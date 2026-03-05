@@ -67,5 +67,5 @@ function App() {
     </div>
   );
 }
-
+const API = "https://football-stats-lw4b.onrender.com";
 export default App;

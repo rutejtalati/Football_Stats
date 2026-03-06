@@ -1,4 +1,4 @@
-name: Deploy frontend to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -9,33 +9,28 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install
-        working-directory: frontend
-        run: npm ci
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
 
-      - name: Build
-        working-directory: frontend
-        env:
-          VITE_API_BASE_URL: https://football-stats-lw4b.onrender.com
-        run: npm run build
+      - name: Build project
+        run: |
+          cd frontend
+          npm run build
 
-      - name: Upload artifact
+      - name: Upload build
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
@@ -43,6 +38,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         uses: actions/deploy-pages@v4

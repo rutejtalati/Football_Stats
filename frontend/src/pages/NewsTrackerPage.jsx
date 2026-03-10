@@ -703,8 +703,8 @@ export default function NewsTrackerPage() {
           </div>
         </div>
 
-        {/* ── NO KEY BANNER ── */}
-        {!GEMINI_KEY && <NoKeyBanner />}
+        {/* ── NO KEY BANNER — only shown in local dev if key missing ── */}
+        {!GEMINI_KEY && process.env.NODE_ENV !== "production" && <NoKeyBanner />}
 
         {/* ── LEAGUE FILTER ── */}
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
@@ -741,10 +741,16 @@ export default function NewsTrackerPage() {
           ))}
         </div>
 
-        {/* ── ERROR ── */}
+        {/* ── ERROR / DEBUG ── */}
         {error && (
-          <div style={{padding:16,background:"rgba(255,77,109,.08)",border:"1px solid rgba(255,77,109,.2)",
-            borderRadius:10,color:"#ff4d6d",fontSize:12,marginBottom:20}}>{error}</div>
+          <div style={{padding:"16px 18px",background:"rgba(255,77,109,.08)",border:"1px solid rgba(255,77,109,.2)",
+            borderRadius:10,color:"#ff4d6d",fontSize:12,marginBottom:20,lineHeight:1.7}}>
+            <div style={{fontWeight:800,marginBottom:6}}>⚠ {error}</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>
+              Key loaded: <code style={{color:GEMINI_KEY?"#28d97a":"#ff4d6d",fontFamily:"monospace"}}>{GEMINI_KEY ? `${GEMINI_KEY.slice(0,8)}…${GEMINI_KEY.slice(-4)} ✓` : "NOT FOUND"}</code>
+              {" · "}Open <strong>F12 → Console</strong> for the full error from Gemini.
+            </div>
+          </div>
         )}
 
         {/* ── LOADING SKELETON ── */}

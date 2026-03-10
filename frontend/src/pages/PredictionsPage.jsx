@@ -11,37 +11,41 @@ import {
    TASK 1 — LEAGUE THEMES
 ══════════════════════════════════════════════════════════ */
 const THEMES = {
+  // EPL — England flag: red (#C8102E) + navy (#012169) + white
   epl: {
-    bg:"#0d0118",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(122,0,212,0.18) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(233,0,82,0.12) 0%,transparent 55%)",
-    accent:"#00ff85", accent2:"#e90052", mid:"#7a00d4",
-    panel:"rgba(22,4,40,0.95)", border:"rgba(122,0,212,0.28)", borderHi:"rgba(0,255,133,0.5)",
-    text:"#f0e8ff", muted:"#8060aa", faint:"rgba(122,0,212,0.12)",
-    homeCol:"#00ff85", awayCol:"#e90052", label:"Premier League",
+    bg:"#060a12",
+    grad:"radial-gradient(ellipse at 20% 20%,rgba(200,16,46,0.14) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(1,33,105,0.18) 0%,transparent 55%)",
+    accent:"#C8102E", accent2:"#4a7fff", mid:"#012169",
+    panel:"rgba(6,10,18,0.96)", border:"rgba(200,16,46,0.28)", borderHi:"rgba(200,16,46,0.6)",
+    text:"#f0f4ff", muted:"#6070a0", faint:"rgba(200,16,46,0.10)",
+    homeCol:"#C8102E", awayCol:"#4a7fff", label:"Premier League",
   },
+  // La Liga — Spain flag: red (#AA151B) + gold (#F1BF00)
   laliga: {
-    bg:"#120500",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(255,180,0,0.14) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(200,16,46,0.12) 0%,transparent 55%)",
-    accent:"#ffcc00", accent2:"#c8102e", mid:"#ff6b00",
-    panel:"rgba(28,8,0,0.95)", border:"rgba(180,80,0,0.28)", borderHi:"rgba(255,204,0,0.5)",
-    text:"#fff5e0", muted:"#906040", faint:"rgba(180,80,0,0.12)",
-    homeCol:"#ffcc00", awayCol:"#c8102e", label:"La Liga",
+    bg:"#0e0700",
+    grad:"radial-gradient(ellipse at 20% 20%,rgba(241,191,0,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(170,21,27,0.14) 0%,transparent 55%)",
+    accent:"#F1BF00", accent2:"#AA151B", mid:"#e07800",
+    panel:"rgba(16,9,0,0.96)", border:"rgba(241,191,0,0.25)", borderHi:"rgba(241,191,0,0.55)",
+    text:"#fff8e0", muted:"#8a7040", faint:"rgba(241,191,0,0.10)",
+    homeCol:"#F1BF00", awayCol:"#AA151B", label:"La Liga",
   },
+  // Serie A — Italy flag: green (#009246) + red (#CE2B37) + white
   seriea: {
-    bg:"#00050f",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(0,136,204,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(0,51,160,0.14) 0%,transparent 55%)",
-    accent:"#00d4ff", accent2:"#0055cc", mid:"#0088cc",
-    panel:"rgba(0,8,22,0.95)", border:"rgba(0,100,180,0.28)", borderHi:"rgba(0,212,255,0.5)",
-    text:"#e0f4ff", muted:"#406888", faint:"rgba(0,100,180,0.12)",
-    homeCol:"#00d4ff", awayCol:"#0055cc", label:"Serie A",
+    bg:"#030d06",
+    grad:"radial-gradient(ellipse at 20% 20%,rgba(0,146,70,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(206,43,55,0.14) 0%,transparent 55%)",
+    accent:"#00b856", accent2:"#CE2B37", mid:"#007a38",
+    panel:"rgba(3,12,6,0.96)", border:"rgba(0,146,70,0.28)", borderHi:"rgba(0,184,86,0.55)",
+    text:"#e8fff2", muted:"#3a7055", faint:"rgba(0,146,70,0.10)",
+    homeCol:"#00b856", awayCol:"#CE2B37", label:"Serie A",
   },
+  // Ligue 1 — France flag: blue (#002395) + red (#ED2939) + white
   ligue1: {
-    bg:"#05080e",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(26,106,255,0.14) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(232,192,55,0.10) 0%,transparent 55%)",
-    accent:"#e8c037", accent2:"#1a6aff", mid:"#3355cc",
-    panel:"rgba(8,10,22,0.95)", border:"rgba(40,70,160,0.28)", borderHi:"rgba(232,192,55,0.5)",
-    text:"#eef2ff", muted:"#4a5888", faint:"rgba(40,70,160,0.12)",
-    homeCol:"#e8c037", awayCol:"#1a6aff", label:"Ligue 1",
+    bg:"#020510",
+    grad:"radial-gradient(ellipse at 20% 20%,rgba(0,35,149,0.18) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(237,41,57,0.14) 0%,transparent 55%)",
+    accent:"#4d7fff", accent2:"#ED2939", mid:"#002395",
+    panel:"rgba(2,5,16,0.96)", border:"rgba(0,35,149,0.30)", borderHi:"rgba(77,127,255,0.55)",
+    text:"#eef2ff", muted:"#4050a0", faint:"rgba(0,35,149,0.12)",
+    homeCol:"#4d7fff", awayCol:"#ED2939", label:"Ligue 1",
   },
 };
 
@@ -131,7 +135,7 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
   const homePlayrs=getKeyPlayers(match.home_team),awayPlayrs=getKeyPlayers(match.away_team);
   const hS=match.home_stats||{},aS=match.away_stats||{};
   const hP=(hS.played_home||0)+(hS.played_away||0)||1,aP=(aS.played_home||0)+(aS.played_away||0)||1;
-  const TABS=[{id:"stats",label:"📊 Stats"},{id:"players",label:"⭐ Key Players"},{id:"h2h",label:"🔄 H2H"},{id:"odds",label:"💹 Odds"},{id:"grid",label:"🎯 Score Grid"}];
+  const TABS=[{id:"stats",label:"Stats"},{id:"players",label:"Key Players"},{id:"h2h",label:"H2H"},{id:"odds",label:"Odds"},{id:"grid",label:"Score Grid"}];
 
   return(
     <div onClick={()=>onSelect&&onSelect()} style={{background:T.panel,borderRadius:16,overflow:"hidden",border:`1px solid ${isSelected?T.borderHi:T.border}`,boxShadow:isSelected?`0 0 0 1px ${T.accent}30,0 8px 32px rgba(0,0,0,0.5)`:open?"0 4px 24px rgba(0,0,0,0.5)":"none",transition:"all 0.2s",cursor:"pointer"}}
@@ -453,7 +457,7 @@ const ScorersWidget=({league,T})=>{
   return(
     <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
       <div style={{display:"flex",borderBottom:`1px solid ${T.border}`}}>
-        {[["goals","⚽ Top Scorers"],["assists","🎯 Top Assists"]].map(([k,l])=>(
+        {[["goals","Top Scorers"],["assists","Top Assists"]].map(([k,l])=>(
           <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:12,fontSize:11,fontWeight:800,cursor:"pointer",background:"none",border:"none",fontFamily:"'Inter',sans-serif",color:tab===k?T.accent:T.muted,borderBottom:`2px solid ${tab===k?T.accent:"transparent"}`,transition:"all 0.15s"}}>{l}</button>
         ))}
       </div>
@@ -557,27 +561,14 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         {tab==="predictions"&&(
           <div style={{display:"grid",gridTemplateColumns:"1fr 290px",gap:20,alignItems:"start"}}>
             <div>
-              {/* GW Overview */}
+              {/* Sort bar */}
               {!predLoad&&!predErr&&matches.length>0&&(
-                <div style={{marginBottom:20}}>
-                  <div style={{fontSize:9,fontWeight:900,color:T.muted,letterSpacing:"0.12em",marginBottom:10}}>GAMEWEEK OVERVIEW</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
-                    {[{val:matches.length,l:"Fixtures",icon:"📅"},{val:homeWins,l:"Home Fav.",icon:"🏠"},{val:draws,l:"Draw Fav.",icon:"🤝"},{val:bttsCount,l:"BTTS Likely",icon:"⚽"},{val:avgXgH,l:"Avg xG H",icon:"📊"},{val:avgXgA,l:"Avg xG A",icon:"📊"},{val:avgConf+"%",l:"Avg Conf.",icon:"🎯"},{val:matches.length-homeWins-draws,l:"Away Fav.",icon:"✈️"}].map(({val,l,icon})=>(
-                      <div key={l} style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:10,padding:"11px 10px",display:"flex",flexDirection:"column",gap:4,transition:"all 0.15s"}}
-                        onMouseEnter={e=>{e.currentTarget.style.borderColor=`${T.accent}44`;e.currentTarget.style.background=`${T.accent}08`;}}
-                        onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.panel;}}>
-                        <span style={{fontSize:14}}>{icon}</span>
-                        <span style={{fontSize:20,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{val}</span>
-                        <span style={{fontSize:8,color:T.muted,letterSpacing:"0.05em"}}>{l}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:10,color:T.muted}}>Sort:</span>
-                    {[["confidence","Confidence"],["date","Date"],["home","Home %"]].map(([s,l])=>(
-                      <button key={s} onClick={()=>setSort(s)} style={{padding:"5px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",border:`1px solid ${sort===s?T.accent:T.border}`,background:sort===s?`${T.accent}18`:"transparent",color:sort===s?T.accent:T.muted,transition:"all 0.13s"}}>{l}</button>
-                    ))}
-                  </div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <span style={{fontSize:10,color:T.muted}}>Sort:</span>
+                  {[["confidence","Confidence"],["date","Date"],["home","Home %"]].map(([s,l])=>(
+                    <button key={s} onClick={()=>setSort(s)} style={{padding:"5px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",border:`1px solid ${sort===s?T.accent:T.border}`,background:sort===s?`${T.accent}18`:"transparent",color:sort===s?T.accent:T.muted,transition:"all 0.13s"}}>{l}</button>
+                  ))}
+                  <span style={{marginLeft:"auto",fontSize:10,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{matches.length} fixtures</span>
                 </div>
               )}
               {predErr&&<div style={{padding:20,background:T.panel,border:`1px solid ${T.border}`,borderRadius:12,color:T.muted,fontSize:13}}>Error: {predErr}</div>}
@@ -585,7 +576,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               {!predLoad&&!predErr&&matches.length===0&&<div style={{padding:40,textAlign:"center",color:T.muted,fontSize:14}}>No upcoming fixtures found.</div>}
               {/* 2-col grid */}
               {!predLoad&&!predErr&&(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(380px,1fr))",gap:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(520px,1fr))",gap:12}}>
                   {sorted.map((m,i)=><MatchCard key={(m.home_team||"")+(m.away_team||"")+i} match={m} T={T} onSelect={()=>setSelectedMatch(m)} isSelected={selectedMatch===m} navigate={navigate}/>)}
                 </div>
               )}

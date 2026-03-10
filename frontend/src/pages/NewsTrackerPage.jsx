@@ -1,41 +1,29 @@
 // NewsTrackerPage.jsx — StatinSite
 // AI-generated football articles from live stats
-// AI provider: Google Gemini 1.5 Flash (browser-safe, no CORS proxy needed)
-// Covers: EPL, La Liga, Serie A, Ligue 1, Champions League
-// Data sources: StatinSite backend API (standings/scorers/predictions/injuries)
-//               + Gemini Flash to synthesise stats into full articles
+// AI provider: Google Gemini 2.0 Flash Lite (free tier, browser-safe)
 
-// ── ALL IMPORTS MUST BE AT THE TOP (ES module rule) ─────────
+// ── ALL IMPORTS MUST BE AT THE TOP ───────────────────────────
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getStandings, getTopScorers, getTopAssists,
   getLeagueInjuries, getLeaguePredictions,
 } from "../api/api";
 
-/* ─── Gemini Flash helper ────────────────────────────────────
-   Key is loaded from VITE_GEMINI_KEY env var.
-   If Vite isn't picking it up, you can paste the key directly
-   into the FALLBACK_KEY string below as a temporary fix.
+/* ─── Gemini AI helper ───────────────────────────────────────
+   Model: gemini-2.0-flash-lite  (separate free quota bucket)
+   🔑 Set in frontend/.env:  VITE_GEMINI_KEY=AIza...
 ──────────────────────────────────────────────────────────── */
-const FALLBACK_KEY = ""; // ← paste your key here if env var isn't working
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || FALLBACK_KEY;
-const GEMINI_ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "AIzaSyDcbwRw07AhTZfPHJhDYkgHP8PlUkvKBqk";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent";
 
-async function geminiChat(prompt) {
-  if (!GEMINI_KEY) {
-    throw new Error("NO_KEY");
-  }
-  const res = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_KEY}`, {
+async function aiChat(prompt) {
+  if (!GEMINI_KEY) throw new Error("NO_KEY");
+  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 1100,
-        temperature: 0.75,
-        topP: 0.9,
-      },
+      generationConfig: { maxOutputTokens: 1100, temperature: 0.7 },
     }),
   });
   if (!res.ok) {
@@ -103,7 +91,7 @@ const NoKeyBanner = () => (
   }}>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
       <span style={{fontSize:16}}>🔑</span>
-      <span style={{fontSize:13,fontWeight:800,color:"rgba(251,191,36,.95)"}}>Gemini API Key Required</span>
+      <span style={{fontSize:13,fontWeight:800,color:"rgba(251,191,36,.95)"}}>OpenRouter API Key Required</span>
     </div>
     <p style={{margin:"0 0 10px",fontSize:12,color:"rgba(255,255,255,.55)",lineHeight:1.65}}>
       Add your free Gemini API key to <code style={{background:"rgba(255,255,255,.08)",padding:"1px 6px",
@@ -112,13 +100,13 @@ const NoKeyBanner = () => (
     <div style={{background:"rgba(0,0,0,.4)",border:"1px solid rgba(255,255,255,.09)",borderRadius:8,
       padding:"9px 14px",fontFamily:"monospace",fontSize:12,color:"rgba(255,255,255,.7)",marginBottom:10,
       letterSpacing:".02em"}}>
-      VITE_GEMINI_KEY=AIzaSy…your_key_here
+      VITE_OPENROUTER_KEY=sk-or-v1-…your_key_here
     </div>
     <p style={{margin:0,fontSize:11,color:"rgba(255,255,255,.35)"}}>
       Get a <strong style={{color:"rgba(251,191,36,.8)"}}>free</strong> key (no credit card) at{" "}
-      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer"
+      <a href="https://openrouter.ai" target="_blank" rel="noreferrer"
         style={{color:"rgba(251,191,36,.85)",textDecoration:"none",fontWeight:700}}>
-        aistudio.google.com/app/apikey
+        openrouter.ai
       </a>
       {" "}— free tier: 15 req/min, 1 M tokens/day.
       After adding the key, restart <code style={{fontSize:11,fontFamily:"monospace"}}>npm run dev</code>.
@@ -200,7 +188,7 @@ const ArticleCard = ({ article, onClick, featured = false }) => {
             <div style={{width:24,height:24,borderRadius:"50%",
               background:`linear-gradient(135deg,${league.color},${league.color}88)`,
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#000"}}>S</div>
-            <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>StatinSite AI · Gemini Flash</span>
+            <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>StatinSite AI · OpenRouter AI</span>
           </div>
         </div>
       </div>
@@ -324,7 +312,7 @@ const ArticleReader = ({ article, onClose }) => {
             display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#000"}}>S</div>
           <div>
             <div style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,.8)"}}>StatinSite Analytics Engine</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)} · Generated from live data via Gemini Flash</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)} · Generated from live data via OpenRouter AI</div>
           </div>
         </div>
 
@@ -360,7 +348,7 @@ const ArticleReader = ({ article, onClose }) => {
   );
 };
 
-/* ── Article generator — Gemini Flash ───────────────────── */
+/* ── Article generator — OpenRouter AI ───────────────────── */
 async function generateArticles(statsData) {
   const { epl, laliga, seriea, ligue1 } = statsData;
 
@@ -414,7 +402,7 @@ TAGS: [comma separated]`;
   const results = [];
   for (const { code, label, data } of LEAGUE_DATA) {
     try {
-      const text = await geminiChat(makePrompt(label, code, data||{}));
+      const text = await aiChat(makePrompt(label, code, data||{}));
       const article = parseArticle(text, code, label, ICONS, TYPE_COLORS);
       if (article) results.push(article);
     } catch (err) {
@@ -464,7 +452,7 @@ function parseArticle(text, code, leagueLabel, ICONS, TYPE_COLORS) {
   };
 }
 
-/* ── UCL article generator — Gemini Flash ───────────────── */
+/* ── UCL article generator — OpenRouter AI ───────────────── */
 async function generateUCLArticle() {
   const prompt = `You are a football analytics journalist. Write a Champions League analysis article.
 
@@ -481,7 +469,7 @@ STAT_BOXES: [{"value":"X","label":"Y"},{"value":"X","label":"Y"},{"value":"X","l
 TAGS: tag1,tag2,tag3,tag4`;
 
   try {
-    const text = await geminiChat(prompt);
+    const text = await aiChat(prompt);
     const article = parseArticle(text, "ucl", "Champions League",
       {"Stats Deep Dive":"📊","Analysis":"🔬"},
       {"Stats Deep Dive":"#1B5EBE","Analysis":"#ffd700"});
@@ -647,7 +635,7 @@ export default function NewsTrackerPage() {
               News & Analysis
             </h1>
             <p style={{margin:0,fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:600}}>
-              AI-generated articles from live stats · Powered by Gemini Flash · EPL · La Liga · Serie A · Ligue 1 · UCL
+              AI-generated articles from live stats · Powered by OpenRouter AI · EPL · La Liga · Serie A · Ligue 1 · UCL
             </p>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -757,7 +745,7 @@ export default function NewsTrackerPage() {
               {[...Array(8)].map((_,i)=><SkeletonCard key={i}/>)}
             </div>
             <div style={{textAlign:"center",marginTop:20,fontSize:12,color:"rgba(255,255,255,.3)"}}>
-              {loading ? "Loading live stats from all leagues..." : "Generating AI articles via Gemini Flash..."}
+              {loading ? "Loading live stats from all leagues..." : "Generating AI articles via OpenRouter AI..."}
             </div>
           </div>
         )}

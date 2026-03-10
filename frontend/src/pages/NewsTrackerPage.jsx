@@ -4,7 +4,13 @@
 // Covers: EPL, La Liga, Serie A, Ligue 1, Champions League
 // Data sources: StatinSite backend API (standings/scorers/predictions/injuries)
 //               + Gemini Flash to synthesise stats into full articles
+
+// ── ALL IMPORTS MUST BE AT THE TOP (ES module rule) ─────────
 import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  getStandings, getTopScorers, getTopAssists,
+  getLeagueInjuries, getLeaguePredictions,
+} from "../api/api";
 
 /* ─── Gemini Flash helper ────────────────────────────────────
    Uses the raw REST endpoint — no npm package needed.
@@ -37,15 +43,13 @@ async function geminiChat(prompt) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Gemini error ${res.status}`);
+    throw new Error(err?.error?.message || `Gemini HTTP ${res.status}`);
   }
   const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  if (!text) throw new Error("Gemini returned empty response");
+  return text;
 }
-import {
-  getStandings, getTopScorers, getTopAssists,
-  getLeagueInjuries, getLeaguePredictions,
-} from "../api/api";
 
 /* ── League config ──────────────────────────────────────── */
 const LEAGUES = [
@@ -409,15 +413,21 @@ TAGS: [comma separated]`;
   const ICONS = { "Form Report":"📈","Analysis":"🔬","Match Preview":"⚽","Stats Deep Dive":"📊","Injury Update":"🏥","Transfer Watch":"💰" };
   const TYPE_COLORS = { "Form Report":"#28d97a","Analysis":"#3b9eff","Match Preview":"#f2c94c","Stats Deep Dive":"#b388ff","Injury Update":"#ff4d6d","Transfer Watch":"#ff6b35" };
 
-  // One article per league — Gemini free tier is 15 req/min so keep it lean
-  const promises = LEAGUE_DATA.map(({ code, label, data }) =>
-    geminiChat(makePrompt(label, code, data||{}))
-      .then(text => parseArticle(text, code, label, ICONS, TYPE_COLORS))
-      .catch(() => null)
-  );
-
-  const results = await Promise.allSettled(promises);
-  return results.map(r => r.value).filter(Boolean);
+  // One article per league — run sequentially to stay under free-tier rate limit (15 req/min)
+  const results = [];
+  for (const { code, label, data } of LEAGUE_DATA) {
+    try {
+      const text = await geminiChat(makePrompt(label, code, data||{}));
+      const article = parseArticle(text, code, label, ICONS, TYPE_COLORS);
+      if (article) results.push(article);
+    } catch (err) {
+      console.warn(`[Gemini] Failed for ${label}:`, err.message);
+      // Re-throw if it's a key error so the outer handler can show it
+      if (err.message === "NO_KEY" || err.message.includes("API_KEY") || err.message.includes("403")) throw err;
+      // Otherwise skip this league and continue
+    }
+  }
+  return results;
 }
 
 function parseArticle(text, code, leagueLabel, ICONS, TYPE_COLORS) {
@@ -480,7 +490,12 @@ TAGS: tag1,tag2,tag3,tag4`;
       {"Stats Deep Dive":"#1B5EBE","Analysis":"#ffd700"});
     if (article) article.icon = "🏆";
     return article;
-  } catch { return null; }
+  } catch(err) {
+    // Propagate auth/key errors; silently skip UCL for other failures
+    if (err.message === "NO_KEY" || err.message.includes("API_KEY") || err.message.includes("403")) throw err;
+    console.warn("[Gemini] UCL article failed:", err.message);
+    return null;
+  }
 }
 
 /* ── Trending headlines ticker data (from stats) ─────────── */
@@ -558,6 +573,7 @@ export default function NewsTrackerPage() {
   const generateAllArticles = useCallback(async (stats) => {
     if (!stats) return;
     setGenerating(true);
+    setError(null);
     try {
       const [leagueArticles, uclArticle] = await Promise.all([
         generateArticles(stats),
@@ -565,17 +581,17 @@ export default function NewsTrackerPage() {
       ]);
       const all = [...leagueArticles];
       if (uclArticle) all.push(uclArticle);
-      // Sort newest first, featured first
       all.sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
       setArticles(all);
       if (all.length === 0) {
-        setError("No articles generated. Check your VITE_GEMINI_KEY is set and valid.");
+        setError("Gemini returned no articles. Check browser console (F12) for details — the key may be invalid or rate limited.");
       }
     } catch(e) {
       if (e.message === "NO_KEY") {
-        setError(null); // NoKeyBanner handles the UI — no need for a duplicate red error
+        setError(null); // NoKeyBanner handles this case
       } else {
-        setError(`AI generation failed: ${e.message}`);
+        // Show the real Gemini error so the user knows what's wrong
+        setError(`Gemini error: ${e.message}`);
       }
     }
     setGenerating(false);

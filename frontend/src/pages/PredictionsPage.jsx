@@ -9,22 +9,22 @@ import {
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  blue:"#4f9eff", blueDim:"rgba(79,158,255,0.12)", blueGlow:"rgba(79,158,255,0.3)",
-  green:"#00e09e", greenDim:"rgba(0,224,158,0.1)", greenGlow:"rgba(0,224,158,0.25)",
-  red:"#ff4d6d",  redDim:"rgba(255,77,109,0.1)",   redGlow:"rgba(255,77,109,0.25)",
-  gold:"#f2c94c", goldDim:"rgba(242,201,76,0.1)",
-  purple:"#b388ff",purpleDim:"rgba(179,136,255,0.1)",
-  orange:"#ff8c42",
-  panel:"rgba(12,18,30,0.97)", panelSoft:"rgba(255,255,255,0.025)",
-  line:"rgba(255,255,255,0.07)", lineMid:"rgba(255,255,255,0.13)",
-  text:"#e8f0ff", muted:"#4a6a8a", soft:"#2a3f58",
+  blue:"#ffffff",   blueDim:"rgba(255,255,255,0.08)", blueGlow:"rgba(255,255,255,0.15)",
+  green:"#ffffff",  greenDim:"rgba(255,255,255,0.06)", greenGlow:"rgba(255,255,255,0.12)",
+  red:"#bfbfbf",    redDim:"rgba(255,255,255,0.05)",   redGlow:"rgba(255,255,255,0.1)",
+  gold:"#bfbfbf",   goldDim:"rgba(255,255,255,0.06)",
+  purple:"#bfbfbf", purpleDim:"rgba(255,255,255,0.05)",
+  orange:"#bfbfbf",
+  panel:"#111111",  panelSoft:"rgba(255,255,255,0.02)",
+  line:"#222222",   lineMid:"#333333",
+  text:"#ffffff",   muted:"#7a7a7a", soft:"#444444",
 };
 
 const LEAGUE_META = {
-  epl:    {label:"Premier League", color:"#4f9eff", bg:"rgba(79,158,255,0.07)"},
-  laliga: {label:"La Liga",        color:"#ff6b35", bg:"rgba(255,107,53,0.07)"},
-  seriea: {label:"Serie A",        color:"#00e09e", bg:"rgba(0,224,158,0.07)"},
-  ligue1: {label:"Ligue 1",        color:"#b388ff", bg:"rgba(179,136,255,0.07)"},
+  epl:    {label:"Premier League", color:"#ffffff", bg:"rgba(255,255,255,0.04)"},
+  laliga: {label:"La Liga",        color:"#bfbfbf", bg:"rgba(255,255,255,0.03)"},
+  seriea: {label:"Serie A",        color:"#ffffff", bg:"rgba(255,255,255,0.04)"},
+  ligue1: {label:"Ligue 1",        color:"#bfbfbf", bg:"rgba(255,255,255,0.03)"},
 };
 
 // League → NewsAPI query terms (for news panel)
@@ -36,10 +36,10 @@ const LEAGUE_NEWS_QUERY = {
 };
 
 const ZONE = {
-  cl:{color:"#4f9eff",label:"Champions League"},
-  el:{color:"#ffc107",label:"Europa League"},
-  ecl:{color:"#b388ff",label:"Conference Lg"},
-  rel:{color:"#ff4d6d",label:"Relegation"},
+  cl:{color:"#ffffff",label:"Champions League"},
+  el:{color:"#bfbfbf",label:"Europa League"},
+  ecl:{color:"#888888",label:"Conference Lg"},
+  rel:{color:"#666666",label:"Relegation"},
 };
 
 // ─── Date formatting ──────────────────────────────────────────────────────────
@@ -59,10 +59,10 @@ function fmtDate(raw) {
 // ─── Micro components ─────────────────────────────────────────────────────────
 const FormPip = ({ r }) => {
   const s = {
-    W: { bg:"rgba(0,224,158,0.15)",  c:"#00e09e", b:"rgba(0,224,158,0.3)"  },
-    D: { bg:"rgba(120,130,150,0.1)", c:"#7a8a9a", b:"rgba(120,130,150,0.2)"},
-    L: { bg:"rgba(255,77,109,0.15)", c:"#ff4d6d", b:"rgba(255,77,109,0.3)" },
-  }[r] || { bg:"rgba(120,130,150,0.1)", c:"#7a8a9a", b:"rgba(120,130,150,0.2)" };
+    W: { bg:"rgba(255,255,255,0.12)", c:"#ffffff", b:"rgba(255,255,255,0.25)" },
+    D: { bg:"rgba(255,255,255,0.04)", c:"#7a7a7a", b:"rgba(255,255,255,0.1)" },
+    L: { bg:"rgba(255,255,255,0.02)", c:"#444444", b:"rgba(255,255,255,0.06)" },
+  }[r] || { bg:"rgba(255,255,255,0.04)", c:"#7a7a7a", b:"rgba(255,255,255,0.1)" };
   return (
     <span style={{ display:"inline-flex",alignItems:"center",justifyContent:"center",
       width:20,height:20,borderRadius:5,fontSize:9,fontWeight:900,
@@ -89,7 +89,7 @@ const XGDualBar = ({ xgHome, xgAway, homeTeam, awayTeam, homeColor, awayColor })
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:9, fontWeight:800, color:homeColor||C.blue, minWidth:48, textAlign:"right" }}>{hName}</span>
         <div style={{ flex:1, height:6, background:"rgba(255,255,255,0.05)", borderRadius:3, overflow:"hidden" }}>
-          <div style={{ width:hPct+"%", height:"100%", background:homeColor||C.blue, borderRadius:3,
+          <div style={{ width:hPct+"%", height:"100%", background:"#ffffff", borderRadius:3,
             boxShadow:`0 0 6px ${(homeColor||C.blue)}66`, transition:"width 0.8s cubic-bezier(.4,0,.2,1)" }}/>
         </div>
         <span style={{ fontSize:13, fontWeight:900, color:homeColor||C.blue, fontFamily:"JetBrains Mono,monospace", minWidth:32 }}>{h.toFixed(2)}</span>
@@ -98,7 +98,7 @@ const XGDualBar = ({ xgHome, xgAway, homeTeam, awayTeam, homeColor, awayColor })
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:9, fontWeight:800, color:awayColor||C.red, minWidth:48, textAlign:"right" }}>{aName}</span>
         <div style={{ flex:1, height:6, background:"rgba(255,255,255,0.05)", borderRadius:3, overflow:"hidden" }}>
-          <div style={{ width:aPct+"%", height:"100%", background:awayColor||C.red, borderRadius:3,
+          <div style={{ width:aPct+"%", height:"100%", background:"#bfbfbf", borderRadius:3,
             boxShadow:`0 0 6px ${(awayColor||C.red)}66`, transition:"width 0.8s cubic-bezier(.4,0,.2,1) 0.1s" }}/>
         </div>
         <span style={{ fontSize:13, fontWeight:900, color:awayColor||C.red, fontFamily:"JetBrains Mono,monospace", minWidth:32 }}>{a.toFixed(2)}</span>
@@ -172,8 +172,8 @@ const StatBar = ({ label, homeVal, awayVal, homeColor, awayColor, fmt }) => {
         <span style={{ fontSize:13, fontWeight:800, color:awayColor||C.red, fontFamily:"JetBrains Mono,monospace" }}>{f(a)}</span>
       </div>
       <div style={{ display:"flex", height:5, borderRadius:3, overflow:"hidden", gap:1 }}>
-        <div style={{ flex:hp, background:homeColor||C.blue, borderRadius:"3px 0 0 3px", transition:"flex 0.6s ease" }}/>
-        <div style={{ flex:ap, background:awayColor||C.red, borderRadius:"0 3px 3px 0", transition:"flex 0.6s ease" }}/>
+        <div style={{ flex:hp, background:"#ffffff", borderRadius:"3px 0 0 3px", transition:"flex 0.6s ease" }}/>
+        <div style={{ flex:ap, background:"#bfbfbf", borderRadius:"0 3px 3px 0", transition:"flex 0.6s ease" }}/>
       </div>
     </div>
   );
@@ -190,9 +190,9 @@ const Heatmap = ({ topScores, homeTeam, awayTeam }) => {
   const heat = (p, m) => {
     if (!m) return "rgba(255,255,255,0.02)";
     const t = Math.min(p/m, 1);
-    if (t < 0.25) return `rgba(79,158,255,${(t/0.25*0.3+0.04).toFixed(2)})`;
-    if (t < 0.6)  return `rgba(255,193,7,${((t-0.25)/0.35*0.5+0.15).toFixed(2)})`;
-    return `rgba(255,77,109,${((t-0.6)/0.4*0.55+0.35).toFixed(2)})`;
+    if (t < 0.25) return `rgba(200,200,200,${(t/0.25*0.3+0.04).toFixed(2)})`;
+    if (t < 0.6)  return `rgba(150,150,150,${((t-0.25)/0.35*0.5+0.15).toFixed(2)})`;
+    return `rgba(80,80,80,${((t-0.6)/0.4*0.55+0.35).toFixed(2)})`;
   };
   const rows = [0,1,2,3,4];
   return (
@@ -200,8 +200,8 @@ const Heatmap = ({ topScores, homeTeam, awayTeam }) => {
       <div style={{ display:"flex", justifyContent:"space-between" }}>
         <span style={{ fontSize:10, fontWeight:900, color:C.muted, letterSpacing:".1em" }}>CORRECT SCORE GRID</span>
         <div style={{ display:"flex", gap:8 }}>
-          <span style={{ fontSize:9, color:C.blue }}>{(homeTeam||"H").split(" ").pop().slice(0,4)} scored</span>
-          <span style={{ fontSize:9, color:C.red }}>{(awayTeam||"A").split(" ").pop().slice(0,4)} scored</span>
+          <span style={{ fontSize:9, color:"#ffffff" }}>{(homeTeam||"H").split(" ").pop().slice(0,4)} scored</span>
+          <span style={{ fontSize:9, color:"#bfbfbf" }}>{(awayTeam||"A").split(" ").pop().slice(0,4)} scored</span>
         </div>
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"22px repeat(5,1fr)", gap:3 }}>
@@ -227,9 +227,9 @@ const Heatmap = ({ topScores, homeTeam, awayTeam }) => {
         ])}
       </div>
       <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-        <span style={{ fontSize:9, color:C.blue }}>Low</span>
-        <div style={{ flex:1,height:3,borderRadius:2,background:"linear-gradient(to right,rgba(79,158,255,0.5),rgba(255,193,7,0.6),rgba(255,77,109,0.8))" }}/>
-        <span style={{ fontSize:9, color:C.red }}>High</span>
+        <span style={{ fontSize:9, color:"#ffffff" }}>Low</span>
+        <div style={{ flex:1,height:3,borderRadius:2,background:"linear-gradient(to right,#222,#888,#ffffff)" }}/>
+        <span style={{ fontSize:9, color:"#bfbfbf" }}>High</span>
       </div>
     </div>
   );
@@ -243,7 +243,7 @@ const H2HWidget = ({ homeId, awayId, homeTeam, awayTeam, homeColor, awayColor })
     if(!homeId||!awayId){setLoading(false);return;}
     getH2H(homeId,awayId,8).then(d=>{setData(d);setLoading(false);}).catch(()=>setLoading(false));
   },[homeId,awayId]);
-  if(loading) return <div style={{height:80,borderRadius:10,background:"rgba(255,255,255,0.03)",animation:"pulse 1.5s ease infinite"}}/>;
+  if(loading) return <div style={{height:80,borderRadius:10,background:"rgba(255,255,255,0.03)"}}/>;
   if(!data||!data.results||!data.results.length)
     return <div style={{padding:"12px",textAlign:"center",color:C.muted,fontSize:12}}>No H2H data</div>;
   const res=data.results; let hw=0,d2=0,aw=0;
@@ -272,16 +272,16 @@ const H2HWidget = ({ homeId, awayId, homeTeam, awayTeam, homeColor, awayColor })
       </div>
       {/* Bar */}
       <div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",gap:1}}>
-        <div style={{flex:hw,background:homeColor||C.blue,transition:"flex 0.6s ease"}}/>
+        <div style={{flex:hw,background:"#ffffff",transition:"flex 0.6s ease"}}/>
         <div style={{flex:d2,background:"rgba(120,130,150,0.3)"}}/>
-        <div style={{flex:aw,background:awayColor||C.red,transition:"flex 0.6s ease"}}/>
+        <div style={{flex:aw,background:"#bfbfbf",transition:"flex 0.6s ease"}}/>
       </div>
       {/* Recent results */}
       <div style={{display:"flex",flexDirection:"column",gap:3,maxHeight:180,overflowY:"auto"}}>
         {res.slice(0,6).map((r,i)=>{
           const isHome=r.home_team===homeTeam,hg=r.home_goals,ag=r.away_goals;
           const win=(hg>ag&&isHome)||(ag>hg&&!isHome)?"W":hg===ag?"D":"L";
-          const wc={W:"#00e09e",D:"#7a8a9a",L:"#ff4d6d"}[win];
+          const wc={W:"#ffffff",D:"#7a7a7a",L:"#444444"}[win];
           return(
             <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}>
               <span style={{fontSize:10,color:C.soft,minWidth:72,fontFamily:"JetBrains Mono,monospace"}}>{r.date}</span>
@@ -312,10 +312,10 @@ const InjuryWidget = ({ homeTeam, awayTeam, homeColor, awayColor, allInjuries })
   );
   if(!homeInj.length&&!awayInj.length) return(
     <div style={{padding:"12px",textAlign:"center",color:C.muted,fontSize:12,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#00e09e" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round"/></svg>
       No current injuries reported
     </div>);
-  const typeColor = t => t&&t.toLowerCase().includes("suspend")?"#ffc107":C.red;
+  const typeColor = t => t&&t.toLowerCase().includes("suspend")?"#bfbfbf":C.red;
   const Side = ({team,injuries,color}) => (
     <div style={{flex:1}}>
       <div style={{fontSize:10,fontWeight:900,color,letterSpacing:".08em",marginBottom:6,borderBottom:"1px solid "+color+"33",paddingBottom:4}}>
@@ -352,15 +352,15 @@ const OddsWidget = ({ fixtureId, pHome, pDraw, pAway, homeTeam, awayTeam }) => {
   useEffect(()=>{ if(!fixtureId) return; getFixtureOdds(fixtureId).then(setOdds).catch(()=>{}); },[fixtureId]);
   const impliedProb = odd => odd?Math.round(1/parseFloat(odd)*100):0;
   const modelPct = p => Math.round((p||0)*100);
-  const diff = (model,implied) => { const d=model-implied; if(Math.abs(d)<3) return null; return{val:d>0?"+"+d:String(d),color:d>0?"#00e09e":"#ff4d6d"}; };
+  const diff = (model,implied) => { const d=model-implied; if(Math.abs(d)<3) return null; return{val:d>0?"+"+d:String(d),color:d>0?"#ffffff":"#7a7a7a"}; };
   if(!odds||!odds.bookmakers||!odds.bookmakers.length)
     return <div style={{padding:"12px",textAlign:"center",color:C.muted,fontSize:12}}>Loading odds data...</div>;
   const bk=odds.bookmakers[0], mw=bk.bets["Match Winner"]||{};
   const homeOdd=mw["Home"], drawOdd=mw["Draw"], awayOdd=mw["Away"];
   const outcomes=[
-    {label:(homeTeam||"").split(" ").pop().slice(0,8),odd:homeOdd,model:modelPct(pHome),color:C.blue},
+    {label:(homeTeam||"").split(" ").pop().slice(0,8),odd:homeOdd,model:modelPct(pHome),color:"#ffffff"},
     {label:"Draw",odd:drawOdd,model:modelPct(pDraw),color:C.muted},
-    {label:(awayTeam||"").split(" ").pop().slice(0,8),odd:awayOdd,model:modelPct(pAway),color:C.red},
+    {label:(awayTeam||"").split(" ").pop().slice(0,8),odd:awayOdd,model:modelPct(pAway),color:"#bfbfbf"},
   ];
   return(
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -374,7 +374,7 @@ const OddsWidget = ({ fixtureId, pHome, pDraw, pAway, homeTeam, awayTeam }) => {
               <span style={{fontSize:20,fontWeight:900,color:"#fff",fontFamily:"JetBrains Mono,monospace"}}>{odd||"—"}</span>
               <span style={{fontSize:10,color:C.soft}}>Implied: {imp}%</span>
               <span style={{fontSize:10,color}}>Model: {model}%</span>
-              {d&&<span style={{fontSize:10,fontWeight:800,color:d.color,background:d.color+"22",padding:"1px 6px",borderRadius:4}}>Edge {d.val}%</span>}
+              {d&&<span style={{fontSize:10,fontWeight:800,color:d.color,background:"rgba(255,255,255,0.08)",padding:"1px 6px",borderRadius:4}}>Edge {d.val}%</span>}
             </div>
           );
         })}
@@ -435,8 +435,8 @@ const APIPredWidget = ({ fixtureId, homeTeam, awayTeam, homeColor, awayColor }) 
   return(
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       {pred.advice&&(
-        <div style={{padding:"8px 12px",borderRadius:8,background:"rgba(255,193,7,0.08)",border:"1px solid rgba(255,193,7,0.2)",
-          fontSize:12,color:C.gold,fontWeight:700,textAlign:"center",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+        <div style={{padding:"8px 12px",borderRadius:8,background:"rgba(150,150,150,0.08)",border:"1px solid rgba(150,150,150,0.2)",
+          fontSize:12,color:"#bfbfbf",fontWeight:700,textAlign:"center",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke={C.gold} strokeWidth="1.3"/><path d="M6 4v3M6 8.5v.5" stroke={C.gold} strokeWidth="1.3" strokeLinecap="round"/></svg>
           {pred.advice}
         </div>
@@ -454,7 +454,7 @@ const APIPredWidget = ({ fixtureId, homeTeam, awayTeam, homeColor, awayColor }) 
 
 // ─── Confidence / Prediction Strength meter ───────────────────────────────────
 const ConfMeter = ({ value }) => {
-  const color=value>=72?"#28d97a":value>=52?"#f2c94c":value>=36?"#ff6b35":"#7a8a9a";
+  const color=value>=72?"#ffffff":value>=52?"#bfbfbf":value>=36?"#888888":"#555555";
   const label=value>=72?"Strong":value>=52?"Moderate":value>=36?"Uncertain":"Low";
   return(
     <div style={{display:"flex",alignItems:"center",gap:7}}>
@@ -481,11 +481,11 @@ const MiniPitch = ({ outcome, homeProb, awayProb, homeTeam, awayTeam, leagueColo
   const isHome = outcome === "home";
   const isAway = outcome === "away";
   const isDraw = outcome === "draw";
-  const lc = leagueColor || "#4f9eff";
+  const lc = leagueColor || "#ffffff";
 
   // Team colours
   const hCol = lc;
-  const aCol = isAway ? "#ff4d6d" : "rgba(255,77,109,0.5)";
+  const aCol = isAway ? "#bfbfbf" : "rgba(80,80,80,0.5)";
 
   // Player node positions [x, y, team("h"/"a"), role]
   // Home players on left half, away on right half
@@ -548,7 +548,7 @@ const MiniPitch = ({ outcome, homeProb, awayProb, homeTeam, awayTeam, leagueColo
 
   const DELAY = 0.3;
   const DUR   = isDraw ? 1.6 : 2.2;
-  const glowCol = isHome ? hCol : isAway ? "#ff4d6d" : "#f2c94c";
+  const glowCol = isHome ? hCol : isAway ? "#bfbfbf" : "#888888";
 
   const css = `
     @keyframes mn_ball_${uid}  { 0%{offset-distance:0%} 100%{offset-distance:100%} }
@@ -641,7 +641,7 @@ const MiniPitch = ({ outcome, homeProb, awayProb, homeTeam, awayTeam, leagueColo
         <line x1="2.5" y1={MY-10} x2="2.5" y2={MY+10} stroke="rgba(255,255,255,0.65)" strokeWidth="2"/>
         {/* Net flash left */}
         {isAway && <rect x="2" y={MY-10} width="6" height="20" rx="1"
-          fill="#ff4d6d" opacity="0"
+          fill="rgba(255,255,255,0.3)" opacity="0"
           style={{animation:`mn_net_${uid} 0.7s ${DELAY+DUR*0.88}s ease-out forwards`}}/>}
 
         {/* Right goal */}
@@ -659,7 +659,7 @@ const MiniPitch = ({ outcome, homeProb, awayProb, homeTeam, awayTeam, leagueColo
           {(homeTeam||"HOME").slice(0,3).toUpperCase()}
         </text>
         <text x={W-24} y={H-4} fontSize="6.5" fontWeight="900"
-          fill={`${isAway?"#ff4d6d":"rgba(255,77,109,0.35)"}55`} textAnchor="middle" fontFamily="Sora,sans-serif">
+          fill={`${isAway?"#bfbfbf":"rgba(180,180,180,0.35)"}55`} textAnchor="middle" fontFamily="Sora,sans-serif">
           {(awayTeam||"AWAY").slice(0,3).toUpperCase()}
         </text>
 
@@ -722,741 +722,164 @@ const MiniPitch = ({ outcome, homeProb, awayProb, homeTeam, awayTeam, leagueColo
 
 
 
-// ─── News Panel ───────────────────────────────────────────────────────────────
-// Uses NewsAPI.org (free tier). To enable: add VITE_NEWS_API_KEY to .env
-// Free tier: 100 req/day. Key: https://newsapi.org/register
-// If no key, shows empty state with instructions.
-const NewsPanel = ({ league }) => {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
-  const meta = LEAGUE_META[league] || {};
-  const query = LEAGUE_NEWS_QUERY[league] || "football";
+// ─── Scenario Explorer (replaces News Panel) ─────────────────────────────────
+// A sandbox for model assumptions. Does NOT modify official predictions.
+const ScenarioExplorer = ({ match }) => {
+  const [mods, setMods] = React.useState({ homeAtk:0, awayAtk:0, homeDef:0, awayDef:0, tempo:0 });
+  const reset = () => setMods({ homeAtk:0, awayAtk:0, homeDef:0, awayDef:0, tempo:0 });
 
-  useEffect(() => {
-    setLoading(true); setError(null); setArticles([]);
-    const cacheKey = `news_v2_${league}_${new Date().toDateString()}`;
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) { setArticles(JSON.parse(cached)); setLoading(false); return; }
-    } catch {}
-    // Uses backend proxy at /api/news/{league} which reads NEWS_API_KEY from .env
-    // No frontend API key needed — all calls go through FastAPI backend
-    fetch(`http://localhost:8003/api/news/${league}`)
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => {
-        const items = (data.articles || []).slice(0, 10);
-        if (data.error) { setError("no_key"); setLoading(false); return; }
-        setArticles(items);
-        try { sessionStorage.setItem(cacheKey, JSON.stringify(items)); } catch {}
-        setLoading(false);
-      })
-      .catch(() => { setError("fetch_failed"); setLoading(false); });
-  }, [league]);
+  // Derive scenario probabilities using simple Poisson approximation
+  const scenario = React.useMemo(() => {
+    if (!match) return null;
+    const baseXgH = parseFloat(match.xg_home) || 1.3;
+    const baseXgA = parseFloat(match.xg_away) || 1.1;
+    const tempMult = 1 + (mods.tempo / 100);
+    const xgH = Math.max(0.1, baseXgH * (1 + mods.homeAtk/100) * (1 - mods.awayDef/200) * tempMult);
+    const xgA = Math.max(0.1, baseXgA * (1 + mods.awayAtk/100) * (1 - mods.homeDef/200) * tempMult);
 
-  const fmtAge = iso => {
-    if (!iso) return "";
-    const diff = Date.now() - new Date(iso).getTime();
-    const h = Math.floor(diff / 3600000);
-    return h < 1 ? "Just now" : h < 24 ? `${h}h ago` : `${Math.floor(h/24)}d ago`;
+    // Monte Carlo via Poisson PMF
+    const poisson = (lam, k) => {
+      let r = Math.exp(-lam); for (let i=0;i<k;i++) r*=lam/(i+1); return r;
+    };
+    let pH=0, pD=0, pA=0, topScore="1-0", topP=0;
+    for (let h=0;h<=6;h++) for (let a=0;a<=6;a++) {
+      const p = poisson(xgH,h)*poisson(xgA,a);
+      if (h>a) pH+=p; else if (h===a) pD+=p; else pA+=p;
+      if (p>topP) { topP=p; topScore=`${h}-${a}`; }
+    }
+    const tot = pH+pD+pA||1;
+    return {
+      pH: Math.round(pH/tot*100), pD: Math.round(pD/tot*100), pA: Math.round(pA/tot*100),
+      xgH: xgH.toFixed(2), xgA: xgA.toFixed(2), topScore,
+    };
+  }, [match, mods]);
+
+  // Default message when no match selected
+  if (!match) return (
+    <div style={{background:"#111",border:"1px solid #222",borderRadius:10,padding:20,
+      display:"flex",flexDirection:"column",gap:8,alignItems:"center",justifyContent:"center",height:200}}>
+      <span style={{fontSize:11,color:"#7a7a7a",textAlign:"center"}}>
+        Click a match card to load the Scenario Explorer
+      </span>
+    </div>
+  );
+
+  const Slider = ({ label, key2, min=-20, max=20 }) => {
+    const val = mods[key2];
+    const sign = val > 0 ? "+" : "";
+    return (
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:10,color:"#bfbfbf",fontFamily:"Inter,sans-serif"}}>{label}</span>
+          <span style={{fontSize:11,fontWeight:700,color:val===0?"#7a7a7a":val>0?"#ffffff":"#bfbfbf",
+            fontFamily:"JetBrains Mono,monospace",minWidth:36,textAlign:"right"}}>{sign}{val}%</span>
+        </div>
+        <input type="range" min={min} max={max} value={val}
+          onChange={e => setMods(prev => ({...prev,[key2]:parseInt(e.target.value)}))}
+          style={{width:"100%",accentColor:"#ffffff",cursor:"pointer"}}/>
+      </div>
+    );
   };
 
-  const ExternalIcon = () => (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <path d="M4 2H2a1 1 0 00-1 1v5a1 1 0 001 1h5a1 1 0 001-1V6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M6 1h3v3M9 1L5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:0,
-      background:C.panel, border:"1px solid "+C.line,
-      borderRadius:16, overflow:"hidden", height:"100%" }}>
-
-      {/* Panel header */}
-      <div style={{ padding:"14px 16px", borderBottom:"1px solid "+C.line,
-        display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ width:3, height:18, borderRadius:2, background:meta.color||C.blue }}/>
-          <span style={{ fontSize:11, fontWeight:900, color:C.text, letterSpacing:".06em",
-            fontFamily:"Sora,sans-serif" }}>LATEST NEWS</span>
-        </div>
-        <span style={{ fontSize:9, color:C.muted, fontFamily:"JetBrains Mono,monospace" }}>
-          {meta.label}
-        </span>
+  const ProbBar = ({ label, pct, isHighlight }) => (
+    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:10,color:"#bfbfbf",fontFamily:"Inter,sans-serif"}}>{label}</span>
+        <span style={{fontSize:12,fontWeight:900,color:isHighlight?"#ffffff":"#7a7a7a",
+          fontFamily:"JetBrains Mono,monospace"}}>{pct}%</span>
       </div>
-
-      {/* Content */}
-      <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
-
-        {loading && Array.from({length:5}).map((_,i) => (
-          <div key={i} style={{ padding:"10px 16px", borderBottom:"1px solid "+C.line, display:"flex", gap:10 }}>
-            <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
-              <div style={{ height:10, borderRadius:3, background:"rgba(255,255,255,0.04)",
-                width:"85%", animation:"pulse 1.5s ease infinite", animationDelay:i*120+"ms" }}/>
-              <div style={{ height:8, borderRadius:3, background:"rgba(255,255,255,0.03)",
-                width:"60%", animation:"pulse 1.5s ease infinite", animationDelay:i*120+60+"ms" }}/>
-            </div>
-          </div>
-        ))}
-
-        {error === "no_key" && (
-          <div style={{ padding:"20px 16px", display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ padding:"12px", borderRadius:10, background:"rgba(79,158,255,0.07)",
-              border:"1px solid rgba(79,158,255,0.18)" }}>
-              <div style={{ fontSize:11, fontWeight:700, color:C.blue, marginBottom:6 }}>
-                Enable live news
-              </div>
-              <div style={{ fontSize:10, color:C.muted, lineHeight:1.6 }}>
-                Add <code style={{ background:"rgba(255,255,255,0.06)",padding:"1px 5px",borderRadius:3,fontFamily:"JetBrains Mono,monospace" }}>VITE_NEWS_API_KEY</code> to your .env file.
-              </div>
-              <div style={{ fontSize:10, color:C.soft, marginTop:6, lineHeight:1.6 }}>
-                Free API key at newsapi.org (100 req/day). Then add a /api/news/:league backend route that proxies NewsAPI.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error === "fetch_failed" && (
-          <div style={{ padding:"16px", textAlign:"center", color:C.muted, fontSize:12 }}>
-            Unable to load news
-          </div>
-        )}
-
-        {!loading && !error && articles.length === 0 && (
-          <div style={{ padding:"16px", textAlign:"center", color:C.muted, fontSize:12 }}>
-            No news items found
-          </div>
-        )}
-
-        {articles.map((a, i) => (
-          <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
-            style={{ display:"flex", flexDirection:"column", gap:4, padding:"10px 16px",
-              borderBottom:i < articles.length-1 ? "1px solid "+C.line : "none",
-              textDecoration:"none", transition:"background 0.12s", cursor:"pointer" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = ""; }}>
-            <div style={{ fontSize:11.5, fontWeight:700, color:C.text, lineHeight:1.45,
-              display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden",
-              fontFamily:"Inter,sans-serif" }}>
-              {a.title?.replace(/\s*-\s*[^-]+$/, "")}
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <span style={{ fontSize:9, color:C.muted, fontWeight:700 }}>
-                {a.source?.name}
-              </span>
-              <span style={{ width:2, height:2, borderRadius:"50%", background:C.soft }}/>
-              <span style={{ fontSize:9, color:C.soft, fontFamily:"JetBrains Mono,monospace" }}>
-                {fmtAge(a.publishedAt)}
-              </span>
-              <span style={{ marginLeft:"auto", color:C.soft }}><ExternalIcon/></span>
-            </div>
-          </a>
-        ))}
+      <div style={{height:4,background:"#222",borderRadius:2,overflow:"hidden"}}>
+        <div style={{width:pct+"%",height:"100%",background:isHighlight?"#ffffff":"#444",
+          borderRadius:2,transition:"width 0.3s ease"}}/>
       </div>
     </div>
   );
-};
 
-
-// ─── League Stats Panel (left column summary) ────────────────────────────────
-// Sits above the match cards — shows aggregate stats for the prediction set
-const LeagueStatsPanel = ({ matches, loading, meta, league }) => {
-  if (loading || !matches.length) return null;
-
-  // Compute aggregate stats from current predictions
-  const avgXgHome  = matches.reduce((s,m)=>s+(m.xg_home||0),0)/matches.length;
-  const avgXgAway  = matches.reduce((s,m)=>s+(m.xg_away||0),0)/matches.length;
-  const avgConf    = matches.reduce((s,m)=>s+(m.confidence||0),0)/matches.length;
-  const highBTTS   = matches.filter(m=>(m.btts||0)>=0.55).length;
-  const highGoals  = matches.filter(m=>(m.over_2_5||0)>=0.65).length;
-  const homeWins   = matches.filter(m=>m.p_home_win>m.p_away_win&&m.p_home_win>m.p_draw).length;
-  const awayWins   = matches.filter(m=>m.p_away_win>m.p_home_win&&m.p_away_win>m.p_draw).length;
-  const draws      = matches.filter(m=>m.p_draw>=m.p_home_win&&m.p_draw>=m.p_away_win).length;
-
-  // Best bet (highest confidence)
-  const best = [...matches].sort((a,b)=>(b.confidence||0)-(a.confidence||0))[0];
-  const bestFav = best
-    ? (best.p_home_win>best.p_away_win?best.home_team:best.away_team)
-    : null;
-
-  const lc = meta.color || C.blue;
-
-  // Mini donut chart for outcome distribution
-  const total = matches.length || 1;
-  const hw = homeWins/total, dw = draws/total, aw = awayWins/total;
-  const R = 24, stroke = 8, circ = 2*Math.PI*R;
-  // Stack: home (blue), draw (grey), away (red)
-  const homeArc  = hw * circ;
-  const drawArc  = dw * circ;
-  const awayArc  = aw * circ;
-  const homeOffset  = 0;
-  const drawOffset  = -(homeArc);
-  const awayOffset  = -(homeArc + drawArc);
+  const maxP = Math.max(scenario.pH, scenario.pD, scenario.pA);
 
   return (
-    <div style={{
-      marginBottom:14,
-      background:C.panel,
-      border:`1px solid ${lc}28`,
-      borderRadius:14,
-      overflow:"hidden",
-      padding:"14px 16px",
-    }}>
+    <div style={{background:"#111",border:"1px solid #222",borderRadius:10,overflow:"hidden",
+      display:"flex",flexDirection:"column",position:"sticky",top:72}}>
+
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <span style={{fontSize:10,fontWeight:900,color:C.muted,letterSpacing:".1em",fontFamily:"Inter,sans-serif"}}>
-          GAMEWEEK OVERVIEW
+      <div style={{padding:"12px 14px",borderBottom:"1px solid #222"}}>
+        <div style={{fontSize:11,fontWeight:900,color:"#ffffff",letterSpacing:".06em",
+          fontFamily:"Sora,sans-serif",marginBottom:4}}>SCENARIO SIMULATOR</div>
+        <div style={{fontSize:9,color:"#7a7a7a",lineHeight:1.5,fontFamily:"Inter,sans-serif"}}>
+          Adjust assumptions to explore hypothetical outcomes. Official predictions remain unchanged.
+        </div>
+      </div>
+
+      {/* Match context */}
+      <div style={{padding:"10px 14px",borderBottom:"1px solid #222",
+        display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#ffffff",fontFamily:"Sora,sans-serif",
+          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"45%"}}>
+          {match.home_team}
         </span>
-        <span style={{fontSize:9,color:C.soft,fontFamily:"JetBrains Mono,monospace"}}>
-          {matches.length} fixture{matches.length!==1?"s":""}
+        <span style={{fontSize:9,color:"#7a7a7a",fontFamily:"JetBrains Mono,monospace"}}>vs</span>
+        <span style={{fontSize:11,fontWeight:700,color:"#bfbfbf",fontFamily:"Sora,sans-serif",
+          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"45%",textAlign:"right"}}>
+          {match.away_team}
         </span>
       </div>
 
-      {/* Two columns: donut + stats grid */}
-      <div style={{display:"flex",gap:16,alignItems:"center"}}>
+      {/* Sliders */}
+      <div style={{padding:"12px 14px",borderBottom:"1px solid #222",display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{fontSize:9,fontWeight:900,color:"#7a7a7a",letterSpacing:".1em",
+          fontFamily:"Inter,sans-serif",marginBottom:2}}>ASSUMPTIONS</div>
+        <Slider label="Home Attack Modifier"  key2="homeAtk"/>
+        <Slider label="Away Attack Modifier"  key2="awayAtk"/>
+        <Slider label="Home Defense Modifier" key2="homeDef"/>
+        <Slider label="Away Defense Modifier" key2="awayDef"/>
+        <Slider label="Match Tempo"           key2="tempo" min={-10} max={10}/>
+      </div>
 
-        {/* Outcome donut */}
-        <div style={{flexShrink:0,position:"relative",width:68,height:68,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <svg width="68" height="68" viewBox="0 0 68 68" style={{position:"absolute",top:0,left:0}}>
-            {/* Background ring */}
-            <circle cx="34" cy="34" r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={stroke}/>
-            {/* Home wins arc */}
-            <circle cx="34" cy="34" r={R} fill="none" stroke={lc} strokeWidth={stroke}
-              strokeDasharray={`${homeArc} ${circ}`}
-              strokeDashoffset={circ * 0.25}
-              strokeLinecap="butt" style={{transition:"stroke-dasharray 0.8s ease"}}/>
-            {/* Draw arc */}
-            <circle cx="34" cy="34" r={R} fill="none" stroke="rgba(120,140,160,0.5)" strokeWidth={stroke}
-              strokeDasharray={`${drawArc} ${circ}`}
-              strokeDashoffset={circ * 0.25 + drawOffset}
-              strokeLinecap="butt"/>
-            {/* Away arc */}
-            <circle cx="34" cy="34" r={R} fill="none" stroke={C.red} strokeWidth={stroke}
-              strokeDasharray={`${awayArc} ${circ}`}
-              strokeDashoffset={circ * 0.25 + awayOffset}
-              strokeLinecap="butt"/>
-          </svg>
-          {/* Centre label */}
-          <div style={{textAlign:"center",zIndex:1}}>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff",fontFamily:"JetBrains Mono,monospace",lineHeight:1}}>{matches.length}</div>
-            <div style={{fontSize:7,color:C.muted,fontFamily:"Inter,sans-serif",marginTop:1}}>games</div>
+      {/* Results */}
+      <div style={{padding:"12px 14px",borderBottom:"1px solid #222",display:"flex",flexDirection:"column",gap:8}}>
+        <div style={{fontSize:9,fontWeight:900,color:"#7a7a7a",letterSpacing:".1em",
+          fontFamily:"Inter,sans-serif",marginBottom:2}}>SIMULATION RESULT</div>
+        <ProbBar label="Home Win" pct={scenario.pH} isHighlight={scenario.pH===maxP}/>
+        <ProbBar label="Draw"     pct={scenario.pD} isHighlight={scenario.pD===maxP}/>
+        <ProbBar label="Away Win" pct={scenario.pA} isHighlight={scenario.pA===maxP}/>
+      </div>
+
+      {/* xG + scoreline */}
+      <div style={{padding:"12px 14px",borderBottom:"1px solid #222"}}>
+        <div style={{fontSize:9,fontWeight:900,color:"#7a7a7a",letterSpacing:".1em",
+          fontFamily:"Inter,sans-serif",marginBottom:8}}>EXPECTED GOALS</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:22,fontWeight:900,color:"#ffffff",fontFamily:"JetBrains Mono,monospace"}}>{scenario.xgH}</div>
+            <div style={{fontSize:9,color:"#7a7a7a",fontFamily:"Inter,sans-serif"}}>Home xG</div>
           </div>
-        </div>
-
-        {/* Stats grid */}
-        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-          {[
-            {label:"Home Wins",    val:homeWins,   color:lc},
-            {label:"Away Wins",    val:awayWins,   color:C.red},
-            {label:"Draws",        val:draws,       color:C.muted},
-            {label:"Goals 2.5+",   val:highGoals,  color:C.gold},
-            {label:"BTTS likely",  val:highBTTS,   color:C.green},
-            {label:"Avg conf.",    val:Math.round(avgConf)+"%", color:"#ffc107", raw:true},
-          ].map(({label,val,color,raw})=>(
-            <div key={label} style={{
-              display:"flex",alignItems:"center",gap:6,
-              padding:"5px 8px",borderRadius:7,
-              background:"rgba(255,255,255,0.025)",
-            }}>
-              <div style={{width:3,height:16,borderRadius:2,background:color,flexShrink:0}}/>
-              <div>
-                <div style={{fontSize:14,fontWeight:900,color,fontFamily:"JetBrains Mono,monospace",lineHeight:1}}>
-                  {raw ? val : val}
-                </div>
-                <div style={{fontSize:8,color:C.muted,fontFamily:"Inter,sans-serif",letterSpacing:".05em"}}>{label}</div>
-              </div>
-            </div>
-          ))}
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:13,fontWeight:900,color:"#7a7a7a",fontFamily:"JetBrains Mono,monospace",
+              letterSpacing:".1em"}}>LIKELY</div>
+            <div style={{fontSize:24,fontWeight:900,color:"#ffffff",fontFamily:"JetBrains Mono,monospace"}}>{scenario.topScore}</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:22,fontWeight:900,color:"#bfbfbf",fontFamily:"JetBrains Mono,monospace"}}>{scenario.xgA}</div>
+            <div style={{fontSize:9,color:"#7a7a7a",fontFamily:"Inter,sans-serif"}}>Away xG</div>
+          </div>
         </div>
       </div>
 
-      {/* xG comparison strip */}
-      {avgXgHome > 0 && (
-        <div style={{marginTop:12,padding:"8px 10px",borderRadius:8,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)"}}>
-          <div style={{fontSize:8,fontWeight:900,color:C.muted,letterSpacing:".1em",marginBottom:6,fontFamily:"Inter,sans-serif"}}>AVG xG THIS ROUND</div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            {[
-              {label:"Home",val:avgXgHome,color:lc},
-              {label:"Away",val:avgXgAway,color:C.red},
-            ].map(({label,val,color})=>{
-              const pct = (val/Math.max(avgXgHome,avgXgAway,1))*100;
-              return(
-                <div key={label} style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:9,fontWeight:700,color,minWidth:28,fontFamily:"Inter,sans-serif"}}>{label}</span>
-                  <div style={{flex:1,height:4,background:"rgba(255,255,255,0.05)",borderRadius:2,overflow:"hidden"}}>
-                    <div style={{width:pct+"%",height:"100%",background:color,borderRadius:2,boxShadow:`0 0 5px ${color}66`,transition:"width 0.8s ease"}}/>
-                  </div>
-                  <span style={{fontSize:11,fontWeight:900,color,fontFamily:"JetBrains Mono,monospace",minWidth:28,textAlign:"right"}}>{val.toFixed(2)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Best bet highlight */}
-      {best && bestFav && (
-        <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,
-          background:lc+"0e",border:`1px solid ${lc}28`,
-          display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:3,height:24,borderRadius:2,background:lc,flexShrink:0,boxShadow:`0 0 6px ${lc}88`}}/>
-          <div>
-            <div style={{fontSize:8,fontWeight:900,color:C.muted,letterSpacing:".1em",fontFamily:"Inter,sans-serif"}}>HIGHEST CONFIDENCE</div>
-            <div style={{fontSize:13,fontWeight:800,color:lc,fontFamily:"Sora,sans-serif"}}>{bestFav} to win</div>
-            <div style={{fontSize:9,color:C.soft,fontFamily:"JetBrains Mono,monospace"}}>
-              {best.home_team} vs {best.away_team} · {Math.round(best.confidence)}% conf.
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── Full match card (stats-first hierarchy) ──────────────────────────────────
-const MatchCard = ({ match, idx, league, injuries }) => {
-  const [open, setOpen]       = useState(false);
-  const [activeTab, setActiveTab] = useState("stats");
-  const hp = match.p_home_win||0, dp = match.p_draw||0, ap = match.p_away_win||0;
-  const fav = hp>ap&&hp>dp?"home":ap>hp&&ap>dp?"away":"draw";
-  const meta = LEAGUE_META[league] || {};
-  const hColor = fav==="home" ? (meta.color||C.blue) : C.soft;
-  const aColor = fav==="away" ? (meta.color||C.red)  : C.soft;
-  const { day, date, time } = fmtDate(match.date);
-
-  const hForm = Array.isArray(match.home_form)
-    ? match.home_form
-    : String(match.home_form||"").split("").filter(c=>"WDL".includes(c));
-  const aForm = Array.isArray(match.away_form)
-    ? match.away_form
-    : String(match.away_form||"").split("").filter(c=>"WDL".includes(c));
-
-  // Chip helpers
-  const bttsPct    = Math.round((match.btts||0)*100);
-  const bttsLabel  = bttsPct>=55?"Likely":bttsPct>=38?"Possible":"Unlikely";
-  const bttsColor  = bttsPct>=55?C.green:bttsPct>=38?C.gold:C.muted;
-  const o25        = Math.round((match.over_2_5||0)*100);
-  const goalLabel  = o25>=68?"High":o25>=48?"Medium":"Low";
-  const goalColor  = o25>=68?C.green:o25>=48?C.gold:C.muted;
-  const csH = Math.round((match.home_clean_sheet||0)*100);
-  const csA = Math.round((match.away_clean_sheet||0)*100);
-  const csEdge = csH>csA+8?(match.home_team||"Home").split(" ").pop():csA>csH+8?(match.away_team||"Away").split(" ").pop():"Neither";
-  const csColor = csEdge!=="Neither"?C.green:C.muted;
-  const confMeta = match.confidence>=72?{l:"Strong",c:C.green}:match.confidence>=52?{l:"Moderate",c:C.gold}:match.confidence>=36?{l:"Uncertain",c:C.orange}:{l:"Low",c:C.muted};
-  const winnerName = fav==="home"?(match.home_team||"Home"):fav==="away"?(match.away_team||"Away"):"Draw";
-  const winnerColor = fav==="home"?(meta.color||C.blue):fav==="away"?C.red:C.gold;
-
-  const Chip = ({ topLabel, val, color, active }) => (
-    <div style={{ display:"flex",flexDirection:"column",gap:2,padding:"7px 10px",borderRadius:9,
-      flex:1,minWidth:0,cursor:"default",
-      background:active?color+"12":"rgba(255,255,255,0.025)",
-      border:"1px solid "+(active?color+"35":"rgba(255,255,255,0.07)") }}>
-      <span style={{ fontSize:7.5,fontWeight:900,letterSpacing:".1em",color:"#2a4a6a",whiteSpace:"nowrap",textTransform:"uppercase" }}>{topLabel}</span>
-      <span style={{ fontSize:12,fontWeight:800,color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontFamily:"Inter,sans-serif" }}>{val}</span>
-    </div>
-  );
-
-  const tabs = ["stats","h2h","injuries","odds","grid"];
-  const tabLabels = {stats:"Stats",h2h:"H2H",injuries:"Injuries",odds:"Odds",grid:"Score Grid"};
-
-  return (
-    <div style={{ background:C.panel, border:"1px solid "+(open?"rgba(79,158,255,0.22)":C.line),
-      borderRadius:16, overflow:"hidden", transition:"border-color 0.2s, box-shadow 0.2s",
-      boxShadow:open?"0 8px 36px rgba(0,0,0,0.45)":"none",
-      animation:"fadeUp 350ms ease both", animationDelay:idx*40+"ms" }}
-      onMouseEnter={e=>{ if(!open) e.currentTarget.style.borderColor=C.lineMid; }}
-      onMouseLeave={e=>{ if(!open) e.currentTarget.style.borderColor=C.line; }}>
-
-      {/* ── Card clickable header area ── */}
-      <div style={{ padding:"16px 18px 14px", cursor:"pointer" }} onClick={() => setOpen(o=>!o)}>
-
-        {/* DATE HEADER — large, premium, clear */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            {/* Date badge */}
-            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
-              <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
-                <span style={{ fontSize:13, fontWeight:700, color:meta.color||C.blue, fontFamily:"Sora,sans-serif", letterSpacing:"-0.01em" }}>
-                  {day}
-                </span>
-                <span style={{ fontSize:15, fontWeight:800, color:C.text, fontFamily:"Sora,sans-serif", letterSpacing:"-0.02em" }}>
-                  {date}
-                </span>
-                {time && (
-                  <span style={{ fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.55)",
-                    fontFamily:"JetBrains Mono,monospace", marginLeft:4 }}>
-                    {time}
-                  </span>
-                )}
-              </div>
-              {match.venue && (
-                <span style={{ fontSize:9, color:C.muted, marginTop:1, display:"flex", alignItems:"center", gap:4 }}>
-                  <svg width="8" height="8" viewBox="0 0 10 12" fill="none">
-                    <path d="M5 1C3.067 1 1 2.5 1 5c0 3.5 4 7 4 7s4-3.5 4-7c0-2.5-2.067-4-4-4z" stroke="currentColor" strokeWidth="1.2"/>
-                    <circle cx="5" cy="5" r="1.3" fill="currentColor"/>
-                  </svg>
-                  {match.venue}
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            {match.referee && (
-              <span style={{ fontSize:9, color:C.soft, display:"flex", alignItems:"center", gap:4 }}>
-                <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                  <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.2"/>
-                  <rect x="3" y="2" width="4" height="6" rx="0.5" fill="currentColor" opacity="0.4"/>
-                </svg>
-                {match.referee}
-              </span>
-            )}
-            <span style={{ fontSize:9, color:C.muted }}>
-              {open ? "▲" : "▼"}
-            </span>
-          </div>
-        </div>
-
-        {/* ── HERO: Teams + Score + Prob bar ── */}
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
-
-          {/* Home team */}
-          <div style={{ flex:1, display:"flex", alignItems:"center", gap:10, justifyContent:"flex-end" }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:17, fontWeight:900, color:fav==="home"?"#fff":"#4a6a8a",
-                transition:"color 0.2s", fontFamily:"Sora,sans-serif", letterSpacing:"-0.01em" }}>
-                {match.home_team}
-              </div>
-              <div style={{ display:"flex", gap:3, justifyContent:"flex-end", marginTop:4 }}>
-                {hForm.slice(-5).map((r,i) => <FormPip key={i} r={r}/>)}
-              </div>
-            </div>
-            {match.home_logo && (
-              <img src={match.home_logo} alt="" style={{ width:40, height:40, objectFit:"contain", flexShrink:0 }}
-                onError={e=>{ e.currentTarget.style.display="none"; }}/>
-            )}
-          </div>
-
-          {/* Centre — score + prob bar */}
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5, minWidth:148, flexShrink:0 }}>
-            <div style={{ fontSize:30, fontWeight:900, color:"#fff", fontFamily:"JetBrains Mono,monospace",
-              letterSpacing:"0.06em", textShadow:"0 0 24px rgba(255,255,255,0.12)", lineHeight:1 }}>
-              {match.most_likely_score||"?–?"}
-            </div>
-            {/* 3-way prob bar */}
-            <div style={{ display:"flex", width:136, height:5, borderRadius:3, overflow:"hidden", gap:1 }}>
-              <div style={{ flex:hp, background:meta.color||C.blue, borderRadius:"3px 0 0 3px", transition:"flex 0.6s" }}/>
-              <div style={{ flex:dp, background:"rgba(100,120,140,0.35)" }}/>
-              <div style={{ flex:ap, background:C.red, borderRadius:"0 3px 3px 0", transition:"flex 0.6s" }}/>
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", width:136 }}>
-              <span style={{ fontSize:11, fontWeight:800, color:meta.color||C.blue, fontFamily:"JetBrains Mono,monospace" }}>
-                {Math.round(hp*100)}%
-              </span>
-              <span style={{ fontSize:10, color:C.soft, fontFamily:"JetBrains Mono,monospace" }}>
-                {Math.round(dp*100)}%
-              </span>
-              <span style={{ fontSize:11, fontWeight:800, color:C.red, fontFamily:"JetBrains Mono,monospace" }}>
-                {Math.round(ap*100)}%
-              </span>
-            </div>
-            <ConfMeter value={match.confidence||0}/>
-          </div>
-
-          {/* Away team */}
-          <div style={{ flex:1, display:"flex", alignItems:"center", gap:10 }}>
-            {match.away_logo && (
-              <img src={match.away_logo} alt="" style={{ width:40, height:40, objectFit:"contain", flexShrink:0 }}
-                onError={e=>{ e.currentTarget.style.display="none"; }}/>
-            )}
-            <div>
-              <div style={{ fontSize:17, fontWeight:900, color:fav==="away"?"#fff":"#4a6a8a",
-                transition:"color 0.2s", fontFamily:"Sora,sans-serif", letterSpacing:"-0.01em" }}>
-                {match.away_team}
-              </div>
-              <div style={{ display:"flex", gap:3, marginTop:4 }}>
-                {aForm.slice(-5).map((r,i) => <FormPip key={i} r={r}/>)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── PRIMARY STATS BLOCK (chips + xG bar) — main reading area ── */}
-        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-
-          {/* Row 1: Winner + Strength */}
-          <div style={{ display:"flex", gap:5 }}>
-            <Chip topLabel="Likely Winner" val={winnerName} color={winnerColor} active/>
-            <Chip topLabel="Prediction Strength" val={confMeta.l} color={confMeta.c} active/>
-          </div>
-
-          {/* Row 2: Goal Outlook + Both Teams Score + Clean Sheet */}
-          <div style={{ display:"flex", gap:5 }}>
-            <Chip topLabel="Goal Outlook" val={goalLabel} color={goalColor} active={o25>=48}/>
-            <Chip topLabel="Both Teams Score" val={bttsLabel} color={bttsColor} active={bttsPct>=38}/>
-            <Chip topLabel="Clean Sheet Edge" val={csEdge} color={csColor} active={csEdge!=="Neither"}/>
-          </div>
-
-          {/* xG dual progress bar — primary graphic */}
-          {(match.xg_home||match.xg_away) && (
-            <div style={{ padding:"10px 12px", borderRadius:10,
-              background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)" }}>
-              <XGDualBar
-                xgHome={match.xg_home} xgAway={match.xg_away}
-                homeTeam={match.home_team} awayTeam={match.away_team}
-                homeColor={meta.color||C.blue} awayColor={C.red}/>
-            </div>
-          )}
-        </div>
-
-        {/* ── SECONDARY: Pitch animation — subtle, reduced height ── */}
-        <MiniPitch
-          outcome={fav}
-          homeProb={hp} awayProb={ap}
-          homeTeam={match.home_team} awayTeam={match.away_team}
-          leagueColor={meta.color}/>
-
-      </div>
-
-      {/* ── Expanded section ── */}
-      {open && (
-        <div style={{ borderTop:"1px solid "+C.line, background:"rgba(0,0,0,0.18)" }}>
-          {/* Tab bar — no emojis */}
-          <div style={{ display:"flex", borderBottom:"1px solid "+C.line, overflowX:"auto" }}>
-            {tabs.map(t => (
-              <button key={t} onClick={() => setActiveTab(t)}
-                style={{ padding:"10px 14px", fontSize:11, fontWeight:800, cursor:"pointer",
-                  fontFamily:"Inter,sans-serif", background:"none", border:"none", whiteSpace:"nowrap",
-                  color:activeTab===t?(meta.color||C.blue):C.muted,
-                  borderBottom:"2px solid "+(activeTab===t?(meta.color||C.blue):"transparent"),
-                  transition:"all 0.15s" }}>
-                {tabLabels[t]}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ padding:"16px 18px" }}>
-            {activeTab==="stats" && (
-              <>
-                <TeamStatsWidget hStats={match.home_stats} aStats={match.away_stats}
-                  homeTeam={match.home_team} awayTeam={match.away_team}
-                  homeColor={meta.color} awayColor={C.red}/>
-                {(match.home_stats||match.away_stats) && (
-                  <div style={{ marginTop:16 }}>
-                    <ScoringPatterns hStats={match.home_stats} aStats={match.away_stats}
-                      homeTeam={match.home_team} awayTeam={match.away_team}
-                      homeColor={meta.color} awayColor={C.red}/>
-                  </div>
-                )}
-                <div style={{ marginTop:16 }}>
-                  <APIPredWidget fixtureId={match.fixture_id}
-                    homeTeam={match.home_team} awayTeam={match.away_team}
-                    homeColor={meta.color} awayColor={C.red}/>
-                </div>
-              </>
-            )}
-            {activeTab==="h2h" && (
-              <H2HWidget homeId={match.home_id} awayId={match.away_id}
-                homeTeam={match.home_team} awayTeam={match.away_team}
-                homeColor={meta.color} awayColor={C.red}/>
-            )}
-            {activeTab==="injuries" && (
-              <InjuryWidget homeTeam={match.home_team} awayTeam={match.away_team}
-                homeColor={meta.color} awayColor={C.red} allInjuries={injuries}/>
-            )}
-            {activeTab==="odds" && (
-              <OddsWidget fixtureId={match.fixture_id}
-                pHome={hp} pDraw={dp} pAway={ap}
-                homeTeam={match.home_team} awayTeam={match.away_team}/>
-            )}
-            {activeTab==="grid" && (
-              <Heatmap topScores={match.top_scores}
-                homeTeam={match.home_team} awayTeam={match.away_team}/>
-            )}
-          </div>
-
-          {/* Model badges */}
-          <div style={{ display:"flex", gap:6, padding:"8px 18px 14px", flexWrap:"wrap" }}>
-            {[["Dixon-Coles","#00e09e"],["Elo Rating","#ffc107"],["Real xG","#4f9eff"]].map(([l,c])=>(
-              <span key={l} style={{ fontSize:9,fontWeight:800,letterSpacing:".05em",padding:"2px 8px",borderRadius:5,
-                background:c+"15",border:"1px solid "+c+"30",color:c }}>{l}</span>
-            ))}
-            {match.elo_diff!=null && (
-              <span style={{ fontSize:9,color:C.soft,fontFamily:"JetBrains Mono,monospace" }}>
-                Elo gap: {match.elo_diff>0?"+":""}{Math.round(match.elo_diff)}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-// ─── Top scorers / assists ────────────────────────────────────────────────────
-const ScorersWidget = ({ league }) => {
-  const [tab,setTab]=useState("goals");
-  const [scorers,setScorers]=useState([]); const [assists,setAssists]=useState([]);
-  const [loading,setLoading]=useState(true);
-  useEffect(()=>{
-    setLoading(true);
-    Promise.allSettled([getTopScorers(league),getTopAssists(league)]).then(([sr,ar])=>{
-      if(sr.status==="fulfilled") setScorers(sr.value.scorers||[]);
-      if(ar.status==="fulfilled") setAssists(ar.value.assists||[]);
-      setLoading(false);
-    });
-  },[league]);
-  const meta=LEAGUE_META[league]||{};
-  const data=tab==="goals"?scorers:assists;
-  const statKey=tab==="goals"?"goals":"assists";
-  const PersonIcon=()=>(<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="3" stroke="currentColor" strokeWidth="1.3" opacity="0.5"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.5"/></svg>);
-  return(
-    <div style={{background:C.panel,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
-      <div style={{display:"flex",borderBottom:"1px solid "+C.line}}>
-        {[["goals","Top Scorers"],["assists","Top Assists"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:1,padding:"12px",fontSize:11,fontWeight:800,cursor:"pointer",
-              background:"none",border:"none",fontFamily:"Inter,sans-serif",
-              color:tab===k?(meta.color||C.blue):C.muted,
-              borderBottom:"2px solid "+(tab===k?(meta.color||C.blue):"transparent"),
-              transition:"all 0.15s"}}>
-            {l}
-          </button>))}
-      </div>
-      <div style={{padding:"8px 0",maxHeight:340,overflowY:"auto"}}>
-        {loading?Array.from({length:8}).map((_,i)=>(
-          <div key={i} style={{display:"flex",gap:10,padding:"8px 14px",alignItems:"center"}}>
-            <div style={{width:16,height:16,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
-            <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
-            <div style={{flex:1,height:12,borderRadius:4,background:"rgba(255,255,255,0.04)"}}/>
-            <div style={{width:24,height:16,borderRadius:4,background:"rgba(255,255,255,0.04)"}}/>
-          </div>
-        )):data.slice(0,10).map((p,i)=>(
-          <div key={p.player_id||i}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",transition:"background 0.15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.025)";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="";}}>
-            <span style={{fontSize:11,fontWeight:900,color:i<3?meta.color||C.blue:C.muted,
-              width:16,textAlign:"center",fontFamily:"JetBrains Mono,monospace"}}>{i+1}</span>
-            {p.photo
-              ?<img src={p.photo} style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",flexShrink:0}}
-                onError={e=>{e.currentTarget.replaceWith(Object.assign(document.createElement("div"),{innerHTML:'<svg/>'}));}}/>
-              :<div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.3)"}}><PersonIcon/></div>}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:13,fontWeight:800,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-              <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                {p.team_logo&&<img src={p.team_logo} style={{width:12,height:12,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";}}/>}
-                <span style={{fontSize:10,color:C.muted}}>{p.team_name}</span>
-              </div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:20,fontWeight:900,color:meta.color||C.blue,fontFamily:"JetBrains Mono,monospace"}}>{p[statKey]||0}</div>
-              <div style={{fontSize:9,color:C.soft}}>{p.played||0} apps</div>
-            </div>
-          </div>
-        ))}
+      {/* Reset button */}
+      <div style={{padding:"10px 14px"}}>
+        <button onClick={reset}
+          style={{width:"100%",padding:"8px",borderRadius:6,border:"1px solid #333",background:"transparent",
+            color:"#bfbfbf",fontSize:11,fontWeight:700,fontFamily:"Inter,sans-serif",cursor:"pointer",
+            transition:"all 0.15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.background="#222";e.currentTarget.style.color="#fff";}}
+          onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#bfbfbf";}}>
+          Reset to Official Prediction
+        </button>
       </div>
     </div>
   );
 };
 
-// ─── Standings table ──────────────────────────────────────────────────────────
-const getZone=(pos,total)=>{
-  if(pos<=4) return "cl"; if(pos===5) return "el"; if(pos===6) return "ecl";
-  if(pos>=total-2) return "rel"; return null;
-};
-
-const StandingsTable=({rows,loading,league})=>{
-  const [sort,setSort]=useState("rank"); const [dir,setDir]=useState(1);
-  const total=rows.length||(LEAGUE_META[league]&&20);
-  const meta=LEAGUE_META[league]||{};
-  const sorted=useMemo(()=>{
-    if(loading) return [];
-    return [...rows].sort((a,b)=>{
-      let va=a[sort],vb=b[sort];
-      if(va==null)va=sort==="rank"?999:0; if(vb==null)vb=sort==="rank"?999:0;
-      if(typeof va==="string"){va=va.toLowerCase();vb=vb.toLowerCase();}
-      return va<vb?-dir:va>vb?dir:0;
-    });
-  },[rows,sort,dir,loading]);
-  const toggle=col=>{ if(sort===col) setDir(d=>-d); else{setSort(col);setDir(col==="rank"?1:-1);} };
-  const Th=({col,children,align,width})=>(
-    <th onClick={()=>toggle(col)} style={{padding:"10px",fontSize:9,fontWeight:900,letterSpacing:".1em",
-      color:sort===col?(meta.color||C.blue):C.muted,borderBottom:"1px solid "+C.line,
-      background:"rgba(0,0,0,0.5)",textAlign:align||"center",width,cursor:"pointer",
-      userSelect:"none",whiteSpace:"nowrap"}}>
-      {children}{sort===col?(dir===1?" ↑":" ↓"):""}
-    </th>);
-  return(
-    <div style={{overflowX:"auto",borderRadius:12}}>
-      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,fontFamily:"Sora,sans-serif"}}>
-        <thead><tr>
-          <Th col="rank" width={36}>#</Th>
-          <Th col="team_name" align="left">Club</Th>
-          <Th col="played" width={34}>P</Th>
-          <Th col="won"    width={34}>W</Th>
-          <Th col="drawn"  width={34}>D</Th>
-          <Th col="lost"   width={34}>L</Th>
-          <Th col="goals_for"     width={38}>GF</Th>
-          <Th col="goals_against" width={38}>GA</Th>
-          <Th col="goal_diff"     width={38}>GD</Th>
-          <Th col="points"        width={42}>Pts</Th>
-          <th style={{padding:"10px",fontSize:9,fontWeight:900,color:C.muted,borderBottom:"1px solid "+C.line,background:"rgba(0,0,0,0.5)",width:108,textAlign:"center",letterSpacing:".1em"}}>FORM</th>
-        </tr></thead>
-        <tbody>
-          {loading?Array.from({length:14}).map((_,i)=>(
-            <tr key={i}>{Array.from({length:11}).map((_,j)=>(
-              <td key={j} style={{padding:"10px",borderBottom:"1px solid "+C.line}}>
-                <div style={{height:12,borderRadius:4,background:"rgba(255,255,255,0.04)",width:j===1?120:28,animation:"pulse 1.5s ease infinite"}}/>
-              </td>))}</tr>
-          )):sorted.map((row,i)=>{
-            const pos=row.rank??i+1, zone=getZone(pos,total);
-            const zc=zone?ZONE[zone].color:"transparent", gd=row.goal_diff??0;
-            const form=String(row.form||"");
-            return(
-              <tr key={row.team_id??i}
-                style={{borderLeft:"3px solid "+zc,transition:"background 0.12s"}}
-                onMouseEnter={e=>{e.currentTarget.style.background="rgba(79,158,255,0.04)";}}
-                onMouseLeave={e=>{e.currentTarget.style.background="";}}>
-                <td style={{padding:"10px",textAlign:"center",color:C.muted,fontWeight:800,borderBottom:"1px solid "+C.line}}>{pos}</td>
-                <td style={{padding:"10px",borderBottom:"1px solid "+C.line}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    {row.logo&&<img src={row.logo} alt="" style={{width:20,height:20,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";}}/>}
-                    <span style={{fontWeight:800,color:C.text,whiteSpace:"nowrap"}}>{row.team_name}</span>
-                  </div>
-                </td>
-                <td style={{padding:"10px",textAlign:"center",borderBottom:"1px solid "+C.line}}>{row.played}</td>
-                <td style={{padding:"10px",textAlign:"center",color:"#00e09e",fontWeight:800,borderBottom:"1px solid "+C.line}}>{row.won}</td>
-                <td style={{padding:"10px",textAlign:"center",color:C.soft,borderBottom:"1px solid "+C.line}}>{row.drawn}</td>
-                <td style={{padding:"10px",textAlign:"center",color:C.red,fontWeight:800,borderBottom:"1px solid "+C.line}}>{row.lost}</td>
-                <td style={{padding:"10px",textAlign:"center",borderBottom:"1px solid "+C.line}}>{row.goals_for}</td>
-                <td style={{padding:"10px",textAlign:"center",borderBottom:"1px solid "+C.line}}>{row.goals_against}</td>
-                <td style={{padding:"10px",textAlign:"center",borderBottom:"1px solid "+C.line,color:gd>0?"#00e09e":gd<0?C.red:undefined}}>{gd>0?"+":""}{gd}</td>
-                <td style={{padding:"10px",textAlign:"center",borderBottom:"1px solid "+C.line}}><strong style={{color:"#fff",fontSize:15}}>{row.points}</strong></td>
-                <td style={{padding:"10px",borderBottom:"1px solid "+C.line}}>
-                  <div style={{display:"flex",gap:2,justifyContent:"center"}}>
-                    {form.split("").slice(-5).map((r,j)=><FormPip key={j} r={r}/>)}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {!loading&&(
-        <div style={{display:"flex",gap:16,flexWrap:"wrap",padding:"12px 12px 8px",borderTop:"1px solid "+C.line}}>
-          {Object.entries(ZONE).map(([k,{color,label}])=>(
-            <span key={k} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:C.muted,fontWeight:700}}>
-              <span style={{width:7,height:7,borderRadius:"50%",background:color,flexShrink:0}}/>
-              {label}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 
 // ─── League Flag SVG (inline, no emojis) ─────────────────────────────────────
@@ -1480,7 +903,7 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
   };
   const resolveMap = slugMap || DEFAULTS;
   const league = resolveMap[raw] || raw;
-  const meta = LEAGUE_META[league] || { label:league.toUpperCase(), color:C.blue };
+  const meta = LEAGUE_META[league] || { label:league.toUpperCase(), color:"#ffffff" };
 
   const [tab,setTab]             = useState("predictions");
   const [standings,setStandings] = useState([]);
@@ -1491,6 +914,7 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
   const [standErr,setStandErr]   = useState(null);
   const [predErr,setPredErr]     = useState(null);
   const [sort,setSort]           = useState("confidence");
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
   const cache = useCallback((key,fn,setter,setLoading,setErr)=>{
     setLoading(true); setErr&&setErr(null);
@@ -1537,10 +961,9 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
         flexWrap:"wrap", gap:14, padding:"24px 0 20px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ width:4,height:52,borderRadius:4,background:meta.color,
-            boxShadow:"0 0 12px "+meta.color+"66",flexShrink:0 }}/>
+          <div style={{ width:4,height:52,borderRadius:4,background:"#ffffff"}}/>
           <div>
-            <h1 style={{ fontSize:28,fontWeight:900,color:"#f0f6ff",margin:"0 0 3px",
+            <h1 style={{ fontSize:28,fontWeight:900,color:"#ffffff",margin:"0 0 3px",
               letterSpacing:"-0.02em",fontFamily:"Sora,sans-serif",
               display:"flex",alignItems:"center",gap:10 }}>
               <LeagueFlag code={league} size={22}/>
@@ -1563,9 +986,9 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
                   display:"flex",alignItems:"center",gap:7,
                   padding:"7px 13px",borderRadius:999,fontSize:11,fontWeight:800,
                   textDecoration:"none",whiteSpace:"nowrap",
-                  border:"1.5px solid "+(active?lm.color:"rgba(255,255,255,0.07)"),
-                  color:active?lm.color:"#2a4a6a",
-                  background:active?lm.color+"14":"transparent",
+                  border:"1.5px solid "+(active?"#ffffff":"#333"),
+                  color:active?"#ffffff":"#7a7a7a",
+                  background:active?"rgba(255,255,255,0.06)":"transparent",
                   transition:"all 0.15s",
                 }}>
                 <span style={{display:"flex",alignItems:"center"}}><LeagueFlag code={code} size={16}/></span>
@@ -1587,13 +1010,13 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
             style={{ display:"flex",alignItems:"center",gap:7,padding:"12px 18px",
               fontSize:12,fontWeight:800,cursor:"pointer",background:"none",border:"none",
               fontFamily:"Inter,sans-serif",letterSpacing:".04em",
-              color:tab===key?(meta.color||C.blue):"#2a4a6a",
-              borderBottom:"2px solid "+(tab===key?(meta.color||C.blue):"transparent"),
+              color:tab===key?"#ffffff":"#7a7a7a",
+              borderBottom:"2px solid "+(tab===key?"#ffffff":"transparent"),
               transition:"all 0.15s" }}>
             {label}
             {badge!=null&&(
               <span style={{ background:tab===key?(meta.color+"25"):"rgba(255,255,255,0.05)",
-                color:tab===key?(meta.color||C.blue):"#2a4a6a",
+                color:tab===key?"#ffffff":"#7a7a7a",
                 borderRadius:999,padding:"1px 7px",fontSize:10 }}>
                 {badge}
               </span>
@@ -1608,36 +1031,45 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
 
           {/* Left: match cards with stats header */}
           <div>
-            {/* League stats panel at top of left column */}
-            <LeagueStatsPanel matches={matches} loading={predLoad} meta={meta} league={league}/>
-            {/* Summary bar */}
+
+            {/* ── Gameweek Overview — 2×4 stat tiles ── */}
             {!predLoad&&!predErr&&matches.length>0&&(
-              <div style={{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",
-                background:"rgba(255,255,255,0.025)",border:"1px solid "+C.line,
-                borderRadius:12,padding:"12px 18px",marginBottom:14 }}>
-                {[
-                  {val:matches.length,     label:"Fixtures",  color:meta.color},
-                  {val:homeWins,           label:"Home fav",  color:"#4f9eff"},
-                  {val:draws,              label:"Draw fav",  color:"#7a8a9a"},
-                  {val:matches.length-homeWins-draws,label:"Away fav",color:C.red},
-                  {val:avgConf,            label:"Avg conf",  color:"#ffc107"},
-                  {val:injuries.length,    label:"Injuries",  color:"#ff6b35"},
-                ].map(({val,label,color},i)=>([
-                  i>0&&<div key={"sep"+i} style={{width:1,height:32,background:C.line}}/>,
-                  <div key={label} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
-                    <span style={{fontSize:22,fontWeight:900,fontFamily:"JetBrains Mono,monospace",color}}>{val}</span>
-                    <span style={{fontSize:9,fontWeight:800,color:"#1a3a5a",letterSpacing:".1em"}}>{label}</span>
-                  </div>
-                ]))}
-                <div style={{marginLeft:"auto",display:"flex",gap:4,alignItems:"center"}}>
-                  <span style={{fontSize:10,color:C.muted,fontWeight:800}}>Sort:</span>
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:9,fontWeight:900,color:"#7a7a7a",letterSpacing:".12em",
+                  fontFamily:"Inter,sans-serif",marginBottom:10}}>GAMEWEEK OVERVIEW</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                  {[
+                    {val:matches.length,  label:"Fixtures"},
+                    {val:homeWins,         label:"Home Favored"},
+                    {val:draws,            label:"Draw Favored"},
+                    {val:matches.length-homeWins-draws, label:"Away Favored"},
+                    {val:(matches.reduce((s,m)=>s+(parseFloat(m.xg_home)||0),0)/matches.length||0).toFixed(2), label:"Avg xG Home"},
+                    {val:(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length||0).toFixed(2), label:"Avg xG Away"},
+                    {val:matches.filter(m=>(m.btts||0)>=0.55).length, label:"BTTS Likely"},
+                    {val:avgConf+"%",      label:"Avg Confidence"},
+                  ].map(({val,label})=>(
+                    <div key={label} style={{background:"#111",border:"1px solid #222",
+                      borderRadius:8,padding:"12px 10px",display:"flex",flexDirection:"column",gap:3,
+                      transition:"background 0.15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="#1a1a1a";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="#111";}}>
+                      <span style={{fontSize:22,fontWeight:900,color:"#ffffff",
+                        fontFamily:"JetBrains Mono,monospace",lineHeight:1}}>{val}</span>
+                      <span style={{fontSize:9,color:"#7a7a7a",fontFamily:"Inter,sans-serif",
+                        letterSpacing:".05em"}}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Sort controls */}
+                <div style={{display:"flex",alignItems:"center",gap:6,marginTop:10}}>
+                  <span style={{fontSize:10,color:"#7a7a7a",fontWeight:700,fontFamily:"Inter,sans-serif"}}>Sort:</span>
                   {["confidence","date","home"].map(s=>(
                     <button key={s} onClick={()=>setSort(s)}
-                      style={{padding:"4px 10px",borderRadius:999,fontSize:10,fontWeight:800,cursor:"pointer",
+                      style={{padding:"4px 10px",borderRadius:4,fontSize:10,fontWeight:700,cursor:"pointer",
                         fontFamily:"Inter,sans-serif",
-                        border:"1px solid "+(sort===s?(meta.color||C.blue)+"44":"rgba(255,255,255,0.07)"),
-                        background:sort===s?(meta.color||C.blue)+"15":"rgba(255,255,255,0.03)",
-                        color:sort===s?(meta.color||C.blue):"#2a4a6a",transition:"all 0.13s"}}>
+                        border:"1px solid "+(sort===s?"#ffffff":"#333"),
+                        background:sort===s?"rgba(255,255,255,0.08)":"transparent",
+                        color:sort===s?"#ffffff":"#7a7a7a",transition:"all 0.13s"}}>
                       {s==="confidence"?"Confidence":s==="date"?"Date":"Home %"}
                     </button>
                   ))}
@@ -1645,12 +1077,11 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
               </div>
             )}
 
-            {predErr&&<div style={{padding:20,background:"rgba(255,77,109,0.07)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:12,color:C.red,fontSize:13}}>Error: {predErr}</div>}
+            {predErr&&<div style={{padding:20,background:"rgba(80,80,80,0.07)",border:"1px solid rgba(80,80,80,0.2)",borderRadius:12,color:"#bfbfbf",fontSize:13}}>Error: {predErr}</div>}
 
             {predLoad&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
               {Array.from({length:4}).map((_,i)=>(
-                <div key={i} style={{height:120,borderRadius:16,background:"rgba(255,255,255,0.025)",
-                  animation:"shimmer 1.5s ease-in-out infinite",animationDelay:i*80+"ms"}}/>
+                <div key={i} style={{height:120,borderRadius:16,background:"rgba(255,255,255,0.025)",animationDelay:i*80+"ms"}}/>
               ))}
             </div>}
 
@@ -1662,15 +1093,16 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 {sorted.map((m,i)=>(
                   <MatchCard key={(m.home_team||"")+(m.away_team||"")+i}
-                    match={m} idx={i} league={league} injuries={injuries}/>
+                    match={m} idx={i} league={league} injuries={injuries}
+                    onSelect={()=>setSelectedMatch(m)} isSelected={selectedMatch===m}/>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Right: news panel */}
-          <div style={{ position:"sticky", top:72, maxHeight:"calc(100vh - 100px)", display:"flex", flexDirection:"column" }}>
-            <NewsPanel league={league}/>
+          {/* Right: Scenario Explorer */}
+          <div style={{ position:"sticky", top:72, maxHeight:"calc(100vh - 100px)", overflowY:"auto" }}>
+            <ScenarioExplorer match={selectedMatch||sorted[0]}/>
           </div>
         </div>
       )}
@@ -1679,7 +1111,7 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
       {tab==="standings"&&(
         <div style={{background:C.panel,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
           {standErr
-            ?<div style={{padding:20,color:C.red}}>Error: {standErr}</div>
+            ?<div style={{padding:20,color:"#bfbfbf"}}>Error: {standErr}</div>
             :<StandingsTable rows={standings} loading={standLoad} league={league}/>}
         </div>
       )}
@@ -1688,12 +1120,12 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
       {tab==="scorers"&&<ScorersWidget league={league}/>}
 
       <style>{`
-        @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes shimmer  { 0%{background-position:-800px 0} 100%{background-position:800px 0} }
-        @keyframes pulse    { 0%,100%{opacity:.4} 50%{opacity:.8} }
         ::-webkit-scrollbar       { width:4px; height:4px }
         ::-webkit-scrollbar-track { background:transparent }
-        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:2px }
+        ::-webkit-scrollbar-thumb { background:#333; border-radius:2px }
+        input[type=range] { height:3px; }
+        input[type=range]::-webkit-slider-track { background:#333; border-radius:2px; }
+        input[type=range]::-webkit-slider-thumb { width:14px; height:14px; background:#fff; border-radius:50%; cursor:pointer; }
         @media(max-width:900px){
           .pred-grid { grid-template-columns:1fr !important; }
         }

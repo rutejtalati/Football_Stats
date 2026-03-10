@@ -47,6 +47,8 @@ function isFootballArticle(title, desc) {
   const text = (title + " " + desc).toLowerCase();
   return FOOTBALL_KEYWORDS.some(k => text.includes(k));
 }
+
+function timeAgo(iso) {
   const d = new Date(iso), now = Date.now();
   const mins = Math.round((now - d) / 60000);
   if (mins < 2) return "just now";

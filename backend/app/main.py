@@ -49,8 +49,21 @@ API_FOOTBALL_BASE = "https://v3.football.api-sports.io"
 FPL_BASE = "https://fantasy.premierleague.com/api"
 CURRENT_SEASON = 2025
 
-LEAGUE_IDS = {"epl":39,"laliga":140,"seriea":135,"ligue1":61}
-LEAGUE_NAMES = {"epl":"Premier League","laliga":"La Liga","seriea":"Serie A","ligue1":"Ligue 1"}
+# ── Bundesliga added (API-Football league ID: 78) ──────────────────────────
+LEAGUE_IDS = {
+    "epl":        39,
+    "laliga":     140,
+    "seriea":     135,
+    "ligue1":     61,
+    "bundesliga": 78,   # ← ADDED
+}
+LEAGUE_NAMES = {
+    "epl":        "Premier League",
+    "laliga":     "La Liga",
+    "seriea":     "Serie A",
+    "ligue1":     "Ligue 1",
+    "bundesliga": "Bundesliga",   # ← ADDED
+}
 POSITION_MAP = {1:"GK",2:"DEF",3:"MID",4:"FWD"}
 
 TTL_1H=3600; TTL_24H=86400; TTL_PERM=604800
@@ -200,11 +213,8 @@ def player_merit(p):
     ict   = float(p.get("ict_index") or 0)
     ppg   = float(p.get("total_points") or 0) / max(float(p.get("minutes") or 45) / 90, 1)
     prob  = appearance_probability(p)
-    # Composite merit: ep_next 40%, form 35%, PPG 15%, ICT 10%
     raw   = ep * 0.40 + form * 0.35 + ppg * 0.15 + (ict / 30) * 0.10
-    # Form gate: if form < 1.5, apply graduated penalty (player not featuring recently)
     form_gate = 1.0 if form >= 1.5 else max(form / 1.5, 0.25)
-    # Appearance probability penalty: square it so 50% prob = 25% weight not 50%
     prob_penalty = prob ** 1.4
     return round(raw * form_gate * prob_penalty, 2)
 
@@ -252,14 +262,10 @@ def get_fpl_predictor_table(start_gw:int=29,max_cost:float=15.5,min_prob:float=0
         next_opp="-"
         if tfx: next_opp=f"{teams[tfx[0]['opp_id']]['short_name']} ({'H' if tfx[0]['is_home'] else 'A'})"
         base=float(p.get("ep_next") or p.get("points_per_game") or 0); merit=player_merit(p)
-        # GW projected pts = blend of ep_next + form, scaled by fixture difficulty and appearance probability
-        # No floor on prob — injured/suspended players score 0 (as they should)
         form_val = float(p.get("form") or 0)
         ict_val  = float(p.get("ict_index") or 0)
         ppg      = float(p.get("total_points") or 0) / max(float(p.get("minutes") or 45) / 90, 1)
-        # Composite base: 55% ep_next (fixture-aware FPL model), 30% form (recent games), 15% PPG
         comp_base = base * 0.55 + form_val * 0.30 + ppg * 0.15
-        # Appearance probability as hard multiplier (no floor) — doubted/injured get penalised properly
         gw_pts = [round(comp_base * difficulty_factor(fx["difficulty"]) * prob, 1) for fx in tfx]
         while len(gw_pts)<6: gw_pts.append(0.0)
         pts_rest=round(sum(gw_pts),1); val=round(pts_rest/cost,2) if cost>0 else 0
@@ -458,14 +464,15 @@ def simulate_league(league:str):
     except ValueError as e: raise HTTPException(404,str(e))
 
 
-# ─── News proxy (NewsAPI.org) ─────────────────────────────────────────────────
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")  # add NEWS_API_KEY=your_key to .env
+# ── News proxy (NewsAPI.org) ──────────────────────────────────────────────────
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 LEAGUE_NEWS_QUERIES = {
-    "epl":    "Premier League football",
-    "laliga": "La Liga football",
-    "seriea": "Serie A football",
-    "ligue1": "Ligue 1 football",
+    "epl":        "Premier League football",
+    "laliga":     "La Liga football",
+    "seriea":     "Serie A football",
+    "ligue1":     "Ligue 1 football",
+    "bundesliga": "Bundesliga football",   # ← ADDED
 }
 
 @app.get("/api/news/{league}")
@@ -485,7 +492,6 @@ def get_league_news(league: str):
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
-        # Strip articles with removed content
         articles = [
             a for a in data.get("articles", [])
             if a.get("title") and a["title"] != "[Removed]"

@@ -1131,5 +1131,7 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
         }
       `}</style>
     </div>
+  </div>
+  </div>
   );
 }

@@ -1,4 +1,4 @@
-// PredictionsPage.jsx — StatinSite monochrome v5
+﻿// PredictionsPage.jsx — StatinSite monochrome v5
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, NavLink } from "react-router-dom";
 import {

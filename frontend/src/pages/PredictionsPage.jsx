@@ -1124,8 +1124,12 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
     } catch {}
     getSeasonSimulation(league)
       .then(raw => {
-        const rows = Object.entries(raw).map(([name, d]) => ({
-          team_name:       name,
+        // Backend returns { league, results: [...] } or legacy { TeamName: {...} }
+        const items = Array.isArray(raw?.results) ? raw.results
+          : Array.isArray(raw) ? raw
+          : Object.entries(raw).filter(([k]) => k !== "league").map(([name, d]) => ({ team: name, ...d }));
+        const rows = items.map(d => ({
+          team_name:       d.team || d.team_name || "",
           avg_position:    parseFloat(d.avg_position)    || 0,
           title_prob:      parseFloat(d.title_prob)      || 0,
           top4_prob:       parseFloat(d.top4_prob)       || 0,

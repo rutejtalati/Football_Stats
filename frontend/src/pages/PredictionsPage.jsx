@@ -1331,11 +1331,11 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
 ══════════════════════════════════════════════════════════ */
 
 // Maps frontend league code → backend API code
-// Add/adjust these if your backend uses different slugs
+// All codes now match directly — bundesliga added to backend LEAGUE_IDS
 const BACKEND_LEAGUE = {
   epl:        "epl",
   laliga:     "laliga",
-  bundesliga: "bl1",      // ← backend likely wants "bl1" not "bundesliga"
+  bundesliga: "bundesliga",  // ← backend now has this in LEAGUE_IDS
   seriea:     "seriea",
   ligue1:     "ligue1",
 };

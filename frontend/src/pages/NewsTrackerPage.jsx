@@ -24,7 +24,7 @@ import {
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "";
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-
+const FALLBACK_KEY = "AIzaSyCRzC0qQmlvmXVeNSx83LnvygSI6mM6HX0";
 async function geminiChat(prompt) {
   if (!GEMINI_KEY) {
     throw new Error("NO_KEY");

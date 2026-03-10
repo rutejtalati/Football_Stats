@@ -77,15 +77,22 @@ const Icons = {
 };
 
 // ── Nav items ───────────────────────────────────
-// Each item: to, label, icon, accent color
 const NAV_ITEMS = [
-  { to: "/",                          label: "Home",        Icon: Icons.Home,       color: "rgba(255,255,255,0.55)", end: true   },
-  { to: "/predictions/premier-league", label: "Predictions", Icon: Icons.Predict,    color: "#60a5fa"                              },
-  { to: "/best-team",                  label: "Fantasy",     Icon: Icons.Fantasy,    color: "#28d97a",  fplGroup: true              },
-  { to: "/player",                     label: "Players",     Icon: Icons.Players,    color: "#a78bfa"                              },
-  { to: "/news",                       label: "News",        Icon: Icons.News,       color: "#f472b6"                              },
-  { to: "/learn",                      label: "Ground Zero", Icon: Icons.GroundZero, color: "#fbbf24"                              },
-  { to: "/games",                      label: "Games",       Icon: Icons.Games,      color: "#fb923c"                              },
+  { to: "/",                           label: "Home",        Icon: Icons.Home,       color: "rgba(255,255,255,0.55)", end: true },
+  { to: "/predictions/premier-league", label: "Predictions", Icon: Icons.Predict,    color: "#60a5fa"                           },
+  { to: "/best-team",                  label: "Fantasy",     Icon: Icons.Fantasy,    color: "#28d97a", fplGroup: true            },
+  { to: "/player",                     label: "Players",     Icon: Icons.Players,    color: "#a78bfa"                           },
+  { to: "/news",                       label: "News",        Icon: Icons.News,       color: "#f472b6"                           },
+  { to: "/learn",                      label: "Ground Zero", Icon: Icons.GroundZero, color: "#fbbf24"                           },
+  { to: "/games",                      label: "Games",       Icon: Icons.Games,      color: "#fb923c"                           },
+];
+
+// FPL sub-pages shown in Fantasy dropdown
+const FPL_ITEMS = [
+  { to: "/best-team",          label: "Best XI",          desc: "Optimal FPL starting 11"      },
+  { to: "/squad-builder",      label: "Squad Builder",    desc: "Build your 15-man squad"       },
+  { to: "/gameweek-insights",  label: "GW Insights",      desc: "Gameweek stats & analysis"     },
+  { to: "/fpl-table",          label: "FPL Table",        desc: "Live FPL leaderboard"          },
 ];
 
 // FPL sub-pages — used to detect active state for Fantasy pill
@@ -169,14 +176,17 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [fplOpen, setFplOpen] = useState(false);
   const navRef = useRef(null);
   const searchRef = useRef(null);
   const inputRef = useRef(null);
+  const fplRef = useRef(null);
 
   const hidden = useScrollHide();
   const fplActive = useFplActive();
 
   useClickOutside(searchRef, () => { setSearchOpen(false); setSearchVal(""); });
+  useClickOutside(fplRef, () => setFplOpen(false));
   useLockScroll(mobileOpen);
 
   // Focus input when search opens
@@ -184,8 +194,8 @@ export default function Navbar() {
     if (searchOpen) setTimeout(() => inputRef.current?.focus(), 60);
   }, [searchOpen]);
 
-  // Close mobile on route change
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  // Close drawers on route change
+  useEffect(() => { setMobileOpen(false); setFplOpen(false); }, [location.pathname]);
 
   // ── pill active check ────────────────────────
   const isPillActive = (item) => {
@@ -213,6 +223,43 @@ export default function Navbar() {
           <nav className="sn-nav" aria-label="Main navigation">
             {NAV_ITEMS.map((item) => {
               const active = isPillActive(item);
+
+              if (item.fplGroup) {
+                return (
+                  <div key={item.to} style={{ position: "relative" }} ref={fplRef}>
+                    <button
+                      className={`sn-pill ${active ? "sn-pill--active" : ""}`}
+                      style={active ? { "--pill-color": item.color } : {}}
+                      onClick={() => setFplOpen(v => !v)}
+                      aria-expanded={fplOpen}
+                    >
+                      <item.Icon />
+                      <span>{item.label}</span>
+                      <span className="sn-pill-tag">FPL</span>
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none"
+                        style={{ opacity: .5, marginLeft: 1, transition: "transform .15s", transform: fplOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                    {fplOpen && (
+                      <div className="sn-fpl-dropdown">
+                        <div className="sn-fpl-dropdown-label">Fantasy Premier League</div>
+                        {FPL_ITEMS.map(sub => (
+                          <NavLink
+                            key={sub.to}
+                            to={sub.to}
+                            className={`sn-fpl-item ${location.pathname.startsWith(sub.to) ? "sn-fpl-item--active" : ""}`}
+                          >
+                            <div className="sn-fpl-item-name">{sub.label}</div>
+                            <div className="sn-fpl-item-desc">{sub.desc}</div>
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <NavLink
                   key={item.to}
@@ -224,9 +271,6 @@ export default function Navbar() {
                 >
                   <item.Icon />
                   <span>{item.label}</span>
-                  {item.fplGroup && (
-                    <span className="sn-pill-tag" title="Fantasy Premier League">FPL</span>
-                  )}
                 </NavLink>
               );
             })}

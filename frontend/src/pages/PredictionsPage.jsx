@@ -1,4 +1,5 @@
-﻿// PredictionsPage.jsx — StatinSite v6
+﻿
+// PredictionsPage.jsx — StatinSite v6
 // VS Split Cards · League Themes · Floating Simulator · Key Players · Charts
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, NavLink, useNavigate } from "react-router-dom";
@@ -941,222 +942,498 @@ const ScorersWidget=({league,T})=>{
 };
 
 /* ══════════════════════════════════════════════════════════
-   SEASON SIMULATOR — Monte Carlo supercomputer
-   Uses current standings + Poisson to simulate remaining GWs
+   SEASON SIMULATOR — Monte Carlo engine v2
+   Fixes: fixture shuffling, correct relegation zones per league,
+   probability scaling, league-specific home advantage
+   New: Title Race Chart, Points Projection, Relegation Battle Card,
+        What-If toggle
 ══════════════════════════════════════════════════════════ */
 
-// League-specific season metadata
-const LEAGUE_META = {
-  epl:    { total:38, relegZone:3, euroTop:4, elPos:5, confPos:6, name:"Premier League" },
-  laliga: { total:38, relegZone:3, euroTop:4, elPos:5, confPos:null, name:"La Liga" },
-  seriea: { total:38, relegZone:3, euroTop:4, elPos:5, confPos:null, name:"Serie A" },
-  ligue1: { total:34, relegZone:3, euroTop:3, elPos:4, confPos:null, name:"Ligue 1" },
+// ── League config (authoritative source of truth) ─────────
+const LEAGUE_CFG = {
+  epl:        { total:20, games:38, ucl:4, uel:5, uecl:6, relPlay:null, relStart:18, homeAdv:0.32, avgGoals:1.36, label:"Premier League" },
+  laliga:     { total:20, games:38, ucl:4, uel:5, uecl:null, relPlay:null, relStart:18, homeAdv:0.28, avgGoals:1.30, label:"La Liga" },
+  seriea:     { total:20, games:38, ucl:4, uel:5, uecl:null, relPlay:null, relStart:18, homeAdv:0.25, avgGoals:1.28, label:"Serie A" },
+  bundesliga: { total:18, games:34, ucl:4, uel:5, uecl:6,  relPlay:16,  relStart:17, homeAdv:0.30, avgGoals:1.48, label:"Bundesliga" },
+  ligue1:     { total:18, games:34, ucl:3, uel:4, uecl:null, relPlay:null, relStart:16, homeAdv:0.27, avgGoals:1.25, label:"Ligue 1" },
 };
+// Legacy alias
+const ZONE_CONFIG = LEAGUE_CFG;
 
+function getZoneStyle(pos, cfg, T) {
+  if (!cfg) return null;
+  if (pos <= cfg.ucl)                            return { color:"#6366f1", label:"UCL",  bg:"#6366f115" };
+  if (pos === cfg.uel)                           return { color:"#f59e0b", label:"UEL",  bg:"#f59e0b15" };
+  if (cfg.uecl && pos === cfg.uecl)             return { color:"#10b981", label:"UECL", bg:"#10b98115" };
+  if (cfg.relPlay && pos === cfg.relPlay)        return { color:"#f97316", label:"Play", bg:"#f9731615" };
+  if (pos >= cfg.relStart)                      return { color:"#ef4444", label:"REL",  bg:"#ef444415" };
+  return null;
+}
+
+// ── Poisson RNG ───────────────────────────────────────────
 function poissonRandom(lambda) {
-  let L = Math.exp(-lambda), k = 0, p = 1;
+  const L = Math.exp(-Math.min(lambda, 20));
+  let k = 0, p = 1;
   do { k++; p *= Math.random(); } while (p > L);
   return k - 1;
 }
 
-function runMonteCarlo(teams, gamesPlayed, totalGames, sims = 8000) {
+// ── Fisher-Yates shuffle ──────────────────────────────────
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── Monte Carlo engine (fixed) ────────────────────────────
+function runMonteCarlo(teams, league, sims = 8000, excludeIdx = null) {
   if (!teams.length) return [];
+  const cfg = LEAGUE_CFG[league] || LEAGUE_CFG.epl;
   const n = teams.length;
-  const remaining = totalGames - gamesPlayed;
-  // Each team still plays ~remaining/2 home, ~remaining/2 away (simplified)
-  const homeAdv = 0.35; // avg home xG advantage
+  const gamesPlayed = teams[0]?.played || 20;
+  const gamesLeft   = cfg.games - gamesPlayed;
 
-  // Derive attack/defense strength from current goals scored/conceded
-  const avgGF = teams.reduce((s,t) => s + (t.goals_for||0), 0) / n / Math.max(gamesPlayed, 1);
-  const avgGA = teams.reduce((s,t) => s + (t.goals_against||0), 0) / n / Math.max(gamesPlayed, 1);
+  // Strength ratings: attack/defense relative to league average
+  const avgGF = teams.reduce((s,t) => s+(t.goals_for||0),0) / n / Math.max(gamesPlayed,1);
+  const avgGA = teams.reduce((s,t) => s+(t.goals_against||0),0) / n / Math.max(gamesPlayed,1);
 
-  const strength = teams.map(t => {
-    const gp = Math.max(t.played || gamesPlayed, 1);
-    const atk = (t.goals_for || 0) / gp / Math.max(avgGF, 0.01);
-    const def = (t.goals_against || 0) / gp / Math.max(avgGA, 0.01);
-    return { atk: Math.max(atk, 0.3), def: Math.max(def, 0.3) };
+  const strength = teams.map((t, idx) => {
+    const gp  = Math.max(t.played || gamesPlayed, 1);
+    const atk = idx === excludeIdx ? 0.3   // "what-if: team stripped of attack"
+      : (t.goals_for||0) / gp / Math.max(avgGF, 0.01);
+    const def = idx === excludeIdx ? 2.5   // "what-if: team stripped of defence"
+      : (t.goals_against||0) / gp / Math.max(avgGA, 0.01);
+    return { atk: Math.max(atk, 0.25), def: Math.max(def, 0.25) };
   });
 
-  const avgLambda = 1.35; // league avg goals/game per team
+  // Generate ALL possible fixtures for remaining round-robin
+  const allFixtures = [];
+  for (let i = 0; i < n; i++)
+    for (let j = i+1; j < n; j++)
+      allFixtures.push([i,j]);
+
+  // How many unique fixture slots do we need per sim?
+  // Each team plays gamesLeft more games ≈ n*gamesLeft/2 fixtures total
+  const fixturesNeeded = Math.round(n * gamesLeft / 2);
 
   // Accumulators
-  const titleCount   = new Array(n).fill(0);
-  const top4Count    = new Array(n).fill(0);
-  const top5Count    = new Array(n).fill(0);
-  const relegCount   = new Array(n).fill(0);
-  const pointsSum    = new Array(n).fill(0);
-  const posSum       = new Array(n).fill(0);
+  const titleCount = new Array(n).fill(0);
+  const uclCount   = new Array(n).fill(0);
+  const uelCount   = new Array(n).fill(0);
+  const relegCount = new Array(n).fill(0);
+  const relPlayCount = new Array(n).fill(0);
+  const pointsSum  = new Array(n).fill(0);
+  const posSum     = new Array(n).fill(0);
 
   for (let s = 0; s < sims; s++) {
-    // Clone current points
     const pts = teams.map(t => t.points || 0);
     const gd  = teams.map(t => t.goal_diff || 0);
     const gf  = teams.map(t => t.goals_for || 0);
 
-    // Simulate remaining fixtures — round-robin style for remaining games
-    const gamesLeft = Math.round(remaining);
-    // Generate fixture pairs proportionally
-    const fixtures = [];
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        fixtures.push([i, j]);
-      }
-    }
-    // Scale fixtures to ~match remaining game count per team
-    const totalFixtures = Math.round((n * gamesLeft) / 2);
-    const usedFixtures = fixtures.slice(0, totalFixtures);
+    // ✅ FIX: shuffle fixtures each simulation so all matchups get sampled
+    const pool = shuffle([...allFixtures]);
+    const usedFixtures = pool.slice(0, fixturesNeeded);
 
     for (const [h, a] of usedFixtures) {
-      const xgH = Math.max(0.3, avgLambda * strength[h].atk / strength[a].def * (1 + homeAdv));
-      const xgA = Math.max(0.3, avgLambda * strength[a].atk / strength[h].def);
+      const xgH = Math.max(0.2, cfg.avgGoals * strength[h].atk / strength[a].def * (1 + cfg.homeAdv));
+      const xgA = Math.max(0.2, cfg.avgGoals * strength[a].atk / strength[h].def);
       const gh  = poissonRandom(xgH);
       const ga  = poissonRandom(xgA);
       gd[h] += gh - ga; gd[a] += ga - gh;
       gf[h] += gh;      gf[a] += ga;
-      if (gh > ga)      { pts[h] += 3; }
+      if      (gh > ga) { pts[h] += 3; }
       else if (gh < ga) { pts[a] += 3; }
       else              { pts[h]++; pts[a]++; }
     }
 
-    // Rank teams
-    const order = Array.from({length: n}, (_, i) => i)
-      .sort((a, b) => pts[b] - pts[a] || gd[b] - gd[a] || gf[b] - gf[a]);
+    // Rank by pts → GD → GF
+    const order = Array.from({length:n},(_,i)=>i)
+      .sort((a,b) => pts[b]-pts[a] || gd[b]-gd[a] || gf[b]-gf[a]);
 
     order.forEach((ti, pos) => {
       pointsSum[ti] += pts[ti];
       posSum[ti]    += pos + 1;
-      if (pos === 0)    titleCount[ti]++;
-      if (pos < 4)      top4Count[ti]++;
-      if (pos < 5)      top5Count[ti]++;
-      if (pos >= n - 3) relegCount[ti]++;
+      if (pos === 0)                                     titleCount[ti]++;
+      if (pos < cfg.ucl)                                 uclCount[ti]++;
+      if (pos === cfg.uel - 1)                           uelCount[ti]++;
+      // ✅ FIX: use league-specific relegation zone
+      if (cfg.relPlay && pos === cfg.relPlay - 1)        relPlayCount[ti]++;
+      if (pos >= cfg.relStart - 1)                       relegCount[ti]++;
     });
   }
 
-  return teams.map((t, i) => ({
+  return teams.map((t,i) => ({
     ...t,
-    simPts:    Math.round(pointsSum[i] / sims),
-    simPos:    Math.round(posSum[i] / sims * 10) / 10,
-    titlePct:  Math.round(titleCount[i] / sims * 100),
-    top4Pct:   Math.round(top4Count[i] / sims * 100),
-    top5Pct:   Math.round(top5Count[i] / sims * 100),
-    relegPct:  Math.round(relegCount[i] / sims * 100),
-  })).sort((a, b) => a.simPos - b.simPos);
+    avg_pts:         Math.round(pointsSum[i] / sims * 10) / 10,
+    avg_position:    Math.round(posSum[i] / sims * 10) / 10,
+    title_prob:      Math.round(titleCount[i] / sims * 100 * 10) / 10,
+    top4_prob:       Math.round(uclCount[i] / sims * 100 * 10) / 10,
+    uel_prob:        Math.round(uelCount[i] / sims * 100 * 10) / 10,
+    relplay_prob:    Math.round(relPlayCount[i] / sims * 100 * 10) / 10,
+    relegation_prob: Math.round(relegCount[i] / sims * 100 * 10) / 10,
+  })).sort((a,b) => a.avg_position - b.avg_position);
 }
 
-// Animated probability bar
-const ProbBar = ({ pct, color, bg = "rgba(255,255,255,0.05)" }) => (
-  <div style={{ position: "relative", height: 4, borderRadius: 2, background: bg, overflow: "hidden", minWidth: 60 }}>
-    <div style={{
-      position: "absolute", left: 0, top: 0, height: "100%",
-      width: `${Math.min(pct, 100)}%`,
-      background: color,
-      borderRadius: 2,
-      transition: "width 0.6s cubic-bezier(.22,1,.36,1)",
-    }}/>
+// ── Shared UI components ──────────────────────────────────
+const ProbBar = ({ pct, color, bg="rgba(255,255,255,0.05)" }) => (
+  <div style={{position:"relative",height:4,borderRadius:2,background:bg,overflow:"hidden",minWidth:60}}>
+    <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${Math.min(pct,100)}%`,
+      background:color,borderRadius:2,transition:"width 0.6s cubic-bezier(.22,1,.36,1)"}}/>
   </div>
 );
 
-// Chance pill chip — iOS style
 const ChancePill = ({ value, color, label }) => {
-  const v = value || 0;
+  const v = Math.round(value) || 0;
   const alpha = v > 50 ? 0.22 : v > 20 ? 0.14 : v > 5 ? 0.09 : 0.05;
-  const textAlpha = v > 0 ? 1 : 0.3;
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, minWidth: 54 }}>
-      <div style={{
-        padding: "4px 10px", borderRadius: 999,
-        background: `${color}${Math.round(alpha * 255).toString(16).padStart(2,"0")}`,
-        border: `1px solid ${color}${v > 5 ? "44" : "1a"}`,
-        fontSize: 12, fontWeight: 900,
-        color: v > 0 ? color : "rgba(255,255,255,0.2)",
-        fontFamily: "'JetBrains Mono', monospace",
-        opacity: textAlpha,
-        minWidth: 46, textAlign: "center",
-      }}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:54}}>
+      <div style={{padding:"4px 10px",borderRadius:999,
+        background:`${color}${Math.round(alpha*255).toString(16).padStart(2,"0")}`,
+        border:`1px solid ${color}${v>5?"44":"1a"}`,
+        fontSize:12,fontWeight:900,
+        color:v>0?color:"rgba(255,255,255,0.2)",
+        fontFamily:"'JetBrains Mono',monospace",
+        minWidth:46,textAlign:"center"}}>
         {v > 0 ? `${v}%` : "—"}
       </div>
-      <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</span>
+      <span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
+    </div>
+  );
+};
+
+// ── Title Race Chart ──────────────────────────────────────
+const TitleRaceChart = ({ data, cfg, T }) => {
+  const contenders = data.filter(r => r.title_prob > 1).slice(0, 8);
+  if (!contenders.length) return null;
+  const max = Math.max(...contenders.map(r => r.title_prob), 1);
+
+  return (
+    <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px 24px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
+        <span style={{fontSize:16}}>🏆</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif"}}>Title Race</div>
+          <div style={{fontSize:10,color:T.muted}}>Championship probability distribution</div>
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {contenders.map((row, i) => (
+          <div key={row.team_name} style={{display:"grid",gridTemplateColumns:"140px 1fr 52px",alignItems:"center",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
+              {row.logo
+                ? <img src={row.logo} alt="" style={{width:20,height:20,objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
+                : <div style={{width:20,height:20,borderRadius:"50%",background:`#6366f118`,flexShrink:0,border:`1px solid ${T.border}`}}/>}
+              <span style={{fontSize:11,fontWeight:700,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Sora',sans-serif"}}>
+                {row.team_name}
+              </span>
+            </div>
+            <div style={{position:"relative",height:20,borderRadius:4,background:"rgba(255,255,255,0.04)",overflow:"hidden"}}>
+              <div style={{
+                position:"absolute",left:0,top:0,height:"100%",
+                width:`${(row.title_prob/max)*100}%`,
+                background:`linear-gradient(90deg,#6366f1,#8b5cf6)`,
+                borderRadius:4,
+                transition:"width 0.8s cubic-bezier(.22,1,.36,1)",
+                opacity: i===0 ? 1 : 0.65 + (0.35 * (1 - i/contenders.length)),
+              }}/>
+              <div style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",
+                fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.8)",fontFamily:"'JetBrains Mono',monospace"}}>
+                {row.title_prob > 2 ? `${row.title_prob}%` : ""}
+              </div>
+            </div>
+            <div style={{fontSize:12,fontWeight:900,color:"#6366f1",fontFamily:"'JetBrains Mono',monospace",textAlign:"right"}}>
+              {row.title_prob}%
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Points Projection ─────────────────────────────────────
+const PointsProjection = ({ data, cfg, T }) => {
+  const top10 = data.slice(0, 10);
+  if (!top10.length) return null;
+
+  return (
+    <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px 24px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
+        <span style={{fontSize:16}}>📈</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif"}}>Points Projection</div>
+          <div style={{fontSize:10,color:T.muted}}>Current vs projected final points</div>
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {top10.map(row => {
+          const curr = row.currentPts ?? row.points ?? 0;
+          const proj = row.avg_pts || row.avg_points || 0;
+          const delta = proj - curr;
+          return (
+            <div key={row.team_name} style={{display:"grid",gridTemplateColumns:"130px 1fr 90px",alignItems:"center",gap:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
+                {row.logo
+                  ? <img src={row.logo} alt="" style={{width:18,height:18,objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
+                  : <div style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",flexShrink:0}}/>}
+                <span style={{fontSize:11,fontWeight:700,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {row.team_name}
+                </span>
+              </div>
+              <div style={{position:"relative",height:6,borderRadius:3,background:"rgba(255,255,255,0.05)"}}>
+                {/* Current pts bar */}
+                <div style={{position:"absolute",left:0,top:0,height:"100%",
+                  width:`${Math.min((curr/110)*100,100)}%`,
+                  background:"rgba(255,255,255,0.2)",borderRadius:3}}/>
+                {/* Projected pts extension */}
+                <div style={{position:"absolute",left:`${Math.min((curr/110)*100,100)}%`,top:0,height:"100%",
+                  width:`${Math.min((delta/110)*100,100)}%`,
+                  background:"linear-gradient(90deg,#10b981,#6366f1)",borderRadius:"0 3px 3px 0",
+                  transition:"width 0.8s cubic-bezier(.22,1,.36,1)"}}/>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
+                <span style={{fontSize:11,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace"}}>{proj}</span>
+                <span style={{fontSize:9,fontWeight:800,
+                  color: delta > 0 ? "#10b981" : "#ef4444",
+                  background: delta > 0 ? "#10b98115" : "#ef444415",
+                  border: `1px solid ${delta > 0 ? "#10b98130" : "#ef444430"}`,
+                  borderRadius:4,padding:"1px 5px",fontFamily:"'JetBrains Mono',monospace"}}>
+                  +{delta}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{marginTop:12,fontSize:9,color:T.muted,display:"flex",gap:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:5}}>
+          <div style={{width:12,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+          <span>Current pts</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:5}}>
+          <div style={{width:12,height:4,borderRadius:2,background:"linear-gradient(90deg,#10b981,#6366f1)"}}/>
+          <span>Projected gain</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Relegation Battle Card ────────────────────────────────
+const RelegationBattleCard = ({ data, cfg, T }) => {
+  // Get bottom zone teams — those in or near relegation
+  const dangerZone = data.filter(r => {
+    const pos = Math.round(r.avg_position);
+    return pos >= cfg.relStart - 3; // show 3 above relegation too
+  });
+  if (!dangerZone.length) return null;
+  const maxRel = Math.max(...dangerZone.map(r => r.relegation_prob), 1);
+
+  return (
+    <div style={{background:"rgba(239,68,68,0.04)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:16,padding:"20px 24px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+        <span style={{fontSize:16}}>⚠️</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:900,color:"#ef4444",fontFamily:"'Sora',sans-serif"}}>Relegation Battle</div>
+          <div style={{fontSize:10,color:T.muted}}>Survival probabilities for bottom clubs</div>
+        </div>
+      </div>
+      <div style={{marginBottom:16,fontSize:10,color:T.muted,padding:"8px 12px",background:"rgba(239,68,68,0.06)",borderRadius:8,border:"1px solid rgba(239,68,68,0.12)"}}>
+        Relegation zone: positions {cfg.relStart}–{cfg.total} · {cfg.total - cfg.relStart + 1} teams go down
+        {cfg.relPlay ? ` · Position ${cfg.relPlay} enters playoff` : ""}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {[...dangerZone].sort((a,b) => b.relegation_prob - a.relegation_prob).map(row => {
+          const rel   = row.relegation_prob;
+          const surv  = Math.round(100 - rel);
+          const pos   = Math.round(row.avg_position);
+          const isRel = pos >= cfg.relStart;
+          const isPlay = cfg.relPlay && pos === cfg.relPlay;
+
+          return (
+            <div key={row.team_name} style={{
+              background: isRel ? "rgba(239,68,68,0.08)" : isPlay ? "rgba(249,115,22,0.06)" : "rgba(255,255,255,0.02)",
+              border: `1px solid ${isRel?"rgba(239,68,68,0.3)":isPlay?"rgba(249,115,22,0.25)":"rgba(255,255,255,0.06)"}`,
+              borderRadius:12,padding:"14px 16px",
+            }}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  {row.logo
+                    ? <img src={row.logo} alt="" style={{width:22,height:22,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>
+                    : <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)"}}/>}
+                  <div>
+                    <div style={{fontSize:12,fontWeight:800,color:T.text,fontFamily:"'Sora',sans-serif"}}>{row.team_name}</div>
+                    <div style={{fontSize:9,color:T.muted}}>Avg pos: {row.avg_position?.toFixed(1)} · {row.currentPts ?? "?"} pts</div>
+                  </div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:20,fontWeight:900,color:rel>50?"#ef4444":rel>25?"#f97316":"#10b981",fontFamily:"'JetBrains Mono',monospace"}}>
+                    {rel}%
+                  </div>
+                  <div style={{fontSize:8,color:T.muted,fontWeight:700}}>RELEGATION RISK</div>
+                </div>
+              </div>
+              {/* Survival bar */}
+              <div style={{position:"relative",height:8,borderRadius:4,background:"rgba(239,68,68,0.15)",overflow:"hidden"}}>
+                <div style={{
+                  position:"absolute",right:0,top:0,height:"100%",
+                  width:`${surv}%`,
+                  background:surv>75?"#10b981":surv>50?"#f59e0b":"#ef4444",
+                  borderRadius:4,
+                  transition:"width 0.8s cubic-bezier(.22,1,.36,1)",
+                }}/>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:5,fontSize:9,color:T.muted}}>
+                <span style={{color:"#ef4444",fontWeight:700}}>Relegated</span>
+                <span style={{color:"#10b981",fontWeight:700}}>Survival: {surv}%</span>
+              </div>
+              {isPlay && (
+                <div style={{marginTop:8,fontSize:9,fontWeight:800,color:"#f97316",
+                  background:"rgba(249,115,22,0.1)",border:"1px solid rgba(249,115,22,0.2)",
+                  borderRadius:6,padding:"4px 8px",display:"inline-block"}}>
+                  ⚡ Relegation Play-off spot
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ── What-If Toggle ────────────────────────────────────────
+const WhatIfPanel = ({ standings, league, T, onResult }) => {
+  const [selectedTeam, setSelectedTeam] = useState("");
+  const [running, setRunning]           = useState(false);
+
+  const teams = standings || [];
+
+  const runWhatIf = () => {
+    if (!selectedTeam || !teams.length) return;
+    setRunning(true);
+    setTimeout(() => {
+      const idx = teams.findIndex(t =>
+        (t.team_name || "").toLowerCase() === selectedTeam.toLowerCase()
+      );
+      if (idx === -1) { setRunning(false); return; }
+      const results = runMonteCarlo(teams, league, 6000, idx);
+      onResult(results, selectedTeam);
+      setRunning(false);
+    }, 50);
+  };
+
+  return (
+    <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px 24px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+        <span style={{fontSize:16}}>🔮</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif"}}>What-If Simulator</div>
+          <div style={{fontSize:10,color:T.muted}}>Remove a team's strength — see how the table changes</div>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+        <select value={selectedTeam} onChange={e=>setSelectedTeam(e.target.value)}
+          style={{flex:1,minWidth:160,padding:"8px 12px",borderRadius:8,fontSize:12,
+            background:"rgba(255,255,255,0.06)",border:`1px solid ${T.border}`,
+            color:T.text,outline:"none",cursor:"pointer"}}>
+          <option value="">Select a team to weaken…</option>
+          {teams.map(t => (
+            <option key={t.team_name} value={t.team_name}>{t.team_name}</option>
+          ))}
+        </select>
+        <button onClick={runWhatIf} disabled={!selectedTeam || running}
+          style={{padding:"8px 18px",borderRadius:8,fontSize:11,fontWeight:800,cursor:"pointer",
+            background:selectedTeam?"rgba(99,102,241,0.15)":"rgba(255,255,255,0.04)",
+            border:`1px solid ${selectedTeam?"#6366f140":"rgba(255,255,255,0.08)"}`,
+            color:selectedTeam?"#6366f1":"rgba(255,255,255,0.3)"}}>
+          {running ? "Simulating…" : "Run Simulation"}
+        </button>
+        {selectedTeam && (
+          <button onClick={()=>{setSelectedTeam("");onResult(null);}}
+            style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:800,cursor:"pointer",
+              background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444"}}>
+            Reset
+          </button>
+        )}
+      </div>
+      {selectedTeam && !running && (
+        <div style={{marginTop:10,fontSize:10,color:"#f59e0b",
+          background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",
+          borderRadius:8,padding:"8px 12px"}}>
+          ⚡ Simulating season with <strong>{selectedTeam}</strong> performing at relegation-level strength — showing how other teams benefit
+        </div>
+      )}
     </div>
   );
 };
 
 /* ══════════════════════════════════════════════════════════
-   SEASON SIMULATOR TAB — wired to getSeasonSimulation(league)
-   API returns: { TeamName: { avg_position, title_prob, top4_prob, relegation_prob } }
-   We merge with live standings for current pts/logo/played
+   SEASON SIMULATOR TAB
 ══════════════════════════════════════════════════════════ */
-
-// Zone config per league
-const ZONE_CONFIG = {
-  epl:    { ucl:4, uel:5, uecl:6, relStart:18, total:20, label:"Premier League" },
-  laliga: { ucl:4, uel:5, uecl:null, relStart:18, total:20, label:"La Liga" },
-  seriea: { ucl:4, uel:5, uecl:null, relStart:18, total:20, label:"Serie A" },
-  bundesliga:{ ucl:4, uel:5, uecl:6, relStart:17, relPlay:16, total:18, label:"Bundesliga" },
-  ligue1: { ucl:3, uel:4, uecl:null, relStart:17, total:18, label:"Ligue 1" },
-};
-
-function getZoneStyle(pos, cfg, T) {
-  if (!cfg) return null;
-  if (pos <= cfg.ucl)  return { color: T.accent,  label: "UCL",  border: `${T.accent}40` };
-  if (pos === cfg.uel) return { color: T.mid,    label: "UEL",  border: `${T.mid}40` };
-  if (cfg.uecl && pos === cfg.uecl) return { color: T.muted, label: "UECL", border: `${T.muted}40` };
-  if (cfg.relPlay && pos === cfg.relPlay) return { color: "#f97316", label: "Play", border: "#f9731640" };
-  if (pos >= cfg.relStart) return { color: T.accent2, label: "REL", border: `${T.accent2}40` };
-  return null;
-}
-
 const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
-  const [simData, setSimData]   = useState(null);
-  const [simLoad, setSimLoad]   = useState(true);
-  const [simErr, setSimErr]     = useState(null);
-  const [sortKey, setSortKey]   = useState("avg_position");
-  const [sortDir, setSortDir]   = useState(1);
-  const [hovered, setHovered]   = useState(null);
+  const [simData,     setSimData]     = useState(null);
+  const [simLoad,     setSimLoad]     = useState(true);
+  const [simErr,      setSimErr]      = useState(null);
+  const [sortKey,     setSortKey]     = useState("avg_position");
+  const [sortDir,     setSortDir]     = useState(1);
+  const [hovered,     setHovered]     = useState(null);
+  const [activeView,  setActiveView]  = useState("table"); // table | title | points | relegation
+  const [whatIfData,  setWhatIfData]  = useState(null);
+  const [whatIfTeam,  setWhatIfTeam]  = useState(null);
 
-  const cfg = ZONE_CONFIG[league] || ZONE_CONFIG.epl;
+  const cfg = LEAGUE_CFG[league] || LEAGUE_CFG.epl;
 
   useEffect(() => {
-    setSimLoad(true); setSimErr(null); setSimData(null);
-    const cacheKey = "sim_v1_" + league;
+    setSimLoad(true); setSimErr(null); setSimData(null); setWhatIfData(null);
+    const cacheKey = "sim_v2_" + league;
     try {
       const r = sessionStorage.getItem(cacheKey);
-      if (r) { const p = JSON.parse(r); if (Date.now() - p.ts < 1800000) { setSimData(p.data); setSimLoad(false); return; } }
+      if (r) {
+        const p = JSON.parse(r);
+        if (Date.now() - p.ts < 1800000) { setSimData(p.data); setSimLoad(false); return; }
+      }
     } catch {}
+
     getSeasonSimulation(league)
       .then(raw => {
-        // Backend returns { league, results: [...] } or legacy { TeamName: {...} }
+        // ✅ Handle { league, results:[...] } format from backend
         const items = Array.isArray(raw?.results) ? raw.results
           : Array.isArray(raw) ? raw
-          : Object.entries(raw).filter(([k]) => k !== "league").map(([name, d]) => ({ team: name, ...d }));
+          : Object.entries(raw).filter(([k]) => k !== "league").map(([name,d]) => ({team:name,...d}));
+
         const rows = items.map(d => ({
           team_name:       d.team || d.team_name || "",
           avg_position:    parseFloat(d.avg_position)    || 0,
+          avg_pts:         parseFloat(d.avg_points)      || 0,
+          // ✅ FIX: backend already sends percentages (e.g. 39.87), don't multiply by 100
           title_prob:      parseFloat(d.title_prob)      || 0,
           top4_prob:       parseFloat(d.top4_prob)       || 0,
+          uel_prob:        parseFloat(d.top5_prob)       || 0,
           relegation_prob: parseFloat(d.relegation_prob) || 0,
         }));
-        try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: rows, ts: Date.now() })); } catch {}
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({data:rows, ts:Date.now()})); } catch {}
         setSimData(rows);
       })
       .catch(() => {
-        // Backend 404 — fall back to client-side Monte Carlo using live standings
-        if (standings && standings.length > 0) {
-          const cfg2 = ZONE_CONFIG[league] || ZONE_CONFIG.epl;
-          const gamesPlayed = standings[0]?.played || 20;
-          const totalGames = (cfg2.total - 1) * 2; // round-robin total games per team
-          const results = runMonteCarlo(standings, gamesPlayed, totalGames, 6000);
+        if (standings?.length > 0) {
+          const results = runMonteCarlo(standings, league, 6000);
           const rows = results.map(r => ({
             team_name:       r.team_name,
-            avg_position:    r.simPos,
-            title_prob:      r.titlePct,
-            top4_prob:       r.top4Pct,
-            relegation_prob: r.relegPct,
+            avg_position:    r.avg_position,
+            avg_pts:         r.avg_pts,
+            title_prob:      r.title_prob,
+            top4_prob:       r.top4_prob,
+            uel_prob:        r.uel_prob,
+            relegation_prob: r.relegation_prob,
             logo:            r.logo,
             currentPts:      r.points,
             played:          r.played,
             _clientSide:     true,
           }));
-          try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: rows, ts: Date.now() })); } catch {}
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({data:rows, ts:Date.now()})); } catch {}
           setSimData(rows);
         } else {
           setSimErr("Waiting for standings data… try switching to the Table tab first.");
@@ -1165,213 +1442,275 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
       .finally(() => setSimLoad(false));
   }, [league, standings]);
 
-  // Merge sim data with live standings for logos + current pts + played
+  // Merge sim rows with live standings for logos + pts
   const merged = useMemo(() => {
-    if (!simData) return [];
-    return simData.map(row => {
-      const live = standings.find(s =>
+    const source = whatIfData || simData;
+    if (!source) return [];
+    return source.map(row => {
+      const live = standings?.find(s =>
         s.team_name === row.team_name ||
-        (s.team_name || "").toLowerCase().includes((row.team_name || "").toLowerCase().split(" ")[0]) ||
-        (row.team_name || "").toLowerCase().includes((s.team_name || "").toLowerCase().split(" ")[0])
+        (s.team_name||"").toLowerCase().includes((row.team_name||"").toLowerCase().split(" ")[0]) ||
+        (row.team_name||"").toLowerCase().includes((s.team_name||"").toLowerCase().split(" ")[0])
       );
-      return { ...row, logo: live?.logo, currentPts: live?.points, played: live?.played };
+      return { ...row, logo:live?.logo, currentPts:live?.points, played:live?.played,
+               goals_for:live?.goals_for, goals_against:live?.goals_against, goal_diff:live?.goal_diff };
     });
-  }, [simData, standings]);
+  }, [simData, whatIfData, standings]);
 
   const sorted = useMemo(() => {
-    return [...merged].sort((a, b) => {
-      const va = a[sortKey] ?? 0, vb = b[sortKey] ?? 0;
-      return sortKey === "avg_position" ? (va - vb) * sortDir : (vb - va) * sortDir;
+    return [...merged].sort((a,b) => {
+      const va = a[sortKey]??0, vb = b[sortKey]??0;
+      return sortKey==="avg_position" ? (va-vb)*sortDir : (vb-va)*sortDir;
     });
   }, [merged, sortKey, sortDir]);
 
   const toggleSort = (key) => {
-    if (sortKey === key) setSortDir(d => -d);
-    else { setSortKey(key); setSortDir(1); }
+    if (sortKey===key) setSortDir(d=>-d);
+    else { setSortKey(key); setSortDir(key==="avg_position"?1:-1); }
   };
 
   const loading = simLoad || standLoad;
 
-  // ── Legend zones
   const zones = [
-    { color: T.accent,  label: "Champions League" },
-    { color: T.mid,     label: "Europa League" },
-    ...(cfg.uecl ? [{ color: T.muted, label: "Conference League" }] : []),
-    ...(cfg.relPlay ? [{ color: "#f97316", label: "Relegation Play-off" }] : []),
-    { color: T.accent2, label: "Relegation" },
+    { color:"#6366f1", label:"Champions League" },
+    { color:"#f59e0b", label:"Europa League" },
+    ...(cfg.uecl ? [{ color:"#10b981", label:"Conference League" }] : []),
+    ...(cfg.relPlay ? [{ color:"#f97316", label:"Relegation Play-off" }] : []),
+    { color:"#ef4444", label:"Relegation" },
   ];
 
+  const ViewBtn = ({ id, icon, label }) => (
+    <button onClick={()=>setActiveView(id)} style={{
+      display:"flex",alignItems:"center",gap:5,
+      padding:"7px 14px",borderRadius:8,fontSize:11,fontWeight:800,cursor:"pointer",
+      background:activeView===id?"rgba(99,102,241,0.15)":"rgba(255,255,255,0.04)",
+      border:`1px solid ${activeView===id?"#6366f140":"rgba(255,255,255,0.08)"}`,
+      color:activeView===id?"#6366f1":"rgba(255,255,255,0.45)",transition:"all .15s"}}>
+      <span>{icon}</span>{label}
+    </button>
+  );
+
   const SortBtn = ({ k, label }) => (
-    <button onClick={() => toggleSort(k)} style={{
-      padding: "5px 12px", borderRadius: 20, fontSize: 10, fontWeight: 700,
-      cursor: "pointer", fontFamily: "'Inter',sans-serif",
-      border: `1px solid ${sortKey === k ? T.accent : T.border}`,
-      background: sortKey === k ? `${T.accent}18` : "transparent",
-      color: sortKey === k ? T.accent : T.muted,
-      transition: "all 0.13s", display: "flex", alignItems: "center", gap: 4,
-    }}>
-      {label}
-      {sortKey === k && <span style={{ fontSize: 9 }}>{sortDir === 1 ? "↑" : "↓"}</span>}
+    <button onClick={()=>toggleSort(k)} style={{
+      padding:"5px 12px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",
+      border:`1px solid ${sortKey===k?"#6366f1":T.border}`,
+      background:sortKey===k?"rgba(99,102,241,0.12)":"transparent",
+      color:sortKey===k?"#6366f1":T.muted,
+      transition:"all 0.13s",display:"flex",alignItems:"center",gap:4}}>
+      {label}{sortKey===k && <span style={{fontSize:9}}>{sortDir===1?"↑":"↓"}</span>}
     </button>
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
-      {/* ── Header card */}
+      {/* ── Header */}
       <div style={{
-        background: `linear-gradient(135deg, ${T.accent}14 0%, ${T.faint} 50%, ${T.panel} 100%)`,
-        border: `1px solid ${T.borderHi}`,
-        borderRadius: 20, padding: "20px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14,
-      }}>
+        background:`linear-gradient(135deg,rgba(99,102,241,0.12) 0%,${T.faint} 50%,${T.panel} 100%)`,
+        border:`1px solid rgba(99,102,241,0.2)`,borderRadius:20,padding:"20px 24px",
+        display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent, boxShadow: `0 0 10px ${T.accent}` }}/>
-            <span style={{ fontSize: 11, fontWeight: 900, color: T.accent, letterSpacing: "0.12em", fontFamily: "'Inter',sans-serif" }}>
-              SEASON SIMULATOR
-            </span>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+            <div style={{width:8,height:8,borderRadius:"50%",background:"#6366f1",boxShadow:"0 0 10px #6366f1"}}/>
+            <span style={{fontSize:11,fontWeight:900,color:"#6366f1",letterSpacing:"0.12em"}}>SEASON SIMULATOR</span>
+            {whatIfTeam && (
+              <span style={{fontSize:9,fontWeight:800,color:"#f59e0b",background:"rgba(245,158,11,0.12)",
+                border:"1px solid rgba(245,158,11,0.3)",borderRadius:999,padding:"2px 8px"}}>
+                🔮 WHAT-IF: {whatIfTeam} weakened
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: T.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em" }}>
+          <div style={{fontSize:22,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>
             {cfg.label} — Final Day Predictions
           </div>
-          <div style={{ fontSize: 11, color: T.muted, marginTop: 4, fontFamily: "'Inter',sans-serif" }}>
-            Monte Carlo · 10,000 simulations · Poisson xG model · Updates each session
+          <div style={{fontSize:11,color:T.muted,marginTop:4}}>
+            Monte Carlo · 8,000 simulations · Poisson xG · Shuffled fixtures · League-specific zones
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {zones.map(z => (
-            <div key={z.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 3, height: 14, borderRadius: 2, background: z.color }}/>
-              <span style={{ fontSize: 9, color: T.muted, fontFamily: "'Inter',sans-serif" }}>{z.label}</span>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {zones.map(z=>(
+            <div key={z.label} style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:3,height:14,borderRadius:2,background:z.color}}/>
+              <span style={{fontSize:9,color:T.muted}}>{z.label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Sort controls */}
+      {/* ── View switcher */}
       {!loading && !simErr && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, color: T.muted, fontFamily: "'Inter',sans-serif" }}>Sort by:</span>
-          <SortBtn k="avg_position"    label="Predicted Pos" />
-          <SortBtn k="title_prob"      label="Title %" />
-          <SortBtn k="top4_prob"       label="Top 4 %" />
-          <SortBtn k="relegation_prob" label="Relegation %" />
-          <span style={{ marginLeft: "auto", fontSize: 10, color: T.muted, fontFamily: "'JetBrains Mono',monospace" }}>
-            {sorted.length} teams
-          </span>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <ViewBtn id="table"     icon="📊" label="Full Table" />
+          <ViewBtn id="title"     icon="🏆" label="Title Race" />
+          <ViewBtn id="points"    icon="📈" label="Points Projection" />
+          <ViewBtn id="relegation" icon="⚠️" label="Relegation Battle" />
+          <ViewBtn id="whatif"    icon="🔮" label="What-If" />
         </div>
       )}
 
       {/* ── Error */}
       {simErr && (
-        <div style={{ padding: 24, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 10, opacity: .4 }}>⚠️</div>
-          <div style={{ color: T.muted, fontSize: 13 }}>Could not load simulation data</div>
-          <div style={{ color: T.accent2, fontSize: 11, marginTop: 6, fontFamily: "'JetBrains Mono',monospace" }}>{simErr}</div>
+        <div style={{padding:24,background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,textAlign:"center"}}>
+          <div style={{fontSize:28,marginBottom:10,opacity:.4}}>⚠️</div>
+          <div style={{color:T.muted,fontSize:13}}>Could not load simulation data</div>
+          <div style={{color:"#ef4444",fontSize:11,marginTop:6,fontFamily:"'JetBrains Mono',monospace"}}>{simErr}</div>
         </div>
       )}
 
-      {/* ── Loading skeletons */}
+      {/* ── Loading */}
       {loading && !simErr && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{
-              height: 72, borderRadius: 14,
-              background: `linear-gradient(90deg, ${T.panel} 25%, ${T.faint} 50%, ${T.panel} 75%)`,
-              backgroundSize: "200% 100%",
-              animation: "shimmer 1.4s infinite",
-              opacity: 1 - i * 0.08,
-              border: `1px solid ${T.border}`,
-            }}/>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {Array.from({length:8}).map((_,i)=>(
+            <div key={i} style={{height:72,borderRadius:14,
+              background:`linear-gradient(90deg,${T.panel} 25%,${T.faint} 50%,${T.panel} 75%)`,
+              backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite",
+              opacity:1-i*0.08,border:`1px solid ${T.border}`}}/>
           ))}
-          <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+          <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
         </div>
       )}
 
-      {/* ── Team rows */}
-      {!loading && !simErr && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {/* ── TITLE RACE */}
+      {!loading && !simErr && activeView==="title" && (
+        <TitleRaceChart data={sorted} cfg={cfg} T={T}/>
+      )}
+
+      {/* ── POINTS PROJECTION */}
+      {!loading && !simErr && activeView==="points" && (
+        <PointsProjection data={sorted} cfg={cfg} T={T}/>
+      )}
+
+      {/* ── RELEGATION BATTLE */}
+      {!loading && !simErr && activeView==="relegation" && (
+        <RelegationBattleCard data={sorted} cfg={cfg} T={T}/>
+      )}
+
+      {/* ── WHAT-IF */}
+      {!loading && !simErr && activeView==="whatif" && (
+        <WhatIfPanel
+          standings={standings}
+          league={league}
+          T={T}
+          onResult={(results, team) => {
+            if (!results) { setWhatIfData(null); setWhatIfTeam(null); return; }
+            const rows = results.map(r => ({
+              team_name:       r.team_name,
+              avg_position:    r.avg_position,
+              avg_pts:         r.avg_pts,
+              title_prob:      r.title_prob,
+              top4_prob:       r.top4_prob,
+              relegation_prob: r.relegation_prob,
+              logo:            r.logo,
+              currentPts:      r.points,
+              played:          r.played,
+            }));
+            setWhatIfData(rows);
+            setWhatIfTeam(team);
+            setActiveView("table");
+          }}
+        />
+      )}
+
+      {/* ── FULL TABLE */}
+      {!loading && !simErr && activeView==="table" && (
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {/* Sort controls */}
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
+            <span style={{fontSize:10,color:T.muted}}>Sort by:</span>
+            <SortBtn k="avg_position"    label="Predicted Pos" />
+            <SortBtn k="title_prob"      label="Title %" />
+            <SortBtn k="top4_prob"       label="Top 4 %" />
+            <SortBtn k="relegation_prob" label="Relegation %" />
+            <span style={{marginLeft:"auto",fontSize:10,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>
+              {sorted.length} teams{whatIfTeam ? ` · 🔮 ${whatIfTeam} weakened` : ""}
+            </span>
+          </div>
+
           {sorted.map((row, i) => {
-            const pos     = Math.round(row.avg_position) || i + 1;
-            const zone    = getZoneStyle(pos, cfg, T);
-            const titleP  = Math.round(row.title_prob * 100);
-            const top4P   = Math.round(row.top4_prob * 100);
-            const relegP  = Math.round(row.relegation_prob * 100);
+            const pos   = Math.round(row.avg_position) || i+1;
+            const zone  = getZoneStyle(pos, cfg, T);
+            // ✅ FIX: values already in % from backend, don't multiply again
+            const titleP = Math.round(row.title_prob);
+            const top4P  = Math.round(row.top4_prob);
+            const relegP = Math.round(row.relegation_prob);
+            const projPts = row.avg_pts || row.avg_points || 0;
+            const currPts = row.currentPts ?? 0;
+            const delta   = projPts ? Math.round(projPts - currPts) : null;
             const isHov   = hovered === row.team_name;
+            const isWhatIfTeam = whatIfTeam && row.team_name === whatIfTeam;
 
             return (
-              <div
-                key={row.team_name}
-                onMouseEnter={() => setHovered(row.team_name)}
-                onMouseLeave={() => setHovered(null)}
+              <div key={row.team_name}
+                onMouseEnter={()=>setHovered(row.team_name)}
+                onMouseLeave={()=>setHovered(null)}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "44px 1fr 80px 80px 80px 80px",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "14px 16px",
-                  borderRadius: 14,
-                  background: isHov ? `${T.accent}0a` : T.panel,
-                  border: `1px solid ${isHov ? T.borderHi : T.border}`,
-                  transition: "all 0.15s",
-                }}
-              >
+                  display:"grid",
+                  gridTemplateColumns:"52px 1fr 70px 70px 70px 70px",
+                  alignItems:"center",gap:12,padding:"14px 16px",borderRadius:14,
+                  background: isWhatIfTeam ? "rgba(245,158,11,0.06)" : isHov ? "rgba(99,102,241,0.06)" : T.panel,
+                  border:`1px solid ${isWhatIfTeam?"rgba(245,158,11,0.3)":zone?`${zone.color}22`:isHov?"rgba(99,102,241,0.25)":T.border}`,
+                  transition:"all 0.15s",
+                }}>
+
                 {/* Pos + zone bar */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {zone && <div style={{ width: 3, height: 32, borderRadius: 2, background: zone.color, flexShrink: 0 }}/>}
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: zone ? zone.color : T.muted, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  {zone && <div style={{width:3,height:36,borderRadius:2,background:zone.color,flexShrink:0}}/>}
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:18,fontWeight:900,
+                      color:zone?zone.color:T.muted,
+                      fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>
                       {pos}
                     </div>
                     {zone && (
-                      <div style={{ fontSize: 7, fontWeight: 800, color: zone.color, letterSpacing: "0.06em", marginTop: 2 }}>
+                      <div style={{fontSize:7,fontWeight:800,color:zone.color,letterSpacing:"0.06em",marginTop:2}}>
                         {zone.label}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Team name + logo + current pts */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                {/* Team */}
+                <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
                   {row.logo
-                    ? <img src={row.logo} alt="" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"}/>
-                    : <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${T.accent}18`, flexShrink: 0, border: `1px solid ${T.border}` }}/>
-                  }
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: "'Sora',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    ? <img src={row.logo} alt="" style={{width:28,height:28,objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
+                    : <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(99,102,241,0.1)",flexShrink:0,border:`1px solid ${T.border}`}}/>}
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:800,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Sora',sans-serif"}}>
                       {row.team_name}
+                      {isWhatIfTeam && <span style={{marginLeft:6,fontSize:9,color:"#f59e0b"}}>🔮 weakened</span>}
                     </div>
-                    {row.currentPts != null && (
-                      <div style={{ fontSize: 10, color: T.muted, fontFamily: "'JetBrains Mono',monospace", marginTop: 1 }}>
-                        {row.currentPts} pts · {row.played} played
-                      </div>
-                    )}
+                    <div style={{fontSize:10,color:T.muted,fontFamily:"'JetBrains Mono',monospace",marginTop:1,display:"flex",gap:8}}>
+                      {row.currentPts != null && <span>{row.currentPts} pts</span>}
+                      {delta != null && delta > 0 && <span style={{color:"#10b981"}}>→ {Math.round(projPts)} proj (+{delta})</span>}
+                      {row.played && <span>· {row.played} played</span>}
+                    </div>
                   </div>
                 </div>
 
-                {/* Avg final position */}
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: T.text, fontFamily: "'JetBrains Mono',monospace" }}>
-                    {row.avg_position.toFixed(1)}
+                {/* Avg Pos */}
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:16,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace"}}>
+                    {row.avg_position?.toFixed(1)}
                   </div>
-                  <div style={{ fontSize: 8, color: T.muted, marginTop: 2 }}>Avg Pos</div>
-                  <ProbBar pct={(cfg.total - row.avg_position) / cfg.total * 100} color={T.accent} />
+                  <div style={{fontSize:8,color:T.muted,marginTop:2}}>Avg Pos</div>
+                  <ProbBar pct={(cfg.total - row.avg_position)/cfg.total*100} color="#6366f1"/>
                 </div>
 
                 {/* Title % */}
-                <div style={{ textAlign: "center" }}>
-                  <ChancePill value={titleP} color={T.accent} label="Title" />
+                <div style={{textAlign:"center"}}>
+                  <ChancePill value={titleP} color="#6366f1" label="Title"/>
                 </div>
 
                 {/* Top 4 % */}
-                <div style={{ textAlign: "center" }}>
-                  <ChancePill value={top4P} color={T.mid || T.accent} label="Top 4" />
+                <div style={{textAlign:"center"}}>
+                  <ChancePill value={top4P} color="#f59e0b" label="Top 4"/>
                 </div>
 
                 {/* Relegation % */}
-                <div style={{ textAlign: "center" }}>
-                  <ChancePill value={relegP} color={relegP > 30 ? T.accent2 : relegP > 10 ? "#f97316" : T.muted} label="Rel %" />
+                <div style={{textAlign:"center"}}>
+                  <ChancePill value={relegP}
+                    color={relegP>40?"#ef4444":relegP>20?"#f97316":relegP>5?"#f59e0b":T.muted}
+                    label="Rel %"/>
                 </div>
               </div>
             );
@@ -1379,18 +1718,19 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
         </div>
       )}
 
-      {/* ── Footer note */}
+      {/* ── Footer */}
       {!loading && !simErr && (
-        <div style={{ padding: "12px 16px", borderRadius: 10, background: T.faint, border: `1px solid ${T.border}`, display: "flex", gap: 8, alignItems: "flex-start" }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>🔬</span>
-          <span style={{ fontSize: 10, color: T.muted, lineHeight: 1.6, fontFamily: "'Inter',sans-serif" }}>
-            Probabilities generated via Monte Carlo simulation (10,000 runs) using Poisson goal models calibrated on current season xG and historical attack/defense ratings. Percentages reflect frequency across all simulated season outcomes — not guaranteed predictions.
+        <div style={{padding:"12px 16px",borderRadius:10,background:T.faint,border:`1px solid ${T.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{fontSize:14,flexShrink:0}}>🔬</span>
+          <span style={{fontSize:10,color:T.muted,lineHeight:1.6}}>
+            Monte Carlo simulation (8,000 runs) using Poisson goal models with shuffled fixture sampling, league-specific home advantage ({(cfg.homeAdv*100).toFixed(0)}% for {cfg.label}), and per-team attack/defence ratings derived from current season stats. Relegation zones reflect {cfg.label} rules ({cfg.total-cfg.relStart+1} teams relegated). Not guaranteed predictions.
           </span>
         </div>
       )}
     </div>
   );
 };
+
 
 /* ══════════════════════════════════════════════════════════
    MAIN PAGE

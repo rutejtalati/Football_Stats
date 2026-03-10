@@ -19,10 +19,40 @@ const SLUG_MAP = {
   "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",
 };
 
+
+/* ── Global mobile CSS injected via App ───── */
+const GLOBAL_MOBILE_CSS = `
+  /* Hide bottom tabs on desktop */
+  @media (min-width: 641px) {
+    .sn-bottom-tabs { display: none !important; }
+  }
+  /* Add bottom padding on mobile so content isn't hidden behind tab bar */
+  @media (max-width: 640px) {
+    .sn-page-wrap { padding-bottom: 80px !important; }
+    .sn-nav { display: none !important; }
+  }
+  /* Safe area support for notched phones */
+  .sn-bottom-tabs {
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+  /* Prevent horizontal scroll globally */
+  body { overflow-x: hidden; }
+  * { box-sizing: border-box; }
+  /* Better tap targets */
+  @media (max-width: 640px) {
+    button, a { min-height: 36px; }
+  }
+`;
+
+function GlobalMobileStyles() {
+  return <style>{GLOBAL_MOBILE_CSS}</style>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <div className="app-shell">
+        <GlobalMobileStyles />
         <Navbar />
         <div className="sn-page-wrap">
           <Routes>

@@ -2,6 +2,17 @@
 // Controls: SPACE/Click=action, ←→=move, WASD=alt move, Enter=start/restart, ESC=close
 import { useState, useEffect, useRef, useCallback } from "react";
 
+
+/* ── Responsive hook ─────────────────────────────────────── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  React.useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
 /* ────────────── Design tokens ────────────── */
 const C = {
   bg:"#060a14", panel:"rgba(8,13,24,0.98)", line:"rgba(255,255,255,0.07)",
@@ -1116,7 +1127,7 @@ function TicTacToe() {
         ))}
       </div>
       {/* Grid */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:240}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:isMobile?200:240}}>
         {board.map((cell,i)=>{
           const isWin=winLine&&winLine.includes(i);
           return (
@@ -2193,6 +2204,7 @@ function GameCard({ game, onOpen }) {
    MAIN PAGE
    ════════════════════════════════════════════════════════ */
 export default function MiniGamesPage() {
+  const isMobile = useIsMobile();
   const [active,  setActive]  = useState(null); // open game
   const [cat,     setCat]     = useState("All");
   const [scores,  setScores]  = useState(loadAll());

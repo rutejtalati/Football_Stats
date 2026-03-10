@@ -3,6 +3,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+
+/* ── Responsive hook ─────────────────────────────────────── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  React.useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
 /* ── RSS Feed sources ────────────────────────────────────────
    Fetched via rss2json.com (free, CORS-friendly, no key needed)
 ──────────────────────────────────────────────────────────── */
@@ -162,6 +173,7 @@ const ArticleCard = ({ article, featured }) => {
 };
 
 export default function NewsTrackerPage() {
+  const isMobile = useIsMobile();
   const [articles, setArticles]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
@@ -295,12 +307,12 @@ export default function NewsTrackerPage() {
         {!loading && filtered.length > 0 && (
           <div>
             {featured.length > 0 && (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(420px,1fr))",gap:16,marginBottom:16}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(420px,1fr))",gap:16,marginBottom:16}}>
                 {featured.map(a=><ArticleCard key={a.id} article={a} featured/>)}
               </div>
             )}
             {rest.length > 0 && (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
                 {rest.map(a=><ArticleCard key={a.id} article={a}/>)}
               </div>
             )}

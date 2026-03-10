@@ -2,6 +2,17 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
+
+/* ── Responsive hook ─────────────────────────────────────── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  React.useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
 const C = {
   bg:"#060a14", panel:"rgba(8,13,24,0.98)", line:"rgba(255,255,255,0.07)",
   text:"#f4f7fb", muted:"#8a9ab8", soft:"#3a5272",
@@ -131,7 +142,7 @@ function EloSim(){
   const sl=col=>({width:"100%",accentColor:col,cursor:"pointer"});
   return(
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10}}>
         {[["Team A",tA,setA,C.blue],["Team B",tB,setB,C.orange]].map(([l,v,s,col])=>(
           <div key={l} style={{background:`${col}0a`,border:`1px solid ${col}22`,borderRadius:10,padding:"10px 12px"}}>
             <div style={{fontSize:9,fontWeight:900,color:col,letterSpacing:"0.1em",marginBottom:4}}>{l}</div>

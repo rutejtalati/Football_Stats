@@ -2,6 +2,17 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 
+
+/* ── Responsive hook ─────────────────────────────────────── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  React.useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
 /* ─── Design tokens ─────────────────────────────────────── */
 const C = {
   blue:"#4f9eff",   blueGlow:"rgba(79,158,255,0.35)",
@@ -688,6 +699,7 @@ const FEATURES = [
 
 /* ─── Main page ─────────────────────────────────────────── */
 export default function HomePage() {
+  const isMobile = useIsMobile();
   return (
     <div style={{minHeight:"100vh",background:"transparent",overflow:"hidden"}}>
       <style>{HOME_CSS}</style>
@@ -769,7 +781,7 @@ export default function HomePage() {
             background:"radial-gradient(circle at 100% 0%,rgba(79,158,255,0.07),transparent 70%)",pointerEvents:"none"}}/>
           <h2 style={{fontSize:22,fontWeight:900,color:"#f4f8ff",margin:"0 0 16px",
             fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>Built for football fans who love numbers</h2>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,fontFamily:"'Inter',sans-serif"}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:20,fontFamily:"'Inter',sans-serif"}}>
             {[
               ["Planning FPL transfers?",C.blue,"Get data-driven squad recommendations with FDR, form ratings and projected points for the next 6 gameweeks."],
               ["Want to bet smarter?",C.gold,"Our Poisson + Elo model identifies where bookmakers are mispriced. See model vs implied odds edge for every fixture."],

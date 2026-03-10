@@ -29,6 +29,17 @@ const UNIFIED = {
   label:"",
 };
 
+/* ── Responsive hook ─────────────────────────────────────── */
+function useWindowWidth() {
+  const [w, setW] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  React.useEffect(() => {
+    const handler = () => setW(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return w;
+}
+
 const LEAGUE_LABELS = {
   epl:"Premier League", laliga:"La Liga", bundesliga:"Bundesliga",
   seriea:"Serie A", ligue1:"Ligue 1",
@@ -362,7 +373,7 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
       </div>
 
       {/* ── VS SPLIT */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 170px 1fr",gap:0,minWidth:0}}>
+      <div style={{display:isMobile?"flex":"grid",flexDirection:"column",gridTemplateColumns:isMobile?"1fr":"1fr 170px 1fr",gap:0,minWidth:0,overflowX:"hidden"}}>
 
         {/* HOME */}
         <div style={{padding:"16px 14px",background:`linear-gradient(160deg,${T.homeCol}07 0%,transparent 70%)`,minWidth:0,overflow:"hidden"}}>
@@ -1119,7 +1130,7 @@ const TitleRaceChart = ({ data, cfg, T }) => {
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {contenders.map((row, i) => (
-          <div key={row.team_name} style={{display:"grid",gridTemplateColumns:"140px 1fr 52px",alignItems:"center",gap:12}}>
+          <div key={row.team_name} style={{display:"grid",gridTemplateColumns:"110px 1fr 46px",alignItems:"center",gap:8}}>
             <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
               {row.logo
                 ? <img src={row.logo} alt="" style={{width:20,height:20,objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
@@ -1172,7 +1183,7 @@ const PointsProjection = ({ data, cfg, T }) => {
           const proj = row.avg_pts || row.avg_points || 0;
           const delta = proj - curr;
           return (
-            <div key={row.team_name} style={{display:"grid",gridTemplateColumns:"130px 1fr 90px",alignItems:"center",gap:12}}>
+            <div key={row.team_name} style={{display:"grid",gridTemplateColumns:"110px 1fr 80px",alignItems:"center",gap:8}}>
               <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
                 {row.logo
                   ? <img src={row.logo} alt="" style={{width:18,height:18,objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
@@ -1373,6 +1384,7 @@ const WhatIfPanel = ({ standings, league, T, onResult }) => {
    SEASON SIMULATOR TAB
 ══════════════════════════════════════════════════════════ */
 const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
+  const isMobile = useWindowWidth() < 640;
   const [simData,     setSimData]     = useState(null);
   const [simLoad,     setSimLoad]     = useState(true);
   const [simErr,      setSimErr]      = useState(null);
@@ -1539,7 +1551,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
 
       {/* ── View switcher */}
       {!loading && !simErr && (
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",overflowX:isMobile?"auto":"visible",paddingBottom:isMobile?4:0}}>
           <ViewBtn id="table"     icon="📊" label="Full Table" />
           <ViewBtn id="title"     icon="🏆" label="Title Race" />
           <ViewBtn id="points"    icon="📈" label="Points Projection" />
@@ -1645,8 +1657,8 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
                 onMouseLeave={()=>setHovered(null)}
                 style={{
                   display:"grid",
-                  gridTemplateColumns:"52px 1fr 70px 70px 70px 70px",
-                  alignItems:"center",gap:12,padding:"14px 16px",borderRadius:14,
+                  gridTemplateColumns:isMobile ? "40px 1fr 60px 60px" : "52px 1fr 70px 70px 70px 70px",
+                  alignItems:"center",gap:isMobile?8:12,padding:isMobile?"10px 12px":"14px 16px",borderRadius:14,
                   background: isWhatIfTeam ? "rgba(245,158,11,0.06)" : isHov ? "rgba(99,102,241,0.06)" : T.panel,
                   border:`1px solid ${isWhatIfTeam?"rgba(245,158,11,0.3)":zone?`${zone.color}22`:isHov?"rgba(99,102,241,0.25)":T.border}`,
                   transition:"all 0.15s",
@@ -1706,12 +1718,21 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
                   <ChancePill value={top4P} color="#f59e0b" label="Top 4"/>
                 </div>
 
-                {/* Relegation % */}
-                <div style={{textAlign:"center"}}>
+                {/* Relegation % — hidden on mobile */}
+                {!isMobile && <div style={{textAlign:"center"}}>
                   <ChancePill value={relegP}
                     color={relegP>40?"#ef4444":relegP>20?"#f97316":relegP>5?"#f59e0b":T.muted}
                     label="Rel %"/>
-                </div>
+                </div>}
+
+                {/* Avg Pos — hidden on mobile (shown inline) */}
+                {!isMobile && <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:16,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace"}}>
+                    {row.avg_position?.toFixed(1)}
+                  </div>
+                  <div style={{fontSize:8,color:T.muted,marginTop:2}}>Avg Pos</div>
+                  <ProbBar pct={(cfg.total-row.avg_position)/cfg.total*100} color="#6366f1"/>
+                </div>}
               </div>
             );
           })}
@@ -1747,6 +1768,7 @@ const BACKEND_LEAGUE = {
 };
 
 export default function PredictionsPage({league:propLeague,slugMap}){
+  const isMobile = useWindowWidth() < 640;
   const{league:paramLeague}=useParams();
   const navigate=useNavigate();
   const raw=paramLeague||propLeague||"premier-league";
@@ -1795,7 +1817,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
       <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:"0 24px 64px"}}>
 
         {/* ══ HEADER ══════════════════════════════════════════ */}
-        <div style={{padding:"28px 0 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+        <div style={{padding:isMobile?"16px 0 14px":"28px 0 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
 
           {/* Title block */}
           <div style={{display:"flex",alignItems:"center",gap:16}}>
@@ -1850,7 +1872,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         {/* ══ QUICK STATS ROW ════════════════════════════════ */}
         {!predLoad&&matches.length>0&&(
           <div style={{
-            display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,
+            display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(auto-fit,minmax(120px,1fr))",gap:10,
             marginBottom:24,
           }}>
             {[
@@ -1916,7 +1938,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
         {/* ══ PREDICTIONS TAB ════════════════════════════════ */}
         {tab==="predictions"&&(
-          <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:20,alignItems:"start"}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 300px",gap:20,alignItems:"start"}}>
             <div>
               {/* Sort controls */}
               {!predLoad&&!predErr&&matches.length>0&&(

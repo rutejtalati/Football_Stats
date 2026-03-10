@@ -171,6 +171,67 @@ function useActiveColor() {
 // NAVBAR v8 — PART 3: JSX / Render
 // ═══════════════════════════════════════════════
 
+
+/* ══════════════════════════════════════════════
+   BOTTOM TAB BAR — mobile only
+══════════════════════════════════════════════ */
+const BOTTOM_TABS = [
+  { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "rgba(255,255,255,0.7)", end: true },
+  { to: "/predictions/premier-league", label: "Predict", Icon: Icons.Predict, color: "#60a5fa" },
+  { to: "/best-team",                  label: "Fantasy", Icon: Icons.Fantasy, color: "#28d97a" },
+  { to: "/news",                       label: "News",    Icon: Icons.News,    color: "#f472b6" },
+  { to: "/games",                      label: "Games",   Icon: Icons.Games,   color: "#fb923c" },
+];
+
+function BottomTabBar() {
+  const location = useLocation();
+  const fplActive = useFplActive();
+
+  return (
+    <nav style={{
+      display: "flex",
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 999,
+      background: "rgba(10,11,16,0.96)",
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      padding: "6px 0 max(6px, env(safe-area-inset-bottom))",
+      justifyContent: "space-around",
+    }} className="sn-bottom-tabs">
+      {BOTTOM_TABS.map(item => {
+        const active = item.fplGroup ? fplActive
+          : item.end ? location.pathname === item.to
+          : location.pathname.startsWith(item.to);
+        return (
+          <NavLink key={item.to} to={item.to} end={item.end}
+            style={{
+              display: "flex", flexDirection: "column", alignItems: "center",
+              gap: 3, padding: "4px 12px", borderRadius: 10,
+              color: active ? item.color : "rgba(255,255,255,0.35)",
+              textDecoration: "none", transition: "all .15s",
+              minWidth: 52,
+            }}>
+            <div style={{
+              padding: 6, borderRadius: 10,
+              background: active ? `${item.color}18` : "transparent",
+              transition: "all .15s",
+            }}>
+              <item.Icon />
+            </div>
+            <span style={{ fontSize: 9, fontWeight: active ? 800 : 600, letterSpacing: "0.02em" }}>
+              {item.label}
+            </span>
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -359,6 +420,9 @@ export default function Navbar() {
           aria-hidden="true"
         />
       )}
+      {/* ── Bottom tab bar — mobile only */}
+      <BottomTabBar />
+
     </>
   );
 }

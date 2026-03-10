@@ -9,6 +9,17 @@ import {
   getLeagueInjuries, getStandings,
 } from "../api/api";
 
+
+/* ── Responsive hook ─────────────────────────────────────── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  React.useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
 // ─── helpers ──────────────────────────────────────────────
 function sn(n) {
   if (!n) return "?";
@@ -364,6 +375,7 @@ function PosRadarCard({pos,player,vals,color}) {
 //  MAIN PAGE
 // ════════════════════════════════════════════════════════════
 export default function GameweekInsightsPage() {
+  const isMobile = useIsMobile();
   const [gwInfo, setGwInfo]          = useState({ id:null, name:"GW?", label:"Live" });
   const [gwWindow, setGwWindow]      = useState([]);
   const [players, setPlayers]        = useState([]);

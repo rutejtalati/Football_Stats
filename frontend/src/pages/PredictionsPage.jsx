@@ -1120,15 +1120,11 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
       {tab==="scorers"&&<ScorersWidget league={league}/>}
 
       <style>{`
-        ::-webkit-scrollbar       { width:4px; height:4px }
-        ::-webkit-scrollbar-track { background:transparent }
-        ::-webkit-scrollbar-thumb { background:#333; border-radius:2px }
-        input[type=range] { height:3px; }
-        input[type=range]::-webkit-slider-track { background:#333; border-radius:2px; }
-        input[type=range]::-webkit-slider-thumb { width:14px; height:14px; background:#fff; border-radius:50%; cursor:pointer; }
-        @media(max-width:900px){
-          .pred-grid { grid-template-columns:1fr !important; }
-        }
+        ::-webkit-scrollbar{width:4px;height:4px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+        .pred-grid-responsive{grid-template-columns:1fr !important}
+        @media(max-width:900px){.pred-grid{grid-template-columns:1fr !important}}
       `}</style>
     </div>
   </div>

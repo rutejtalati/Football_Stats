@@ -8,54 +8,34 @@ import {
 } from "../api/api";
 
 /* ══════════════════════════════════════════════════════════
-   TASK 1 — LEAGUE THEMES
+   UNIFIED THEME — One black-glass design across all leagues
+   Home: #FF6B35 (vivid orange)  Away: #4CC9F0 (electric cyan)
 ══════════════════════════════════════════════════════════ */
-const THEMES = {
-  // EPL — England flag: red (#C8102E) + navy (#012169) + white
-  epl: {
-    bg:"#060a12",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(200,16,46,0.14) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(1,33,105,0.18) 0%,transparent 55%)",
-    accent:"#C8102E", accent2:"#4a7fff", mid:"#012169",
-    panel:"rgba(6,10,18,0.96)", border:"rgba(200,16,46,0.28)", borderHi:"rgba(200,16,46,0.6)",
-    text:"#f0f4ff", muted:"#6070a0", faint:"rgba(200,16,46,0.10)",
-    homeCol:"#C8102E", awayCol:"#4a7fff", label:"Premier League",
-  },
-  // La Liga — Spain flag: red (#AA151B) + gold (#F1BF00)
-  laliga: {
-    bg:"#0e0700",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(241,191,0,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(170,21,27,0.14) 0%,transparent 55%)",
-    accent:"#F1BF00", accent2:"#AA151B", mid:"#e07800",
-    panel:"rgba(16,9,0,0.96)", border:"rgba(241,191,0,0.25)", borderHi:"rgba(241,191,0,0.55)",
-    text:"#fff8e0", muted:"#8a7040", faint:"rgba(241,191,0,0.10)",
-    homeCol:"#F1BF00", awayCol:"#AA151B", label:"La Liga",
-  },
-  // Serie A — Italy flag: green (#009246) + red (#CE2B37) + white
-  seriea: {
-    bg:"#030d06",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(0,146,70,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(206,43,55,0.14) 0%,transparent 55%)",
-    accent:"#00b856", accent2:"#CE2B37", mid:"#007a38",
-    panel:"rgba(3,12,6,0.96)", border:"rgba(0,146,70,0.28)", borderHi:"rgba(0,184,86,0.55)",
-    text:"#e8fff2", muted:"#3a7055", faint:"rgba(0,146,70,0.10)",
-    homeCol:"#00b856", awayCol:"#CE2B37", label:"Serie A",
-  },
-  // Bundesliga — Germany flag: black (#000) + red (#DD0000) + gold (#FFCE00)
-  bundesliga: {
-    bg:"#080600",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(255,206,0,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(221,0,0,0.14) 0%,transparent 55%)",
-    accent:"#FFCE00", accent2:"#DD0000", mid:"#e08800",
-    panel:"rgba(12,10,0,0.96)", border:"rgba(255,206,0,0.22)", borderHi:"rgba(255,206,0,0.52)",
-    text:"#fffbe0", muted:"#8a7a30", faint:"rgba(255,206,0,0.08)",
-    homeCol:"#FFCE00", awayCol:"#DD0000", label:"Bundesliga",
-  },
-  ligue1: {
-    bg:"#020510",
-    grad:"radial-gradient(ellipse at 20% 20%,rgba(0,35,149,0.18) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(237,41,57,0.14) 0%,transparent 55%)",
-    accent:"#4d7fff", accent2:"#ED2939", mid:"#002395",
-    panel:"rgba(2,5,16,0.96)", border:"rgba(0,35,149,0.30)", borderHi:"rgba(77,127,255,0.55)",
-    text:"#eef2ff", muted:"#4050a0", faint:"rgba(0,35,149,0.12)",
-    homeCol:"#4d7fff", awayCol:"#ED2939", label:"Ligue 1",
-  },
+const UNIFIED = {
+  bg:"#000000",
+  grad:"radial-gradient(ellipse at 15% 15%,rgba(255,107,53,0.08) 0%,transparent 50%),radial-gradient(ellipse at 85% 85%,rgba(76,201,240,0.07) 0%,transparent 50%)",
+  accent:"#FF6B35",       // orange — primary highlight, FAV, confidence
+  accent2:"#4CC9F0",      // cyan — secondary, away team, negative edge
+  mid:"rgba(255,255,255,0.5)",
+  panel:"rgba(255,255,255,0.04)",
+  border:"rgba(255,255,255,0.08)",
+  borderHi:"rgba(255,107,53,0.4)",
+  text:"rgba(255,255,255,0.92)",
+  muted:"rgba(255,255,255,0.3)",
+  faint:"rgba(255,255,255,0.04)",
+  homeCol:"#FF6B35",      // orange for home team throughout
+  awayCol:"#4CC9F0",      // cyan for away team throughout
+  label:"",               // filled per league below
 };
+
+const LEAGUE_LABELS = {
+  epl:"Premier League", laliga:"La Liga", bundesliga:"Bundesliga",
+  seriea:"Serie A", ligue1:"Ligue 1",
+};
+
+const THEMES = Object.fromEntries(
+  Object.entries(LEAGUE_LABELS).map(([code,label])=>[code,{...UNIFIED,label}])
+);
 
 const LEAGUE_TABS = [
   {code:"epl",slug:"premier-league",label:"Premier League"},
@@ -373,35 +353,35 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
       </div>
 
       {/* ── VS SPLIT */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 140px 1fr",gap:0}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 170px 1fr",gap:0,minWidth:0}}>
 
         {/* HOME */}
-        <div style={{padding:"18px 16px",background:`linear-gradient(160deg,${T.homeCol}07 0%,transparent 70%)`}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-            {match.home_logo&&<div style={{width:38,height:38,borderRadius:12,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
-              <img src={match.home_logo} alt="" style={{width:28,height:28,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
+        <div style={{padding:"16px 14px",background:`linear-gradient(160deg,${T.homeCol}07 0%,transparent 70%)`,minWidth:0,overflow:"hidden"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+            {match.home_logo&&<div style={{width:36,height:36,borderRadius:11,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
+              <img src={match.home_logo} alt="" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
             </div>}
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:700,color:fav==="home"?T.homeCol:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-0.01em"}}>{match.home_team}</div>
+              <div style={{fontSize:13,fontWeight:700,color:fav==="home"?T.homeCol:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-0.01em"}}>{match.home_team}</div>
               <div style={{fontSize:9,color:"rgba(255,255,255,0.25)",marginTop:1,fontFamily:"'Inter',sans-serif",letterSpacing:"0.08em"}}>HOME</div>
             </div>
-            {fav==="home"&&<span style={{fontSize:8,fontWeight:700,color:T.accent,background:`${T.accent}18`,border:`1px solid ${T.accent}35`,padding:"2px 7px",borderRadius:999,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>FAV</span>}
+            {fav==="home"&&<span style={{fontSize:7,fontWeight:700,color:T.accent,background:`${T.accent}18`,border:`1px solid ${T.accent}35`,padding:"2px 6px",borderRadius:999,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>FAV</span>}
           </div>
           {/* Form */}
-          <div style={{display:"flex",gap:4,marginBottom:14}}>{hForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
+          <div style={{display:"flex",gap:3,marginBottom:12,flexWrap:"wrap"}}>{hForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
           {/* Donuts */}
-          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14}}>
-            <MiniDonut value={xgH} max={3} color={T.homeCol} size={54} label="xG"/>
-            <MiniDonut value={hS.shots_pg||2} max={20} color={T.homeCol} size={54} label="Shots"/>
-            <MiniDonut value={hS.possession_avg||50} max={100} color={T.homeCol} size={54} label="Poss"/>
+          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:12}}>
+            <MiniDonut value={xgH} max={3} color={T.homeCol} size={48} label="xG"/>
+            <MiniDonut value={hS.shots_pg||2} max={20} color={T.homeCol} size={48} label="Shots"/>
+            <MiniDonut value={hS.possession_avg||50} max={100} color={T.homeCol} size={48} label="Poss"/>
           </div>
           {/* Win prob bar */}
           <div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
-              <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>Win probability</span>
-              <span style={{fontSize:16,fontWeight:700,color:T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(hp*100)}%</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+              <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>Win prob</span>
+              <span style={{fontSize:15,fontWeight:700,color:T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(hp*100)}%</span>
             </div>
-            <div style={{height:5,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
+            <div style={{height:4,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
               <div style={{width:`${Math.round(hp*100)}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.homeCol}aa,${T.homeCol})`,boxShadow:`0 0 8px ${T.homeCol}50`,transition:"width 0.6s cubic-bezier(.22,1,.36,1)"}}/>
             </div>
           </div>
@@ -444,29 +424,29 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
         </div>
 
         {/* AWAY */}
-        <div style={{padding:"18px 16px",background:`linear-gradient(200deg,${T.awayCol}07 0%,transparent 70%)`}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexDirection:"row-reverse"}}>
-            {match.away_logo&&<div style={{width:38,height:38,borderRadius:12,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
-              <img src={match.away_logo} alt="" style={{width:28,height:28,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
+        <div style={{padding:"16px 14px",background:`linear-gradient(200deg,${T.awayCol}07 0%,transparent 70%)`,minWidth:0,overflow:"hidden"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexDirection:"row-reverse"}}>
+            {match.away_logo&&<div style={{width:36,height:36,borderRadius:11,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
+              <img src={match.away_logo} alt="" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
             </div>}
             <div style={{flex:1,minWidth:0,textAlign:"right"}}>
-              <div style={{fontSize:14,fontWeight:700,color:fav==="away"?T.awayCol:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-0.01em"}}>{match.away_team}</div>
+              <div style={{fontSize:13,fontWeight:700,color:fav==="away"?T.awayCol:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-0.01em"}}>{match.away_team}</div>
               <div style={{fontSize:9,color:"rgba(255,255,255,0.25)",marginTop:1,fontFamily:"'Inter',sans-serif",letterSpacing:"0.08em"}}>AWAY</div>
             </div>
-            {fav==="away"&&<span style={{fontSize:8,fontWeight:700,color:T.accent2,background:`${T.accent2}18`,border:`1px solid ${T.accent2}35`,padding:"2px 7px",borderRadius:999,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>FAV</span>}
+            {fav==="away"&&<span style={{fontSize:7,fontWeight:700,color:T.accent2,background:`${T.accent2}18`,border:`1px solid ${T.accent2}35`,padding:"2px 6px",borderRadius:999,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>FAV</span>}
           </div>
-          <div style={{display:"flex",gap:4,marginBottom:14,justifyContent:"flex-end"}}>{aForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
-          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,justifyContent:"flex-end"}}>
-            <MiniDonut value={aS.possession_avg||50} max={100} color={T.awayCol} size={54} label="Poss"/>
-            <MiniDonut value={aS.shots_pg||2} max={20} color={T.awayCol} size={54} label="Shots"/>
-            <MiniDonut value={xgA} max={3} color={T.awayCol} size={54} label="xG"/>
+          <div style={{display:"flex",gap:3,marginBottom:12,flexWrap:"wrap",justifyContent:"flex-end"}}>{aForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
+          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:12,justifyContent:"flex-end"}}>
+            <MiniDonut value={aS.possession_avg||50} max={100} color={T.awayCol} size={48} label="Poss"/>
+            <MiniDonut value={aS.shots_pg||2} max={20} color={T.awayCol} size={48} label="Shots"/>
+            <MiniDonut value={xgA} max={3} color={T.awayCol} size={48} label="xG"/>
           </div>
           <div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
-              <span style={{fontSize:16,fontWeight:700,color:T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(ap*100)}%</span>
-              <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>Win probability</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+              <span style={{fontSize:15,fontWeight:700,color:T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(ap*100)}%</span>
+              <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>Win prob</span>
             </div>
-            <div style={{height:5,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
+            <div style={{height:4,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
               <div style={{width:`${Math.round(ap*100)}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.awayCol},${T.awayCol}aa)`,boxShadow:`0 0 8px ${T.awayCol}50`,transition:"width 0.6s cubic-bezier(.22,1,.36,1)",marginLeft:"auto"}}/>
             </div>
           </div>
@@ -1349,6 +1329,17 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
 /* ══════════════════════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════════════════════ */
+
+// Maps frontend league code → backend API code
+// Add/adjust these if your backend uses different slugs
+const BACKEND_LEAGUE = {
+  epl:        "epl",
+  laliga:     "laliga",
+  bundesliga: "bl1",      // ← backend likely wants "bl1" not "bundesliga"
+  seriea:     "seriea",
+  ligue1:     "ligue1",
+};
+
 export default function PredictionsPage({league:propLeague,slugMap}){
   const{league:paramLeague}=useParams();
   const navigate=useNavigate();
@@ -1370,8 +1361,9 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   },[]);
 
   useEffect(()=>{
-    cache("stn_v6_"+league,()=>getStandings(league),setStandings,setStandLoad,setStandErr);
-    cache("pred_v6_"+league,()=>getLeaguePredictions(league),setMatches,setPredLoad,setPredErr);
+    const apiLeague = BACKEND_LEAGUE[league] || league;
+    cache("stn_v6_"+league,()=>getStandings(apiLeague),setStandings,setStandLoad,setStandErr);
+    cache("pred_v6_"+league,()=>getLeaguePredictions(apiLeague),setMatches,setPredLoad,setPredErr);
     setSelectedMatch(null);
   },[league,cache]);
 
@@ -1428,18 +1420,17 @@ export default function PredictionsPage({league:propLeague,slugMap}){
           <nav style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             {LEAGUE_TABS.map(({code,slug,label})=>{
               const active=league===code;
-              const LT=THEMES[code];
               return(
                 <NavLink key={code} to={`/predictions/${slug}`} style={{
                   display:"flex",alignItems:"center",gap:6,
                   padding:"7px 14px",borderRadius:999,fontSize:11,fontWeight:600,
                   textDecoration:"none",whiteSpace:"nowrap",
-                  border:`1px solid ${active?LT.accent+"60":"rgba(255,255,255,0.1)"}`,
-                  color:active?LT.accent:"rgba(255,255,255,0.4)",
-                  background:active?`${LT.accent}14`:"rgba(255,255,255,0.04)",
+                  border:`1px solid ${active?"rgba(255,107,53,0.5)":"rgba(255,255,255,0.1)"}`,
+                  color:active?"#FF6B35":"rgba(255,255,255,0.4)",
+                  background:active?"rgba(255,107,53,0.1)":"rgba(255,255,255,0.04)",
                   backdropFilter:"blur(10px)",
                   transition:"all 0.18s cubic-bezier(.22,1,.36,1)",
-                  boxShadow:active?`0 0 12px ${LT.accent}25`:"none",
+                  boxShadow:active?"0 0 14px rgba(255,107,53,0.2)":"none",
                   fontFamily:"'Inter',sans-serif",letterSpacing:"0.01em",
                 }}>
                   <LeagueFlag code={code} size={13}/>
@@ -1566,7 +1557,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
               {/* Match cards grid */}
               {!predLoad&&!predErr&&(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(520px,1fr))",gap:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(480px,1fr))",gap:12}}>
                   {sorted.map((m,i)=>(
                     <MatchCard key={(m.home_team||"")+(m.away_team||"")+i} match={m} T={T}
                       onSelect={()=>setSelectedMatch(m)}

@@ -6,8 +6,8 @@ import { useState, useEffect, useCallback } from "react";
 
 /* ── Responsive hook ─────────────────────────────────────── */
 function useIsMobile(bp = 640) {
-  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  React.useEffect(() => {
+  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  useEffect(() => {
     const h = () => setM(window.innerWidth < bp);
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);

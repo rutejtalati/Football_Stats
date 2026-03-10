@@ -31,8 +31,8 @@ const UNIFIED = {
 
 /* ── Responsive hook ─────────────────────────────────────── */
 function useWindowWidth() {
-  const [w, setW] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
-  React.useEffect(() => {
+  const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  useEffect(() => {
     const handler = () => setW(window.innerWidth);
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);

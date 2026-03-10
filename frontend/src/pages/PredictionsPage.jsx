@@ -8,24 +8,25 @@ import {
 } from "../api/api";
 
 /* ══════════════════════════════════════════════════════════
-   UNIFIED THEME — One black-glass design across all leagues
-   Home: #FF6B35 (vivid orange)  Away: #4CC9F0 (electric cyan)
+   UNIFIED THEME — Professional monochrome + accent system
+   Home: #E8F4FD (cool white-blue)  Away: #10B981 (emerald)
+   Accent: #6366F1 (indigo) for highlights / selected states
 ══════════════════════════════════════════════════════════ */
 const UNIFIED = {
   bg:"#000000",
-  grad:"radial-gradient(ellipse at 15% 15%,rgba(255,107,53,0.08) 0%,transparent 50%),radial-gradient(ellipse at 85% 85%,rgba(76,201,240,0.07) 0%,transparent 50%)",
-  accent:"#FF6B35",       // orange — primary highlight, FAV, confidence
-  accent2:"#4CC9F0",      // cyan — secondary, away team, negative edge
-  mid:"rgba(255,255,255,0.5)",
+  grad:"radial-gradient(ellipse at 20% 10%,rgba(99,102,241,0.07) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(16,185,129,0.05) 0%,transparent 55%)",
+  accent:"#818CF8",        // soft indigo — selected, FAV, active highlights
+  accent2:"#F87171",       // soft red — relegation, negative
+  mid:"rgba(255,255,255,0.55)",
   panel:"rgba(255,255,255,0.04)",
   border:"rgba(255,255,255,0.08)",
-  borderHi:"rgba(255,107,53,0.4)",
+  borderHi:"rgba(129,140,248,0.35)",
   text:"rgba(255,255,255,0.92)",
   muted:"rgba(255,255,255,0.3)",
   faint:"rgba(255,255,255,0.04)",
-  homeCol:"#FF6B35",      // orange for home team throughout
-  awayCol:"#4CC9F0",      // cyan for away team throughout
-  label:"",               // filled per league below
+  homeCol:"#E2E8F0",        // near-white slate — home team (neutral, clean)
+  awayCol:"#10B981",        // emerald green — away team (professional, distinct)
+  label:"",
 };
 
 const LEAGUE_LABELS = {
@@ -145,18 +146,26 @@ const MiniRadar=({vals,color,size=60})=>{
 
 /* ─── iOS Versus Bar ─────────────────────────────────────── */
 const VersusBar=({label,hv,av,T,fmtFn})=>{
-  const h=parseFloat(hv)||0,a=parseFloat(av)||0,tot=h+a||1,hp=h/tot*100,ap=a/tot*100;
-  const fmt=fmtFn||(v=>typeof v==="number"?v.toFixed(1):v);
+  const hNull=hv==null||hv===false,aNull=av==null||av===false;
+  const h=hNull?0:parseFloat(hv)||0,a=aNull?0:parseFloat(av)||0;
+  const tot=h+a||1,hp=h/tot*100,ap=a/tot*100;
+  const fmt=fmtFn||(v=>v!=null?typeof v==="number"?v.toFixed(1):v:"—");
+  const noData=hNull&&aNull;
   return(
     <div style={{display:"flex",flexDirection:"column",gap:5}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:13,fontWeight:700,color:T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{fmt(h)}</span>
+        <span style={{fontSize:13,fontWeight:700,color:hNull?"rgba(255,255,255,0.18)":T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hNull?"—":fmt(h)}</span>
         <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-        <span style={{fontSize:13,fontWeight:700,color:T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{fmt(a)}</span>
+        <span style={{fontSize:13,fontWeight:700,color:aNull?"rgba(255,255,255,0.18)":T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{aNull?"—":fmt(a)}</span>
       </div>
       <div style={{display:"flex",height:5,borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.05)"}}>
-        <div style={{flex:hp,background:`linear-gradient(90deg,${T.homeCol}cc,${T.homeCol})`,borderRadius:"999px 0 0 999px",transition:"flex 0.4s ease"}}/>
-        <div style={{flex:ap,background:`linear-gradient(90deg,${T.awayCol},${T.awayCol}cc)`,borderRadius:"0 999px 999px 0",transition:"flex 0.4s ease"}}/>
+        {noData
+          ? <div style={{flex:1,background:"rgba(255,255,255,0.06)",borderRadius:999}}/>
+          : <>
+              <div style={{flex:hp,background:`linear-gradient(90deg,${T.homeCol}99,${T.homeCol})`,borderRadius:"999px 0 0 999px",transition:"flex 0.4s ease"}}/>
+              <div style={{flex:ap,background:`linear-gradient(90deg,${T.awayCol},${T.awayCol}99)`,borderRadius:"0 999px 999px 0",transition:"flex 0.4s ease"}}/>
+            </>
+        }
       </div>
     </div>
   );
@@ -372,8 +381,8 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
           {/* Donuts */}
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:12}}>
             <MiniDonut value={xgH} max={3} color={T.homeCol} size={48} label="xG"/>
-            <MiniDonut value={hS.shots_pg||2} max={20} color={T.homeCol} size={48} label="Shots"/>
-            <MiniDonut value={hS.possession_avg||50} max={100} color={T.homeCol} size={48} label="Poss"/>
+            <MiniDonut value={hS.shots_pg>0?hS.shots_pg:0} max={20} color={T.homeCol} size={48} label="Shots"/>
+            <MiniDonut value={hS.possession_avg>0?hS.possession_avg:0} max={100} color={T.homeCol} size={48} label="Poss"/>
           </div>
           {/* Win prob bar */}
           <div>
@@ -437,8 +446,8 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
           </div>
           <div style={{display:"flex",gap:3,marginBottom:12,flexWrap:"wrap",justifyContent:"flex-end"}}>{aForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:12,justifyContent:"flex-end"}}>
-            <MiniDonut value={aS.possession_avg||50} max={100} color={T.awayCol} size={48} label="Poss"/>
-            <MiniDonut value={aS.shots_pg||2} max={20} color={T.awayCol} size={48} label="Shots"/>
+            <MiniDonut value={aS.possession_avg>0?aS.possession_avg:0} max={100} color={T.awayCol} size={48} label="Poss"/>
+            <MiniDonut value={aS.shots_pg>0?aS.shots_pg:0} max={20} color={T.awayCol} size={48} label="Shots"/>
             <MiniDonut value={xgA} max={3} color={T.awayCol} size={48} label="xG"/>
           </div>
           <div>
@@ -478,12 +487,43 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
                   <span style={{fontSize:12,fontWeight:700,color:T.awayCol,fontFamily:"'Inter',sans-serif"}}>{(match.away_team||"").split(" ").pop()}</span>
                 </div>
                 {[
-                  {l:"Goals / Game",hv:((hS.scored_home||0)+(hS.scored_away||0))/hP,av:((aS.scored_home||0)+(aS.scored_away||0))/aP,fmt:v=>v.toFixed(2)},
-                  {l:"xG",hv:xgH,av:xgA,fmt:v=>v.toFixed(2)},
-                  {l:"Shots / Game",hv:hS.shots_pg||0,av:aS.shots_pg||0,fmt:v=>v.toFixed(1)},
-                  {l:"On Target %",hv:hS.shots_on_target_pct||0,av:aS.shots_on_target_pct||0,fmt:v=>v.toFixed(0)+"%"},
-                  {l:"Possession",hv:hS.possession_avg||50,av:aS.possession_avg||50,fmt:v=>v+"%"},
-                  {l:"Pass Accuracy",hv:hS.pass_accuracy||0,av:aS.pass_accuracy||0,fmt:v=>v.toFixed(0)+"%"},
+                  {
+                    l:"Goals / Game",
+                    hv:hP>1?((hS.scored_home||0)+(hS.scored_away||0))/hP:null,
+                    av:aP>1?((aS.scored_home||0)+(aS.scored_away||0))/aP:null,
+                    fmt:v=>v!=null?v.toFixed(2):"—"
+                  },
+                  {l:"xG",hv:xgH||null,av:xgA||null,fmt:v=>v!=null?v.toFixed(2):"—"},
+                  {
+                    l:"Shots / Game",
+                    hv:hS.shots_pg>0?hS.shots_pg:null,
+                    av:aS.shots_pg>0?aS.shots_pg:null,
+                    fmt:v=>v!=null?v.toFixed(1):"—"
+                  },
+                  {
+                    l:"On Target %",
+                    hv:hS.shots_on_target_pct>0?hS.shots_on_target_pct:null,
+                    av:aS.shots_on_target_pct>0?aS.shots_on_target_pct:null,
+                    fmt:v=>v!=null?v.toFixed(0)+"%":"—"
+                  },
+                  {
+                    l:"Possession",
+                    hv:hS.possession_avg>0&&hS.possession_avg!==50?hS.possession_avg:null,
+                    av:aS.possession_avg>0&&aS.possession_avg!==50?aS.possession_avg:null,
+                    fmt:v=>v!=null?v+"%":"—"
+                  },
+                  {
+                    l:"Pass Accuracy",
+                    hv:hS.pass_accuracy>0?hS.pass_accuracy:null,
+                    av:aS.pass_accuracy>0?aS.pass_accuracy:null,
+                    fmt:v=>v!=null?v.toFixed(0)+"%":"—"
+                  },
+                  {
+                    l:"Clean Sheets",
+                    hv:hS.clean_sheets!=null?hS.clean_sheets:null,
+                    av:aS.clean_sheets!=null?aS.clean_sheets:null,
+                    fmt:v=>v!=null?String(v):"—"
+                  },
                 ].map(({l,hv,av,fmt})=><VersusBar key={l} label={l} hv={hv} av={av} T={T} fmtFn={fmt}/>)}
               </div>
             )}
@@ -1084,20 +1124,42 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
     } catch {}
     getSeasonSimulation(league)
       .then(raw => {
-        // raw = { "TeamName": { avg_position, title_prob, top4_prob, relegation_prob }, ... }
         const rows = Object.entries(raw).map(([name, d]) => ({
-          team_name:      name,
-          avg_position:   parseFloat(d.avg_position)   || 0,
-          title_prob:     parseFloat(d.title_prob)     || 0,
-          top4_prob:      parseFloat(d.top4_prob)      || 0,
-          relegation_prob:parseFloat(d.relegation_prob)|| 0,
+          team_name:       name,
+          avg_position:    parseFloat(d.avg_position)    || 0,
+          title_prob:      parseFloat(d.title_prob)      || 0,
+          top4_prob:       parseFloat(d.top4_prob)       || 0,
+          relegation_prob: parseFloat(d.relegation_prob) || 0,
         }));
         try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: rows, ts: Date.now() })); } catch {}
         setSimData(rows);
       })
-      .catch(e => setSimErr(e.message))
+      .catch(() => {
+        // Backend 404 — fall back to client-side Monte Carlo using live standings
+        if (standings && standings.length > 0) {
+          const cfg2 = ZONE_CONFIG[league] || ZONE_CONFIG.epl;
+          const gamesPlayed = standings[0]?.played || 20;
+          const totalGames = (cfg2.total - 1) * 2; // round-robin total games per team
+          const results = runMonteCarlo(standings, gamesPlayed, totalGames, 6000);
+          const rows = results.map(r => ({
+            team_name:       r.team_name,
+            avg_position:    r.simPos,
+            title_prob:      r.titlePct,
+            top4_prob:       r.top4Pct,
+            relegation_prob: r.relegPct,
+            logo:            r.logo,
+            currentPts:      r.points,
+            played:          r.played,
+            _clientSide:     true,
+          }));
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: rows, ts: Date.now() })); } catch {}
+          setSimData(rows);
+        } else {
+          setSimErr("Waiting for standings data… try switching to the Table tab first.");
+        }
+      })
       .finally(() => setSimLoad(false));
-  }, [league]);
+  }, [league, standings]);
 
   // Merge sim data with live standings for logos + current pts + played
   const merged = useMemo(() => {

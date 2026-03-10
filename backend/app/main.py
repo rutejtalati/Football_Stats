@@ -460,6 +460,9 @@ def get_fixture_stats(fixture_id:int): return api_get("/fixtures/statistics",{"f
 
 @app.get("/api/simulate/{league}")
 def simulate_league(league:str):
+    # Ensure bundesliga is supported — season_simulator must also know it
+    if league not in LEAGUE_IDS:
+        raise HTTPException(404, f"Unknown league: {league}")
     try: return {"league":league,"results":monte_carlo_league(league)}
     except ValueError as e: raise HTTPException(404,str(e))
 

@@ -107,29 +107,195 @@ function buildProbs(xgH,xgA){let pH=0,pD=0,pA=0,topScore="1-0",topP=0;for(let h=
 /* ─── League Flag ────────────────────────────────────────── */
 const LeagueFlag=({code,size=18})=>{const h=Math.round(size*.72);if(code==="epl")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="13" fill="#012169"/><path d="M0 0L18 13M18 0L0 13" stroke="#fff" strokeWidth="2.6"/><path d="M0 0L18 13M18 0L0 13" stroke="#C8102E" strokeWidth="1.6"/><path d="M9 0V13M0 6.5H18" stroke="#fff" strokeWidth="4.3"/><path d="M9 0V13M0 6.5H18" stroke="#C8102E" strokeWidth="2.6"/></svg>;if(code==="laliga")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="3" fill="#c60b1e"/><rect y="3" width="18" height="7" fill="#ffc400"/><rect y="10" width="18" height="3" fill="#c60b1e"/></svg>;if(code==="bundesliga")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="4.3" fill="#000"/><rect y="4.3" width="18" height="4.3" fill="#DD0000"/><rect y="8.6" width="18" height="4.4" fill="#FFCE00"/></svg>;if(code==="seriea")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#009246"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ce2b37"/></svg>;if(code==="ligue1")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#002395"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>;return null;};
 
-/* ─── Form Pip ───────────────────────────────────────────── */
-const FormPip=({r,T})=>{const s={W:{bg:`${T.accent}22`,c:T.accent,b:`${T.accent}55`},D:{bg:"rgba(255,255,255,0.06)",c:T.muted,b:"rgba(255,255,255,0.12)"},L:{bg:`${T.accent2}18`,c:T.accent2,b:`${T.accent2}40`}}[r]||{bg:"rgba(255,255,255,0.06)",c:T.muted,b:"rgba(255,255,255,0.12)"};return<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,borderRadius:5,fontSize:9,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",background:s.bg,color:s.c,border:`1px solid ${s.b}`}}>{r}</span>;};
+/* ─── iOS Form Pip ───────────────────────────────────────── */
+const FormPip=({r,T})=>{
+  const s={
+    W:{bg:`${T.accent}28`,c:T.accent,b:`${T.accent}60`,shadow:`0 0 8px ${T.accent}40`},
+    D:{bg:"rgba(255,255,255,0.08)",c:"rgba(255,255,255,0.5)",b:"rgba(255,255,255,0.15)",shadow:"none"},
+    L:{bg:`${T.accent2}20`,c:T.accent2,b:`${T.accent2}50`,shadow:`0 0 8px ${T.accent2}30`},
+  }[r]||{bg:"rgba(255,255,255,0.06)",c:"rgba(255,255,255,0.3)",b:"rgba(255,255,255,0.10)",shadow:"none"};
+  return(
+    <span style={{
+      display:"inline-flex",alignItems:"center",justifyContent:"center",
+      width:22,height:22,borderRadius:7,fontSize:9,fontWeight:800,
+      fontFamily:"'SF Mono','JetBrains Mono',monospace",
+      background:s.bg,color:s.c,border:`1px solid ${s.b}`,
+      boxShadow:s.shadow,letterSpacing:"0.02em",
+    }}>{r}</span>
+  );
+};
 
-/* ─── Mini Donut ─────────────────────────────────────────── */
-const MiniDonut=({value,max=3,color,size=54,label})=>{const pct=Math.min(value/max,1),r=19,circ=2*Math.PI*r,dash=pct*circ,gap=circ-dash;return(<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><svg width={size} height={size} viewBox="0 0 52 52"><circle cx="26" cy="26" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5"/><circle cx="26" cy="26" r={r} fill="none" stroke={color} strokeWidth="5" strokeDasharray={`${dash} ${gap}`} strokeLinecap="round" transform="rotate(-90 26 26)" opacity=".85"/><text x="26" y="30" fontSize="11" fontWeight="900" fill={color} textAnchor="middle" fontFamily="'JetBrains Mono',monospace">{typeof value==="number"?value.toFixed(1):value}</text></svg><span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.3)",letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span></div>);};
+/* ─── iOS Mini Donut ─────────────────────────────────────── */
+const MiniDonut=({value,max=3,color,size=56,label})=>{
+  const pct=Math.min(value/max,1),r=20,circ=2*Math.PI*r,dash=pct*circ,gap=circ-dash;
+  return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+      <div style={{position:"relative",width:size,height:size}}>
+        <svg width={size} height={size} viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4.5"/>
+          <circle cx="26" cy="26" r={r} fill="none" stroke={color} strokeWidth="4.5"
+            strokeDasharray={`${dash} ${gap}`} strokeLinecap="round"
+            transform="rotate(-90 26 26)" opacity=".9"
+            style={{filter:`drop-shadow(0 0 4px ${color}60)`}}/>
+          <text x="26" y="30" fontSize="10.5" fontWeight="700" fill={color}
+            textAnchor="middle" fontFamily="'SF Mono','JetBrains Mono',monospace">
+            {typeof value==="number"?value.toFixed(1):value}
+          </text>
+        </svg>
+      </div>
+      <span style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.28)",letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+    </div>
+  );
+};
 
-/* ─── Mini Radar ─────────────────────────────────────────── */
-const MiniRadar=({vals,color,size=60})=>{const n=vals.length,cx=size/2,cy=size/2,r=size*.38;const pts=vals.map((v,i)=>{const a=(i/n)*Math.PI*2-Math.PI/2;return[cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v];});const poly=pts.map(([x,y])=>`${x},${y}`).join(" ");return(<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{[.33,.66,1].map((g,i)=><polygon key={i} points={Array.from({length:n}).map((_,j)=>{const a=(j/n)*Math.PI*2-Math.PI/2;return`${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;}).join(" ")} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth=".6"/>)}{Array.from({length:n}).map((_,i)=>{const a=(i/n)*Math.PI*2-Math.PI/2;return<line key={i} x1={cx} y1={cy} x2={cx+Math.cos(a)*r} y2={cy+Math.sin(a)*r} stroke="rgba(255,255,255,0.06)" strokeWidth=".5"/>;})}<polygon points={poly} fill={color} fillOpacity=".18" stroke={color} strokeWidth="1.5" strokeOpacity=".85"/>{pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r="2.5" fill={color} opacity=".9"/>)}</svg>);};
+/* ─── iOS Mini Radar ─────────────────────────────────────── */
+const MiniRadar=({vals,color,size=60})=>{
+  const n=vals.length,cx=size/2,cy=size/2,r=size*.38;
+  const pts=vals.map((v,i)=>{const a=(i/n)*Math.PI*2-Math.PI/2;return[cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v];});
+  const poly=pts.map(([x,y])=>`${x},${y}`).join(" ");
+  return(
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {[.33,.66,1].map((g,i)=><polygon key={i} points={Array.from({length:n}).map((_,j)=>{const a=(j/n)*Math.PI*2-Math.PI/2;return`${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;}).join(" ")} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth=".7"/>)}
+      {Array.from({length:n}).map((_,i)=>{const a=(i/n)*Math.PI*2-Math.PI/2;return<line key={i} x1={cx} y1={cy} x2={cx+Math.cos(a)*r} y2={cy+Math.sin(a)*r} stroke="rgba(255,255,255,0.05)" strokeWidth=".6"/>;  })}
+      <polygon points={poly} fill={color} fillOpacity=".15" stroke={color} strokeWidth="1.5" strokeOpacity=".9" style={{filter:`drop-shadow(0 0 3px ${color}50)`}}/>
+      {pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r="2.5" fill={color} opacity=".95"/>)}
+    </svg>
+  );
+};
 
-/* ─── Versus Bar ─────────────────────────────────────────── */
-const VersusBar=({label,hv,av,T,fmtFn})=>{const h=parseFloat(hv)||0,a=parseFloat(av)||0,tot=h+a||1,hp=h/tot*100,ap=a/tot*100,fmt=fmtFn||(v=>typeof v==="number"?v.toFixed(1):v);return(<div style={{display:"flex",flexDirection:"column",gap:4}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,fontWeight:800,color:T.homeCol,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(h)}</span><span style={{fontSize:9,fontWeight:700,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>{label}</span><span style={{fontSize:13,fontWeight:800,color:T.awayCol,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(a)}</span></div><div style={{display:"flex",height:4,borderRadius:2,overflow:"hidden",gap:1}}><div style={{flex:hp,background:T.homeCol,borderRadius:"2px 0 0 2px",opacity:.75}}/><div style={{flex:ap,background:T.awayCol,borderRadius:"0 2px 2px 0",opacity:.75}}/></div></div>);};
+/* ─── iOS Versus Bar ─────────────────────────────────────── */
+const VersusBar=({label,hv,av,T,fmtFn})=>{
+  const h=parseFloat(hv)||0,a=parseFloat(av)||0,tot=h+a||1,hp=h/tot*100,ap=a/tot*100;
+  const fmt=fmtFn||(v=>typeof v==="number"?v.toFixed(1):v);
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:13,fontWeight:700,color:T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{fmt(h)}</span>
+        <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+        <span style={{fontSize:13,fontWeight:700,color:T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{fmt(a)}</span>
+      </div>
+      <div style={{display:"flex",height:5,borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.05)"}}>
+        <div style={{flex:hp,background:`linear-gradient(90deg,${T.homeCol}cc,${T.homeCol})`,borderRadius:"999px 0 0 999px",transition:"flex 0.4s ease"}}/>
+        <div style={{flex:ap,background:`linear-gradient(90deg,${T.awayCol},${T.awayCol}cc)`,borderRadius:"0 999px 999px 0",transition:"flex 0.4s ease"}}/>
+      </div>
+    </div>
+  );
+};
 
-/* ─── Score Grid ─────────────────────────────────────────── */
-const ScoreGrid=({topScores,T})=>{if(!topScores?.length)return<div style={{padding:12,textAlign:"center",color:T.muted,fontSize:12}}>No score data</div>;const G=5,pm={};let mx=0;topScores.forEach(({score,prob})=>{const[hg,ag]=score.split("-").map(Number);if(hg<G&&ag<G){pm[`${hg}-${ag}`]=prob;if(prob>mx)mx=prob;}});return(<div><div style={{fontSize:9,fontWeight:800,color:T.muted,letterSpacing:"0.12em",marginBottom:8}}>CORRECT SCORE GRID (Home → Away ↓)</div><div style={{display:"grid",gridTemplateColumns:"18px repeat(5,1fr)",gap:3}}><div/>{[0,1,2,3,4].map(ag=><div key={ag} style={{textAlign:"center",fontSize:9,fontWeight:700,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{ag}</div>)}{[0,1,2,3,4].map(hg=>[<div key={"r"+hg} style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{hg}</div>,...[0,1,2,3,4].map(ag=>{const p=pm[`${hg}-${ag}`]||0,pct=Math.round(p*100),isTop=p===mx&&mx>0,alpha=mx>0?Math.min(p/mx,1):0;return<div key={`${hg}-${ag}`} style={{aspectRatio:"1",minHeight:26,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:5,background:`rgba(255,255,255,${(alpha*.22+.03).toFixed(2)})`,fontSize:9,fontWeight:800,color:isTop?T.accent:"rgba(255,255,255,0.65)",fontFamily:"'JetBrains Mono',monospace",outline:isTop?`1.5px solid ${T.accent}`:"none"}} title={`${hg}-${ag}: ${(p*100).toFixed(1)}%`}>{pct>0?`${pct}%`:""}</div>;})])}</div></div>);};
+/* ─── iOS Score Grid ─────────────────────────────────────── */
+const ScoreGrid=({topScores,T})=>{
+  if(!topScores?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12}}>No score data</div>;
+  const G=5,pm={};let mx=0;
+  topScores.forEach(({score,prob})=>{const[hg,ag]=score.split("-").map(Number);if(hg<G&&ag<G){pm[`${hg}-${ag}`]=prob;if(prob>mx)mx=prob;}});
+  return(
+    <div>
+      <div style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.12em",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>SCORE MATRIX — Home ↓ Away →</div>
+      <div style={{display:"grid",gridTemplateColumns:"20px repeat(5,1fr)",gap:4}}>
+        <div/>
+        {[0,1,2,3,4].map(ag=><div key={ag} style={{textAlign:"center",fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{ag}</div>)}
+        {[0,1,2,3,4].map(hg=>[
+          <div key={"r"+hg} style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hg}</div>,
+          ...[0,1,2,3,4].map(ag=>{
+            const p=pm[`${hg}-${ag}`]||0,pct=Math.round(p*100),isTop=p===mx&&mx>0;
+            const alpha=mx>0?Math.min(p/mx,1):0;
+            return(
+              <div key={`${hg}-${ag}`} style={{
+                aspectRatio:"1",minHeight:30,display:"flex",alignItems:"center",justifyContent:"center",
+                borderRadius:8,fontSize:9,fontWeight:700,
+                background:isTop?`${T.accent}28`:`rgba(255,255,255,${(alpha*.15+.03).toFixed(2)})`,
+                color:isTop?T.accent:"rgba(255,255,255,0.55)",
+                fontFamily:"'SF Mono','JetBrains Mono',monospace",
+                border:isTop?`1px solid ${T.accent}50`:"1px solid rgba(255,255,255,0.05)",
+                boxShadow:isTop?`0 0 10px ${T.accent}30`:"none",
+              }} title={`${hg}-${ag}: ${(p*100).toFixed(1)}%`}>{pct>0?`${pct}%`:""}</div>
+            );
+          })
+        ])}
+      </div>
+    </div>
+  );
+};
 
-/* ─── H2H Widget ─────────────────────────────────────────── */
-const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{const[data,setData]=useState(null);const[loading,setLoading]=useState(true);useEffect(()=>{if(!homeId||!awayId){setLoading(false);return;}getH2H(homeId,awayId,8).then(d=>{setData(d);setLoading(false);}).catch(()=>setLoading(false));},[homeId,awayId]);if(loading)return<div style={{height:80,borderRadius:8,background:T.faint}}/>;if(!data?.results?.length)return<div style={{padding:12,textAlign:"center",color:T.muted,fontSize:12}}>No H2H data</div>;const res=data.results;let hw=0,dw=0,aw=0;res.forEach(r=>{const isHome=r.home_team===homeTeam;if(r.home_goals>r.away_goals){if(isHome)hw++;else aw++;}else if(r.home_goals===r.away_goals)dw++;else{if(isHome)aw++;else hw++;}});const tot=hw+dw+aw||1;return(<div style={{display:"flex",flexDirection:"column",gap:10}}><div style={{display:"flex",gap:6}}>{[{label:(homeTeam||"").split(" ").pop(),val:hw,col:T.homeCol},{label:"Draw",val:dw,col:T.muted},{label:(awayTeam||"").split(" ").pop(),val:aw,col:T.awayCol}].map(({label,val,col})=><div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"8px 4px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:`1px solid ${T.border}`}}><span style={{fontSize:22,fontWeight:900,color:col,fontFamily:"'JetBrains Mono',monospace"}}>{val}</span><span style={{fontSize:9,color:T.muted}}>{label.slice(0,7)}</span><span style={{fontSize:9,color:T.muted,opacity:.6}}>{Math.round(val/tot*100)}%</span></div>)}</div><div style={{display:"flex",height:5,borderRadius:3,overflow:"hidden"}}><div style={{flex:hw,background:T.homeCol,opacity:.8}}/><div style={{flex:dw,background:"rgba(255,255,255,0.15)"}}/><div style={{flex:aw,background:T.awayCol,opacity:.8}}/></div><div style={{display:"flex",flexDirection:"column",gap:3,maxHeight:180,overflowY:"auto"}}>{res.slice(0,6).map((r,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><span style={{fontSize:10,color:T.muted,minWidth:72,fontFamily:"'JetBrains Mono',monospace"}}>{r.date}</span><span style={{flex:1,fontSize:11,fontWeight:700,color:T.muted,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.home_team}</span><span style={{padding:"2px 8px",borderRadius:4,background:"rgba(255,255,255,0.05)",fontSize:12,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace",minWidth:40,textAlign:"center"}}>{r.home_goals} – {r.away_goals}</span><span style={{flex:1,fontSize:11,fontWeight:700,color:T.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.away_team}</span></div>)}</div></div>);};
+/* ─── iOS H2H Widget ─────────────────────────────────────── */
+const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
+  const[data,setData]=useState(null);const[loading,setLoading]=useState(true);
+  useEffect(()=>{if(!homeId||!awayId){setLoading(false);return;}getH2H(homeId,awayId,8).then(d=>{setData(d);setLoading(false);}).catch(()=>setLoading(false));},[homeId,awayId]);
+  if(loading)return<div style={{height:100,borderRadius:14,background:"rgba(255,255,255,0.03)",animation:"pulse 1.5s ease infinite"}}/>;
+  if(!data?.results?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12}}>No H2H data available</div>;
+  const res=data.results;let hw=0,dw=0,aw=0;
+  res.forEach(r=>{const isHome=r.home_team===homeTeam;if(r.home_goals>r.away_goals){if(isHome)hw++;else aw++;}else if(r.home_goals===r.away_goals)dw++;else{if(isHome)aw++;else hw++;}});
+  const tot=hw+dw+aw||1;
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {/* Summary pills */}
+      <div style={{display:"flex",gap:8}}>
+        {[{label:(homeTeam||"").split(" ").slice(-1)[0],val:hw,col:T.homeCol},{label:"Draw",val:dw,col:"rgba(255,255,255,0.4)"},{label:(awayTeam||"").split(" ").slice(-1)[0],val:aw,col:T.awayCol}].map(({label,val,col})=>(
+          <div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"12px 8px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
+            <span style={{fontSize:26,fontWeight:800,color:col,fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{val}</span>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Inter',sans-serif"}}>{label.slice(0,8)}</span>
+            <span style={{fontSize:10,fontWeight:700,color:col,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(val/tot*100)}%</span>
+          </div>
+        ))}
+      </div>
+      {/* Bar */}
+      <div style={{display:"flex",height:6,borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.05)"}}>
+        <div style={{flex:hw,background:T.homeCol,opacity:.85,transition:"flex 0.5s ease"}}/>
+        <div style={{flex:dw,background:"rgba(255,255,255,0.15)"}}/>
+        <div style={{flex:aw,background:T.awayCol,opacity:.85,transition:"flex 0.5s ease"}}/>
+      </div>
+      {/* Recent results */}
+      <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:200,overflowY:"auto"}}>
+        {res.slice(0,6).map((r,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.05)"}}>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",minWidth:70,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{r.date}</span>
+            <span style={{flex:1,fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.home_team}</span>
+            <span style={{padding:"3px 10px",borderRadius:8,background:"rgba(255,255,255,0.06)",fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",minWidth:44,textAlign:"center",border:"1px solid rgba(255,255,255,0.08)"}}>{r.home_goals}–{r.away_goals}</span>
+            <span style={{flex:1,fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.away_team}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
-/* ─── Odds Widget ────────────────────────────────────────── */
-const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{const[odds,setOdds]=useState(null);useEffect(()=>{if(fixtureId)getFixtureOdds(fixtureId).then(setOdds).catch(()=>{});},[fixtureId]);if(!odds?.bookmakers?.length)return<div style={{padding:12,textAlign:"center",color:T.muted,fontSize:12}}>Loading odds...</div>;const bk=odds.bookmakers[0],mw=bk.bets?.["Match Winner"]||{};const imp=odd=>odd?Math.round(1/parseFloat(odd)*100):0;const outcomes=[{label:(homeTeam||"").split(" ").pop().slice(0,8),odd:mw["Home"],model:Math.round((pHome||0)*100)},{label:"Draw",odd:mw["Draw"],model:Math.round((pDraw||0)*100)},{label:(awayTeam||"").split(" ").pop().slice(0,8),odd:mw["Away"],model:Math.round((pAway||0)*100)}];return(<div style={{display:"flex",flexDirection:"column",gap:8}}><div style={{display:"flex",gap:6}}>{outcomes.map(({label,odd,model})=>{const implied=imp(odd),diff=implied?model-implied:0;return<div key={label} style={{flex:1,display:"flex",flexDirection:"column",gap:4,alignItems:"center",padding:"10px 6px",borderRadius:10,background:"rgba(255,255,255,0.03)",border:`1px solid ${T.border}`}}><span style={{fontSize:9,fontWeight:800,color:T.muted}}>{label}</span><span style={{fontSize:22,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace"}}>{odd||"—"}</span><div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span style={{fontSize:9,color:T.muted}}>Implied {implied}%</span><span style={{fontSize:10,fontWeight:800,color:T.accent}}>Model {model}%</span></div>{Math.abs(diff)>=3&&<span style={{fontSize:10,fontWeight:900,color:diff>0?T.accent:T.accent2,background:`${diff>0?T.accent:T.accent2}18`,padding:"2px 7px",borderRadius:999,border:`1px solid ${diff>0?T.accent:T.accent2}40`}}>{diff>0?"+":""}{diff}% edge</span>}</div>;})} </div><div style={{fontSize:9,color:T.muted,textAlign:"center"}}>{bk.name}</div></div>);};
+/* ─── iOS Odds Widget ────────────────────────────────────── */
+const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
+  const[odds,setOdds]=useState(null);
+  useEffect(()=>{if(fixtureId)getFixtureOdds(fixtureId).then(setOdds).catch(()=>{});},[fixtureId]);
+  if(!odds?.bookmakers?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><div style={{width:12,height:12,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.15)",borderTopColor:T.accent,animation:"spin 0.8s linear infinite"}}/> Loading odds…</div>;
+  const bk=odds.bookmakers[0],mw=bk.bets?.["Match Winner"]||{};
+  const imp=odd=>odd?Math.round(1/parseFloat(odd)*100):0;
+  const outcomes=[
+    {label:(homeTeam||"").split(" ").slice(-1)[0].slice(0,9),odd:mw["Home"],model:Math.round((pHome||0)*100)},
+    {label:"Draw",odd:mw["Draw"],model:Math.round((pDraw||0)*100)},
+    {label:(awayTeam||"").split(" ").slice(-1)[0].slice(0,9),odd:mw["Away"],model:Math.round((pAway||0)*100)},
+  ];
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{display:"flex",gap:8}}>
+        {outcomes.map(({label,odd,model})=>{
+          const implied=imp(odd),diff=implied?model-implied:0,hasEdge=Math.abs(diff)>=3;
+          return(
+            <div key={label} style={{flex:1,display:"flex",flexDirection:"column",gap:6,alignItems:"center",padding:"14px 8px",borderRadius:16,background:hasEdge&&diff>0?`${T.accent}0c`:"rgba(255,255,255,0.04)",border:`1px solid ${hasEdge&&diff>0?T.accent+"30":"rgba(255,255,255,0.07)"}`,transition:"all 0.2s"}}>
+              <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.35)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+              <span style={{fontSize:26,fontWeight:700,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{odd||"—"}</span>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:9,color:"rgba(255,255,255,0.25)"}}>Implied {implied}%</span>
+                <span style={{fontSize:10,fontWeight:700,color:T.accent}}>Model {model}%</span>
+              </div>
+              {hasEdge&&<span style={{fontSize:10,fontWeight:800,color:diff>0?T.accent:T.accent2,background:`${diff>0?T.accent:T.accent2}18`,padding:"3px 9px",borderRadius:999,border:`1px solid ${diff>0?T.accent:T.accent2}35`}}>{diff>0?"+":""}{diff}% edge</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{fontSize:9,color:"rgba(255,255,255,0.2)",textAlign:"center",fontFamily:"'Inter',sans-serif"}}>{bk.name}</div>
+    </div>
+  );
+};
 
 /* ══════════════════════════════════════════════════════════
-   TASK 2+3+4 — VS SPLIT MATCH CARD
+   iOS MATCH CARD — frosted glass, big rounded corners,
+   clean VS split, smooth probability bars
 ══════════════════════════════════════════════════════════ */
 const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
   const[open,setOpen]=useState(false);
@@ -141,132 +307,200 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
   const xgH=parseFloat(match.xg_home)||0,xgA=parseFloat(match.xg_away)||0;
   const bttsPct=Math.round((match.btts||0)*100),o25=Math.round((match.over_2_5||0)*100),conf=Math.round(match.confidence||0);
   const confLabel=conf>=72?"Strong":conf>=52?"Moderate":conf>=36?"Uncertain":"Low";
+  const confColor=conf>=72?T.accent:conf>=52?"rgba(255,200,80,0.9)":conf>=36?"rgba(255,150,50,0.8)":"rgba(255,255,255,0.3)";
   const homePlayrs=getKeyPlayers(match.home_team),awayPlayrs=getKeyPlayers(match.away_team);
   const hS=match.home_stats||{},aS=match.away_stats||{};
   const hP=(hS.played_home||0)+(hS.played_away||0)||1,aP=(aS.played_home||0)+(aS.played_away||0)||1;
-  const TABS=[{id:"stats",label:"Stats"},{id:"players",label:"Key Players"},{id:"h2h",label:"H2H"},{id:"odds",label:"Odds"},{id:"grid",label:"Score Grid"}];
+  const TABS=[{id:"stats",label:"Stats"},{id:"players",label:"Players"},{id:"h2h",label:"H2H"},{id:"odds",label:"Odds"},{id:"grid",label:"Grid"}];
 
   return(
-    <div onClick={()=>onSelect&&onSelect()} style={{background:T.panel,borderRadius:16,overflow:"hidden",border:`1px solid ${isSelected?T.borderHi:T.border}`,boxShadow:isSelected?`0 0 0 1px ${T.accent}30,0 8px 32px rgba(0,0,0,0.5)`:open?"0 4px 24px rgba(0,0,0,0.5)":"none",transition:"all 0.2s",cursor:"pointer"}}
-      onMouseEnter={e=>{if(!isSelected)e.currentTarget.style.borderColor=T.border+"cc";}}
-      onMouseLeave={e=>{if(!isSelected)e.currentTarget.style.borderColor=T.border;}}>
-
-      {/* DATE BAR */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 14px",borderBottom:`1px solid ${T.border}`,background:`linear-gradient(90deg,${T.faint},transparent)`}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:11,fontWeight:900,color:T.accent,fontFamily:"'JetBrains Mono',monospace"}}>{day}</span>
-          <span style={{fontSize:12,fontWeight:700,color:T.text}}>{date}</span>
-          {time&&<span style={{fontSize:11,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{time}</span>}
+    <div
+      onClick={()=>onSelect&&onSelect()}
+      style={{
+        background: isSelected
+          ? `linear-gradient(145deg, ${T.accent}0a 0%, rgba(0,0,0,0.95) 100%)`
+          : "rgba(0,0,0,0.75)",
+        backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+        borderRadius:20,overflow:"hidden",
+        border:`1px solid ${isSelected?T.accent+"50":"rgba(255,255,255,0.08)"}`,
+        boxShadow: isSelected
+          ? `0 0 0 1px ${T.accent}25, 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06)`
+          : `0 2px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)`,
+        transition:"all 0.25s cubic-bezier(.22,1,.36,1)",
+        cursor:"pointer",
+      }}
+      onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor="rgba(255,255,255,0.14)";e.currentTarget.style.transform="translateY(-1px)";}}}
+      onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";e.currentTarget.style.transform="";}}}
+    >
+      {/* ── TOP BAR: date + selected badge + toggle */}
+      <div style={{
+        display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"10px 16px",
+        background:"rgba(255,255,255,0.03)",
+        borderBottom:"1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:11,fontWeight:700,color:T.accent,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{day}</span>
+            <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.7)",fontFamily:"'Inter',sans-serif"}}>{date}</span>
+            {time&&<span style={{fontSize:11,color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{time}</span>}
+          </div>
+          {/* Confidence badge */}
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:999,background:`${confColor}14`,border:`1px solid ${confColor}30`}}>
+            <div style={{width:5,height:5,borderRadius:"50%",background:confColor,boxShadow:`0 0 6px ${confColor}`}}/>
+            <span style={{fontSize:9,fontWeight:700,color:confColor,fontFamily:"'Inter',sans-serif"}}>{confLabel}</span>
+          </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {isSelected&&<span style={{fontSize:8,fontWeight:900,color:T.accent,background:`${T.accent}18`,border:`1px solid ${T.accent}40`,padding:"2px 8px",borderRadius:999}}>IN SIMULATOR</span>}
-          <button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}} style={{background:"none",border:`1px solid ${T.border}`,borderRadius:6,color:T.muted,fontSize:10,padding:"3px 8px",cursor:"pointer",transition:"all 0.15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.muted;}}>
-            {open?"▲":"▼ Details"}
+          {isSelected&&<span style={{fontSize:8,fontWeight:700,color:T.accent,background:`${T.accent}18`,border:`1px solid ${T.accent}35`,padding:"3px 9px",borderRadius:999,letterSpacing:"0.05em",fontFamily:"'Inter',sans-serif"}}>SELECTED</span>}
+          <button
+            onClick={e=>{e.stopPropagation();setOpen(o=>!o);}}
+            style={{
+              background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",
+              borderRadius:8,color:"rgba(255,255,255,0.5)",fontSize:10,fontWeight:600,
+              padding:"4px 10px",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Inter',sans-serif",
+              display:"flex",alignItems:"center",gap:4,
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.1)";e.currentTarget.style.color="rgba(255,255,255,0.8)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color="rgba(255,255,255,0.5)";}}
+          >
+            {open
+              ? <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 7l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>Less</>
+              : <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>Details</>
+            }
           </button>
         </div>
       </div>
 
-      {/* VS SPLIT */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr"}}>
+      {/* ── VS SPLIT */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 140px 1fr",gap:0}}>
 
         {/* HOME */}
-        <div style={{padding:"16px 14px",background:`linear-gradient(135deg,${T.homeCol}09 0%,transparent 60%)`}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-            {match.home_logo&&<img src={match.home_logo} alt="" style={{width:32,height:32,objectFit:"contain",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>}
+        <div style={{padding:"18px 16px",background:`linear-gradient(160deg,${T.homeCol}07 0%,transparent 70%)`}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+            {match.home_logo&&<div style={{width:38,height:38,borderRadius:12,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
+              <img src={match.home_logo} alt="" style={{width:28,height:28,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
+            </div>}
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:900,color:fav==="home"?T.homeCol:T.text,fontFamily:"'Sora',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{match.home_team}</div>
-              <div style={{fontSize:8,color:T.muted,marginTop:1}}>HOME</div>
+              <div style={{fontSize:14,fontWeight:700,color:fav==="home"?T.homeCol:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-0.01em"}}>{match.home_team}</div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,0.25)",marginTop:1,fontFamily:"'Inter',sans-serif",letterSpacing:"0.08em"}}>HOME</div>
             </div>
-            {fav==="home"&&<span style={{fontSize:7,fontWeight:900,color:T.accent,background:`${T.accent}18`,border:`1px solid ${T.accent}40`,padding:"2px 6px",borderRadius:999,flexShrink:0}}>FAV</span>}
+            {fav==="home"&&<span style={{fontSize:8,fontWeight:700,color:T.accent,background:`${T.accent}18`,border:`1px solid ${T.accent}35`,padding:"2px 7px",borderRadius:999,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>FAV</span>}
           </div>
-          <div style={{display:"flex",gap:3,marginBottom:12,flexWrap:"wrap"}}>{hForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
-          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12,justifyContent:"flex-start"}}>
-            <MiniDonut value={xgH} max={3} color={T.homeCol} size={52} label="xG"/>
-            <MiniDonut value={hS.shots_pg||2} max={20} color={T.homeCol} size={52} label="Shots"/>
-            <MiniDonut value={hS.possession_avg||50} max={100} color={T.homeCol} size={52} label="Poss%"/>
+          {/* Form */}
+          <div style={{display:"flex",gap:4,marginBottom:14}}>{hForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
+          {/* Donuts */}
+          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14}}>
+            <MiniDonut value={xgH} max={3} color={T.homeCol} size={54} label="xG"/>
+            <MiniDonut value={hS.shots_pg||2} max={20} color={T.homeCol} size={54} label="Shots"/>
+            <MiniDonut value={hS.possession_avg||50} max={100} color={T.homeCol} size={54} label="Poss"/>
           </div>
+          {/* Win prob bar */}
           <div>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
-              <div style={{flex:1,height:4,borderRadius:2,background:"rgba(255,255,255,0.06)"}}><div style={{width:`${Math.round(hp*100)}%`,height:"100%",borderRadius:2,background:T.homeCol,boxShadow:`0 0 6px ${T.homeCol}66`,transition:"width 0.5s"}}/></div>
-              <span style={{fontSize:15,fontWeight:900,color:T.homeCol,fontFamily:"'JetBrains Mono',monospace",minWidth:36,textAlign:"right"}}>{Math.round(hp*100)}%</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
+              <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>Win probability</span>
+              <span style={{fontSize:16,fontWeight:700,color:T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(hp*100)}%</span>
             </div>
-            <div style={{fontSize:8,color:T.muted}}>Win probability</div>
+            <div style={{height:5,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
+              <div style={{width:`${Math.round(hp*100)}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.homeCol}aa,${T.homeCol})`,boxShadow:`0 0 8px ${T.homeCol}50`,transition:"width 0.6s cubic-bezier(.22,1,.36,1)"}}/>
+            </div>
           </div>
         </div>
 
         {/* CENTER */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"16px 10px",borderLeft:`1px solid ${T.border}`,borderRight:`1px solid ${T.border}`,minWidth:120,gap:7}}>
+        <div style={{
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          padding:"18px 8px",
+          borderLeft:"1px solid rgba(255,255,255,0.06)",
+          borderRight:"1px solid rgba(255,255,255,0.06)",
+          gap:10,
+          background:"rgba(255,255,255,0.02)",
+        }}>
+          {/* Score */}
           <div style={{textAlign:"center"}}>
-            <div style={{fontSize:30,fontWeight:900,letterSpacing:"0.04em",lineHeight:1,fontFamily:"'JetBrains Mono',monospace",color:T.text}}>{match.most_likely_score||"?–?"}</div>
-            <div style={{fontSize:7,color:T.muted,letterSpacing:"0.1em",marginTop:3}}>PREDICTED</div>
+            <div style={{fontSize:28,fontWeight:700,letterSpacing:"0.06em",lineHeight:1,fontFamily:"'SF Mono','JetBrains Mono',monospace",color:"rgba(255,255,255,0.92)"}}>{match.most_likely_score||"?–?"}</div>
+            <div style={{fontSize:8,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",marginTop:4,fontFamily:"'Inter',sans-serif"}}>PREDICTED</div>
           </div>
+          {/* H D A pills */}
           <div style={{display:"flex",gap:3,width:"100%"}}>
-            {[{l:"H",v:Math.round(hp*100),c:T.homeCol},{l:"D",v:Math.round(dp*100),c:T.muted},{l:"A",v:Math.round(ap*100),c:T.awayCol}].map(({l,v,c})=>(
-              <div key={l} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"5px 2px",borderRadius:6,background:"rgba(255,255,255,0.04)",border:`1px solid ${T.border}`}}>
-                <span style={{fontSize:7,color:T.muted}}>{l}</span>
-                <span style={{fontSize:12,fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace"}}>{v}%</span>
+            {[{l:"H",v:Math.round(hp*100),c:T.homeCol},{l:"D",v:Math.round(dp*100),c:"rgba(255,255,255,0.4)"},{l:"A",v:Math.round(ap*100),c:T.awayCol}].map(({l,v,c})=>(
+              <div key={l} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 2px",borderRadius:10,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                <span style={{fontSize:7,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>{l}</span>
+                <span style={{fontSize:12,fontWeight:700,color:c,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v}%</span>
               </div>
             ))}
           </div>
-          <div style={{display:"flex",height:4,width:"100%",borderRadius:2,overflow:"hidden",gap:1}}>
+          {/* Tricolor bar */}
+          <div style={{display:"flex",height:4,width:"100%",borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.04)"}}>
             <div style={{flex:hp,background:T.homeCol,opacity:.85}}/><div style={{flex:dp,background:"rgba(255,255,255,0.2)"}}/><div style={{flex:ap,background:T.awayCol,opacity:.85}}/>
           </div>
-          {[{l:"BTTS",v:`${bttsPct}%`,hi:bttsPct>=55},{l:"O2.5",v:`${o25}%`,hi:o25>=60},{l:"CONF",v:`${conf}%`,hi:conf>=65}].map(({l,v,hi})=>(
-            <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"4px 7px",borderRadius:5,background:hi?`${T.accent}10`:"rgba(255,255,255,0.03)",border:`1px solid ${hi?T.accent+"28":T.border}`}}>
-              <span style={{fontSize:7,fontWeight:800,color:T.muted,letterSpacing:"0.08em"}}>{l}</span>
-              <span style={{fontSize:10,fontWeight:900,color:hi?T.accent:T.text,fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
+          {/* BTTS / O2.5 / Conf */}
+          {[{l:"BTTS",v:`${bttsPct}%`,hi:bttsPct>=55},{l:"O2.5",v:`${o25}%`,hi:o25>=60}].map(({l,v,hi})=>(
+            <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"5px 8px",borderRadius:8,background:hi?`${T.accent}0e`:"rgba(255,255,255,0.03)",border:`1px solid ${hi?T.accent+"28":"rgba(255,255,255,0.05)"}`}}>
+              <span style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.3)",letterSpacing:"0.08em",fontFamily:"'Inter',sans-serif"}}>{l}</span>
+              <span style={{fontSize:11,fontWeight:700,color:hi?T.accent:"rgba(255,255,255,0.6)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v}</span>
             </div>
           ))}
-          <div style={{fontSize:8,fontWeight:700,color:conf>=65?T.accent:T.muted,textAlign:"center"}}>{confLabel} confidence</div>
         </div>
 
         {/* AWAY */}
-        <div style={{padding:"16px 14px",background:`linear-gradient(225deg,${T.awayCol}09 0%,transparent 60%)`}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexDirection:"row-reverse"}}>
-            {match.away_logo&&<img src={match.away_logo} alt="" style={{width:32,height:32,objectFit:"contain",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>}
+        <div style={{padding:"18px 16px",background:`linear-gradient(200deg,${T.awayCol}07 0%,transparent 70%)`}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexDirection:"row-reverse"}}>
+            {match.away_logo&&<div style={{width:38,height:38,borderRadius:12,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
+              <img src={match.away_logo} alt="" style={{width:28,height:28,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
+            </div>}
             <div style={{flex:1,minWidth:0,textAlign:"right"}}>
-              <div style={{fontSize:14,fontWeight:900,color:fav==="away"?T.awayCol:T.text,fontFamily:"'Sora',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{match.away_team}</div>
-              <div style={{fontSize:8,color:T.muted,marginTop:1}}>AWAY</div>
+              <div style={{fontSize:14,fontWeight:700,color:fav==="away"?T.awayCol:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-0.01em"}}>{match.away_team}</div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,0.25)",marginTop:1,fontFamily:"'Inter',sans-serif",letterSpacing:"0.08em"}}>AWAY</div>
             </div>
-            {fav==="away"&&<span style={{fontSize:7,fontWeight:900,color:T.accent2,background:`${T.accent2}18`,border:`1px solid ${T.accent2}40`,padding:"2px 6px",borderRadius:999,flexShrink:0}}>FAV</span>}
+            {fav==="away"&&<span style={{fontSize:8,fontWeight:700,color:T.accent2,background:`${T.accent2}18`,border:`1px solid ${T.accent2}35`,padding:"2px 7px",borderRadius:999,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>FAV</span>}
           </div>
-          <div style={{display:"flex",gap:3,marginBottom:12,flexWrap:"wrap",justifyContent:"flex-end"}}>{aForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
-          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12,justifyContent:"flex-end"}}>
-            <MiniDonut value={aS.possession_avg||50} max={100} color={T.awayCol} size={52} label="Poss%"/>
-            <MiniDonut value={aS.shots_pg||2} max={20} color={T.awayCol} size={52} label="Shots"/>
-            <MiniDonut value={xgA} max={3} color={T.awayCol} size={52} label="xG"/>
+          <div style={{display:"flex",gap:4,marginBottom:14,justifyContent:"flex-end"}}>{aForm.slice(-5).map((r,i)=><FormPip key={i} r={r} T={T}/>)}</div>
+          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,justifyContent:"flex-end"}}>
+            <MiniDonut value={aS.possession_avg||50} max={100} color={T.awayCol} size={54} label="Poss"/>
+            <MiniDonut value={aS.shots_pg||2} max={20} color={T.awayCol} size={54} label="Shots"/>
+            <MiniDonut value={xgA} max={3} color={T.awayCol} size={54} label="xG"/>
           </div>
           <div>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,flexDirection:"row-reverse"}}>
-              <div style={{flex:1,height:4,borderRadius:2,background:"rgba(255,255,255,0.06)"}}><div style={{width:`${Math.round(ap*100)}%`,height:"100%",borderRadius:2,background:T.awayCol,boxShadow:`0 0 6px ${T.awayCol}66`,transition:"width 0.5s",marginLeft:"auto"}}/></div>
-              <span style={{fontSize:15,fontWeight:900,color:T.awayCol,fontFamily:"'JetBrains Mono',monospace",minWidth:36}}>{Math.round(ap*100)}%</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
+              <span style={{fontSize:16,fontWeight:700,color:T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(ap*100)}%</span>
+              <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>Win probability</span>
             </div>
-            <div style={{fontSize:8,color:T.muted,textAlign:"right"}}>Win probability</div>
+            <div style={{height:5,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
+              <div style={{width:`${Math.round(ap*100)}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.awayCol},${T.awayCol}aa)`,boxShadow:`0 0 8px ${T.awayCol}50`,transition:"width 0.6s cubic-bezier(.22,1,.36,1)",marginLeft:"auto"}}/>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* EXPANDABLE */}
+      {/* ── EXPANDABLE DETAIL PANEL */}
       {open&&(
-        <div style={{borderTop:`1px solid ${T.border}`}} onClick={e=>e.stopPropagation()}>
-          <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,overflowX:"auto"}}>
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.07)"}} onClick={e=>e.stopPropagation()}>
+          {/* Tab bar */}
+          <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.06)",overflowX:"auto",background:"rgba(0,0,0,0.3)"}}>
             {TABS.map(({id,label})=>(
-              <button key={id} onClick={()=>setActiveTab(id)} style={{padding:"10px 14px",fontSize:11,fontWeight:800,cursor:"pointer",background:"none",border:"none",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif",color:activeTab===id?T.accent:T.muted,borderBottom:`2px solid ${activeTab===id?T.accent:"transparent"}`,transition:"all 0.15s"}}>{label}</button>
+              <button key={id} onClick={()=>setActiveTab(id)} style={{
+                padding:"11px 16px",fontSize:11,fontWeight:600,cursor:"pointer",
+                background:"none",border:"none",whiteSpace:"nowrap",
+                fontFamily:"'Inter',sans-serif",letterSpacing:"0.02em",
+                color:activeTab===id?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)",
+                borderBottom:`2px solid ${activeTab===id?T.accent:"transparent"}`,
+                transition:"all 0.15s",
+              }}>{label}</button>
             ))}
           </div>
-          <div style={{padding:"16px 14px"}}>
+          {/* Tab content */}
+          <div style={{padding:"18px 16px"}}>
             {activeTab==="stats"&&(
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                  <span style={{fontSize:11,fontWeight:800,color:T.homeCol}}>{(match.home_team||"").split(" ").pop()}</span>
-                  <span style={{fontSize:11,fontWeight:800,color:T.awayCol}}>{(match.away_team||"").split(" ").pop()}</span>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                  <span style={{fontSize:12,fontWeight:700,color:T.homeCol,fontFamily:"'Inter',sans-serif"}}>{(match.home_team||"").split(" ").pop()}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:T.awayCol,fontFamily:"'Inter',sans-serif"}}>{(match.away_team||"").split(" ").pop()}</span>
                 </div>
                 {[
-                  {l:"Goals/Game",hv:((hS.scored_home||0)+(hS.scored_away||0))/hP,av:((aS.scored_home||0)+(aS.scored_away||0))/aP,fmt:v=>v.toFixed(2)},
+                  {l:"Goals / Game",hv:((hS.scored_home||0)+(hS.scored_away||0))/hP,av:((aS.scored_home||0)+(aS.scored_away||0))/aP,fmt:v=>v.toFixed(2)},
                   {l:"xG",hv:xgH,av:xgA,fmt:v=>v.toFixed(2)},
-                  {l:"Shots/Game",hv:hS.shots_pg||0,av:aS.shots_pg||0,fmt:v=>v.toFixed(1)},
+                  {l:"Shots / Game",hv:hS.shots_pg||0,av:aS.shots_pg||0,fmt:v=>v.toFixed(1)},
                   {l:"On Target %",hv:hS.shots_on_target_pct||0,av:aS.shots_on_target_pct||0,fmt:v=>v.toFixed(0)+"%"},
                   {l:"Possession",hv:hS.possession_avg||50,av:aS.possession_avg||50,fmt:v=>v+"%"},
                   {l:"Pass Accuracy",hv:hS.pass_accuracy||0,av:aS.pass_accuracy||0,fmt:v=>v.toFixed(0)+"%"},
@@ -274,25 +508,24 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
               </div>
             )}
             {activeTab==="players"&&(
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
                 {[{team:match.home_team,players:homePlayrs,col:T.homeCol,side:"HOME"},{team:match.away_team,players:awayPlayrs,col:T.awayCol,side:"AWAY"}].map(({team,players,col,side})=>(
                   <div key={side}>
-                    <div style={{fontSize:9,fontWeight:900,color:col,letterSpacing:"0.12em",marginBottom:10}}>{side} · WATCH</div>
+                    <div style={{fontSize:9,fontWeight:700,color:col,letterSpacing:"0.1em",marginBottom:10,fontFamily:"'Inter',sans-serif"}}>{side} · WATCH</div>
                     <div style={{display:"flex",flexDirection:"column",gap:7}}>
                       {players.map((p,i)=>(
                         <div key={i} onClick={()=>navigate(`/player?search=${encodeURIComponent(p.name)}`)}
-                          style={{display:"flex",alignItems:"center",gap:8,padding:"9px 11px",borderRadius:10,background:`${col}0a`,border:`1px solid ${col}22`,cursor:"pointer",transition:"all 0.18s"}}
-                          onMouseEnter={e=>{e.currentTarget.style.background=`${col}18`;e.currentTarget.style.borderColor=`${col}50`;e.currentTarget.style.transform="translateX(3px)";}}
-                          onMouseLeave={e=>{e.currentTarget.style.background=`${col}0a`;e.currentTarget.style.borderColor=`${col}22`;e.currentTarget.style.transform="";}}>
-                          <div style={{width:30,height:30,borderRadius:7,background:`${col}20`,border:`1px solid ${col}40`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <span style={{fontSize:8,fontWeight:900,color:col}}>{p.pos}</span>
+                          style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:12,background:`${col}08`,border:`1px solid ${col}18`,cursor:"pointer",transition:"all 0.18s"}}
+                          onMouseEnter={e=>{e.currentTarget.style.background=`${col}14`;e.currentTarget.style.borderColor=`${col}40`;e.currentTarget.style.transform="translateX(2px)";}}
+                          onMouseLeave={e=>{e.currentTarget.style.background=`${col}08`;e.currentTarget.style.borderColor=`${col}18`;e.currentTarget.style.transform="";}}>
+                          <div style={{width:32,height:32,borderRadius:9,background:`${col}18`,border:`1px solid ${col}35`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <span style={{fontSize:8,fontWeight:700,color:col,fontFamily:"'Inter',sans-serif"}}>{p.pos}</span>
                           </div>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:12,fontWeight:800,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                            <div style={{fontSize:10,fontWeight:700,color:col,fontFamily:"'JetBrains Mono',monospace"}}>{p.stat}</div>
+                            <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.88)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>{p.name}</div>
+                            <div style={{fontSize:10,fontWeight:600,color:col,fontFamily:"'SF Mono','JetBrains Mono',monospace",marginTop:1}}>{p.stat}</div>
                           </div>
-                          <MiniRadar vals={[.6+Math.random()*.35,.5+Math.random()*.4,.55+Math.random()*.35,.5+Math.random()*.4,.6+Math.random()*.35]} color={col} size={48}/>
-                          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" style={{flexShrink:0,opacity:.4}}><path d="M2 6h8M7 3l3 3-3 3" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <MiniRadar vals={[.6+Math.random()*.35,.5+Math.random()*.4,.55+Math.random()*.35,.5+Math.random()*.4,.6+Math.random()*.35]} color={col} size={46}/>
                         </div>
                       ))}
                     </div>
@@ -304,8 +537,11 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
             {activeTab==="odds"&&<OddsWidget fixtureId={match.fixture_id} pHome={hp} pDraw={dp} pAway={ap} homeTeam={match.home_team} awayTeam={match.away_team} T={T}/>}
             {activeTab==="grid"&&<ScoreGrid topScores={match.top_scores} T={T}/>}
           </div>
-          <div style={{display:"flex",gap:4,padding:"6px 14px 12px",flexWrap:"wrap"}}>
-            {["Dixon-Coles","Elo","Poisson","xG"].map(l=><span key={l} style={{fontSize:8,fontWeight:800,letterSpacing:"0.05em",padding:"2px 8px",borderRadius:4,background:`${T.accent}0e`,border:`1px solid ${T.accent}22`,color:T.muted}}>{l}</span>)}
+          {/* Model tags */}
+          <div style={{display:"flex",gap:5,padding:"8px 16px 14px",flexWrap:"wrap"}}>
+            {["Dixon-Coles","Elo","Poisson","xG Model"].map(l=>(
+              <span key={l} style={{fontSize:8,fontWeight:600,letterSpacing:"0.06em",padding:"3px 9px",borderRadius:999,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>{l}</span>
+            ))}
           </div>
         </div>
       )}
@@ -314,7 +550,7 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
 };
 
 /* ══════════════════════════════════════════════════════════
-   TASK 5 — FLOATING SCENARIO SIMULATOR
+   iOS SCENARIO SIMULATOR — frosted glass sidebar widget
 ══════════════════════════════════════════════════════════ */
 const PRESETS=[
   {label:"Normal",icon:"⚖️",mods:{homeAtk:0,awayAtk:0,homeDef:0,awayDef:0,tempo:0}},
@@ -332,55 +568,71 @@ const ScenarioSimulator=({match,T})=>{
   const scenario=useMemo(()=>{if(!match)return null;const baseH=parseFloat(match.xg_home)||1.3,baseA=parseFloat(match.xg_away)||1.1,tMult=1+mods.tempo/100;const xgH=Math.max(.1,baseH*(1+mods.homeAtk/100)*(1-mods.awayDef/200)*tMult),xgA=Math.max(.1,baseA*(1+mods.awayAtk/100)*(1-mods.homeDef/200)*tMult);return{...buildProbs(xgH,xgA),xgH:xgH.toFixed(2),xgA:xgA.toFixed(2)};},[match,mods]);
   const isModified=JSON.stringify(mods)!==JSON.stringify(PRESETS[0].mods);
 
+  const cardStyle={
+    background:"rgba(0,0,0,0.8)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",
+    border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,overflow:"hidden",
+    boxShadow:`0 0 0 1px ${T.accent}18, 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)`,
+  };
+
   if(!match)return(
-    <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:28,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:220,gap:12}}>
-      <span style={{fontSize:32,opacity:.3}}>🎯</span>
-      <span style={{fontSize:12,color:T.muted,textAlign:"center",lineHeight:1.7}}>Click any match card to load the Scenario Simulator</span>
+    <div style={{...cardStyle,padding:32,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:240,gap:14}}>
+      <div style={{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🎯</div>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.5)",fontFamily:"'Inter',sans-serif",lineHeight:1.6}}>Select a match card</div>
+        <div style={{fontSize:11,color:"rgba(255,255,255,0.2)",fontFamily:"'Inter',sans-serif",marginTop:4}}>to load the scenario simulator</div>
+      </div>
     </div>
   );
 
   return(
-    <div style={{background:T.panel,border:`1px solid ${T.borderHi}`,borderRadius:16,overflow:"hidden",boxShadow:`0 0 0 1px ${T.accent}18,0 16px 48px rgba(0,0,0,0.6)`}}>
+    <div style={cardStyle}>
       {/* Header */}
-      <div style={{padding:"13px 15px",borderBottom:`1px solid ${T.border}`,background:`linear-gradient(90deg,${T.accent}0e,transparent)`}}>
-        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
-          <div style={{width:5,height:5,borderRadius:"50%",background:T.accent,boxShadow:`0 0 7px ${T.accent}`}}/>
-          <span style={{fontSize:10,fontWeight:900,color:T.accent,letterSpacing:"0.1em"}}>SCENARIO SIMULATOR</span>
+      <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,0.07)",background:`linear-gradient(90deg,${T.accent}0c,transparent)`}}>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:6}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:T.accent,boxShadow:`0 0 8px ${T.accent}`}}/>
+          <span style={{fontSize:9,fontWeight:700,color:T.accent,letterSpacing:"0.12em",fontFamily:"'Inter',sans-serif"}}>SCENARIO SIMULATOR</span>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:12,fontWeight:800,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
-            {match.home_team} <span style={{color:T.muted,fontWeight:400}}>vs</span> {match.away_team}
+          <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.75)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:"'Inter',sans-serif"}}>
+            {match.home_team} <span style={{color:"rgba(255,255,255,0.2)",fontWeight:400}}>vs</span> {match.away_team}
           </div>
-          {isModified&&<button onClick={()=>applyPreset(0)} style={{fontSize:9,fontWeight:800,color:T.muted,background:"none",border:`1px solid ${T.border}`,borderRadius:5,padding:"2px 7px",cursor:"pointer",flexShrink:0,marginLeft:6}}>Reset</button>}
+          {isModified&&<button onClick={()=>applyPreset(0)} style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,padding:"3px 9px",cursor:"pointer",flexShrink:0,marginLeft:8,fontFamily:"'Inter',sans-serif"}}>Reset</button>}
         </div>
       </div>
 
       {/* Presets */}
-      <div style={{padding:"11px 13px",borderBottom:`1px solid ${T.border}`}}>
-        <div style={{fontSize:8,fontWeight:900,color:T.muted,letterSpacing:"0.12em",marginBottom:7}}>QUICK SCENARIOS</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+      <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",marginBottom:8,fontFamily:"'Inter',sans-serif"}}>QUICK SCENARIOS</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
           {PRESETS.map((p,i)=>(
-            <button key={i} onClick={()=>applyPreset(i)} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:7,fontSize:10,fontWeight:800,cursor:"pointer",transition:"all 0.15s",background:activePreset===i?`${T.accent}1a`:"rgba(255,255,255,0.04)",border:`1px solid ${activePreset===i?T.accent:T.border}`,color:activePreset===i?T.accent:T.muted}}>
-              <span>{p.icon}</span>{p.label}
+            <button key={i} onClick={()=>applyPreset(i)} style={{
+              display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,fontSize:10,fontWeight:600,
+              cursor:"pointer",transition:"all 0.15s",fontFamily:"'Inter',sans-serif",
+              background:activePreset===i?`${T.accent}18`:"rgba(255,255,255,0.04)",
+              border:`1px solid ${activePreset===i?T.accent+"40":"rgba(255,255,255,0.08)"}`,
+              color:activePreset===i?T.accent:"rgba(255,255,255,0.4)",
+            }}>
+              <span style={{fontSize:11}}>{p.icon}</span>{p.label}
             </button>
           ))}
         </div>
       </div>
 
       {/* Sliders */}
-      <div style={{padding:"11px 13px",borderBottom:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:9}}>
-        <div style={{fontSize:8,fontWeight:900,color:T.muted,letterSpacing:"0.12em",marginBottom:2}}>FINE TUNE</div>
+      <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",fontFamily:"'Inter',sans-serif"}}>FINE TUNE</div>
         {[{label:"Home Attack",k:"homeAtk"},{label:"Away Attack",k:"awayAtk"},{label:"Home Defense",k:"homeDef"},{label:"Away Defense",k:"awayDef"},{label:"Tempo",k:"tempo"}].map(({label,k})=>{
           const val=mods[k];
+          const col=val===0?"rgba(255,255,255,0.25)":val>0?T.accent:T.accent2;
           return(
-            <div key={k} style={{display:"flex",flexDirection:"column",gap:3}}>
-              <div style={{display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:10,color:T.muted}}>{label}</span>
-                <span style={{fontSize:11,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:val===0?T.muted:val>0?T.accent:T.accent2}}>{val>0?"+":""}{val}%</span>
+            <div key={k} style={{display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.45)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+                <span style={{fontSize:11,fontWeight:700,fontFamily:"'SF Mono','JetBrains Mono',monospace",color:col}}>{val>0?"+":""}{val}%</span>
               </div>
               <input type="range" min={-25} max={25} value={val}
                 onChange={e=>{setActivePreset(-1);setMods(p=>({...p,[k]:parseInt(e.target.value)}));}}
-                style={{width:"100%",accentColor:T.accent,cursor:"pointer"}}/>
+                style={{width:"100%",accentColor:T.accent,cursor:"pointer",height:3}}/>
             </div>
           );
         })}
@@ -388,38 +640,34 @@ const ScenarioSimulator=({match,T})=>{
 
       {/* Comparison */}
       {official&&scenario&&(
-        <div style={{padding:"11px 13px",borderBottom:`1px solid ${T.border}`}}>
-          <div style={{fontSize:8,fontWeight:900,color:T.muted,letterSpacing:"0.12em",marginBottom:9}}>OFFICIAL vs SCENARIO</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
-            {[{label:"Official",data:official,col:T.muted},{label:"Scenario",data:scenario,col:T.accent}].map(({label,data,col})=>(
-              <div key={label} style={{padding:"9px 11px",borderRadius:10,background:label==="Scenario"?`${T.accent}0a`:"rgba(255,255,255,0.02)",border:`1px solid ${label==="Scenario"?T.accent+"28":T.border}`}}>
-                <div style={{fontSize:8,fontWeight:900,color:col,letterSpacing:"0.1em",marginBottom:6}}>{label.toUpperCase()}</div>
-                <div style={{fontSize:22,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace",textAlign:"center",marginBottom:5}}>{data.topScore}</div>
-                <div style={{display:"flex",height:3,borderRadius:2,overflow:"hidden",marginBottom:5}}>
+        <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+          <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",marginBottom:10,fontFamily:"'Inter',sans-serif"}}>OFFICIAL vs SCENARIO</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[{label:"Official",data:official,col:"rgba(255,255,255,0.3)"},{label:"Scenario",data:scenario,col:T.accent}].map(({label,data,col})=>(
+              <div key={label} style={{padding:"10px 12px",borderRadius:14,background:label==="Scenario"?`${T.accent}0a`:"rgba(255,255,255,0.03)",border:`1px solid ${label==="Scenario"?T.accent+"28":"rgba(255,255,255,0.06)"}`}}>
+                <div style={{fontSize:8,fontWeight:700,color:col,letterSpacing:"0.1em",marginBottom:7,fontFamily:"'Inter',sans-serif"}}>{label.toUpperCase()}</div>
+                <div style={{fontSize:24,fontWeight:700,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",textAlign:"center",marginBottom:6}}>{data.topScore}</div>
+                <div style={{display:"flex",height:4,borderRadius:999,overflow:"hidden",marginBottom:6,background:"rgba(255,255,255,0.05)"}}>
                   <div style={{flex:data.pH,background:T.homeCol,opacity:.8}}/><div style={{flex:data.pD,background:"rgba(255,255,255,0.2)"}}/><div style={{flex:data.pA,background:T.awayCol,opacity:.8}}/>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between"}}>
-                  {[{v:Math.round(data.pH*100),c:T.homeCol},{v:Math.round(data.pD*100),c:T.muted},{v:Math.round(data.pA*100),c:T.awayCol}].map(({v,c},i)=>(
-                    <span key={i} style={{fontSize:11,fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace"}}>{v}%</span>
+                  {[{v:Math.round(data.pH*100),c:T.homeCol},{v:Math.round(data.pD*100),c:"rgba(255,255,255,0.3)"},{v:Math.round(data.pA*100),c:T.awayCol}].map(({v,c},i)=>(
+                    <span key={i} style={{fontSize:11,fontWeight:700,color:c,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v}%</span>
                   ))}
-                </div>
-                <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}>
-                  <span style={{fontSize:9,color:T.homeCol,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>H {data.xgH}</span>
-                  <span style={{fontSize:9,color:T.awayCol,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>A {data.xgA}</span>
                 </div>
               </div>
             ))}
           </div>
           {isModified&&(
-            <div style={{marginTop:7,display:"flex",gap:4,flexWrap:"wrap"}}>
+            <div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}}>
               {[{l:"Home Win",d:Math.round((scenario.pH-official.pH)*100)},{l:"Draw",d:Math.round((scenario.pD-official.pD)*100)},{l:"Away Win",d:Math.round((scenario.pA-official.pA)*100)}].map(({l,d})=>d!==0&&(
-                <span key={l} style={{fontSize:9,fontWeight:800,color:d>0?T.accent:T.accent2,background:`${d>0?T.accent:T.accent2}14`,border:`1px solid ${d>0?T.accent:T.accent2}30`,padding:"2px 7px",borderRadius:999}}>{l} {d>0?"+":""}{d}%</span>
+                <span key={l} style={{fontSize:9,fontWeight:700,color:d>0?T.accent:T.accent2,background:`${d>0?T.accent:T.accent2}14`,border:`1px solid ${d>0?T.accent:T.accent2}30`,padding:"2px 8px",borderRadius:999,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{l} {d>0?"+":""}{d}%</span>
               ))}
             </div>
           )}
         </div>
       )}
-      <div style={{padding:"9px 13px",fontSize:9,color:T.muted,lineHeight:1.5}}>Adjusts xG assumptions only. Official predictions unchanged.</div>
+      <div style={{padding:"10px 14px",fontSize:9,color:"rgba(255,255,255,0.2)",lineHeight:1.6,fontFamily:"'Inter',sans-serif"}}>Adjusts xG assumptions only. Official predictions unchanged.</div>
     </div>
   );
 };
@@ -427,68 +675,246 @@ const ScenarioSimulator=({match,T})=>{
 /* ══════════════════════════════════════════════════════════
    TASK 6 — STANDINGS + SCORERS
 ══════════════════════════════════════════════════════════ */
-const StandingsTable=({rows,loading,T})=>{
+const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
   const[sortCol,setSortCol]=useState("rank");const[dir,setDir]=useState(1);
   const total=rows.length||20;
-  const ZONE_COL={cl:T.accent,el:T.mid,ecl:T.muted,rel:T.accent2};
+  const ZONE_COL={cl:T.accent,el:T.mid||T.accent,ecl:"rgba(255,255,255,0.35)",rel:T.accent2};
   function getZone(pos){if(pos<=4)return"cl";if(pos===5)return"el";if(pos===6)return"ecl";if(pos>=total-2)return"rel";return null;}
   const sorted=useMemo(()=>{if(loading)return[];return[...rows].sort((a,b)=>{let va=a[sortCol],vb=b[sortCol];if(va==null)va=sortCol==="rank"?999:0;if(vb==null)vb=sortCol==="rank"?999:0;if(typeof va==="string"){va=va.toLowerCase();vb=vb.toLowerCase();}return va<vb?-dir:va>vb?dir:0;});},[rows,sortCol,dir,loading]);
   const toggle=col=>{if(sortCol===col)setDir(d=>-d);else{setSortCol(col);setDir(col==="rank"?1:-1);}};
-  const Th=({col,children,align,width})=><th onClick={()=>toggle(col)} style={{padding:10,fontSize:9,fontWeight:900,letterSpacing:".1em",color:sortCol===col?T.accent:T.muted,borderBottom:`1px solid ${T.border}`,background:"rgba(0,0,0,0.3)",textAlign:align||"center",width,cursor:"pointer",userSelect:"none"}}>{children}{sortCol===col?(dir===1?" ↑":" ↓"):""}</th>;
+
+  const colStyle=(col,align)=>({
+    padding:"11px 12px",fontSize:9,fontWeight:600,letterSpacing:"0.1em",
+    color:sortCol===col?T.accent:"rgba(255,255,255,0.25)",
+    borderBottom:"1px solid rgba(255,255,255,0.07)",
+    background:"rgba(0,0,0,0.4)",
+    textAlign:align||"center",cursor:"pointer",userSelect:"none",
+    transition:"color 0.15s",fontFamily:"'Inter',sans-serif",
+    whiteSpace:"nowrap",
+  });
+  const Th=({col,children,align,width})=>(
+    <th onClick={()=>toggle(col)} style={{...colStyle(col,align),width}}>
+      {children}{sortCol===col?<span style={{marginLeft:3,opacity:.7}}>{dir===1?"↑":"↓"}</span>:null}
+    </th>
+  );
+
   return(
-    <div style={{overflowX:"auto",borderRadius:12}}>
-      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,fontFamily:"'Sora',sans-serif"}}>
-        <thead><tr><Th col="rank" width={36}>#</Th><Th col="team_name" align="left">Club</Th><Th col="played" width={34}>P</Th><Th col="won" width={34}>W</Th><Th col="drawn" width={34}>D</Th><Th col="lost" width={34}>L</Th><Th col="goals_for" width={34}>GF</Th><Th col="goals_against" width={34}>GA</Th><Th col="goal_diff" width={40}>GD</Th><Th col="points" width={40}>Pts</Th></tr></thead>
-        <tbody>
-          {loading?Array.from({length:10}).map((_,i)=><tr key={i}>{Array.from({length:10}).map((_2,j)=><td key={j} style={{padding:10,textAlign:"center"}}><div style={{height:12,borderRadius:3,background:T.faint}}/></td>)}</tr>):sorted.map((row,i)=>{const zone=getZone(row.rank||i+1);return(
-            <tr key={row.team_id||i} style={{borderBottom:`1px solid ${T.border}`,transition:"background 0.12s"}} onMouseEnter={e=>{e.currentTarget.style.background=`${T.accent}08`;}} onMouseLeave={e=>{e.currentTarget.style.background="";}}>
-              <td style={{padding:10,textAlign:"center"}}><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{zone&&<div style={{width:3,height:16,borderRadius:2,background:ZONE_COL[zone],flexShrink:0}}/>}<span style={{fontSize:12,fontWeight:800,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{row.rank||i+1}</span></div></td>
-              <td style={{padding:10}}><div style={{display:"flex",alignItems:"center",gap:8}}>{row.logo&&<img src={row.logo} style={{width:20,height:20,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";}}/>}<span style={{fontWeight:700,color:T.text}}>{row.team_name}</span></div></td>
-              {[row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against].map((v,j)=><td key={j} style={{padding:10,textAlign:"center",color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{v??"-"}</td>)}
-              <td style={{padding:10,textAlign:"center",fontFamily:"'JetBrains Mono',monospace",color:(row.goal_diff||0)>0?T.accent:(row.goal_diff||0)<0?T.accent2:T.muted}}>{(row.goal_diff||0)>0?"+":""}{row.goal_diff??"-"}</td>
-              <td style={{padding:10,textAlign:"center",fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace"}}>{row.points??"-"}</td>
+    <div style={{
+      background:"rgba(0,0,0,0.75)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+      borderRadius:20,overflow:"hidden",
+      border:"1px solid rgba(255,255,255,0.08)",
+      boxShadow:"0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+    }}>
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'Inter',sans-serif"}}>
+          <thead>
+            <tr>
+              <Th col="rank" width={52}>#</Th>
+              <Th col="team_name" align="left">Club</Th>
+              <Th col="played" width={40}>P</Th>
+              <Th col="won" width={40}>W</Th>
+              <Th col="drawn" width={40}>D</Th>
+              <Th col="lost" width={40}>L</Th>
+              <Th col="goals_for" width={40}>GF</Th>
+              <Th col="goals_against" width={40}>GA</Th>
+              <Th col="goal_diff" width={48}>GD</Th>
+              <Th col="points" width={52}>Pts</Th>
             </tr>
-          );})}
-        </tbody>
-      </table>
-      <div style={{display:"flex",gap:14,padding:"10px 14px",borderTop:`1px solid ${T.border}`,flexWrap:"wrap"}}>
-        {[{c:T.accent,l:"Champions League"},{c:T.mid,l:"Europa League"},{c:T.muted,l:"Conference"},{c:T.accent2,l:"Relegation"}].map(({c,l})=><div key={l} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:3,height:12,borderRadius:2,background:c}}/><span style={{fontSize:9,color:T.muted}}>{l}</span></div>)}
+          </thead>
+          <tbody>
+            {loading
+              ? Array.from({length:10}).map((_,i)=>(
+                  <tr key={i}>
+                    {Array.from({length:10}).map((_2,j)=>(
+                      <td key={j} style={{padding:"11px 12px"}}>
+                        <div style={{height:11,borderRadius:6,background:"rgba(255,255,255,0.05)",animation:"pulse 1.5s ease infinite",animationDelay:`${i*0.06}s`}}/>
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : sorted.map((row,i)=>{
+                  const pos=row.rank||i+1;
+                  const zone=getZone(pos);
+                  const zoneColor=zone?ZONE_COL[zone]:null;
+                  return(
+                    <tr key={row.team_id||i}
+                      style={{borderBottom:"1px solid rgba(255,255,255,0.05)",transition:"background 0.15s",cursor:"default"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="";}}>
+
+                      {/* Rank with zone dot */}
+                      <td style={{padding:"11px 12px",textAlign:"center"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                          {zoneColor
+                            ? <div style={{width:3,height:18,borderRadius:999,background:zoneColor,boxShadow:`0 0 6px ${zoneColor}60`,flexShrink:0}}/>
+                            : <div style={{width:3,height:18,flexShrink:0}}/>
+                          }
+                          <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.45)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{pos}</span>
+                        </div>
+                      </td>
+
+                      {/* Club */}
+                      <td style={{padding:"11px 12px"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          {row.logo
+                            ? <div style={{width:26,height:26,borderRadius:8,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:2}}>
+                                <img src={row.logo} style={{width:20,height:20,objectFit:"contain"}} onError={e=>{e.currentTarget.parentElement.style.display="none";}}/>
+                              </div>
+                            : <div style={{width:26,height:26,borderRadius:8,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",flexShrink:0}}/>
+                          }
+                          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.88)",fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>{row.team_name}</span>
+                        </div>
+                      </td>
+
+                      {/* Stats */}
+                      {[row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against].map((v,j)=>(
+                        <td key={j} style={{padding:"11px 12px",textAlign:"center",fontSize:12,color:"rgba(255,255,255,0.4)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v??"-"}</td>
+                      ))}
+
+                      {/* GD */}
+                      <td style={{padding:"11px 12px",textAlign:"center",fontSize:12,fontWeight:700,fontFamily:"'SF Mono','JetBrains Mono',monospace",
+                        color:(row.goal_diff||0)>0?T.accent:(row.goal_diff||0)<0?T.accent2:"rgba(255,255,255,0.35)"}}>
+                        {(row.goal_diff||0)>0?"+":""}{row.goal_diff??"-"}
+                      </td>
+
+                      {/* Points */}
+                      <td style={{padding:"11px 12px",textAlign:"center"}}>
+                        <span style={{
+                          fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.92)",
+                          fontFamily:"'SF Mono','JetBrains Mono',monospace",
+                          background:"rgba(255,255,255,0.06)",
+                          border:"1px solid rgba(255,255,255,0.1)",
+                          padding:"2px 9px",borderRadius:8,
+                        }}>{row.points??"-"}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+          </tbody>
+        </table>
+      </div>
+      {/* Legend */}
+      <div style={{display:"flex",gap:16,padding:"12px 16px",borderTop:"1px solid rgba(255,255,255,0.07)",flexWrap:"wrap",background:"rgba(0,0,0,0.3)"}}>
+        {[{c:T.accent,l:"Champions League"},{c:T.mid||T.accent,l:"Europa League"},{c:"rgba(255,255,255,0.35)",l:"Conference"},{c:T.accent2,l:"Relegation"}].map(({c,l})=>(
+          <div key={l} style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:3,height:14,borderRadius:999,background:c,boxShadow:`0 0 4px ${c}50`}}/>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Inter',sans-serif"}}>{l}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
+/* ── iOS ScorersWidget ───────────────────────────────────── */
 const ScorersWidget=({league,T})=>{
-  const[tab,setTab]=useState("goals");const[scorers,setScorers]=useState([]);const[assists,setAssists]=useState([]);const[loading,setLoading]=useState(true);
+  const[tab,setTab]=useState("goals");
+  const[scorers,setScorers]=useState([]);
+  const[assists,setAssists]=useState([]);
+  const[loading,setLoading]=useState(true);
   const navigate=useNavigate();
-  useEffect(()=>{setLoading(true);Promise.allSettled([getTopScorers(league),getTopAssists(league)]).then(([sr,ar])=>{if(sr.status==="fulfilled")setScorers(sr.value.scorers||[]);if(ar.status==="fulfilled")setAssists(ar.value.assists||[]);setLoading(false);});},[league]);
-  const data=tab==="goals"?scorers:assists,statKey=tab==="goals"?"goals":"assists",maxVal=Math.max(...data.map(p=>p[statKey]||0),1);
+
+  useEffect(()=>{
+    setLoading(true);
+    Promise.allSettled([getTopScorers(league),getTopAssists(league)]).then(([sr,ar])=>{
+      if(sr.status==="fulfilled")setScorers(sr.value.scorers||[]);
+      if(ar.status==="fulfilled")setAssists(ar.value.assists||[]);
+      setLoading(false);
+    });
+  },[league]);
+
+  const data=tab==="goals"?scorers:assists;
+  const statKey=tab==="goals"?"goals":"assists";
+  const maxVal=Math.max(...data.map(p=>p[statKey]||0),1);
+
+  const medalColor=i=>i===0?"#FFD60A":i===1?"rgba(255,255,255,0.6)":i===2?"#CD7F32":"rgba(255,255,255,0.2)";
+
   return(
-    <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
-      <div style={{display:"flex",borderBottom:`1px solid ${T.border}`}}>
-        {[["goals","Top Scorers"],["assists","Top Assists"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:12,fontSize:11,fontWeight:800,cursor:"pointer",background:"none",border:"none",fontFamily:"'Inter',sans-serif",color:tab===k?T.accent:T.muted,borderBottom:`2px solid ${tab===k?T.accent:"transparent"}`,transition:"all 0.15s"}}>{l}</button>
+    <div style={{
+      background:"rgba(0,0,0,0.75)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+      borderRadius:20,overflow:"hidden",
+      border:"1px solid rgba(255,255,255,0.08)",
+      boxShadow:"0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+    }}>
+      {/* Tab switcher */}
+      <div style={{display:"flex",background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        {[["goals","⚽ Top Scorers"],["assists","🎯 Top Assists"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)} style={{
+            flex:1,padding:"14px 12px",fontSize:12,fontWeight:600,cursor:"pointer",
+            background:"none",border:"none",fontFamily:"'Inter',sans-serif",
+            color:tab===k?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)",
+            borderBottom:`2px solid ${tab===k?T.accent:"transparent"}`,
+            transition:"all 0.15s",letterSpacing:"0.02em",
+          }}>{l}</button>
         ))}
       </div>
-      <div style={{padding:"8px 0",maxHeight:440,overflowY:"auto"}}>
-        {loading?Array.from({length:8}).map((_,i)=><div key={i} style={{display:"flex",gap:10,padding:"10px 14px",alignItems:"center"}}><div style={{width:18,height:18,borderRadius:"50%",background:T.faint}}/><div style={{width:36,height:36,borderRadius:"50%",background:T.faint}}/><div style={{flex:1,height:12,borderRadius:4,background:T.faint}}/></div>)
-          :data.slice(0,10).map((p,i)=>(
-            <div key={p.player_id||i} onClick={()=>navigate(`/player?search=${encodeURIComponent(p.name)}`)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",transition:"background 0.15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background=`${T.accent}08`;}} onMouseLeave={e=>{e.currentTarget.style.background="";}}>
-              <span style={{fontSize:12,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:i<3?T.accent:T.muted,width:18,textAlign:"center"}}>{i+1}</span>
-              {p.photo?<img src={p.photo} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>:<div style={{width:36,height:36,borderRadius:"50%",background:T.faint,flexShrink:0}}/>}
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:800,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                <div style={{height:3,borderRadius:2,background:"rgba(255,255,255,0.05)",marginTop:4,marginBottom:2}}><div style={{width:`${(p[statKey]||0)/maxVal*100}%`,height:"100%",borderRadius:2,background:T.accent,opacity:.7}}/></div>
-                <div style={{fontSize:9,color:T.muted}}>{p.team_name}</div>
+
+      {/* List */}
+      <div style={{maxHeight:520,overflowY:"auto"}}>
+        {loading
+          ? Array.from({length:8}).map((_,i)=>(
+              <div key={i} style={{display:"flex",gap:12,padding:"14px 16px",alignItems:"center"}}>
+                <div style={{width:22,height:22,borderRadius:7,background:"rgba(255,255,255,0.04)"}}/>
+                <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+                <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                  <div style={{height:11,borderRadius:6,background:"rgba(255,255,255,0.04)",width:"60%"}}/>
+                  <div style={{height:7,borderRadius:6,background:"rgba(255,255,255,0.03)",width:"85%"}}/>
+                </div>
+                <div style={{width:32,height:32,borderRadius:10,background:"rgba(255,255,255,0.04)"}}/>
               </div>
-              <div style={{textAlign:"right",flexShrink:0}}>
-                <div style={{fontSize:22,fontWeight:900,color:T.accent,fontFamily:"'JetBrains Mono',monospace"}}>{p[statKey]||0}</div>
-                <div style={{fontSize:9,color:T.muted}}>{p.played||0} apps</div>
+            ))
+          : data.slice(0,10).map((p,i)=>(
+              <div key={p.player_id||i}
+                onClick={()=>navigate(`/player?search=${encodeURIComponent(p.name)}`)}
+                style={{
+                  display:"flex",alignItems:"center",gap:12,
+                  padding:"13px 16px",cursor:"pointer",
+                  borderBottom:"1px solid rgba(255,255,255,0.04)",
+                  transition:"background 0.15s",
+                }}
+                onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="";}}>
+
+                {/* Rank badge */}
+                <div style={{
+                  width:24,height:24,borderRadius:8,
+                  background:i<3?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.03)",
+                  border:`1px solid ${i<3?medalColor(i)+"40":"rgba(255,255,255,0.06)"}`,
+                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,
+                }}>
+                  <span style={{fontSize:10,fontWeight:700,color:medalColor(i),fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{i+1}</span>
+                </div>
+
+                {/* Photo */}
+                {p.photo
+                  ? <img src={p.photo} style={{width:38,height:38,borderRadius:"50%",objectFit:"cover",flexShrink:0,border:"1px solid rgba(255,255,255,0.1)"}} onError={e=>{e.currentTarget.style.display="none";}}/>
+                  : <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.05)",flexShrink:0,border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{fontSize:14}}>👤</span>
+                    </div>
+                }
+
+                {/* Name + bar + team */}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.88)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif",marginBottom:4}}>{p.name}</div>
+                  <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.05)",marginBottom:4,overflow:"hidden"}}>
+                    <div style={{width:`${(p[statKey]||0)/maxVal*100}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.accent}88,${T.accent})`,transition:"width 0.5s cubic-bezier(.22,1,.36,1)"}}/>
+                  </div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>{p.team_name} · {p.played||0} apps</div>
+                </div>
+
+                {/* Stat number */}
+                <div style={{
+                  minWidth:40,height:40,borderRadius:12,
+                  background:i===0?`${T.accent}18`:"rgba(255,255,255,0.05)",
+                  border:`1px solid ${i===0?T.accent+"30":"rgba(255,255,255,0.08)"}`,
+                  display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                  flexShrink:0,
+                }}>
+                  <span style={{fontSize:17,fontWeight:800,color:i===0?T.accent:"rgba(255,255,255,0.7)",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{p[statKey]||0}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+        }
       </div>
     </div>
   );
@@ -959,96 +1385,243 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const avgXgA=matches.length?(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length).toFixed(2):"0.00";
 
   return(
-    <div style={{minHeight:"100vh",background:T.bg,position:"relative"}}>
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:T.grad}}/>
-      <div style={{position:"relative",zIndex:1,maxWidth:1400,margin:"0 auto",padding:"0 20px 48px"}}>
+    <div style={{minHeight:"100vh",background:"#000",position:"relative",fontFamily:"'Inter',sans-serif"}}>
 
-        {/* HEADER */}
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:14,padding:"24px 0 20px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:4,height:52,borderRadius:4,background:T.accent,boxShadow:`0 0 16px ${T.accent}88`,flexShrink:0}}/>
+      {/* ── Ambient gradient background */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0}}>
+        <div style={{position:"absolute",inset:0,background:T.grad,opacity:0.7}}/>
+        {/* Noise texture overlay */}
+        <div style={{position:"absolute",inset:0,opacity:0.025,backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,backgroundSize:"150px"}}/>
+      </div>
+
+      <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:"0 24px 64px"}}>
+
+        {/* ══ HEADER ══════════════════════════════════════════ */}
+        <div style={{padding:"28px 0 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+
+          {/* Title block */}
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            {/* Accent pill */}
+            <div style={{
+              width:5,height:56,borderRadius:999,flexShrink:0,
+              background:`linear-gradient(180deg,${T.accent},${T.accent2||T.accent}88)`,
+              boxShadow:`0 0 20px ${T.accent}60`,
+            }}/>
             <div>
-              <h1 style={{fontSize:28,fontWeight:900,color:T.text,margin:"0 0 4px",letterSpacing:"-0.02em",fontFamily:"'Sora',sans-serif",display:"flex",alignItems:"center",gap:10}}>
-                <LeagueFlag code={league} size={24}/>{T.label}
-              </h1>
-              <p style={{fontSize:12,color:T.muted,margin:0,fontWeight:600,fontFamily:"'Inter',sans-serif"}}>Elo · Dixon-Coles · Real xG · Pro data</p>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+                <LeagueFlag code={league} size={22}/>
+                <h1 style={{
+                  fontSize:30,fontWeight:700,color:"rgba(255,255,255,0.95)",
+                  margin:0,letterSpacing:"-0.03em",
+                  fontFamily:"'Inter',sans-serif",
+                }}>{T.label}</h1>
+              </div>
+              <p style={{
+                fontSize:11,color:"rgba(255,255,255,0.2)",margin:0,
+                fontFamily:"'SF Mono','JetBrains Mono',monospace",
+                letterSpacing:"0.06em",
+              }}>ELO · DIXON-COLES · REAL xG · PRO DATA</p>
             </div>
           </div>
-          <nav style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-            {LEAGUE_TABS.map(({code,slug,label})=>{const active=league===code;const LT=THEMES[code];return(
-              <NavLink key={code} to={`/predictions/${slug}`} style={{display:"flex",alignItems:"center",gap:7,padding:"8px 14px",borderRadius:999,fontSize:11,fontWeight:800,textDecoration:"none",whiteSpace:"nowrap",border:`1.5px solid ${active?LT.accent:T.border}`,color:active?LT.accent:T.muted,background:active?`${LT.accent}12`:"transparent",transition:"all 0.15s"}}>
-                <LeagueFlag code={code} size={15}/>{label}
-              </NavLink>
-            );})}
+
+          {/* League nav pills */}
+          <nav style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            {LEAGUE_TABS.map(({code,slug,label})=>{
+              const active=league===code;
+              const LT=THEMES[code];
+              return(
+                <NavLink key={code} to={`/predictions/${slug}`} style={{
+                  display:"flex",alignItems:"center",gap:6,
+                  padding:"7px 14px",borderRadius:999,fontSize:11,fontWeight:600,
+                  textDecoration:"none",whiteSpace:"nowrap",
+                  border:`1px solid ${active?LT.accent+"60":"rgba(255,255,255,0.1)"}`,
+                  color:active?LT.accent:"rgba(255,255,255,0.4)",
+                  background:active?`${LT.accent}14`:"rgba(255,255,255,0.04)",
+                  backdropFilter:"blur(10px)",
+                  transition:"all 0.18s cubic-bezier(.22,1,.36,1)",
+                  boxShadow:active?`0 0 12px ${LT.accent}25`:"none",
+                  fontFamily:"'Inter',sans-serif",letterSpacing:"0.01em",
+                }}>
+                  <LeagueFlag code={code} size={13}/>
+                  {label}
+                </NavLink>
+              );
+            })}
           </nav>
         </div>
 
-        {/* TABS */}
-        <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,marginBottom:24,overflowX:"auto"}}>
+        {/* ══ QUICK STATS ROW ════════════════════════════════ */}
+        {!predLoad&&matches.length>0&&(
+          <div style={{
+            display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,
+            marginBottom:24,
+          }}>
+            {[
+              {label:"Fixtures",val:matches.length,mono:true},
+              {label:"Home Wins",val:homeWins,mono:true},
+              {label:"Draws",val:draws,mono:true},
+              {label:"BTTS Likely",val:`${bttsCount}`,mono:true},
+              {label:"Avg Confidence",val:`${avgConf}%`,accent:true},
+              {label:"Avg xG Home",val:avgXgH,mono:true},
+              {label:"Avg xG Away",val:avgXgA,mono:true},
+            ].map(({label,val,accent,mono})=>(
+              <div key={label} style={{
+                padding:"13px 14px",borderRadius:14,
+                background:"rgba(255,255,255,0.04)",
+                border:"1px solid rgba(255,255,255,0.07)",
+                backdropFilter:"blur(10px)",
+                boxShadow:"inset 0 1px 0 rgba(255,255,255,0.05)",
+              }}>
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.25)",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif",marginBottom:5}}>{label}</div>
+                <div style={{fontSize:20,fontWeight:700,color:accent?T.accent:"rgba(255,255,255,0.85)",fontFamily:mono?"'SF Mono','JetBrains Mono',monospace":"'Inter',sans-serif",lineHeight:1}}>{val}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ══ TAB BAR ════════════════════════════════════════ */}
+        <div style={{
+          display:"flex",marginBottom:24,overflowX:"auto",
+          background:"rgba(255,255,255,0.03)",
+          borderRadius:14,padding:4,gap:2,
+          border:"1px solid rgba(255,255,255,0.07)",
+          backdropFilter:"blur(10px)",
+          width:"fit-content",
+        }}>
           {[
-            ["predictions","Predictions",!predLoad?matches.length:null],
-            ["standings","Table",!standLoad?standings.length:null],
-            ["scorers","Scorers",null],
-            ["simulator","Season Sim",null],
-          ].map(([key,label,badge])=>(
-            <button key={key} onClick={()=>setTab(key)} style={{display:"flex",alignItems:"center",gap:7,padding:"12px 18px",fontSize:12,fontWeight:800,cursor:"pointer",background:"none",border:"none",fontFamily:"'Inter',sans-serif",letterSpacing:".04em",whiteSpace:"nowrap",color:tab===key?T.accent:T.muted,borderBottom:`2px solid ${tab===key?T.accent:"transparent"}`,transition:"all 0.15s"}}>
-              {key==="simulator"&&<span style={{fontSize:11}}>🔬</span>}
+            {key:"predictions",label:"Predictions",badge:!predLoad?matches.length:null},
+            {key:"standings",label:"Table",badge:!standLoad?standings.length:null},
+            {key:"scorers",label:"Scorers"},
+            {key:"simulator",label:"Season Sim"},
+          ].map(({key,label,badge})=>(
+            <button key={key} onClick={()=>setTab(key)} style={{
+              display:"flex",alignItems:"center",gap:6,
+              padding:"8px 18px",fontSize:12,fontWeight:600,
+              cursor:"pointer",border:"none",whiteSpace:"nowrap",
+              fontFamily:"'Inter',sans-serif",letterSpacing:"0.01em",
+              borderRadius:10,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",
+              color:tab===key?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.35)",
+              background:tab===key?"rgba(255,255,255,0.1)":"transparent",
+              boxShadow:tab===key?"0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)":"none",
+            }}>
               {label}
-              {badge!=null&&<span style={{background:tab===key?`${T.accent}18`:"rgba(255,255,255,0.04)",color:tab===key?T.accent:T.muted,borderRadius:999,padding:"1px 7px",fontSize:10}}>{badge}</span>}
+              {badge!=null&&(
+                <span style={{
+                  background:tab===key?`${T.accent}28`:"rgba(255,255,255,0.07)",
+                  color:tab===key?T.accent:"rgba(255,255,255,0.3)",
+                  borderRadius:999,padding:"1px 7px",fontSize:9,
+                  fontFamily:"'SF Mono','JetBrains Mono',monospace",fontWeight:700,
+                }}>{badge}</span>
+              )}
             </button>
           ))}
         </div>
 
-        {/* PREDICTIONS TAB */}
+        {/* ══ PREDICTIONS TAB ════════════════════════════════ */}
         {tab==="predictions"&&(
-          <div style={{display:"grid",gridTemplateColumns:"1fr 290px",gap:20,alignItems:"start"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:20,alignItems:"start"}}>
             <div>
-              {/* Sort bar */}
+              {/* Sort controls */}
               {!predLoad&&!predErr&&matches.length>0&&(
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                  <span style={{fontSize:10,color:T.muted}}>Sort:</span>
-                  {[["confidence","Confidence"],["date","Date"],["home","Home %"]].map(([s,l])=>(
-                    <button key={s} onClick={()=>setSort(s)} style={{padding:"5px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",border:`1px solid ${sort===s?T.accent:T.border}`,background:sort===s?`${T.accent}18`:"transparent",color:sort===s?T.accent:T.muted,transition:"all 0.13s"}}>{l}</button>
-                  ))}
-                  <span style={{marginLeft:"auto",fontSize:10,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{matches.length} fixtures</span>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+                  <span style={{fontSize:10,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em"}}>SORT</span>
+                  <div style={{display:"flex",gap:5,padding:"3px",borderRadius:10,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
+                    {[["confidence","Confidence"],["date","Date"],["home","Home Win %"]].map(([s,l])=>(
+                      <button key={s} onClick={()=>setSort(s)} style={{
+                        padding:"5px 12px",borderRadius:7,fontSize:10,fontWeight:600,
+                        cursor:"pointer",border:"none",fontFamily:"'Inter',sans-serif",
+                        background:sort===s?"rgba(255,255,255,0.1)":"transparent",
+                        color:sort===s?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)",
+                        transition:"all 0.15s",
+                        boxShadow:sort===s?"0 1px 2px rgba(0,0,0,0.3)":"none",
+                      }}>{l}</button>
+                    ))}
+                  </div>
+                  <span style={{marginLeft:"auto",fontSize:10,color:"rgba(255,255,255,0.2)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{matches.length} fixtures</span>
                 </div>
               )}
-              {predErr&&<div style={{padding:20,background:T.panel,border:`1px solid ${T.border}`,borderRadius:12,color:T.muted,fontSize:13}}>Error: {predErr}</div>}
-              {predLoad&&<div style={{display:"flex",flexDirection:"column",gap:8}}>{Array.from({length:4}).map((_,i)=><div key={i} style={{height:160,borderRadius:16,background:T.panel,border:`1px solid ${T.border}`,opacity:1-i*.15}}/>)}</div>}
-              {!predLoad&&!predErr&&matches.length===0&&<div style={{padding:40,textAlign:"center",color:T.muted,fontSize:14}}>No upcoming fixtures found.</div>}
-              {/* 2-col grid */}
+
+              {/* Error */}
+              {predErr&&(
+                <div style={{padding:"16px 20px",background:"rgba(255,50,50,0.06)",border:"1px solid rgba(255,50,50,0.15)",borderRadius:14,color:"rgba(255,100,100,0.8)",fontSize:13,fontFamily:"'Inter',sans-serif"}}>
+                  ⚠️ {predErr}
+                </div>
+              )}
+
+              {/* Skeleton */}
+              {predLoad&&(
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {Array.from({length:3}).map((_,i)=>(
+                    <div key={i} style={{height:180,borderRadius:20,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",animation:"pulse 1.5s ease infinite",animationDelay:`${i*0.12}s`}}/>
+                  ))}
+                </div>
+              )}
+
+              {!predLoad&&!predErr&&matches.length===0&&(
+                <div style={{padding:48,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:14,fontFamily:"'Inter',sans-serif"}}>
+                  <div style={{fontSize:36,marginBottom:12,opacity:.3}}>📭</div>
+                  No upcoming fixtures found.
+                </div>
+              )}
+
+              {/* Match cards grid */}
               {!predLoad&&!predErr&&(
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(520px,1fr))",gap:12}}>
-                  {sorted.map((m,i)=><MatchCard key={(m.home_team||"")+(m.away_team||"")+i} match={m} T={T} onSelect={()=>setSelectedMatch(m)} isSelected={selectedMatch===m} navigate={navigate}/>)}
+                  {sorted.map((m,i)=>(
+                    <MatchCard key={(m.home_team||"")+(m.away_team||"")+i} match={m} T={T}
+                      onSelect={()=>setSelectedMatch(m)}
+                      isSelected={selectedMatch===m}
+                      navigate={navigate}
+                    />
+                  ))}
                 </div>
               )}
             </div>
-            {/* Floating simulator */}
-            <div style={{position:"sticky",top:24}}>
+
+            {/* Sticky sidebar */}
+            <div style={{position:"sticky",top:24,display:"flex",flexDirection:"column",gap:12}}>
               <ScenarioSimulator match={selectedMatch||sorted[0]} T={T}/>
             </div>
           </div>
         )}
 
+        {/* ══ STANDINGS TAB ══════════════════════════════════ */}
         {tab==="standings"&&(
-          <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
-            {standErr?<div style={{padding:20,color:T.muted}}>Error: {standErr}</div>:<StandingsTable rows={standings} loading={standLoad} T={T}/>}
+          <div>
+            {standErr
+              ? <div style={{padding:20,color:"rgba(255,100,100,0.7)",fontSize:13}}>{standErr}</div>
+              : <StandingsTable rows={standings} loading={standLoad} T={T}/>
+            }
           </div>
         )}
 
-        {tab==="scorers"&&<ScorersWidget league={league} T={T}/>}
+        {/* ══ SCORERS TAB ════════════════════════════════════ */}
+        {tab==="scorers"&&(
+          <div style={{maxWidth:640}}>
+            <ScorersWidget league={league} T={T}/>
+          </div>
+        )}
 
+        {/* ══ SEASON SIM TAB ═════════════════════════════════ */}
         {tab==="simulator"&&(
           <SeasonSimulatorTab standings={standings} standLoad={standLoad} league={league} T={T}/>
         )}
+
       </div>
 
+      {/* ── Global CSS ─────────────────────────────────────── */}
       <style>{`
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:${T.border};border-radius:2px}
-        input[type=range]{height:3px;border-radius:2px}
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @keyframes spin   { to{transform:rotate(360deg)} }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width:4px; height:4px }
+        ::-webkit-scrollbar-track { background:transparent }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:999px }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.22) }
+        input[type=range] { height:4px; border-radius:999px; outline:none }
+        input[type=range]::-webkit-slider-thumb { width:14px; height:14px; border-radius:50% }
+        ::selection { background:${T.accent}40 }
       `}</style>
     </div>
   );

@@ -9,13 +9,22 @@ import { useState, useEffect, useCallback } from "react";
 const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 
 const FEEDS = [
-  { url:"https://www.skysports.com/rss/12040",         source:"Sky Sports",  league:"epl",    color:"#C8102E" },
-  { url:"https://www.skysports.com/rss/12039",         source:"Sky Sports",  league:"laliga", color:"#F1BF00" },
-  { url:"https://www.skysports.com/rss/12078",         source:"Sky Sports",  league:"seriea", color:"#009246" },
-  { url:"https://www.skysports.com/rss/12081",         source:"Sky Sports",  league:"ligue1", color:"#002395" },
-  { url:"https://www.skysports.com/rss/12116",         source:"Sky Sports",  league:"ucl",    color:"#1B5EBE" },
-  { url:"https://feeds.bbci.co.uk/sport/football/rss.xml", source:"BBC Sport", league:"epl",  color:"#C8102E" },
-  { url:"https://www.goal.com/feeds/en/news",          source:"Goal.com",    league:"epl",    color:"#C8102E" },
+  // Sky Sports — league-specific football feeds
+  { url:"https://www.skysports.com/rss/12040", source:"Sky Sports", league:"epl",    color:"#C8102E" },
+  { url:"https://www.skysports.com/rss/12039", source:"Sky Sports", league:"laliga", color:"#F1BF00" },
+  { url:"https://www.skysports.com/rss/12078", source:"Sky Sports", league:"seriea", color:"#009246" },
+  { url:"https://www.skysports.com/rss/12081", source:"Sky Sports", league:"ligue1", color:"#002395" },
+  { url:"https://www.skysports.com/rss/12116", source:"Sky Sports", league:"ucl",    color:"#1B5EBE" },
+  // Goal.com — football only
+  { url:"https://www.goal.com/feeds/en/news",  source:"Goal.com",   league:"epl",    color:"#1a1a2e" },
+  // Football Italia — Serie A focused
+  { url:"https://www.football-italia.net/rss.xml", source:"Football Italia", league:"seriea", color:"#009246" },
+  // Get French Football News — Ligue 1 focused
+  { url:"https://www.getfootballnewsfrance.com/feed/", source:"GFN France", league:"ligue1", color:"#002395" },
+  // Managing Madrid — La Liga focused
+  { url:"https://www.managingmadrid.com/rss/current", source:"Managing Madrid", league:"laliga", color:"#F1BF00" },
+  // The Short Fuse (Arsenal) / We Ain't Got No History (Chelsea) — EPL focused
+  { url:"https://arseblog.news/feed/", source:"Arseblog", league:"epl", color:"#C8102E" },
 ];
 
 const LEAGUES = [
@@ -32,7 +41,12 @@ const LEAGUES = [
     flag:<svg width={16} height={11} viewBox="0 0 18 13" fill="none"><rect width="18" height="13" fill="#001f6b"/><text x="9" y="9" textAnchor="middle" fontSize="8" fill="#ffd700" fontWeight="900">★</text></svg>},
 ];
 
-function timeAgo(iso) {
+const FOOTBALL_KEYWORDS = ["football","soccer","goal","match","premier league","la liga","serie a","ligue 1","champions league","transfer","manager","striker","midfielder","defender","goalkeeper","fixture","standings","squad","stadium","referee","offside","penalty","kick","club","fc ","united","city fc","arsenal","chelsea","liverpool","barcelona","real madrid","juventus","psg","inter","milan","atletico","dortmund","ajax","porto","benfica"];
+
+function isFootballArticle(title, desc) {
+  const text = (title + " " + desc).toLowerCase();
+  return FOOTBALL_KEYWORDS.some(k => text.includes(k));
+}
   const d = new Date(iso), now = Date.now();
   const mins = Math.round((now - d) / 60000);
   if (mins < 2) return "just now";
@@ -174,6 +188,7 @@ export default function NewsTrackerPage() {
           if (data.status !== "ok") return;
           (data.items || []).forEach(item => {
             if (seen.has(item.title)) return;
+            if (!isFootballArticle(item.title, item.description || "")) return;
             seen.add(item.title);
             const league = guessLeague(item.title, item.description || "", feed.league);
             allArticles.push({

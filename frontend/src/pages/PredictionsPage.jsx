@@ -474,247 +474,35 @@ const ConfMeter = ({ value }) => {
 // Shows players as glowing nodes, passes flowing between them as animated
 // dashed lines, culminating in a shot on goal. Secondary players pulse with
 // "movement" blobs. Outcome changes which side scores / where ball ends up.
-const MiniPitch = ({ outcome, homeProb, awayProb, homeTeam, awayTeam, leagueColor }) => {
-  const uid = React.useRef(Math.random().toString(36).slice(2, 8)).current;
-  const W = 340, H = 64;
-  const MY = H / 2;
+const MiniPitch = ({ outcome, homeTeam, awayTeam }) => {
   const isHome = outcome === "home";
   const isAway = outcome === "away";
-  const isDraw = outcome === "draw";
-  const lc = leagueColor || "#ffffff";
-
-  // Team colours
-  const hCol = lc;
-  const aCol = isAway ? "#bfbfbf" : "rgba(80,80,80,0.5)";
-
-  // Player node positions [x, y, team("h"/"a"), role]
-  // Home players on left half, away on right half
-  const nodes = [
-    // Home (attacking toward right)
-    { x:18,  y:MY,     t:"h", r:"gk"  },
-    { x:70,  y:MY-16, t:"h", r:"def" },
-    { x:70,  y:MY+16, t:"h", r:"def" },
-    { x:120, y:MY-10, t:"h", r:"mid" },
-    { x:120, y:MY+10, t:"h", r:"mid" },
-    { x:168, y:MY,    t:"h", r:"fwd" },
-    // Away (attacking toward left)
-    { x:322, y:MY,     t:"a", r:"gk"  },
-    { x:272, y:MY-16, t:"a", r:"def" },
-    { x:272, y:MY+16, t:"a", r:"def" },
-    { x:224, y:MY-10, t:"a", r:"mid" },
-    { x:224, y:MY+10, t:"a", r:"mid" },
-    { x:178, y:MY,    t:"a", r:"fwd" },
-  ];
-
-  // Pass sequences — each is a list of node indices the ball travels through
-  // For home win: ball flows home side → goal right
-  // For away win: ball flows away side → goal left
-  // For draw: ball flows to centre, bounces back
-  const homePassSeq = [2, 4, 5];   // def → mid → fwd
-  const awayPassSeq = [8, 10, 11]; // def → mid → fwd
-  const drawSeq     = [4, 5, 11];  // home mid → home fwd → away fwd (contested)
-
-  const activeSeq = isHome ? homePassSeq : isAway ? awayPassSeq : drawSeq;
-
-  // Goal mouth positions
-  const goalR = { x:W-6,  y:MY, gy1:MY-10, gy2:MY+10 };
-  const goalL = { x:6,    y:MY, gy1:MY-10, gy2:MY+10 };
-  const shotEnd = isHome ? goalR : isAway ? goalL : { x:W/2, y:MY };
-
-  // Build SVG path for pass sequence + final shot
-  const seqPts = activeSeq.map(i => nodes[i]);
-  const fullPath = [
-    ...seqPts,
-    shotEnd,
-  ];
-
-  // Build cubic bezier path through all points
-  const pathD = fullPath.reduce((acc, pt, i) => {
-    if (i === 0) return `M ${pt.x} ${pt.y}`;
-    const prev = fullPath[i-1];
-    const cpx1 = prev.x + (pt.x - prev.x) * 0.4;
-    const cpy1 = prev.y;
-    const cpx2 = prev.x + (pt.x - prev.x) * 0.6;
-    const cpy2 = pt.y;
-    return acc + ` C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${pt.x} ${pt.y}`;
-  }, "");
-
-  // Approximate path length for dash offset
-  const pathLen = fullPath.reduce((sum, pt, i) => {
-    if (i === 0) return 0;
-    const prev = fullPath[i-1];
-    return sum + Math.hypot(pt.x-prev.x, pt.y-prev.y);
-  }, 0) * 1.1;
-
-  const DELAY = 0.3;
-  const DUR   = isDraw ? 1.6 : 2.2;
-  const glowCol = isHome ? hCol : isAway ? "#bfbfbf" : "#888888";
-
-  const css = `
-    @keyframes mn_ball_${uid}  { 0%{offset-distance:0%} 100%{offset-distance:100%} }
-    @keyframes mn_trail_${uid} { 0%{stroke-dashoffset:${pathLen};opacity:0} 8%{opacity:.55}
-                                  80%{stroke-dashoffset:0;opacity:.4} 100%{opacity:0} }
-    @keyframes mn_glow_${uid}  { 0%,70%{opacity:0;r:6} 85%{opacity:1;r:12} 100%{opacity:0;r:20} }
-    @keyframes mn_net_${uid}   { 0%,72%{opacity:0} 84%{opacity:.35} 100%{opacity:0} }
-    @keyframes mn_pulse_${uid} { 0%{r:12;opacity:.35} 100%{r:22;opacity:0} }
-    @keyframes mn_nod_${uid}   { 0%,100%{opacity:.45;r:4.5} 50%{opacity:.8;r:5.5} }
-    @keyframes mn_act_${uid}   { 0%,100%{opacity:.7;r:5} 30%{opacity:1;r:6.5} }
-    @keyframes mn_halo_${uid}  { 0%{r:8;opacity:.25} 100%{r:16;opacity:0} }
-  `;
-
-  const NodeEl = ({ node, idx }) => {
-    const col = node.t === "h" ? hCol : aCol;
-    const isActive = activeSeq.includes(idx);
-    const animDur  = 1.8 + idx * 0.13;
-    const animDel  = idx * 0.08;
-    return (
-      <g key={idx}>
-        {/* Subtle halo for active nodes */}
-        {isActive && (
-          <circle cx={node.x} cy={node.y} r="8" fill={col} opacity="0"
-            style={{ animation:`mn_halo_${uid} 1.2s ${DELAY+0.4}s ease-out forwards` }}/>
-        )}
-        {/* Node */}
-        <circle cx={node.x} cy={node.y} r={node.r==="gk"?4:isActive?5:4.5}
-          fill={col}
-          opacity={node.r==="gk" ? 0.35 : isActive ? 0.9 : 0.45}
-          style={{ animation:isActive
-            ? `mn_act_${uid} ${animDur}s ${animDel}s ease-in-out infinite`
-            : `mn_nod_${uid} ${animDur}s ${animDel}s ease-in-out infinite` }}/>
-        {/* Position dot */}
-        <circle cx={node.x} cy={node.y} r="1.5" fill="rgba(255,255,255,0.6)" opacity={isActive?0.9:0.3}/>
-      </g>
-    );
-  };
-
-  // Static connection lines between teammates (faint)
-  const connections = [
-    [0,1],[0,2],[1,3],[2,4],[3,5],[4,5],     // home side
-    [6,7],[6,8],[7,9],[8,10],[9,11],[10,11],  // away side
-    [5,11],                                    // fwd duel
-  ];
-
+  const W = 300, H = 60, MY = H / 2;
   return (
-    <div style={{ width:"100%", marginTop:10, marginBottom:0, lineHeight:0 }}>
-      <style>{css}</style>
+    <div style={{ width:"100%", margin:"10px 0 0", lineHeight:0 }}>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`}
-        style={{ display:"block", borderRadius:8, opacity:0.82 }} aria-hidden="true">
-        <defs>
-          <linearGradient id={`pg_${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#091f0d"/>
-            <stop offset="100%" stopColor="#050f06"/>
-          </linearGradient>
-          <pattern id={`ps_${uid}`} width="34" height={H} patternUnits="userSpaceOnUse">
-            <rect width="17" height={H} fill="rgba(255,255,255,0.015)"/>
-          </pattern>
-          <radialGradient id={`ball_${uid}`} cx="35%" cy="28%" r="65%">
-            <stop offset="0%" stopColor="#ffffff"/>
-            <stop offset="100%" stopColor="#aaccdd"/>
-          </radialGradient>
-          <filter id={`gf_${uid}`} x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="3"/>
-          </filter>
-          <filter id={`nf_${uid}`} x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="2"/>
-          </filter>
-        </defs>
-
-        {/* Pitch */}
-        <rect x="0" y="0" width={W} height={H} rx="8" fill={`url(#pg_${uid})`}/>
-        <rect x="0" y="0" width={W} height={H} rx="8" fill={`url(#ps_${uid})`}/>
-
-        {/* Pitch markings */}
-        <line x1={W/2} y1="4" x2={W/2} y2={H-4}
-          stroke="rgba(255,255,255,0.09)" strokeWidth="0.7" strokeDasharray="3 2"/>
-        <circle cx={W/2} cy={MY} r="10" fill="none"
-          stroke="rgba(255,255,255,0.08)" strokeWidth="0.7"/>
-        <circle cx={W/2} cy={MY} r="1.5" fill="rgba(255,255,255,0.2)"/>
-        <rect x="2" y={MY-11} width="16" height="22" rx="1.5"
-          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.7"/>
-        <rect x={W-18} y={MY-11} width="16" height="22" rx="1.5"
-          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.7"/>
-
-        {/* Goals */}
-        {/* Left goal */}
-        <line x1="2" y1={MY-10} x2="8" y2={MY-10} stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="2" y1={MY+10} x2="8" y2={MY+10} stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="2.5" y1={MY-10} x2="2.5" y2={MY+10} stroke="rgba(255,255,255,0.65)" strokeWidth="2"/>
-        {/* Net flash left */}
-        {isAway && <rect x="2" y={MY-10} width="6" height="20" rx="1"
-          fill="rgba(255,255,255,0.3)" opacity="0"
-          style={{animation:`mn_net_${uid} 0.7s ${DELAY+DUR*0.88}s ease-out forwards`}}/>}
-
-        {/* Right goal */}
-        <line x1={W-8} y1={MY-10} x2={W-2} y2={MY-10} stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
-        <line x1={W-8} y1={MY+10} x2={W-2} y2={MY+10} stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
-        <line x1={W-2.5} y1={MY-10} x2={W-2.5} y2={MY+10} stroke="rgba(255,255,255,0.65)" strokeWidth="2"/>
-        {/* Net flash right */}
-        {isHome && <rect x={W-8} y={MY-10} width="6" height="20" rx="1"
-          fill={lc} opacity="0"
-          style={{animation:`mn_net_${uid} 0.7s ${DELAY+DUR*0.88}s ease-out forwards`}}/>}
-
-        {/* Team abbreviations */}
-        <text x="24" y={H-4} fontSize="6.5" fontWeight="900"
-          fill={`${hCol}55`} textAnchor="middle" fontFamily="Sora,sans-serif">
+        style={{ display:"block", borderRadius:6, opacity:0.7 }} aria-hidden="true">
+        <rect width={W} height={H} rx="6" fill="#0a1f0d"/>
+        <line x1={W/2} y1="4" x2={W/2} y2={H-4} stroke="rgba(255,255,255,0.08)" strokeWidth="0.7"/>
+        <circle cx={W/2} cy={MY} r="8" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.7"/>
+        <rect x="2" y={MY-8} width="12" height="16" rx="1" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.7"/>
+        <rect x={W-14} y={MY-8} width="12" height="16" rx="1" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.7"/>
+        <line x1="2" y1={MY-7} x2="6" y2={MY-7} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="2" y1={MY+7} x2="6" y2={MY+7} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="2.5" y1={MY-7} x2="2.5" y2={MY+7} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+        <line x1={W-6} y1={MY-7} x2={W-2} y2={MY-7} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1={W-6} y1={MY+7} x2={W-2} y2={MY+7} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1={W-2.5} y1={MY-7} x2={W-2.5} y2={MY+7} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+        <circle cx={isHome?W*0.62:isAway?W*0.38:W/2} cy={MY} r="4"
+          fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5"/>
+        <text x="20" y={H-4} fontSize="6" fontWeight="900" fill="rgba(255,255,255,0.25)"
+          textAnchor="middle" fontFamily="Sora,sans-serif">
           {(homeTeam||"HOME").slice(0,3).toUpperCase()}
         </text>
-        <text x={W-24} y={H-4} fontSize="6.5" fontWeight="900"
-          fill={`${isAway?"#bfbfbf":"rgba(180,180,180,0.35)"}55`} textAnchor="middle" fontFamily="Sora,sans-serif">
+        <text x={W-20} y={H-4} fontSize="6" fontWeight="900" fill="rgba(255,255,255,0.25)"
+          textAnchor="middle" fontFamily="Sora,sans-serif">
           {(awayTeam||"AWAY").slice(0,3).toUpperCase()}
         </text>
-
-        {/* Static connection lines */}
-        {connections.map(([a,b], i) => (
-          <line key={i}
-            x1={nodes[a].x} y1={nodes[a].y}
-            x2={nodes[b].x} y2={nodes[b].y}
-            stroke={nodes[a].t==="h" ? hCol : aCol}
-            strokeWidth="0.6" opacity="0.12"/>
-        ))}
-
-        {/* Player nodes */}
-        {nodes.map((node, i) => <NodeEl key={i} node={node} idx={i}/>)}
-
-        {/* Animated pass trail */}
-        <path d={pathD} fill="none" stroke={glowCol} strokeWidth="1.8"
-          strokeDasharray="5 7" strokeDashoffset={pathLen} opacity="0"
-          style={{
-            animation:`mn_trail_${uid} ${DUR}s ${DELAY}s ease-in-out forwards`,
-            filter:`drop-shadow(0 0 3px ${glowCol}88)`,
-          }}/>
-
-        {/* Ball glow */}
-        <circle r={6} fill={glowCol} opacity="0" filter={`url(#gf_${uid})`}
-          style={{
-            offsetPath:`path("${pathD}")`,
-            offsetDistance:"0%",
-            animation:`mn_ball_${uid} ${DUR}s ${DELAY}s cubic-bezier(.2,0,.4,1) forwards`,
-          }}/>
-
-        {/* Main ball */}
-        <circle r="4" fill={`url(#ball_${uid})`} stroke="rgba(0,0,0,0.3)" strokeWidth="0.5"
-          style={{
-            offsetPath:`path("${pathD}")`,
-            offsetDistance:"0%",
-            animation:`mn_ball_${uid} ${DUR}s ${DELAY}s cubic-bezier(.2,0,.4,1) forwards`,
-            filter:`drop-shadow(0 1px 2px ${glowCol}66)`,
-          }}/>
-
-        {/* Goal impact burst */}
-        {!isDraw && (
-          <circle cx={shotEnd.x} cy={shotEnd.y} r="6" fill={glowCol} opacity="0"
-            style={{
-              animation:`mn_glow_${uid} 0.9s ${DELAY+DUR*0.87}s ease-out forwards`,
-              transformOrigin:`${shotEnd.x}px ${shotEnd.y}px`,
-              filter:`url(#gf_${uid})`,
-            }}/>
-        )}
-
-        {/* Draw centre pulse */}
-        {isDraw && (
-          <circle cx={W/2} cy={MY} r="12" fill="none" stroke={glowCol} strokeWidth="1" opacity="0"
-            style={{animation:`mn_pulse_${uid} 0.9s ${DELAY+DUR*0.9}s ease-out forwards`}}/>
-        )}
       </svg>
     </div>
   );
@@ -1119,13 +907,7 @@ export default function PredictionsPage({ league: propLeague, slugMap }) {
       {/* ── Scorers ── */}
       {tab==="scorers"&&<ScorersWidget league={league}/>}
 
-      <style>{`
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-        .pred-grid-responsive{grid-template-columns:1fr !important}
-        @media(max-width:900px){.pred-grid{grid-template-columns:1fr !important}}
-      `}</style>
+
     </div>
   </div>
   </div>

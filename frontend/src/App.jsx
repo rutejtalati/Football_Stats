@@ -11,8 +11,7 @@ import PredictionsPage      from "./pages/PredictionsPage";
 import PlayerInsightPage    from "./pages/PlayerInsightPage";
 import PlayerBrowsePage     from "./pages/PlayerBrowsePage";
 import MiniGamesPage        from "./pages/MiniGamesPage";
-import StatsLearnPage       from "./pages/StatsLearnPage";
-
+import GroundZeroPage from "./pages/Groundzeropage"
 const SLUG_MAP = {
   "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
   "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",
@@ -33,8 +32,7 @@ export default function App() {
           <Route path="/player/:id"         element={<PlayerInsightPage />} />
           <Route path="/fpl-table"          element={<FplTablePage />} />
           <Route path="/games"              element={<MiniGamesPage />} />
-          <Route path="/learn"              element={<StatsLearnPage />} />
-          <Route path="/predictions"
+<Route path="/learn" element={<GroundZeroPage/>}/>          <Route path="/predictions"
             element={<Navigate to="/predictions/premier-league" replace />} />
           <Route path="/predictions/:league"
             element={<PredictionsPage slugMap={SLUG_MAP} />} />

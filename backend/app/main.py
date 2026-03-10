@@ -514,7 +514,7 @@ from pydantic import BaseModel
 class PromptRequest(BaseModel):
     prompt: str
 
-OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 
 @app.post("/api/ai/generate")
 def generate_ai_text(body: PromptRequest):
@@ -545,3 +545,4 @@ def generate_ai_text(body: PromptRequest):
         raise HTTPException(502, f"OpenRouter error: {e.response.text[:300]}")
     except Exception as e:
         raise HTTPException(502, f"AI generation failed: {str(e)}")
+

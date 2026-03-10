@@ -1,4 +1,26 @@
-﻿// NewsTrackerPage.jsx â€” StatinSite
+﻿// NewsTrackerPage.jsx — StatinSite
+import { useState, useEffect, useCallback, useRef } from "react";
+import { getStandings, getTopScorers, getTopAssists, getLeagueInjuries, getLeaguePredictions } from "../api/api";
+
+const BACKEND = import.meta.env.VITE_API_BASE_URL || "https://football-stats-lw4b.onrender.com";
+
+async function aiChat(prompt) {
+  const res = await fetch(${BACKEND}/api/ai/generate, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail || "Backend AI error ${res.status}");
+  }
+  const data = await res.json();
+  const text = data?.text ?? "";
+  if (!text) throw new Error("Backend returned empty response");
+  return text;
+}
+
+// NewsTrackerPage.jsx â€” StatinSite
 // AI-generated football articles â€” AI runs on backend (no CORS, no key in browser)
 
 // â”€â”€ ALL IMPORTS MUST BE AT THE TOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -815,3 +837,4 @@ export default function NewsTrackerPage() {
     </div>
   );
 }
+

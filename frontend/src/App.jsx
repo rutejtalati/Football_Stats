@@ -1,71 +1,62 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Navbar               from "./components/Navbar";
+import HomePage             from "./pages/HomePage";
+import LeaguePage           from "./pages/LeaguePage";
+import SeasonSimulator      from "./pages/SeasonSimulator";
+import FplTablePage         from "./pages/FplTablePage";
+import GameweekInsightsPage from "./pages/GameweekInsightsPage";
+import BestTeamPage         from "./pages/BestTeamPage";
+import SquadBuilderPage     from "./pages/SquadBuilderPage";
+import PredictionsPage      from "./pages/PredictionsPage";
+import PlayerInsightPage    from "./pages/PlayerInsightPage";
+import PlayerBrowsePage     from "./pages/PlayerBrowsePage";
+import MiniGamesPage        from "./pages/MiniGamesPage";
+import StatsLearnPage       from "./pages/StatsLearnPage";
 
-function App() {
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+const SLUG_MAP = {
+  "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
+  "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",
+};
 
-  const API = "https://football-stats-lw4b.onrender.com";
-
-  useEffect(() => {
-    fetch(`${API}/api/league/epl/predictions`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("API request failed");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("API DATA:", data);
-        setMatches(data.predictions);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Fetch error:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return (
-      <div style={{ padding: "40px", color: "white" }}>
-        Loading predictions...
-      </div>
-    );
-  }
-
+export default function App() {
   return (
-    <div style={{ padding: "40px", color: "white" }}>
-      <h1>EPL Match Predictions</h1>
-
-      {matches.map((m, i) => (
-        <div
-          key={i}
-          style={{
-            background: "#1e293b",
-            padding: "20px",
-            marginBottom: "20px",
-            borderRadius: "8px",
-          }}
-        >
-          <h3>
-            {m.home_team} vs {m.away_team}
-          </h3>
-
-          <p>
-            Home Win: {(m.p_home_win * 100).toFixed(1)}% | Draw:{" "}
-            {(m.p_draw * 100).toFixed(1)}% | Away Win:{" "}
-            {(m.p_away_win * 100).toFixed(1)}%
-          </p>
-
-          <p>Most Likely Score: {m.most_likely_score}</p>
-
-          <p>
-            xG: {m.xg_home} - {m.xg_away}
-          </p>
+    <BrowserRouter>
+      <div className="app-shell">
+        <Navbar />
+        <div className="sn-page-wrap">
+        <Routes>
+          <Route path="/"                   element={<HomePage />} />
+          <Route path="/squad-builder"      element={<SquadBuilderPage />} />
+          <Route path="/best-team"          element={<BestTeamPage />} />
+          <Route path="/gameweek-insights"  element={<GameweekInsightsPage />} />
+          <Route path="/player"             element={<PlayerBrowsePage />} />
+          <Route path="/player/:id"         element={<PlayerInsightPage />} />
+          <Route path="/fpl-table"          element={<FplTablePage />} />
+          <Route path="/games"              element={<MiniGamesPage />} />
+          <Route path="/learn"              element={<StatsLearnPage />} />
+          <Route path="/predictions"
+            element={<Navigate to="/predictions/premier-league" replace />} />
+          <Route path="/predictions/:league"
+            element={<PredictionsPage slugMap={SLUG_MAP} />} />
+          <Route path="/league/epl"    element={<LeaguePage league="epl" />} />
+          <Route path="/league/laliga" element={<LeaguePage league="laliga" />} />
+          <Route path="/league/seriea" element={<LeaguePage league="seriea" />} />
+          <Route path="/league/ligue1" element={<LeaguePage league="ligue1" />} />
+          <Route path="/simulation/:league" element={<SeasonSimulator />} />
+          <Route path="/simulation/epl"     element={<SeasonSimulator />} />
+        </Routes>
         </div>
-      ))}
-    </div>
+
+        <footer className="site-footer">
+          <span className="site-footer-text">
+            <span className="footer-name">Rutej Talati</span>
+            <span className="footer-sep">©</span>
+            2026
+            <span className="footer-sep">|</span>
+            StatinSite · Sports Analytics &amp; Predictions
+          </span>
+        </footer>
+      </div>
+    </BrowserRouter>
   );
 }
-const API = "https://football-stats-lw4b.onrender.com";
-export default App;

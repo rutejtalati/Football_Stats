@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 from typing import Dict, List, Optional
 import os, time
 from pathlib import Path
@@ -15,7 +15,7 @@ try:
             break
         _env = _env.parent
 except ImportError:
-    pass  # python-dotenv not installed — env vars must be set manually
+    pass  # python-dotenv not installed â€” env vars must be set manually
 
 import requests
 from fastapi import FastAPI, HTTPException
@@ -49,20 +49,20 @@ API_FOOTBALL_BASE = "https://v3.football.api-sports.io"
 FPL_BASE = "https://fantasy.premierleague.com/api"
 CURRENT_SEASON = 2025
 
-# ── Bundesliga added (API-Football league ID: 78) ──────────────────────────
+# â”€â”€ Bundesliga added (API-Football league ID: 78) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 LEAGUE_IDS = {
     "epl":        39,
     "laliga":     140,
     "seriea":     135,
     "ligue1":     61,
-    "bundesliga": 78,   # ← ADDED
+    "bundesliga": 78,   # â† ADDED
 }
 LEAGUE_NAMES = {
     "epl":        "Premier League",
     "laliga":     "La Liga",
     "seriea":     "Serie A",
     "ligue1":     "Ligue 1",
-    "bundesliga": "Bundesliga",   # ← ADDED
+    "bundesliga": "Bundesliga",   # â† ADDED
 }
 POSITION_MAP = {1:"GK",2:"DEF",3:"MID",4:"FWD"}
 
@@ -107,7 +107,7 @@ def parse_standings(raw):
     out = []
     for e in rows:
         t=e.get("team",{}); a=e.get("all",{}); h=e.get("home",{}); aw=e.get("away",{}); g=a.get("goals",{})
-        out.append({"rank":e.get("rank"),"team_id":t.get("id"),"team_name":t.get("name","—"),
+        out.append({"rank":e.get("rank"),"team_id":t.get("id"),"team_name":t.get("name","â€”"),
             "logo":t.get("logo",""),"played":a.get("played",0),"won":a.get("win",0),
             "drawn":a.get("draw",0),"lost":a.get("lose",0),"goals_for":g.get("for",0),
             "goals_against":g.get("against",0),"goal_diff":e.get("goalsDiff",0),
@@ -228,7 +228,7 @@ def next_team_fixtures(fixtures,team_id,start_gw,limit=6):
         elif fx["team_a"]==team_id: out.append({"event":ev,"opp_id":fx["team_h"],"is_home":False,"difficulty":fx["team_a_difficulty"]})
     out.sort(key=lambda x:x["event"]); return out[:limit]
 
-# ── Routes ──────────────────────────────────────────────────────────────────
+# â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/")
 def root(): return {"api":"StatPitch","version":"3.0.0"}
@@ -460,14 +460,14 @@ def get_fixture_stats(fixture_id:int): return api_get("/fixtures/statistics",{"f
 
 @app.get("/api/simulate/{league}")
 def simulate_league(league:str):
-    # Ensure bundesliga is supported — season_simulator must also know it
+    # Ensure bundesliga is supported â€” season_simulator must also know it
     if league not in LEAGUE_IDS:
         raise HTTPException(404, f"Unknown league: {league}")
     try: return {"league":league,"results":monte_carlo_league(league)}
     except ValueError as e: raise HTTPException(404,str(e))
 
 
-# ── News proxy (NewsAPI.org) ──────────────────────────────────────────────────
+# â”€â”€ News proxy (NewsAPI.org) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 LEAGUE_NEWS_QUERIES = {
@@ -475,7 +475,7 @@ LEAGUE_NEWS_QUERIES = {
     "laliga":     "La Liga football",
     "seriea":     "Serie A football",
     "ligue1":     "Ligue 1 football",
-    "bundesliga": "Bundesliga football",   # ← ADDED
+    "bundesliga": "Bundesliga football",   # â† ADDED
 }
 
 
@@ -505,8 +505,8 @@ def get_league_news(league: str):
         raise HTTPException(502, f"News fetch failed: {str(e)}")
 
 
-# ── AI Article Generator ──────────────────────────────────────
-# Calls OpenRouter from the backend — no CORS issues on frontend.
+# â”€â”€ AI Article Generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Calls OpenRouter from the backend â€” no CORS issues on frontend.
 # FREE models available at openrouter.ai (no credit card needed).
 # Set OPENROUTER_API_KEY in Render environment variables.
 from pydantic import BaseModel
@@ -514,7 +514,7 @@ from pydantic import BaseModel
 class PromptRequest(BaseModel):
     prompt: str
 
-OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 
 @app.post("/api/ai/generate")
 def generate_ai_text(body: PromptRequest):

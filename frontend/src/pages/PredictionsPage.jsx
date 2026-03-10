@@ -1,5 +1,4 @@
-﻿
-// PredictionsPage.jsx — StatinSite v6
+﻿// PredictionsPage.jsx — StatinSite v6
 // VS Split Cards · League Themes · Floating Simulator · Key Players · Charts
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, NavLink, useNavigate } from "react-router-dom";
@@ -1407,7 +1406,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
         const rows = items.map(d => ({
           team_name:       d.team || d.team_name || "",
           avg_position:    parseFloat(d.avg_position)    || 0,
-          avg_pts:         parseFloat(d.avg_points)      || 0,
+          avg_pts:         parseFloat(d.avg_points || d.avg_pts) || 0,
           // ✅ FIX: backend already sends percentages (e.g. 39.87), don't multiply by 100
           title_prob:      parseFloat(d.title_prob)      || 0,
           top4_prob:       parseFloat(d.top4_prob)       || 0,
@@ -1469,7 +1468,8 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
     else { setSortKey(key); setSortDir(key==="avg_position"?1:-1); }
   };
 
-  const loading = simLoad || standLoad;
+  // Only block on simLoad — standLoad just means logos/pts may not be merged yet
+  const loading = simLoad;
 
   const zones = [
     { color:"#6366f1", label:"Champions League" },

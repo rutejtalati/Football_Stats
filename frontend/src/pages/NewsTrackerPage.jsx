@@ -5,7 +5,7 @@ import { getStandings, getTopScorers, getTopAssists, getLeagueInjuries, getLeagu
 const BACKEND = import.meta.env.VITE_API_BASE_URL || "https://football-stats-lw4b.onrender.com";
 
 async function aiChat(prompt) {
-  const res = await fetch(${BACKEND}/api/ai/generate, {
+  const res = await fetch(`${BACKEND}/api/ai/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt }),
@@ -837,4 +837,5 @@ export default function NewsTrackerPage() {
     </div>
   );
 }
+
 

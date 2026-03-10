@@ -478,6 +478,7 @@ LEAGUE_NEWS_QUERIES = {
     "bundesliga": "Bundesliga football",   # ← ADDED
 }
 
+
 @app.get("/api/news/{league}")
 def get_league_news(league: str):
     if not NEWS_API_KEY:
@@ -502,3 +503,45 @@ def get_league_news(league: str):
         return {"articles": articles}
     except Exception as e:
         raise HTTPException(502, f"News fetch failed: {str(e)}")
+
+
+# ── AI Article Generator ──────────────────────────────────────
+# Calls OpenRouter from the backend — no CORS issues on frontend.
+# FREE models available at openrouter.ai (no credit card needed).
+# Set OPENROUTER_API_KEY in Render environment variables.
+from pydantic import BaseModel
+
+class PromptRequest(BaseModel):
+    prompt: str
+
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+
+@app.post("/api/ai/generate")
+def generate_ai_text(body: PromptRequest):
+    if not OPENROUTER_KEY:
+        raise HTTPException(503, "OPENROUTER_API_KEY not configured on server")
+    try:
+        r = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {OPENROUTER_KEY}",
+                "HTTP-Referer": "https://www.statinsite.com",
+                "X-Title": "StatinSite",
+            },
+            json={
+                "model": "meta-llama/llama-3.1-8b-instruct:free",
+                "max_tokens": 1100,
+                "temperature": 0.7,
+                "messages": [{"role": "user", "content": body.prompt}],
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        data = r.json()
+        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        return {"text": text}
+    except requests.HTTPError as e:
+        raise HTTPException(502, f"OpenRouter error: {e.response.text[:300]}")
+    except Exception as e:
+        raise HTTPException(502, f"AI generation failed: {str(e)}")

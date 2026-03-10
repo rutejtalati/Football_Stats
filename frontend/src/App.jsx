@@ -11,8 +11,7 @@ import PredictionsPage      from "./pages/PredictionsPage";
 import PlayerInsightPage    from "./pages/PlayerInsightPage";
 import PlayerBrowsePage     from "./pages/PlayerBrowsePage";
 import MiniGamesPage        from "./pages/MiniGamesPage";
-import GroundZeroPage       from "./pages/Groundzeropage";
-
+import GroundZeroPage from "./pages/GroundZeroPage";
 const SLUG_MAP = {
   "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
   "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",

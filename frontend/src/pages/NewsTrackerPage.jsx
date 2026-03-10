@@ -1,10 +1,47 @@
 // NewsTrackerPage.jsx — StatinSite
-// AI-generated football articles from live stats + RSS headlines
+// AI-generated football articles from live stats
+// AI provider: Google Gemini 1.5 Flash (browser-safe, no CORS proxy needed)
 // Covers: EPL, La Liga, Serie A, Ligue 1, Champions League
-// Data sources: Your backend API (standings/scorers/predictions/injuries)
-//               + Claude AI to synthesise stats into full articles
-//               + newsdata.io RSS for real headlines (free, no key needed via proxy)
+// Data sources: StatinSite backend API (standings/scorers/predictions/injuries)
+//               + Gemini Flash to synthesise stats into full articles
 import { useState, useEffect, useCallback, useRef } from "react";
+
+/* ─── Gemini Flash helper ────────────────────────────────────
+   Uses the raw REST endpoint — no npm package needed.
+   Browser fetch to generativelanguage.googleapis.com is
+   CORS-allowed by Google (unlike api.anthropic.com).
+
+   🔑 Set your key in .env:  VITE_GEMINI_KEY=AIza...
+   Get a free key (no credit card) at:
+   https://aistudio.google.com/app/apikey
+──────────────────────────────────────────────────────────── */
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "";
+const GEMINI_ENDPOINT =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+async function geminiChat(prompt) {
+  if (!GEMINI_KEY) {
+    throw new Error("NO_KEY");
+  }
+  const res = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 1100,
+        temperature: 0.75,
+        topP: 0.9,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Gemini error ${res.status}`);
+  }
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
 import {
   getStandings, getTopScorers, getTopAssists,
   getLeagueInjuries, getLeaguePredictions,
@@ -56,6 +93,37 @@ const CSS = `
   background-size:200% 100%; animation: ntShimmer 1.4s linear infinite;
 }
 `;
+
+/* ── No-key warning banner ───────────────────────────────── */
+const NoKeyBanner = () => (
+  <div style={{
+    margin:"0 0 24px",padding:"18px 22px",borderRadius:12,
+    background:"rgba(251,191,36,.07)",border:"1px solid rgba(251,191,36,.25)",
+  }}>
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+      <span style={{fontSize:16}}>🔑</span>
+      <span style={{fontSize:13,fontWeight:800,color:"rgba(251,191,36,.95)"}}>Gemini API Key Required</span>
+    </div>
+    <p style={{margin:"0 0 10px",fontSize:12,color:"rgba(255,255,255,.55)",lineHeight:1.65}}>
+      Add your free Gemini API key to <code style={{background:"rgba(255,255,255,.08)",padding:"1px 6px",
+      borderRadius:4,fontSize:11,fontFamily:"monospace"}}>frontend/.env</code> to enable AI article generation:
+    </p>
+    <div style={{background:"rgba(0,0,0,.4)",border:"1px solid rgba(255,255,255,.09)",borderRadius:8,
+      padding:"9px 14px",fontFamily:"monospace",fontSize:12,color:"rgba(255,255,255,.7)",marginBottom:10,
+      letterSpacing:".02em"}}>
+      VITE_GEMINI_KEY=AIzaSy…your_key_here
+    </div>
+    <p style={{margin:0,fontSize:11,color:"rgba(255,255,255,.35)"}}>
+      Get a <strong style={{color:"rgba(251,191,36,.8)"}}>free</strong> key (no credit card) at{" "}
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer"
+        style={{color:"rgba(251,191,36,.85)",textDecoration:"none",fontWeight:700}}>
+        aistudio.google.com/app/apikey
+      </a>
+      {" "}— free tier: 15 req/min, 1 M tokens/day.
+      After adding the key, restart <code style={{fontSize:11,fontFamily:"monospace"}}>npm run dev</code>.
+    </p>
+  </div>
+);
 
 /* ── Skeleton card ───────────────────────────────────────── */
 const SkeletonCard = () => (
@@ -131,7 +199,7 @@ const ArticleCard = ({ article, onClick, featured = false }) => {
             <div style={{width:24,height:24,borderRadius:"50%",
               background:`linear-gradient(135deg,${league.color},${league.color}88)`,
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#000"}}>S</div>
-            <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>StatinSite AI · Analytics Engine</span>
+            <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>StatinSite AI · Gemini Flash</span>
           </div>
         </div>
       </div>
@@ -255,7 +323,7 @@ const ArticleReader = ({ article, onClose }) => {
             display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#000"}}>S</div>
           <div>
             <div style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,.8)"}}>StatinSite Analytics Engine</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)} · Generated from live data</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)} · Generated from live data via Gemini Flash</div>
           </div>
         </div>
 
@@ -291,7 +359,7 @@ const ArticleReader = ({ article, onClose }) => {
   );
 };
 
-/* ── Article generator (uses Claude API with live stats) ─── */
+/* ── Article generator — Gemini Flash ───────────────────── */
 async function generateArticles(statsData) {
   const { epl, laliga, seriea, ligue1 } = statsData;
 
@@ -341,24 +409,15 @@ TAGS: [comma separated]`;
   const ICONS = { "Form Report":"📈","Analysis":"🔬","Match Preview":"⚽","Stats Deep Dive":"📊","Injury Update":"🏥","Transfer Watch":"💰" };
   const TYPE_COLORS = { "Form Report":"#28d97a","Analysis":"#3b9eff","Match Preview":"#f2c94c","Stats Deep Dive":"#b388ff","Injury Update":"#ff4d6d","Transfer Watch":"#ff6b35" };
 
-  // Generate 2 articles per league = 8 total
-  const promises = LEAGUE_DATA.flatMap(({ code, label, data }) => [
-    fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:1000,
-        messages:[{ role:"user", content:makePrompt(label, code, data||{}) }],
-      }),
-    }).then(r=>r.json()).then(d=>{
-      const text = d.content?.[0]?.text || "";
-      return parseArticle(text, code, label, ICONS, TYPE_COLORS);
-    }).catch(()=>null),
-  ]);
+  // One article per league — Gemini free tier is 15 req/min so keep it lean
+  const promises = LEAGUE_DATA.map(({ code, label, data }) =>
+    geminiChat(makePrompt(label, code, data||{}))
+      .then(text => parseArticle(text, code, label, ICONS, TYPE_COLORS))
+      .catch(() => null)
+  );
 
   const results = await Promise.allSettled(promises);
-  return results.map(r=>r.value).filter(Boolean);
+  return results.map(r => r.value).filter(Boolean);
 }
 
 function parseArticle(text, code, leagueLabel, ICONS, TYPE_COLORS) {
@@ -398,7 +457,7 @@ function parseArticle(text, code, leagueLabel, ICONS, TYPE_COLORS) {
   };
 }
 
-/* ── UCL article generator ───────────────────────────────── */
+/* ── UCL article generator — Gemini Flash ───────────────── */
 async function generateUCLArticle() {
   const prompt = `You are a football analytics journalist. Write a Champions League analysis article.
 
@@ -415,18 +474,8 @@ STAT_BOXES: [{"value":"X","label":"Y"},{"value":"X","label":"Y"},{"value":"X","l
 TAGS: tag1,tag2,tag3,tag4`;
 
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:1000,
-        messages:[{role:"user",content:prompt}],
-      }),
-    });
-    const d = await r.json();
-    const text = d.content?.[0]?.text || "";
-    const article = parseArticle(text,"ucl","Champions League",
+    const text = await geminiChat(prompt);
+    const article = parseArticle(text, "ucl", "Champions League",
       {"Stats Deep Dive":"📊","Analysis":"🔬"},
       {"Stats Deep Dive":"#1B5EBE","Analysis":"#ffd700"});
     if (article) article.icon = "🏆";
@@ -519,8 +568,15 @@ export default function NewsTrackerPage() {
       // Sort newest first, featured first
       all.sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
       setArticles(all);
+      if (all.length === 0) {
+        setError("No articles generated. Check your VITE_GEMINI_KEY is set and valid.");
+      }
     } catch(e) {
-      setError("Failed to generate articles. Check your API connection.");
+      if (e.message === "NO_KEY") {
+        setError(null); // NoKeyBanner handles the UI — no need for a duplicate red error
+      } else {
+        setError(`AI generation failed: ${e.message}`);
+      }
     }
     setGenerating(false);
   }, []);
@@ -578,7 +634,7 @@ export default function NewsTrackerPage() {
               News & Analysis
             </h1>
             <p style={{margin:0,fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:600}}>
-              AI-generated articles from live stats · EPL · La Liga · Serie A · Ligue 1 · UCL
+              AI-generated articles from live stats · Powered by Gemini Flash · EPL · La Liga · Serie A · Ligue 1 · UCL
             </p>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -631,6 +687,9 @@ export default function NewsTrackerPage() {
           </div>
         </div>
 
+        {/* ── NO KEY BANNER ── */}
+        {!GEMINI_KEY && <NoKeyBanner />}
+
         {/* ── LEAGUE FILTER ── */}
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
           {LEAGUES.map(l=>(
@@ -679,7 +738,7 @@ export default function NewsTrackerPage() {
               {[...Array(8)].map((_,i)=><SkeletonCard key={i}/>)}
             </div>
             <div style={{textAlign:"center",marginTop:20,fontSize:12,color:"rgba(255,255,255,.3)"}}>
-              {loading ? "Loading live stats from all leagues..." : "Generating AI articles from live data..."}
+              {loading ? "Loading live stats from all leagues..." : "Generating AI articles via Gemini Flash..."}
             </div>
           </div>
         )}

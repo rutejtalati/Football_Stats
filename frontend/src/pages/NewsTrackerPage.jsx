@@ -9,22 +9,14 @@ import { useState, useEffect, useCallback } from "react";
 const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 
 const FEEDS = [
-  // Sky Sports — league-specific football feeds
-  { url:"https://www.skysports.com/rss/12040", source:"Sky Sports", league:"epl",    color:"#C8102E" },
-  { url:"https://www.skysports.com/rss/12039", source:"Sky Sports", league:"laliga", color:"#F1BF00" },
-  { url:"https://www.skysports.com/rss/12078", source:"Sky Sports", league:"seriea", color:"#009246" },
-  { url:"https://www.skysports.com/rss/12081", source:"Sky Sports", league:"ligue1", color:"#002395" },
-  { url:"https://www.skysports.com/rss/12116", source:"Sky Sports", league:"ucl",    color:"#1B5EBE" },
-  // Goal.com — football only
-  { url:"https://www.goal.com/feeds/en/news",  source:"Goal.com",   league:"epl",    color:"#1a1a2e" },
-  // Football Italia — Serie A focused
-  { url:"https://www.football-italia.net/rss.xml", source:"Football Italia", league:"seriea", color:"#009246" },
-  // Get French Football News — Ligue 1 focused
-  { url:"https://www.getfootballnewsfrance.com/feed/", source:"GFN France", league:"ligue1", color:"#002395" },
-  // Managing Madrid — La Liga focused
-  { url:"https://www.managingmadrid.com/rss/current", source:"Managing Madrid", league:"laliga", color:"#F1BF00" },
-  // The Short Fuse (Arsenal) / We Ain't Got No History (Chelsea) — EPL focused
-  { url:"https://arseblog.news/feed/", source:"Arseblog", league:"epl", color:"#C8102E" },
+  { url:"https://www.espn.com/espn/rss/soccer/news",                    source:"ESPN FC",       league:"epl",    color:"#C8102E" },
+  { url:"https://www.football365.com/feed",                              source:"Football365",   league:"epl",    color:"#ff6600" },
+  { url:"https://www.theguardian.com/football/rss",                      source:"The Guardian",  league:"epl",    color:"#C8102E" },
+  { url:"https://en.as.com/rss/feeds/soccer.xml",                       source:"AS English",    league:"laliga", color:"#F1BF00" },
+  { url:"https://www.getfootballnewsfrance.com/feed/",                   source:"GFN France",    league:"ligue1", color:"#002395" },
+  { url:"https://www.getfootballnewsgermany.com/feed/",                  source:"GFN Germany",   league:"epl",    color:"#d00000" },
+  { url:"https://www.getfootballnewsitaly.com/feed/",                    source:"GFN Italy",     league:"seriea", color:"#009246" },
+  { url:"https://www.getfootballnewsspain.com/feed/",                    source:"GFN Spain",     league:"laliga", color:"#F1BF00" },
 ];
 
 const LEAGUES = [

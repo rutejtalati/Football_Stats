@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, NavLink, useNavigate } from "react-router-dom";
 import {
   getStandings, getLeaguePredictions, getTopScorers, getTopAssists,
-  getLeagueInjuries, getH2H, getFixtureOdds,
+  getLeagueInjuries, getH2H, getFixtureOdds, getSeasonSimulation,
 } from "../api/api";
 
 /* ══════════════════════════════════════════════════════════
@@ -38,7 +38,15 @@ const THEMES = {
     text:"#e8fff2", muted:"#3a7055", faint:"rgba(0,146,70,0.10)",
     homeCol:"#00b856", awayCol:"#CE2B37", label:"Serie A",
   },
-  // Ligue 1 — France flag: blue (#002395) + red (#ED2939) + white
+  // Bundesliga — Germany flag: black (#000) + red (#DD0000) + gold (#FFCE00)
+  bundesliga: {
+    bg:"#080600",
+    grad:"radial-gradient(ellipse at 20% 20%,rgba(255,206,0,0.16) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(221,0,0,0.14) 0%,transparent 55%)",
+    accent:"#FFCE00", accent2:"#DD0000", mid:"#e08800",
+    panel:"rgba(12,10,0,0.96)", border:"rgba(255,206,0,0.22)", borderHi:"rgba(255,206,0,0.52)",
+    text:"#fffbe0", muted:"#8a7a30", faint:"rgba(255,206,0,0.08)",
+    homeCol:"#FFCE00", awayCol:"#DD0000", label:"Bundesliga",
+  },
   ligue1: {
     bg:"#020510",
     grad:"radial-gradient(ellipse at 20% 20%,rgba(0,35,149,0.18) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(237,41,57,0.14) 0%,transparent 55%)",
@@ -52,6 +60,7 @@ const THEMES = {
 const LEAGUE_TABS = [
   {code:"epl",slug:"premier-league",label:"Premier League"},
   {code:"laliga",slug:"la-liga",label:"La Liga"},
+  {code:"bundesliga",slug:"bundesliga",label:"Bundesliga"},
   {code:"seriea",slug:"serie-a",label:"Serie A"},
   {code:"ligue1",slug:"ligue-1",label:"Ligue 1"},
 ];
@@ -96,7 +105,7 @@ function poisson(lam,k){let r=Math.exp(-lam);for(let i=0;i<k;i++)r*=lam/(i+1);re
 function buildProbs(xgH,xgA){let pH=0,pD=0,pA=0,topScore="1-0",topP=0;for(let h=0;h<=7;h++)for(let a=0;a<=7;a++){const p=poisson(xgH,h)*poisson(xgA,a);if(h>a)pH+=p;else if(h===a)pD+=p;else pA+=p;if(p>topP){topP=p;topScore=`${h}-${a}`;}}const tot=pH+pD+pA||1;return{pH:pH/tot,pD:pD/tot,pA:pA/tot,topScore};}
 
 /* ─── League Flag ────────────────────────────────────────── */
-const LeagueFlag=({code,size=18})=>{const h=Math.round(size*.72);if(code==="epl")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="13" fill="#012169"/><path d="M0 0L18 13M18 0L0 13" stroke="#fff" strokeWidth="2.6"/><path d="M0 0L18 13M18 0L0 13" stroke="#C8102E" strokeWidth="1.6"/><path d="M9 0V13M0 6.5H18" stroke="#fff" strokeWidth="4.3"/><path d="M9 0V13M0 6.5H18" stroke="#C8102E" strokeWidth="2.6"/></svg>;if(code==="laliga")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="3" fill="#c60b1e"/><rect y="3" width="18" height="7" fill="#ffc400"/><rect y="10" width="18" height="3" fill="#c60b1e"/></svg>;if(code==="seriea")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#009246"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ce2b37"/></svg>;if(code==="ligue1")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#002395"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>;return null;};
+const LeagueFlag=({code,size=18})=>{const h=Math.round(size*.72);if(code==="epl")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="13" fill="#012169"/><path d="M0 0L18 13M18 0L0 13" stroke="#fff" strokeWidth="2.6"/><path d="M0 0L18 13M18 0L0 13" stroke="#C8102E" strokeWidth="1.6"/><path d="M9 0V13M0 6.5H18" stroke="#fff" strokeWidth="4.3"/><path d="M9 0V13M0 6.5H18" stroke="#C8102E" strokeWidth="2.6"/></svg>;if(code==="laliga")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="3" fill="#c60b1e"/><rect y="3" width="18" height="7" fill="#ffc400"/><rect y="10" width="18" height="3" fill="#c60b1e"/></svg>;if(code==="bundesliga")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="18" height="4.3" fill="#000"/><rect y="4.3" width="18" height="4.3" fill="#DD0000"/><rect y="8.6" width="18" height="4.4" fill="#FFCE00"/></svg>;if(code==="seriea")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#009246"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ce2b37"/></svg>;if(code==="ligue1")return<svg width={size} height={h} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#002395"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>;return null;};
 
 /* ─── Form Pip ───────────────────────────────────────────── */
 const FormPip=({r,T})=>{const s={W:{bg:`${T.accent}22`,c:T.accent,b:`${T.accent}55`},D:{bg:"rgba(255,255,255,0.06)",c:T.muted,b:"rgba(255,255,255,0.12)"},L:{bg:`${T.accent2}18`,c:T.accent2,b:`${T.accent2}40`}}[r]||{bg:"rgba(255,255,255,0.06)",c:T.muted,b:"rgba(255,255,255,0.12)"};return<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,borderRadius:5,fontSize:9,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",background:s.bg,color:s.c,border:`1px solid ${s.b}`}}>{r}</span>;};
@@ -486,13 +495,439 @@ const ScorersWidget=({league,T})=>{
 };
 
 /* ══════════════════════════════════════════════════════════
+   SEASON SIMULATOR — Monte Carlo supercomputer
+   Uses current standings + Poisson to simulate remaining GWs
+══════════════════════════════════════════════════════════ */
+
+// League-specific season metadata
+const LEAGUE_META = {
+  epl:    { total:38, relegZone:3, euroTop:4, elPos:5, confPos:6, name:"Premier League" },
+  laliga: { total:38, relegZone:3, euroTop:4, elPos:5, confPos:null, name:"La Liga" },
+  seriea: { total:38, relegZone:3, euroTop:4, elPos:5, confPos:null, name:"Serie A" },
+  ligue1: { total:34, relegZone:3, euroTop:3, elPos:4, confPos:null, name:"Ligue 1" },
+};
+
+function poissonRandom(lambda) {
+  let L = Math.exp(-lambda), k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+}
+
+function runMonteCarlo(teams, gamesPlayed, totalGames, sims = 8000) {
+  if (!teams.length) return [];
+  const n = teams.length;
+  const remaining = totalGames - gamesPlayed;
+  // Each team still plays ~remaining/2 home, ~remaining/2 away (simplified)
+  const homeAdv = 0.35; // avg home xG advantage
+
+  // Derive attack/defense strength from current goals scored/conceded
+  const avgGF = teams.reduce((s,t) => s + (t.goals_for||0), 0) / n / Math.max(gamesPlayed, 1);
+  const avgGA = teams.reduce((s,t) => s + (t.goals_against||0), 0) / n / Math.max(gamesPlayed, 1);
+
+  const strength = teams.map(t => {
+    const gp = Math.max(t.played || gamesPlayed, 1);
+    const atk = (t.goals_for || 0) / gp / Math.max(avgGF, 0.01);
+    const def = (t.goals_against || 0) / gp / Math.max(avgGA, 0.01);
+    return { atk: Math.max(atk, 0.3), def: Math.max(def, 0.3) };
+  });
+
+  const avgLambda = 1.35; // league avg goals/game per team
+
+  // Accumulators
+  const titleCount   = new Array(n).fill(0);
+  const top4Count    = new Array(n).fill(0);
+  const top5Count    = new Array(n).fill(0);
+  const relegCount   = new Array(n).fill(0);
+  const pointsSum    = new Array(n).fill(0);
+  const posSum       = new Array(n).fill(0);
+
+  for (let s = 0; s < sims; s++) {
+    // Clone current points
+    const pts = teams.map(t => t.points || 0);
+    const gd  = teams.map(t => t.goal_diff || 0);
+    const gf  = teams.map(t => t.goals_for || 0);
+
+    // Simulate remaining fixtures — round-robin style for remaining games
+    const gamesLeft = Math.round(remaining);
+    // Generate fixture pairs proportionally
+    const fixtures = [];
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        fixtures.push([i, j]);
+      }
+    }
+    // Scale fixtures to ~match remaining game count per team
+    const totalFixtures = Math.round((n * gamesLeft) / 2);
+    const usedFixtures = fixtures.slice(0, totalFixtures);
+
+    for (const [h, a] of usedFixtures) {
+      const xgH = Math.max(0.3, avgLambda * strength[h].atk / strength[a].def * (1 + homeAdv));
+      const xgA = Math.max(0.3, avgLambda * strength[a].atk / strength[h].def);
+      const gh  = poissonRandom(xgH);
+      const ga  = poissonRandom(xgA);
+      gd[h] += gh - ga; gd[a] += ga - gh;
+      gf[h] += gh;      gf[a] += ga;
+      if (gh > ga)      { pts[h] += 3; }
+      else if (gh < ga) { pts[a] += 3; }
+      else              { pts[h]++; pts[a]++; }
+    }
+
+    // Rank teams
+    const order = Array.from({length: n}, (_, i) => i)
+      .sort((a, b) => pts[b] - pts[a] || gd[b] - gd[a] || gf[b] - gf[a]);
+
+    order.forEach((ti, pos) => {
+      pointsSum[ti] += pts[ti];
+      posSum[ti]    += pos + 1;
+      if (pos === 0)    titleCount[ti]++;
+      if (pos < 4)      top4Count[ti]++;
+      if (pos < 5)      top5Count[ti]++;
+      if (pos >= n - 3) relegCount[ti]++;
+    });
+  }
+
+  return teams.map((t, i) => ({
+    ...t,
+    simPts:    Math.round(pointsSum[i] / sims),
+    simPos:    Math.round(posSum[i] / sims * 10) / 10,
+    titlePct:  Math.round(titleCount[i] / sims * 100),
+    top4Pct:   Math.round(top4Count[i] / sims * 100),
+    top5Pct:   Math.round(top5Count[i] / sims * 100),
+    relegPct:  Math.round(relegCount[i] / sims * 100),
+  })).sort((a, b) => a.simPos - b.simPos);
+}
+
+// Animated probability bar
+const ProbBar = ({ pct, color, bg = "rgba(255,255,255,0.05)" }) => (
+  <div style={{ position: "relative", height: 4, borderRadius: 2, background: bg, overflow: "hidden", minWidth: 60 }}>
+    <div style={{
+      position: "absolute", left: 0, top: 0, height: "100%",
+      width: `${Math.min(pct, 100)}%`,
+      background: color,
+      borderRadius: 2,
+      transition: "width 0.6s cubic-bezier(.22,1,.36,1)",
+    }}/>
+  </div>
+);
+
+// Chance pill chip — iOS style
+const ChancePill = ({ value, color, label }) => {
+  const v = value || 0;
+  const alpha = v > 50 ? 0.22 : v > 20 ? 0.14 : v > 5 ? 0.09 : 0.05;
+  const textAlpha = v > 0 ? 1 : 0.3;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, minWidth: 54 }}>
+      <div style={{
+        padding: "4px 10px", borderRadius: 999,
+        background: `${color}${Math.round(alpha * 255).toString(16).padStart(2,"0")}`,
+        border: `1px solid ${color}${v > 5 ? "44" : "1a"}`,
+        fontSize: 12, fontWeight: 900,
+        color: v > 0 ? color : "rgba(255,255,255,0.2)",
+        fontFamily: "'JetBrains Mono', monospace",
+        opacity: textAlpha,
+        minWidth: 46, textAlign: "center",
+      }}>
+        {v > 0 ? `${v}%` : "—"}
+      </div>
+      <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</span>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════
+   SEASON SIMULATOR TAB — wired to getSeasonSimulation(league)
+   API returns: { TeamName: { avg_position, title_prob, top4_prob, relegation_prob } }
+   We merge with live standings for current pts/logo/played
+══════════════════════════════════════════════════════════ */
+
+// Zone config per league
+const ZONE_CONFIG = {
+  epl:    { ucl:4, uel:5, uecl:6, relStart:18, total:20, label:"Premier League" },
+  laliga: { ucl:4, uel:5, uecl:null, relStart:18, total:20, label:"La Liga" },
+  seriea: { ucl:4, uel:5, uecl:null, relStart:18, total:20, label:"Serie A" },
+  bundesliga:{ ucl:4, uel:5, uecl:6, relStart:17, relPlay:16, total:18, label:"Bundesliga" },
+  ligue1: { ucl:3, uel:4, uecl:null, relStart:17, total:18, label:"Ligue 1" },
+};
+
+function getZoneStyle(pos, cfg, T) {
+  if (!cfg) return null;
+  if (pos <= cfg.ucl)  return { color: T.accent,  label: "UCL",  border: `${T.accent}40` };
+  if (pos === cfg.uel) return { color: T.mid,    label: "UEL",  border: `${T.mid}40` };
+  if (cfg.uecl && pos === cfg.uecl) return { color: T.muted, label: "UECL", border: `${T.muted}40` };
+  if (cfg.relPlay && pos === cfg.relPlay) return { color: "#f97316", label: "Play", border: "#f9731640" };
+  if (pos >= cfg.relStart) return { color: T.accent2, label: "REL", border: `${T.accent2}40` };
+  return null;
+}
+
+const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
+  const [simData, setSimData]   = useState(null);
+  const [simLoad, setSimLoad]   = useState(true);
+  const [simErr, setSimErr]     = useState(null);
+  const [sortKey, setSortKey]   = useState("avg_position");
+  const [sortDir, setSortDir]   = useState(1);
+  const [hovered, setHovered]   = useState(null);
+
+  const cfg = ZONE_CONFIG[league] || ZONE_CONFIG.epl;
+
+  useEffect(() => {
+    setSimLoad(true); setSimErr(null); setSimData(null);
+    const cacheKey = "sim_v1_" + league;
+    try {
+      const r = sessionStorage.getItem(cacheKey);
+      if (r) { const p = JSON.parse(r); if (Date.now() - p.ts < 1800000) { setSimData(p.data); setSimLoad(false); return; } }
+    } catch {}
+    getSeasonSimulation(league)
+      .then(raw => {
+        // raw = { "TeamName": { avg_position, title_prob, top4_prob, relegation_prob }, ... }
+        const rows = Object.entries(raw).map(([name, d]) => ({
+          team_name:      name,
+          avg_position:   parseFloat(d.avg_position)   || 0,
+          title_prob:     parseFloat(d.title_prob)     || 0,
+          top4_prob:      parseFloat(d.top4_prob)      || 0,
+          relegation_prob:parseFloat(d.relegation_prob)|| 0,
+        }));
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: rows, ts: Date.now() })); } catch {}
+        setSimData(rows);
+      })
+      .catch(e => setSimErr(e.message))
+      .finally(() => setSimLoad(false));
+  }, [league]);
+
+  // Merge sim data with live standings for logos + current pts + played
+  const merged = useMemo(() => {
+    if (!simData) return [];
+    return simData.map(row => {
+      const live = standings.find(s =>
+        s.team_name === row.team_name ||
+        (s.team_name || "").toLowerCase().includes((row.team_name || "").toLowerCase().split(" ")[0]) ||
+        (row.team_name || "").toLowerCase().includes((s.team_name || "").toLowerCase().split(" ")[0])
+      );
+      return { ...row, logo: live?.logo, currentPts: live?.points, played: live?.played };
+    });
+  }, [simData, standings]);
+
+  const sorted = useMemo(() => {
+    return [...merged].sort((a, b) => {
+      const va = a[sortKey] ?? 0, vb = b[sortKey] ?? 0;
+      return sortKey === "avg_position" ? (va - vb) * sortDir : (vb - va) * sortDir;
+    });
+  }, [merged, sortKey, sortDir]);
+
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir(d => -d);
+    else { setSortKey(key); setSortDir(1); }
+  };
+
+  const loading = simLoad || standLoad;
+
+  // ── Legend zones
+  const zones = [
+    { color: T.accent,  label: "Champions League" },
+    { color: T.mid,     label: "Europa League" },
+    ...(cfg.uecl ? [{ color: T.muted, label: "Conference League" }] : []),
+    ...(cfg.relPlay ? [{ color: "#f97316", label: "Relegation Play-off" }] : []),
+    { color: T.accent2, label: "Relegation" },
+  ];
+
+  const SortBtn = ({ k, label }) => (
+    <button onClick={() => toggleSort(k)} style={{
+      padding: "5px 12px", borderRadius: 20, fontSize: 10, fontWeight: 700,
+      cursor: "pointer", fontFamily: "'Inter',sans-serif",
+      border: `1px solid ${sortKey === k ? T.accent : T.border}`,
+      background: sortKey === k ? `${T.accent}18` : "transparent",
+      color: sortKey === k ? T.accent : T.muted,
+      transition: "all 0.13s", display: "flex", alignItems: "center", gap: 4,
+    }}>
+      {label}
+      {sortKey === k && <span style={{ fontSize: 9 }}>{sortDir === 1 ? "↑" : "↓"}</span>}
+    </button>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* ── Header card */}
+      <div style={{
+        background: `linear-gradient(135deg, ${T.accent}14 0%, ${T.faint} 50%, ${T.panel} 100%)`,
+        border: `1px solid ${T.borderHi}`,
+        borderRadius: 20, padding: "20px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14,
+      }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent, boxShadow: `0 0 10px ${T.accent}` }}/>
+            <span style={{ fontSize: 11, fontWeight: 900, color: T.accent, letterSpacing: "0.12em", fontFamily: "'Inter',sans-serif" }}>
+              SEASON SIMULATOR
+            </span>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: T.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em" }}>
+            {cfg.label} — Final Day Predictions
+          </div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 4, fontFamily: "'Inter',sans-serif" }}>
+            Monte Carlo · 10,000 simulations · Poisson xG model · Updates each session
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {zones.map(z => (
+            <div key={z.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 3, height: 14, borderRadius: 2, background: z.color }}/>
+              <span style={{ fontSize: 9, color: T.muted, fontFamily: "'Inter',sans-serif" }}>{z.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Sort controls */}
+      {!loading && !simErr && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, color: T.muted, fontFamily: "'Inter',sans-serif" }}>Sort by:</span>
+          <SortBtn k="avg_position"    label="Predicted Pos" />
+          <SortBtn k="title_prob"      label="Title %" />
+          <SortBtn k="top4_prob"       label="Top 4 %" />
+          <SortBtn k="relegation_prob" label="Relegation %" />
+          <span style={{ marginLeft: "auto", fontSize: 10, color: T.muted, fontFamily: "'JetBrains Mono',monospace" }}>
+            {sorted.length} teams
+          </span>
+        </div>
+      )}
+
+      {/* ── Error */}
+      {simErr && (
+        <div style={{ padding: 24, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: 28, marginBottom: 10, opacity: .4 }}>⚠️</div>
+          <div style={{ color: T.muted, fontSize: 13 }}>Could not load simulation data</div>
+          <div style={{ color: T.accent2, fontSize: 11, marginTop: 6, fontFamily: "'JetBrains Mono',monospace" }}>{simErr}</div>
+        </div>
+      )}
+
+      {/* ── Loading skeletons */}
+      {loading && !simErr && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} style={{
+              height: 72, borderRadius: 14,
+              background: `linear-gradient(90deg, ${T.panel} 25%, ${T.faint} 50%, ${T.panel} 75%)`,
+              backgroundSize: "200% 100%",
+              animation: "shimmer 1.4s infinite",
+              opacity: 1 - i * 0.08,
+              border: `1px solid ${T.border}`,
+            }}/>
+          ))}
+          <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+        </div>
+      )}
+
+      {/* ── Team rows */}
+      {!loading && !simErr && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {sorted.map((row, i) => {
+            const pos     = Math.round(row.avg_position) || i + 1;
+            const zone    = getZoneStyle(pos, cfg, T);
+            const titleP  = Math.round(row.title_prob * 100);
+            const top4P   = Math.round(row.top4_prob * 100);
+            const relegP  = Math.round(row.relegation_prob * 100);
+            const isHov   = hovered === row.team_name;
+
+            return (
+              <div
+                key={row.team_name}
+                onMouseEnter={() => setHovered(row.team_name)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "44px 1fr 80px 80px 80px 80px",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  background: isHov ? `${T.accent}0a` : T.panel,
+                  border: `1px solid ${isHov ? T.borderHi : T.border}`,
+                  transition: "all 0.15s",
+                }}
+              >
+                {/* Pos + zone bar */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {zone && <div style={{ width: 3, height: 32, borderRadius: 2, background: zone.color, flexShrink: 0 }}/>}
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: zone ? zone.color : T.muted, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>
+                      {pos}
+                    </div>
+                    {zone && (
+                      <div style={{ fontSize: 7, fontWeight: 800, color: zone.color, letterSpacing: "0.06em", marginTop: 2 }}>
+                        {zone.label}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Team name + logo + current pts */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  {row.logo
+                    ? <img src={row.logo} alt="" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"}/>
+                    : <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${T.accent}18`, flexShrink: 0, border: `1px solid ${T.border}` }}/>
+                  }
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: "'Sora',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {row.team_name}
+                    </div>
+                    {row.currentPts != null && (
+                      <div style={{ fontSize: 10, color: T.muted, fontFamily: "'JetBrains Mono',monospace", marginTop: 1 }}>
+                        {row.currentPts} pts · {row.played} played
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Avg final position */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: T.text, fontFamily: "'JetBrains Mono',monospace" }}>
+                    {row.avg_position.toFixed(1)}
+                  </div>
+                  <div style={{ fontSize: 8, color: T.muted, marginTop: 2 }}>Avg Pos</div>
+                  <ProbBar pct={(cfg.total - row.avg_position) / cfg.total * 100} color={T.accent} />
+                </div>
+
+                {/* Title % */}
+                <div style={{ textAlign: "center" }}>
+                  <ChancePill value={titleP} color={T.accent} label="Title" />
+                </div>
+
+                {/* Top 4 % */}
+                <div style={{ textAlign: "center" }}>
+                  <ChancePill value={top4P} color={T.mid || T.accent} label="Top 4" />
+                </div>
+
+                {/* Relegation % */}
+                <div style={{ textAlign: "center" }}>
+                  <ChancePill value={relegP} color={relegP > 30 ? T.accent2 : relegP > 10 ? "#f97316" : T.muted} label="Rel %" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Footer note */}
+      {!loading && !simErr && (
+        <div style={{ padding: "12px 16px", borderRadius: 10, background: T.faint, border: `1px solid ${T.border}`, display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>🔬</span>
+          <span style={{ fontSize: 10, color: T.muted, lineHeight: 1.6, fontFamily: "'Inter',sans-serif" }}>
+            Probabilities generated via Monte Carlo simulation (10,000 runs) using Poisson goal models calibrated on current season xG and historical attack/defense ratings. Percentages reflect frequency across all simulated season outcomes — not guaranteed predictions.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════════════════════ */
 export default function PredictionsPage({league:propLeague,slugMap}){
   const{league:paramLeague}=useParams();
   const navigate=useNavigate();
   const raw=paramLeague||propLeague||"premier-league";
-  const DEFAULTS={"premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1","epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1"};
+  const DEFAULTS={"premier-league":"epl","la-liga":"laliga","bundesliga":"bundesliga","serie-a":"seriea","ligue-1":"ligue1","epl":"epl","laliga":"laliga","bundesliga":"bundesliga","seriea":"seriea","ligue1":"ligue1"};
   const league=(slugMap||DEFAULTS)[raw]||raw;
   const T=THEMES[league]||THEMES.epl;
 
@@ -549,10 +984,17 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         </div>
 
         {/* TABS */}
-        <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,marginBottom:24}}>
-          {[["predictions","Predictions",!predLoad?matches.length:null],["standings","Table",!standLoad?standings.length:null],["scorers","Scorers",null]].map(([key,label,badge])=>(
-            <button key={key} onClick={()=>setTab(key)} style={{display:"flex",alignItems:"center",gap:7,padding:"12px 18px",fontSize:12,fontWeight:800,cursor:"pointer",background:"none",border:"none",fontFamily:"'Inter',sans-serif",letterSpacing:".04em",color:tab===key?T.accent:T.muted,borderBottom:`2px solid ${tab===key?T.accent:"transparent"}`,transition:"all 0.15s"}}>
-              {label}{badge!=null&&<span style={{background:tab===key?`${T.accent}18`:"rgba(255,255,255,0.04)",color:tab===key?T.accent:T.muted,borderRadius:999,padding:"1px 7px",fontSize:10}}>{badge}</span>}
+        <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,marginBottom:24,overflowX:"auto"}}>
+          {[
+            ["predictions","Predictions",!predLoad?matches.length:null],
+            ["standings","Table",!standLoad?standings.length:null],
+            ["scorers","Scorers",null],
+            ["simulator","Season Sim",null],
+          ].map(([key,label,badge])=>(
+            <button key={key} onClick={()=>setTab(key)} style={{display:"flex",alignItems:"center",gap:7,padding:"12px 18px",fontSize:12,fontWeight:800,cursor:"pointer",background:"none",border:"none",fontFamily:"'Inter',sans-serif",letterSpacing:".04em",whiteSpace:"nowrap",color:tab===key?T.accent:T.muted,borderBottom:`2px solid ${tab===key?T.accent:"transparent"}`,transition:"all 0.15s"}}>
+              {key==="simulator"&&<span style={{fontSize:11}}>🔬</span>}
+              {label}
+              {badge!=null&&<span style={{background:tab===key?`${T.accent}18`:"rgba(255,255,255,0.04)",color:tab===key?T.accent:T.muted,borderRadius:999,padding:"1px 7px",fontSize:10}}>{badge}</span>}
             </button>
           ))}
         </div>
@@ -595,6 +1037,10 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         )}
 
         {tab==="scorers"&&<ScorersWidget league={league} T={T}/>}
+
+        {tab==="simulator"&&(
+          <SeasonSimulatorTab standings={standings} standLoad={standLoad} league={league} T={T}/>
+        )}
       </div>
 
       <style>{`

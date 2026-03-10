@@ -1,42 +1,36 @@
-// NewsTrackerPage.jsx — StatinSite
-// AI-generated football articles from live stats
-// AI provider: Google Gemini 2.0 Flash Lite (free tier, browser-safe)
+﻿// NewsTrackerPage.jsx â€” StatinSite
+// AI-generated football articles â€” AI runs on backend (no CORS, no key in browser)
 
-// ── ALL IMPORTS MUST BE AT THE TOP ───────────────────────────
+// â”€â”€ ALL IMPORTS MUST BE AT THE TOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getStandings, getTopScorers, getTopAssists,
   getLeagueInjuries, getLeaguePredictions,
 } from "../api/api";
 
-/* ─── Gemini AI helper ───────────────────────────────────────
-   Model: gemini-2.0-flash-lite  (separate free quota bucket)
-   🔑 Set in frontend/.env:  VITE_GEMINI_KEY=AIza...
-──────────────────────────────────────────────────────────── */
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "AIzaSyDcbwRw07AhTZfPHJhDYkgHP8PlUkvKBqk";
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent";
+/* â”€â”€â”€ AI via backend proxy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   POST /api/ai/generate  â†’  backend calls Anthropic (Claude Haiku)
+   No API key needed in the browser. No CORS issues ever.
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+const BACKEND = import.meta.env.VITE_API_BASE_URL || "https://football-stats-lw4b.onrender.com";
 
 async function aiChat(prompt) {
-  if (!GEMINI_KEY) throw new Error("NO_KEY");
-  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
+  const res = await fetch(`${BACKEND}/api/ai/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 1100, temperature: 0.7 },
-    }),
+    body: JSON.stringify({ prompt }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Gemini HTTP ${res.status}`);
+    throw new Error(err?.detail || `Backend AI error ${res.status}`);
   }
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  if (!text) throw new Error("Gemini returned empty response");
+  const text = data?.text ?? "";
+  if (!text) throw new Error("Backend returned empty response");
   return text;
 }
 
-/* ── League config ──────────────────────────────────────── */
+/* â”€â”€ League config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const LEAGUES = [
   { code:"all",   label:"All",             color:"#ffffff", bg:"#1a1a2e" },
   { code:"epl",   label:"Premier League",  color:"#C8102E", bg:"#06090f",
@@ -48,12 +42,12 @@ const LEAGUES = [
   { code:"ligue1",label:"Ligue 1",         color:"#002395", bg:"#020510",
     flag:<svg width={16} height={11} viewBox="0 0 18 13" fill="none"><rect width="6" height="13" fill="#002395"/><rect x="6" width="6" height="13" fill="#fff"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>},
   { code:"ucl",   label:"Champions League",color:"#1B5EBE", bg:"#020816",
-    flag:<svg width={16} height={11} viewBox="0 0 18 13" fill="none"><rect width="18" height="13" fill="#001f6b"/><text x="9" y="9" textAnchor="middle" fontSize="8" fill="#ffd700" fontWeight="900">★</text></svg>},
+    flag:<svg width={16} height={11} viewBox="0 0 18 13" fill="none"><rect width="18" height="13" fill="#001f6b"/><text x="9" y="9" textAnchor="middle" fontSize="8" fill="#ffd700" fontWeight="900">â˜…</text></svg>},
 ];
 
 const ARTICLE_TYPES = ["All","Analysis","Match Preview","Form Report","Injury Update","Transfer Watch","Stats Deep Dive"];
 
-/* ── Helpers ─────────────────────────────────────────────── */
+/* â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function timeAgo(iso) {
   const d = new Date(iso), now = Date.now();
   const mins = Math.round((now - d) / 60000);
@@ -68,7 +62,7 @@ function readingTime(text) {
   return Math.max(1, Math.round((text||"").split(" ").length / 200));
 }
 
-/* ── CSS ─────────────────────────────────────────────────── */
+/* â”€â”€ CSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const CSS = `
 @keyframes ntFadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
 @keyframes ntPulse   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
@@ -83,14 +77,14 @@ const CSS = `
 }
 `;
 
-/* ── No-key warning banner ───────────────────────────────── */
+/* â”€â”€ No-key warning banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const NoKeyBanner = () => (
   <div style={{
     margin:"0 0 24px",padding:"18px 22px",borderRadius:12,
     background:"rgba(251,191,36,.07)",border:"1px solid rgba(251,191,36,.25)",
   }}>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-      <span style={{fontSize:16}}>🔑</span>
+      <span style={{fontSize:16}}>ðŸ”‘</span>
       <span style={{fontSize:13,fontWeight:800,color:"rgba(251,191,36,.95)"}}>OpenRouter API Key Required</span>
     </div>
     <p style={{margin:"0 0 10px",fontSize:12,color:"rgba(255,255,255,.55)",lineHeight:1.65}}>
@@ -100,7 +94,7 @@ const NoKeyBanner = () => (
     <div style={{background:"rgba(0,0,0,.4)",border:"1px solid rgba(255,255,255,.09)",borderRadius:8,
       padding:"9px 14px",fontFamily:"monospace",fontSize:12,color:"rgba(255,255,255,.7)",marginBottom:10,
       letterSpacing:".02em"}}>
-      VITE_OPENROUTER_KEY=sk-or-v1-…your_key_here
+      VITE_OPENROUTER_KEY=sk-or-v1-â€¦your_key_here
     </div>
     <p style={{margin:0,fontSize:11,color:"rgba(255,255,255,.35)"}}>
       Get a <strong style={{color:"rgba(251,191,36,.8)"}}>free</strong> key (no credit card) at{" "}
@@ -108,13 +102,13 @@ const NoKeyBanner = () => (
         style={{color:"rgba(251,191,36,.85)",textDecoration:"none",fontWeight:700}}>
         openrouter.ai
       </a>
-      {" "}— free tier: 15 req/min, 1 M tokens/day.
+      {" "}â€” free tier: 15 req/min, 1 M tokens/day.
       After adding the key, restart <code style={{fontSize:11,fontFamily:"monospace"}}>npm run dev</code>.
     </p>
   </div>
 );
 
-/* ── Skeleton card ───────────────────────────────────────── */
+/* â”€â”€ Skeleton card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const SkeletonCard = () => (
   <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:14,overflow:"hidden"}}>
     <div className="nt-shimmer" style={{height:180}}/>
@@ -127,7 +121,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-/* ── Live ticker ─────────────────────────────────────────── */
+/* â”€â”€ Live ticker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const LiveTicker = ({ items }) => {
   if (!items.length) return null;
   const doubled = [...items, ...items];
@@ -139,7 +133,7 @@ const LiveTicker = ({ items }) => {
             <span style={{fontSize:9,fontWeight:900,padding:"2px 7px",borderRadius:999,
               background:`${item.color}22`,color:item.color,letterSpacing:".08em"}}>{item.league}</span>
             <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.8)"}}>{item.headline}</span>
-            <span style={{fontSize:9,color:"rgba(255,255,255,.3)",margin:"0 8px"}}>·</span>
+            <span style={{fontSize:9,color:"rgba(255,255,255,.3)",margin:"0 8px"}}>Â·</span>
           </div>
         ))}
       </div>
@@ -147,7 +141,7 @@ const LiveTicker = ({ items }) => {
   );
 };
 
-/* ── Article card ────────────────────────────────────────── */
+/* â”€â”€ Article card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const ArticleCard = ({ article, onClick, featured = false }) => {
   const league = LEAGUES.find(l => l.code === article.league) || LEAGUES[0];
   const rt = readingTime(article.body);
@@ -172,7 +166,7 @@ const ArticleCard = ({ article, onClick, featured = false }) => {
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {league.flag}
             <span style={{fontSize:10,fontWeight:800,color:league.color}}>{league.label}</span>
-            <span style={{fontSize:9,color:"rgba(255,255,255,.3)"}}>·</span>
+            <span style={{fontSize:9,color:"rgba(255,255,255,.3)"}}>Â·</span>
             <span style={{fontSize:9,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)}</span>
             <span style={{marginLeft:"auto",fontSize:9,color:"rgba(255,255,255,.3)"}}>{rt} min read</span>
           </div>
@@ -188,7 +182,7 @@ const ArticleCard = ({ article, onClick, featured = false }) => {
             <div style={{width:24,height:24,borderRadius:"50%",
               background:`linear-gradient(135deg,${league.color},${league.color}88)`,
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#000"}}>S</div>
-            <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>StatinSite AI · OpenRouter AI</span>
+            <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>StatinSite AI Â· OpenRouter AI</span>
           </div>
         </div>
       </div>
@@ -239,7 +233,7 @@ const ArticleCard = ({ article, onClick, featured = false }) => {
   );
 };
 
-/* ── Full article reader ─────────────────────────────────── */
+/* â”€â”€ Full article reader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const ArticleReader = ({ article, onClose }) => {
   const league = LEAGUES.find(l => l.code === article.league) || LEAGUES[0];
   const ref = useRef(null);
@@ -261,7 +255,7 @@ const ArticleReader = ({ article, onClose }) => {
       );
       if (line.startsWith("- ")) return (
         <div key={i} style={{display:"flex",gap:10,margin:"5px 0"}}>
-          <span style={{color:league.color,flexShrink:0,marginTop:2}}>▸</span>
+          <span style={{color:league.color,flexShrink:0,marginTop:2}}>â–¸</span>
           <p style={{margin:0,fontSize:13,color:"rgba(255,255,255,.7)",lineHeight:1.65}}>{line.replace("- ","")}</p>
         </div>
       );
@@ -281,12 +275,12 @@ const ArticleReader = ({ article, onClose }) => {
           fontWeight:700,transition:"all .15s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.4)";e.currentTarget.style.color="#fff";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.15)";e.currentTarget.style.color="rgba(255,255,255,.7)";}}>
-          ← Back
+          â† Back
         </button>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {league.flag}
           <span style={{fontSize:11,fontWeight:800,color:league.color}}>{league.label}</span>
-          <span style={{fontSize:10,color:"rgba(255,255,255,.3)"}}>·</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,.3)"}}>Â·</span>
           <span style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{article.type}</span>
         </div>
         <span style={{marginLeft:"auto",fontSize:10,color:"rgba(255,255,255,.3)"}}>{readingTime(article.body)} min read</span>
@@ -312,7 +306,7 @@ const ArticleReader = ({ article, onClose }) => {
             display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#000"}}>S</div>
           <div>
             <div style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,.8)"}}>StatinSite Analytics Engine</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)} · Generated from live data via OpenRouter AI</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{timeAgo(article.publishedAt)} Â· Generated from live data via OpenRouter AI</div>
           </div>
         </div>
 
@@ -348,7 +342,7 @@ const ArticleReader = ({ article, onClose }) => {
   );
 };
 
-/* ── Article generator — OpenRouter AI ───────────────────── */
+/* â”€â”€ Article generator â€” OpenRouter AI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function generateArticles(statsData) {
   const { epl, laliga, seriea, ligue1 } = statsData;
 
@@ -395,10 +389,10 @@ TAGS: [comma separated]`;
     { code:"ligue1", label:"Ligue 1",         data:ligue1 },
   ];
 
-  const ICONS = { "Form Report":"📈","Analysis":"🔬","Match Preview":"⚽","Stats Deep Dive":"📊","Injury Update":"🏥","Transfer Watch":"💰" };
+  const ICONS = { "Form Report":"ðŸ“ˆ","Analysis":"ðŸ”¬","Match Preview":"âš½","Stats Deep Dive":"ðŸ“Š","Injury Update":"ðŸ¥","Transfer Watch":"ðŸ’°" };
   const TYPE_COLORS = { "Form Report":"#28d97a","Analysis":"#3b9eff","Match Preview":"#f2c94c","Stats Deep Dive":"#b388ff","Injury Update":"#ff4d6d","Transfer Watch":"#ff6b35" };
 
-  // One article per league — run sequentially to stay under free-tier rate limit (15 req/min)
+  // One article per league â€” run sequentially to stay under free-tier rate limit (15 req/min)
   const results = [];
   for (const { code, label, data } of LEAGUE_DATA) {
     try {
@@ -444,7 +438,7 @@ function parseArticle(text, code, leagueLabel, ICONS, TYPE_COLORS) {
     body,
     type: type.trim(),
     typeColor: TYPE_COLORS[type.trim()] || "#67b1ff",
-    icon: ICONS[type.trim()] || "📰",
+    icon: ICONS[type.trim()] || "ðŸ“°",
     tags,
     statBoxes,
     publishedAt: new Date(Date.now() - Math.random()*3600000).toISOString(),
@@ -452,7 +446,7 @@ function parseArticle(text, code, leagueLabel, ICONS, TYPE_COLORS) {
   };
 }
 
-/* ── UCL article generator — OpenRouter AI ───────────────── */
+/* â”€â”€ UCL article generator â€” OpenRouter AI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function generateUCLArticle() {
   const prompt = `You are a football analytics journalist. Write a Champions League analysis article.
 
@@ -471,9 +465,9 @@ TAGS: tag1,tag2,tag3,tag4`;
   try {
     const text = await aiChat(prompt);
     const article = parseArticle(text, "ucl", "Champions League",
-      {"Stats Deep Dive":"📊","Analysis":"🔬"},
+      {"Stats Deep Dive":"ðŸ“Š","Analysis":"ðŸ”¬"},
       {"Stats Deep Dive":"#1B5EBE","Analysis":"#ffd700"});
-    if (article) article.icon = "🏆";
+    if (article) article.icon = "ðŸ†";
     return article;
   } catch(err) {
     // Propagate auth/key errors; silently skip UCL for other failures
@@ -483,7 +477,7 @@ TAGS: tag1,tag2,tag3,tag4`;
   }
 }
 
-/* ── Trending headlines ticker data (from stats) ─────────── */
+/* â”€â”€ Trending headlines ticker data (from stats) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function buildTickerItems(allStats) {
   const items = [];
   const { epl, laliga, seriea, ligue1 } = allStats;
@@ -503,9 +497,9 @@ function buildTickerItems(allStats) {
   return items;
 }
 
-/* ══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MAIN PAGE
-══════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function NewsTrackerPage() {
   const [articles, setArticles]       = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -569,7 +563,7 @@ export default function NewsTrackerPage() {
       all.sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
       setArticles(all);
       if (all.length === 0) {
-        setError("Gemini returned no articles. Check browser console (F12) for details — the key may be invalid or rate limited.");
+        setError("Gemini returned no articles. Check browser console (F12) for details â€” the key may be invalid or rate limited.");
       }
     } catch(e) {
       if (e.message === "NO_KEY") {
@@ -622,12 +616,12 @@ export default function NewsTrackerPage() {
 
       <div style={{maxWidth:1400,margin:"0 auto",padding:"28px 20px 60px"}}>
 
-        {/* ── HEADER ── */}
+        {/* â”€â”€ HEADER â”€â”€ */}
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",
           flexWrap:"wrap",gap:16,marginBottom:28}}>
           <div>
             <div style={{fontSize:9,fontWeight:900,letterSpacing:".2em",color:"rgba(255,255,255,.3)",marginBottom:6}}>
-              STATINSITE · FOOTBALL INTELLIGENCE
+              STATINSITE Â· FOOTBALL INTELLIGENCE
             </div>
             <h1 style={{margin:"0 0 6px",fontSize:30,fontWeight:900,letterSpacing:"-.02em",
               background:"linear-gradient(135deg,#fff,rgba(255,255,255,.6))",
@@ -635,7 +629,7 @@ export default function NewsTrackerPage() {
               News & Analysis
             </h1>
             <p style={{margin:0,fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:600}}>
-              AI-generated articles from live stats · Powered by OpenRouter AI · EPL · La Liga · Serie A · Ligue 1 · UCL
+              AI-generated articles from live stats Â· Powered by OpenRouter AI Â· EPL Â· La Liga Â· Serie A Â· Ligue 1 Â· UCL
             </p>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -688,10 +682,10 @@ export default function NewsTrackerPage() {
           </div>
         </div>
 
-        {/* ── NO KEY BANNER — only shown in local dev if key missing ── */}
+        {/* â”€â”€ NO KEY BANNER â€” only shown in local dev if key missing â”€â”€ */}
         {!GEMINI_KEY && process.env.NODE_ENV !== "production" && <NoKeyBanner />}
 
-        {/* ── LEAGUE FILTER ── */}
+        {/* â”€â”€ LEAGUE FILTER â”€â”€ */}
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
           {LEAGUES.map(l=>(
             <button key={l.code} onClick={()=>setActiveLeague(l.code)} style={{
@@ -712,7 +706,7 @@ export default function NewsTrackerPage() {
           ))}
         </div>
 
-        {/* ── TYPE FILTER ── */}
+        {/* â”€â”€ TYPE FILTER â”€â”€ */}
         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:28,
           paddingBottom:16,borderBottom:"1px solid rgba(255,255,255,.06)"}}>
           {ARTICLE_TYPES.map(t=>(
@@ -726,19 +720,19 @@ export default function NewsTrackerPage() {
           ))}
         </div>
 
-        {/* ── ERROR / DEBUG ── */}
+        {/* â”€â”€ ERROR / DEBUG â”€â”€ */}
         {error && (
           <div style={{padding:"16px 18px",background:"rgba(255,77,109,.08)",border:"1px solid rgba(255,77,109,.2)",
             borderRadius:10,color:"#ff4d6d",fontSize:12,marginBottom:20,lineHeight:1.7}}>
-            <div style={{fontWeight:800,marginBottom:6}}>⚠ {error}</div>
+            <div style={{fontWeight:800,marginBottom:6}}>âš  {error}</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>
-              Key loaded: <code style={{color:GEMINI_KEY?"#28d97a":"#ff4d6d",fontFamily:"monospace"}}>{GEMINI_KEY ? `${GEMINI_KEY.slice(0,8)}…${GEMINI_KEY.slice(-4)} ✓` : "NOT FOUND"}</code>
-              {" · "}Open <strong>F12 → Console</strong> for the full error from Gemini.
+              Key loaded: <code style={{color:GEMINI_KEY?"#28d97a":"#ff4d6d",fontFamily:"monospace"}}>{GEMINI_KEY ? `${GEMINI_KEY.slice(0,8)}â€¦${GEMINI_KEY.slice(-4)} âœ“` : "NOT FOUND"}</code>
+              {" Â· "}Open <strong>F12 â†’ Console</strong> for the full error from Gemini.
             </div>
           </div>
         )}
 
-        {/* ── LOADING SKELETON ── */}
+        {/* â”€â”€ LOADING SKELETON â”€â”€ */}
         {(loading || generating) && !articles.length && (
           <div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16}}>
@@ -750,14 +744,14 @@ export default function NewsTrackerPage() {
           </div>
         )}
 
-        {/* ── NO RESULTS ── */}
+        {/* â”€â”€ NO RESULTS â”€â”€ */}
         {!loading && !generating && filtered.length === 0 && articles.length > 0 && (
           <div style={{textAlign:"center",padding:60,color:"rgba(255,255,255,.3)",fontSize:14}}>
             No articles match your filters. Try changing league or type.
           </div>
         )}
 
-        {/* ── ARTICLES GRID ── */}
+        {/* â”€â”€ ARTICLES GRID â”€â”€ */}
         {!loading && filtered.length > 0 && (
           <div>
             {/* Featured article */}
@@ -778,11 +772,11 @@ export default function NewsTrackerPage() {
           </div>
         )}
 
-        {/* ── STATS SNAPSHOT (bottom) ── */}
+        {/* â”€â”€ STATS SNAPSHOT (bottom) â”€â”€ */}
         {!loading && Object.keys(statsData).length > 0 && (
           <div style={{marginTop:48,paddingTop:24,borderTop:"1px solid rgba(255,255,255,.06)"}}>
             <div style={{fontSize:9,fontWeight:900,color:"rgba(255,255,255,.25)",letterSpacing:".14em",marginBottom:14}}>
-              LIVE DATA SNAPSHOT · USED TO GENERATE ARTICLES
+              LIVE DATA SNAPSHOT Â· USED TO GENERATE ARTICLES
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
               {["epl","laliga","seriea","ligue1"].map(code=>{
@@ -800,11 +794,11 @@ export default function NewsTrackerPage() {
                     <div style={{display:"flex",flexDirection:"column",gap:4}}>
                       <div style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>
                         <span style={{color:"rgba(255,255,255,.25)"}}>Leader: </span>
-                        {leader?.team_name||leader?.team||"—"} {leader?.points||0}pts
+                        {leader?.team_name||leader?.team||"â€”"} {leader?.points||0}pts
                       </div>
                       <div style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>
                         <span style={{color:"rgba(255,255,255,.25)"}}>Top scorer: </span>
-                        {topScorer?.player_name||topScorer?.name||"—"} ({topScorer?.goals||0})
+                        {topScorer?.player_name||topScorer?.name||"â€”"} ({topScorer?.goals||0})
                       </div>
                       <div style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>
                         <span style={{color:"rgba(255,255,255,.25)"}}>Injuries: </span>

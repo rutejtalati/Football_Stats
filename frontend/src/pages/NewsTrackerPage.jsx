@@ -13,18 +13,15 @@ import {
 } from "../api/api";
 
 /* ─── Gemini Flash helper ────────────────────────────────────
-   Uses the raw REST endpoint — no npm package needed.
-   Browser fetch to generativelanguage.googleapis.com is
-   CORS-allowed by Google (unlike api.anthropic.com).
-
-   🔑 Set your key in .env:  VITE_GEMINI_KEY=AIza...
-   Get a free key (no credit card) at:
-   https://aistudio.google.com/app/apikey
+   Key is loaded from VITE_GEMINI_KEY env var.
+   If Vite isn't picking it up, you can paste the key directly
+   into the FALLBACK_KEY string below as a temporary fix.
 ──────────────────────────────────────────────────────────── */
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "";
+const FALLBACK_KEY = ""; // ← paste your key here if env var isn't working
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || FALLBACK_KEY;
 const GEMINI_ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-const FALLBACK_KEY = "AIzaSyCRzC0qQmlvmXVeNSx83LnvygSI6mM6HX0";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
 async function geminiChat(prompt) {
   if (!GEMINI_KEY) {
     throw new Error("NO_KEY");

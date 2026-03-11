@@ -460,6 +460,9 @@ def get_fixture_stats(fixture_id:int): return api_get("/fixtures/statistics",{"f
 
 @app.get("/api/simulate/{league}")
 def simulate_league(league:str):
+    # Ensure bundesliga is supported — season_simulator must also know it
+    if league not in LEAGUE_IDS:
+        raise HTTPException(404, f"Unknown league: {league}")
     try: return {"league":league,"results":monte_carlo_league(league)}
     except ValueError as e: raise HTTPException(404,str(e))
 
@@ -474,6 +477,7 @@ LEAGUE_NEWS_QUERIES = {
     "ligue1":     "Ligue 1 football",
     "bundesliga": "Bundesliga football",   # ← ADDED
 }
+
 
 @app.get("/api/news/{league}")
 def get_league_news(league: str):
@@ -499,3 +503,206 @@ def get_league_news(league: str):
         return {"articles": articles}
     except Exception as e:
         raise HTTPException(502, f"News fetch failed: {str(e)}")
+
+
+# ── AI Article Generator ──────────────────────────────────────
+# Calls OpenRouter from the backend — no CORS issues on frontend.
+# FREE models available at openrouter.ai (no credit card needed).
+# Set OPENROUTER_API_KEY in Render environment variables.
+from pydantic import BaseModel
+
+class PromptRequest(BaseModel):
+    prompt: str
+
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+
+@app.post("/api/ai/generate")
+def generate_ai_text(body: PromptRequest):
+    if not OPENROUTER_KEY:
+        raise HTTPException(503, "OPENROUTER_API_KEY not configured on server")
+    try:
+        r = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {OPENROUTER_KEY}",
+                "HTTP-Referer": "https://www.statinsite.com",
+                "X-Title": "StatinSite",
+            },
+            json={
+                "model": "meta-llama/llama-3.1-8b-instruct:free",
+                "max_tokens": 1100,
+                "temperature": 0.7,
+                "messages": [{"role": "user", "content": body.prompt}],
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        data = r.json()
+        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        return {"text": text}
+    except requests.HTTPError as e:
+        raise HTTPException(502, f"OpenRouter error: {e.response.text[:300]}")
+    except Exception as e:
+        raise HTTPException(502, f"AI generation failed: {str(e)}")
+
+
+# ── Intelligence Feed ─────────────────────────────────────────────────────────
+# Aggregates match previews, transfer news, and model insights into a single feed.
+# Called by NewsTrackerPage → /api/intelligence/feed
+
+TRANSFER_KEYWORDS = [
+    "transfer", "signing", "deal", "bid", "loan", "fee", "move",
+    "joins", "agrees", "contract", "swap", "approached",
+]
+
+def _classify_article(title: str, description: str) -> str:
+    text = f"{title} {description}".lower()
+    if any(k in text for k in TRANSFER_KEYWORDS):
+        return "transfer"
+    return "news"
+
+def _build_previews(predictions: list, league_code: str) -> list:
+    items = []
+    for p in predictions[:4]:
+        home = p.get("home_team", "")
+        away = p.get("away_team", "")
+        date = p.get("fixture_date", "")
+        hw = round(p.get("home_win_prob", 0) * 100)
+        dw = round(p.get("draw_prob", 0) * 100)
+        aw = round(p.get("away_win_prob", 0) * 100)
+        conf = p.get("confidence", 0)
+        xgh = round(p.get("expected_home_goals", 0), 2)
+        xga = round(p.get("expected_away_goals", 0), 2)
+        items.append({
+            "id": f"preview_{league_code}_{home}_{away}".replace(" ", "_"),
+            "type": "preview",
+            "league": league_code,
+            "title": f"{home} vs {away}",
+            "description": f"Model confidence {conf}% · xG {xgh}–{xga} · {hw}% / {dw}% / {aw}%",
+            "home_team": home,
+            "away_team": away,
+            "home_win_prob": hw,
+            "draw_prob": dw,
+            "away_win_prob": aw,
+            "xg_home": xgh,
+            "xg_away": xga,
+            "confidence": conf,
+            "fixture_date": date,
+            "home_logo": p.get("home_logo", ""),
+            "away_logo": p.get("away_logo", ""),
+            "publishedAt": datetime.now(timezone.utc).isoformat(),
+            "source": "StatinSite Model",
+        })
+    return items
+
+def _build_insights(predictions: list, league_code: str) -> list:
+    if not predictions:
+        return []
+    top = max(predictions, key=lambda x: x.get("confidence", 0))
+    home = top.get("home_team", "")
+    away = top.get("away_team", "")
+    conf = top.get("confidence", 0)
+    xgh = round(top.get("expected_home_goals", 0), 2)
+    xga = round(top.get("expected_away_goals", 0), 2)
+    return [{
+        "id": f"insight_{league_code}_{home}_{away}".replace(" ", "_"),
+        "type": "insight",
+        "league": league_code,
+        "title": f"Model Insight: {home} vs {away}",
+        "description": (
+            f"Highest-confidence pick this week ({conf}%). "
+            f"Expected goals: {home} {xgh} – {xga} {away}. "
+            f"Dixon-Coles Poisson + Elo model."
+        ),
+        "home_team": home,
+        "away_team": away,
+        "xg_home": xgh,
+        "xg_away": xga,
+        "confidence": conf,
+        "fixture_date": top.get("fixture_date", ""),
+        "home_logo": top.get("home_logo", ""),
+        "away_logo": top.get("away_logo", ""),
+        "publishedAt": datetime.now(timezone.utc).isoformat(),
+        "source": "StatinSite Model",
+    }]
+
+
+@app.get("/api/intelligence/feed")
+def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
+    """
+    Returns a merged feed of:
+      - Match previews (from prediction model)
+      - Model insights (top confidence pick per league)
+      - News articles (from NewsAPI, classified as news/transfer)
+    """
+    cache_key = f"intelligence_feed_{leagues}_v1"
+    hit = _cache.get(cache_key)
+    if hit:
+        return hit
+
+    league_list = [l.strip() for l in leagues.split(",") if l.strip() in LEAGUE_IDS]
+    feed_items: List[dict] = []
+
+    # 1. Match previews + insights from prediction model
+    for code in league_list[:3]:
+        try:
+            preds = league_predictions(code)
+            items = preds.get("predictions", [])
+            feed_items.extend(_build_previews(items, code))
+            feed_items.extend(_build_insights(items, code))
+        except Exception:
+            pass
+
+    # 2. News articles from NewsAPI
+    if NEWS_API_KEY:
+        try:
+            r = requests.get(
+                "https://newsapi.org/v2/everything",
+                params={
+                    "q": "Premier League OR La Liga OR Serie A OR Bundesliga transfer signing",
+                    "language": "en",
+                    "sortBy": "publishedAt",
+                    "pageSize": 20,
+                    "apiKey": NEWS_API_KEY,
+                },
+                timeout=10,
+            )
+            r.raise_for_status()
+            articles = [
+                a for a in r.json().get("articles", [])
+                if a.get("title") and a["title"] != "[Removed]"
+                and a.get("urlToImage")
+            ][:16]
+            for a in articles:
+                t = a.get("title", "")
+                d = a.get("description", "") or ""
+                feed_items.append({
+                    "id": f"news_{hash(t) & 0xFFFFFF}",
+                    "type": _classify_article(t, d),
+                    "league": "multi",
+                    "title": t,
+                    "description": d[:200] if d else "",
+                    "url": a.get("url", ""),
+                    "urlToImage": a.get("urlToImage", ""),
+                    "publishedAt": a.get("publishedAt", ""),
+                    "source": a.get("source", {}).get("name", ""),
+                    "author": a.get("author", ""),
+                })
+        except Exception:
+            pass
+
+    # Sort: previews first, then insights, transfers, news
+    def sort_key(item):
+        type_order = {"preview": 0, "insight": 1, "transfer": 2, "news": 3}
+        return (type_order.get(item.get("type", "news"), 3), item.get("publishedAt", ""))
+
+    feed_items.sort(key=sort_key)
+
+    result = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "count": len(feed_items),
+        "items": feed_items,
+    }
+    _cache.set(cache_key, result)
+    return result

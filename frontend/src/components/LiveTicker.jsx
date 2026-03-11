@@ -8,11 +8,11 @@ import { useLiveTicker } from "../hooks/useLiveTicker";
 
 // ── Chip type configs ──────────────────────────
 const CHIP_CONFIG = {
-  live_score: { dot: "#ff3b3b", dotGlow: "rgba(255,59,59,0.6)", label: "LIVE" },
-  model_edge: { dot: "#00c896", dotGlow: "rgba(0,200,150,0.5)", label: "MODEL" },
+  live_score: { dot: "#ff3b3b", dotGlow: "rgba(255,59,59,0.6)",  label: "LIVE"     },
+  model_edge: { dot: "#00c896", dotGlow: "rgba(0,200,150,0.5)",  label: "MODEL"    },
   upcoming:   { dot: "#3d8ce8", dotGlow: "rgba(61,140,232,0.4)", label: "UPCOMING" },
-  title_race: { dot: "#fbbf24", dotGlow: "rgba(251,191,36,0.4)", label: "TABLE" },
-  default:    { dot: "#666",    dotGlow: "transparent",          label: "INFO" },
+  title_race: { dot: "#fbbf24", dotGlow: "rgba(251,191,36,0.4)", label: "TABLE"    },
+  default:    { dot: "#666",    dotGlow: "transparent",           label: "INFO"     },
 };
 
 function LiveDot({ color, glow }) {
@@ -124,12 +124,17 @@ export default function LiveTicker() {
   const [paused, setPaused] = useState(false);
   const trackRef = useRef(null);
 
-  // Don't render until we have data
+  // Loading placeholder — fixed, flush under navbar
   if (loading && chips.length === 0) return (
     <div style={{
+      position: "fixed",
+      top: 48,
+      left: 0,
+      right: 0,
       height: 34,
       background: "rgba(10,10,15,0.85)",
       borderBottom: "1px solid rgba(255,255,255,0.04)",
+      zIndex: 150,
     }} />
   );
 
@@ -163,16 +168,20 @@ export default function LiveTicker() {
         }
       `}</style>
 
+      {/* ── Fixed ticker bar — sits flush below navbar ── */}
       <div
         style={{
+          position: "fixed",
+          top: 48,
+          left: 0,
+          right: 0,
           height: 34,
           background: "rgba(8,8,12,0.92)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           overflow: "hidden",
-          position: "relative",
-          zIndex: 49,
+          zIndex: 150,
           display: "flex",
           alignItems: "center",
         }}

@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 1: Icons + Constants
 // ═══════════════════════════════════════════════
-
+import LiveTicker from "../components/LiveTicker";
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
@@ -82,7 +82,6 @@ const Icons = {
   ),
 };
 
-// ── Nav items ───────────────────────────────────
 const NAV_ITEMS = [
   { to: "/",                           label: "Home",        Icon: Icons.Home,       color: "rgba(255,255,255,0.55)", end: true },
   { to: "/predictions/premier-league", label: "Predictions", Icon: Icons.Predict,    color: "#60a5fa"                           },
@@ -95,18 +94,13 @@ const NAV_ITEMS = [
 ];
 
 const FPL_ITEMS = [
-  { to: "/best-team",          label: "Best XI",          desc: "Optimal FPL starting 11"      },
-  { to: "/squad-builder",      label: "Squad Builder",    desc: "Build your 15-man squad"       },
-  { to: "/gameweek-insights",  label: "GW Insights",      desc: "Gameweek stats & analysis"     },
-  { to: "/fpl-table",          label: "FPL Table",        desc: "Live FPL leaderboard"          },
+  { to: "/best-team",         label: "Best XI",       desc: "Optimal FPL starting 11"  },
+  { to: "/squad-builder",     label: "Squad Builder", desc: "Build your 15-man squad"  },
+  { to: "/gameweek-insights", label: "GW Insights",   desc: "Gameweek stats & analysis" },
+  { to: "/fpl-table",         label: "FPL Table",     desc: "Live FPL leaderboard"     },
 ];
 
-const FPL_PATHS = [
-  "/best-team",
-  "/squad-builder",
-  "/gameweek-insights",
-  "/fpl-table",
-];
+const FPL_PATHS = ["/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table"];
 
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 2: Hooks + Logic
@@ -115,7 +109,6 @@ const FPL_PATHS = [
 function useScrollHide(threshold = 8) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
-
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
@@ -126,7 +119,6 @@ function useScrollHide(threshold = 8) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [threshold]);
-
   return hidden;
 }
 
@@ -142,11 +134,8 @@ function useClickOutside(ref, callback) {
 
 function useLockScroll(active) {
   useEffect(() => {
-    if (active) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (active) { document.body.style.overflow = "hidden"; }
+    else        { document.body.style.overflow = ""; }
     return () => { document.body.style.overflow = ""; };
   }, [active]);
 }
@@ -154,19 +143,6 @@ function useLockScroll(active) {
 function useFplActive() {
   const { pathname } = useLocation();
   return FPL_PATHS.some((p) => pathname.startsWith(p));
-}
-
-function useActiveColor() {
-  const { pathname } = useLocation();
-  const fplActive = useFplActive();
-
-  if (fplActive) return "#28d97a";
-  const match = NAV_ITEMS.find((item) => {
-    if (item.end) return pathname === item.to;
-    if (item.fplGroup) return false;
-    return pathname.startsWith(item.to);
-  });
-  return match?.color ?? "rgba(255,255,255,0.55)";
 }
 
 // ═══════════════════════════════════════════════
@@ -182,7 +158,7 @@ const BOTTOM_TABS = [
 ];
 
 function BottomTabBar() {
-  const location = useLocation();
+  const location  = useLocation();
   const fplActive = useFplActive();
 
   return (
@@ -199,9 +175,7 @@ function BottomTabBar() {
             className={"sn-bottom-tab-link" + (active ? " active" : "")}
             style={{ "--tab-color": item.color }}
           >
-            <div className="sn-bottom-tab-icon">
-              <item.Icon />
-            </div>
+            <div className="sn-bottom-tab-icon"><item.Icon /></div>
             <span className="sn-bottom-tab-label">{item.label}</span>
           </NavLink>
         );
@@ -214,18 +188,18 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState("");
-  const [fplOpen, setFplOpen] = useState(false);
-  const navRef = useRef(null);
+  const [searchVal,  setSearchVal]  = useState("");
+  const [fplOpen,    setFplOpen]    = useState(false);
+  const navRef    = useRef(null);
   const searchRef = useRef(null);
-  const inputRef = useRef(null);
-  const fplRef = useRef(null);
+  const inputRef  = useRef(null);
+  const fplRef    = useRef(null);
 
-  const hidden = useScrollHide();
+  const hidden    = useScrollHide();
   const fplActive = useFplActive();
 
   useClickOutside(searchRef, () => { setSearchOpen(false); setSearchVal(""); });
-  useClickOutside(fplRef, () => setFplOpen(false));
+  useClickOutside(fplRef,    () => setFplOpen(false));
   useLockScroll(mobileOpen);
 
   useEffect(() => {
@@ -242,7 +216,7 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ── Bar ───────────────────────────────── */}
+      {/* ── Navbar bar ────────────────────────── */}
       <header
         className={`sn-bar ${hidden ? "sn-bar--hidden" : ""} ${mobileOpen ? "sn-bar--open" : ""}`}
         ref={navRef}
@@ -273,7 +247,7 @@ export default function Navbar() {
                       <span>{item.label}</span>
                       <span className="sn-pill-tag">FPL</span>
                       <svg width="9" height="9" viewBox="0 0 10 10" fill="none"
-                        style={{ opacity: .5, marginLeft: 1, transition: "transform .15s", transform: fplOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        style={{ opacity:.5, marginLeft:1, transition:"transform .15s", transform: fplOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
                         <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
                     </button>
@@ -314,8 +288,6 @@ export default function Navbar() {
 
           {/* Right controls */}
           <div className="sn-controls">
-
-            {/* Search */}
             <div className={`sn-search ${searchOpen ? "sn-search--open" : ""}`} ref={searchRef}>
               {searchOpen ? (
                 <>
@@ -328,26 +300,17 @@ export default function Navbar() {
                     onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
                     aria-label="Search"
                   />
-                  <button
-                    className="sn-icon-btn"
-                    onClick={() => { setSearchOpen(false); setSearchVal(""); }}
-                    aria-label="Close search"
-                  >
+                  <button className="sn-icon-btn" onClick={() => { setSearchOpen(false); setSearchVal(""); }} aria-label="Close search">
                     <Icons.Close />
                   </button>
                 </>
               ) : (
-                <button
-                  className="sn-icon-btn"
-                  onClick={() => setSearchOpen(true)}
-                  aria-label="Open search"
-                >
+                <button className="sn-icon-btn" onClick={() => setSearchOpen(true)} aria-label="Open search">
                   <Icons.Search />
                 </button>
               )}
             </div>
 
-            {/* Mobile menu toggle */}
             <button
               className={`sn-icon-btn sn-hamburger ${mobileOpen ? "sn-hamburger--open" : ""}`}
               onClick={() => setMobileOpen((v) => !v)}
@@ -356,10 +319,12 @@ export default function Navbar() {
             >
               {mobileOpen ? <Icons.Close /> : <Icons.Menu />}
             </button>
-
           </div>
         </div>
       </header>
+
+      {/* ── Live ticker — fixed below navbar ──── */}
+      <LiveTicker />
 
       {/* ── Mobile drawer ─────────────────────── */}
       {mobileOpen && (
@@ -377,9 +342,7 @@ export default function Navbar() {
                 >
                   <item.Icon />
                   <span>{item.label}</span>
-                  {item.fplGroup && (
-                    <span className="sn-pill-tag">FPL</span>
-                  )}
+                  {item.fplGroup && <span className="sn-pill-tag">FPL</span>}
                 </NavLink>
               );
             })}
@@ -389,11 +352,7 @@ export default function Navbar() {
 
       {/* ── Mobile backdrop ───────────────────── */}
       {mobileOpen && (
-        <div
-          className="sn-backdrop"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
+        <div className="sn-backdrop" onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
 
       {/* ── Bottom tab bar — mobile only ──────── */}

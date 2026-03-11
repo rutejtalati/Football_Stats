@@ -600,7 +600,7 @@ const ScenarioSimulator=({match,T})=>{
   const isModified=JSON.stringify(mods)!==JSON.stringify(PRESETS[0].mods);
 
   const cardStyle={
-    background:"rgba(0,0,0,0.8)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",
+    background:"rgba(10,10,14,0.95)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",
     border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,overflow:"hidden",
     boxShadow:`0 0 0 1px ${T.accent}18, 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)`,
   };
@@ -718,7 +718,7 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
     padding:"11px 12px",fontSize:9,fontWeight:600,letterSpacing:"0.1em",
     color:sortCol===col?T.accent:"rgba(255,255,255,0.25)",
     borderBottom:"1px solid rgba(255,255,255,0.07)",
-    background:"rgba(0,0,0,0.4)",
+    background:"rgba(12,14,18,0.75)",
     textAlign:align||"center",cursor:"pointer",userSelect:"none",
     transition:"color 0.15s",fontFamily:"'Inter',sans-serif",
     whiteSpace:"nowrap",
@@ -731,7 +731,7 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
 
   return(
     <div style={{
-      background:"rgba(0,0,0,0.75)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+      background:"rgba(10,10,14,0.96)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
       borderRadius:20,overflow:"hidden",
       border:"1px solid rgba(255,255,255,0.08)",
       boxShadow:"0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -862,7 +862,7 @@ const ScorersWidget=({league,T})=>{
 
   return(
     <div style={{
-      background:"rgba(0,0,0,0.75)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+      background:"rgba(10,10,14,0.96)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
       borderRadius:20,overflow:"hidden",
       border:"1px solid rgba(255,255,255,0.08)",
       boxShadow:"0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -1539,7 +1539,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
             Monte Carlo · 8,000 simulations · Poisson xG · Shuffled fixtures · League-specific zones
           </div>
         </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:8,flexWrap:isMobile?"nowrap":"wrap",overflowX:isMobile?"auto":"visible",WebkitOverflowScrolling:"touch",paddingBottom:isMobile?4:0,scrollbarWidth:"none"}}>
           {zones.map(z=>(
             <div key={z.label} style={{display:"flex",alignItems:"center",gap:5}}>
               <div style={{width:3,height:14,borderRadius:2,background:z.color}}/>
@@ -1551,7 +1551,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
 
       {/* ── View switcher */}
       {!loading && !simErr && (
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",overflowX:isMobile?"auto":"visible",paddingBottom:isMobile?4:0}}>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:4,scrollbarWidth:"none"}}>
           <ViewBtn id="table"     icon="📊" label="Full Table" />
           <ViewBtn id="title"     icon="🏆" label="Title Race" />
           <ViewBtn id="points"    icon="📈" label="Points Projection" />
@@ -1814,7 +1814,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         <div style={{position:"absolute",inset:0,opacity:0.025,backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,backgroundSize:"150px"}}/>
       </div>
 
-      <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:"0 24px 64px"}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:isMobile?"0 12px 80px":"0 24px 64px"}}>
 
         {/* ══ HEADER ══════════════════════════════════════════ */}
         <div style={{padding:isMobile?"16px 0 14px":"28px 0 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
@@ -1900,12 +1900,14 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
         {/* ══ TAB BAR ════════════════════════════════════════ */}
         <div style={{
-          display:"flex",marginBottom:24,overflowX:"auto",
+          display:"flex",marginBottom:16,overflowX:"auto",
+          WebkitOverflowScrolling:"touch",
+          scrollbarWidth:"none",
           background:"rgba(255,255,255,0.03)",
           borderRadius:14,padding:4,gap:2,
           border:"1px solid rgba(255,255,255,0.07)",
           backdropFilter:"blur(10px)",
-          width:"fit-content",
+          width:isMobile?"100%":"fit-content",
         }}>
           {[
             {key:"predictions",label:"Predictions",badge:!predLoad?matches.length:null},

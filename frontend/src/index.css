@@ -2030,3 +2030,269 @@ img { max-width: 100%; }
   .bench-side-shell { min-height: auto; }
   .bench-tray-board { grid-template-columns: repeat(2, 1fr) !important; }
 }
+/* ═══════════════════════════════════════════════════════════════
+   STATINSITE — RESPONSIVE DUAL (MOBILE + DESKTOP)
+   Append this to the END of your index.css
+   Breakpoints:
+     ≤ 480px  = small phone
+     ≤ 640px  = phone
+     ≤ 768px  = large phone / small tablet
+     ≤ 1024px = tablet
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Global base (all screen sizes) ─────────── */
+html, body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+img { max-width: 100%; }
+
+/* ── 2. Bottom tab bar — MOBILE ONLY ────────────── */
+.sn-bottom-tabs { display: none; }
+
+@media (max-width: 768px) {
+
+  /* Show bottom tabs */
+  .sn-bottom-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 999;
+    background: rgba(8,9,14,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 4px 0 max(6px, env(safe-area-inset-bottom));
+    justify-content: space-around;
+  }
+
+  /* Add bottom padding so content clears tab bar */
+  .sn-page-wrap { padding-bottom: 72px !important; }
+
+  /* Hide desktop nav pills on mobile (bottom tabs replace them) */
+  .sn-nav { display: none !important; }
+
+  /* Navbar: tighter on mobile */
+  .sn-wrap { padding: 0 12px; }
+  .sn-brand span { font-size: 13px; }
+
+  /* Page shell padding */
+  .page-shell { padding: 12px; }
+  .bt-page-shell { padding: 10px 12px; }
+  .pp2-page { padding: 0 12px 80px; }
+  .pi-content { padding: 0 12px; }
+
+  /* Page titles */
+  .page-title { font-size: 24px; margin: 16px 0 20px; }
+  .page-title-left { font-size: 22px; }
+
+  /* ── Filters ── */
+  .filters-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .filters-panel { padding: 12px; }
+
+  /* ── Summary / stat cards ── */
+  .summary-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .insight-hero-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .analytics-widget-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .metric-cards-mini { grid-template-columns: 1fr 1fr !important; }
+
+  /* ── League / standings layout ── */
+  .league-layout { grid-template-columns: 1fr !important; }
+  .player-detail-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Predictions page ── */
+  .pp2-header { padding: 14px 0 12px; gap: 10px; }
+  .pp2-title { font-size: 20px; }
+  .pp2-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .pp2-tab { padding: 10px 12px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+  .pp2-card-teams { gap: 6px; }
+  .pp2-card-centre { min-width: 90px; }
+  .pp2-team-name { font-size: 12px; }
+  .pp2-score-badge { font-size: 16px; }
+  .pp2-league-nav { gap: 4px; }
+  .pp2-league-pill { padding: 5px 10px; font-size: 10px; }
+  .pp2-stats-banner { padding: 10px 12px; gap: 6px; }
+  .pp2-stat-val { font-size: 16px; }
+  .pp2-hm-cell { min-height: 20px; font-size: 7px; }
+  .pp2-chips-row { gap: 4px; }
+
+  /* ── Season Sim / PredictionsPage ── */
+  .sn-page-wrap > div { padding-left: 0; padding-right: 0; }
+
+  /* ── Best Team page ── */
+  .bt-main-layout { grid-template-columns: 1fr !important; }
+  .bt-left-panel { display: none !important; }
+  .bt-right-panel { display: none !important; }
+  .bt-page-header { flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .bt-header-badges { display: none !important; }
+  .bt-bench-tray-grid { gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .bt-bench-slot { min-width: 70px; }
+
+  /* ── Squad builder ── */
+  .squad-editor-grid { grid-template-columns: 1fr !important; }
+  .squad-filter-row { grid-template-columns: 1fr 1fr !important; }
+  .squad-pitch-bench-layout { grid-template-columns: 1fr !important; }
+  .squad-overview-layout { grid-template-columns: 1fr !important; }
+  .bench-tray-board { grid-template-columns: repeat(2, 1fr) !important; }
+  .squad-builder-layout { grid-template-columns: 1fr !important; }
+
+  /* ── Player page ── */
+  .pi-hero { flex-direction: column; gap: 16px; padding: 16px; }
+  .pi-hero-name { font-size: 22px; }
+  .pi-hero-gauges { flex-direction: row; flex-wrap: wrap; }
+  .pi-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .pi-captaincy-card { flex-direction: column; gap: 12px; }
+  .pi-captaincy-score-col { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding-right: 0; padding-bottom: 12px; }
+
+  /* ── Gameweek Insights ── */
+  .gw-main-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Table toolbar ── */
+  .table-toolbar { grid-template-columns: 1fr !important; gap: 8px; }
+  .page-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .section-tabs { gap: 6px; }
+
+  /* ── Footer ── */
+  .site-footer { padding: 12px 16px 80px; flex-wrap: wrap; text-align: center; }
+}
+
+/* ── 3. Small phones ≤ 480px ─────────────────────── */
+@media (max-width: 480px) {
+  .page-title { font-size: 20px; }
+  .summary-grid { grid-template-columns: 1fr !important; }
+  .insight-hero-grid { grid-template-columns: 1fr !important; }
+  .analytics-widget-grid { grid-template-columns: 1fr !important; }
+  .filters-grid { grid-template-columns: 1fr !important; }
+  .pp2-title { font-size: 18px; }
+  .pp2-card-header { padding: 10px 12px; }
+  .pp2-card-teams { flex-direction: column; gap: 4px; }
+  .pp2-card-away { flex-direction: row; }
+  .pp2-card-centre { min-width: unset; width: 100%; flex-direction: row; justify-content: center; gap: 16px; }
+  .squad-filter-row { grid-template-columns: 1fr !important; }
+  .metric-cards-mini { grid-template-columns: 1fr !important; }
+  .pi-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .sn-brand span { display: none; } /* hide "StatinSite" text on very small screens */
+}
+
+/* ── 4. Tablet 769px–1024px ─────────────────────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Nav pills: tighter */
+  .sn-pill { padding: 5px 8px; font-size: 12px; gap: 4px; }
+  .sn-nav { gap: 1px; }
+
+  /* Page padding */
+  .page-shell { padding: 16px; }
+  .pp2-page { padding: 0 16px 40px; }
+
+  /* Grids */
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .analytics-widget-grid { grid-template-columns: repeat(2, 1fr); }
+  .league-layout { grid-template-columns: 1fr; }
+  .filters-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Best team */
+  .bt-main-layout { grid-template-columns: 200px 1fr !important; }
+  .bt-right-panel { display: none !important; }
+
+  /* Squad */
+  .squad-overview-layout { grid-template-columns: 1fr !important; }
+  .squad-pitch-bench-layout { grid-template-columns: 1fr !important; }
+}
+
+/* ── 5. Bottom tab bar link styles ──────────────── */
+.sn-bottom-tab-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  transition: color 0.15s;
+  flex: 1;
+  min-width: 44px;
+}
+.sn-bottom-tab-link.active,
+.sn-bottom-tab-link[aria-current="page"] {
+  color: var(--tab-color, rgba(255,255,255,0.9));
+}
+.sn-bottom-tab-icon {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  transition: background 0.15s;
+}
+.sn-bottom-tab-link.active .sn-bottom-tab-icon,
+.sn-bottom-tab-link[aria-current="page"] .sn-bottom-tab-icon {
+  background: color-mix(in srgb, var(--tab-color, white) 15%, transparent);
+}
+.sn-bottom-tab-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── 6. Touch-friendly tap targets ──────────────── */
+@media (max-width: 768px) {
+  button, a, [role="button"] { min-height: 36px; }
+  .sn-pill, .sn-drawer-item, .pp2-league-pill, .pp2-tab,
+  .section-tab, .clear-btn, .back-button { min-height: 40px; }
+  input, select { min-height: 42px; font-size: 16px; /* prevents iOS zoom */ }
+}
+
+/* ── 7. Horizontal scrollable tabs (no wrapping) ── */
+@media (max-width: 768px) {
+  .section-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .section-tabs::-webkit-scrollbar { display: none; }
+  .section-tab { flex-shrink: 0; }
+
+  .pp2-league-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .pp2-league-nav::-webkit-scrollbar { display: none; }
+  .pp2-league-pill { flex-shrink: 0; }
+}
+
+/* ── 8. Tables — horizontal scroll on mobile ────── */
+@media (max-width: 768px) {
+  .table-scroll-x { border-radius: 12px; }
+  .fpl-table { min-width: 600px; }
+  .data-table { min-width: 400px; }
+  .pp2-table-wrap { border-radius: 10px; }
+  .pp2-table { min-width: 340px; }
+}
+
+/* ── 9. Pitch — scale down on mobile ───────────── */
+@media (max-width: 768px) {
+  .small-pitch { min-height: 420px !important; }
+  .vertical-pitch { height: 600px !important; width: min(100%, 400px) !important; }
+  .compact-vertical-pitch { height: 540px !important; width: min(100%, 420px) !important; }
+  .bt-pitch-wrap .small-pitch { min-height: 400px !important; }
+  .ptile-starter { width: 72px; }
+  .ptile-bench   { width: 62px; }
+  .ptile-starter .ptile-shirt-img { max-width: 42px; height: 42px; }
+  .ptile-bench   .ptile-shirt-img { max-width: 34px; height: 34px; }
+  .ptile-name { font-size: 8.5px; }
+}
+
+/* ── 10. Misc cards & panels ────────────────────── */
+@media (max-width: 768px) {
+  .panel-dark { border-radius: 16px; padding: 14px; }
+  .panel { border-radius: 14px; }
+  .widget-card { border-radius: 14px; padding: 10px; }
+  .metric-pill-card { min-width: unset; padding: 12px 14px; }
+  .player-pill-card { border-radius: 16px; flex-direction: column; align-items: flex-start; }
+  .player-pill-action { align-self: flex-start; margin-top: 6px; }
+  .summary-card { padding: 12px 14px; }
+  .bench-side-shell { min-height: auto; }
+  .bench-tray-board { grid-template-columns: repeat(2, 1fr) !important; }
+}

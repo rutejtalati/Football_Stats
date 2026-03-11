@@ -107,7 +107,7 @@ img { display: block; }
   min-height: 0;
 }
 
-.app-shell > *:not(.sn-bar):not(.sn-mobile-drawer):not(.site-footer):first-of-type,
+.app-shell > *:not(.sn-bar):not(.sn-mobile-drawer):not(.site-footer):not(.sn-live-ticker):first-of-type,
 .page-shell,
 .homepage-shell {
   padding-top: 60px;
@@ -1946,4 +1946,5 @@ img { max-width: 100%; }
   letter-spacing: 0.02em; font-family: 'Inter', sans-serif;
 }
 }
+
 

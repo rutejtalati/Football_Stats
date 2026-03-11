@@ -298,6 +298,7 @@ const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
    clean VS split, smooth probability bars
 ══════════════════════════════════════════════════════════ */
 const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
+  const isMobile=useWindowWidth()<640;
   const[open,setOpen]=useState(false);
   const[activeTab,setActiveTab]=useState("stats");
   const hp=match.p_home_win||0,dp=match.p_draw||0,ap=match.p_away_win||0;

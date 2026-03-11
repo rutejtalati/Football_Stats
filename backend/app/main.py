@@ -554,6 +554,221 @@ def get_team_profile(team_id: int, league: str = "epl"):
     return result
 
 
+
+# ── Live Ticker Endpoints ─────────────────────────────────────────────────────
+# /api/live/summary  — 60s cache  → max 1,440 upstream calls/day
+# /api/live/featured — 5min cache → max   288 upstream calls/day
+# Total added: ~1,728/day, well within the 7,500/day limit.
+
+_live_cache = TTLCache(ttl_seconds=60)
+_feat_cache = TTLCache(ttl_seconds=300)
+
+ALL_LEAGUE_IDS = list(LEAGUE_IDS.values())
+LIVE_STATUS_SHORT = {"1H", "2H", "ET", "BT", "P", "INT", "HT"}
+
+
+def _fetch_live_matches() -> list:
+    """Single API call for all live fixtures across tracked leagues."""
+    try:
+        data = api_get("/fixtures", {"live": "all"}, timeout=12)
+        matches = []
+        for fx in data.get("response", []):
+            lid = fx.get("league", {}).get("id")
+            if lid not in ALL_LEAGUE_IDS:
+                continue
+            status  = fx.get("fixture", {}).get("status", {})
+            short   = status.get("short", "")
+            elapsed = status.get("elapsed") or 0
+            teams   = fx.get("teams", {})
+            goals   = fx.get("goals", {})
+            league  = fx.get("league", {})
+            events  = fx.get("events", [])
+
+            home_id = teams.get("home", {}).get("id")
+            away_id = teams.get("away", {}).get("id")
+
+            reds_home = sum(
+                1 for e in events
+                if e.get("type") == "Card"
+                and e.get("detail") in ("Red Card", "Second Yellow Card")
+                and e.get("team", {}).get("id") == home_id
+            )
+            reds_away = sum(
+                1 for e in events
+                if e.get("type") == "Card"
+                and e.get("detail") in ("Red Card", "Second Yellow Card")
+                and e.get("team", {}).get("id") == away_id
+            )
+
+            matches.append({
+                "fixture_id":  fx["fixture"]["id"],
+                "status":      short,
+                "elapsed":     elapsed,
+                "home_team":   teams.get("home", {}).get("name", ""),
+                "away_team":   teams.get("away", {}).get("name", ""),
+                "home_logo":   teams.get("home", {}).get("logo", ""),
+                "away_logo":   teams.get("away", {}).get("logo", ""),
+                "home_goals":  goals.get("home") or 0,
+                "away_goals":  goals.get("away") or 0,
+                "reds_home":   reds_home,
+                "reds_away":   reds_away,
+                "league_name": league.get("name", ""),
+                "is_live":     short in {"1H", "2H", "ET", "BT", "P", "INT"},
+                "is_ht":       short == "HT",
+            })
+        return matches
+    except Exception:
+        return []
+
+
+@app.get("/api/live/summary")
+def get_live_summary():
+    """
+    Main ticker endpoint. 60s server-side cache shared by all users.
+    Auto-detects live vs quiet mode. No extra API calls in quiet mode
+    because it reuses already-cached prediction and standings data.
+    """
+    hit = _live_cache.get("live_summary")
+    if hit:
+        return hit
+
+    live_matches = _fetch_live_matches()
+    has_live = any(m["is_live"] or m["is_ht"] for m in live_matches)
+
+    if has_live:
+        chips = []
+        for m in live_matches:
+            if not (m["is_live"] or m["is_ht"]):
+                continue
+            time_label = "HT" if m["is_ht"] else f"{m['elapsed']}'"
+            score = f"{m['home_goals']}\u2013{m['away_goals']}"
+            red_suffix = ""
+            if m["reds_home"]:
+                red_suffix += f" [{m['home_team'][:3].upper()} R]"
+            if m["reds_away"]:
+                red_suffix += f" [{m['away_team'][:3].upper()} R]"
+            chips.append({
+                "type":       "live_score",
+                "label":      f"{m['home_team']} {score} {m['away_team']}",
+                "detail":     f"{time_label} \u00b7 {m['league_name']}{red_suffix}",
+                "glow":       True,
+                "fixture_id": m["fixture_id"],
+                "home_logo":  m["home_logo"],
+                "away_logo":  m["away_logo"],
+                "home_goals": m["home_goals"],
+                "away_goals": m["away_goals"],
+                "elapsed":    m["elapsed"],
+                "is_ht":      m["is_ht"],
+                "reds_home":  m["reds_home"],
+                "reds_away":  m["reds_away"],
+            })
+        result = {"mode": "live", "chips": chips, "match_count": len(chips)}
+
+    else:
+        chips = []
+
+        # Upcoming fixtures — reuses 1h prediction cache, zero new API calls
+        try:
+            preds = league_predictions("epl").get("predictions", [])
+            for p in preds[:3]:
+                hw = round(p.get("home_win_prob", 0) * 100)
+                aw = round(p.get("away_win_prob", 0) * 100)
+                chips.append({
+                    "type":     "upcoming",
+                    "label":    f"{p['home_team']} vs {p['away_team']}",
+                    "detail":   f"{p.get('fixture_date', 'TBD')} \u00b7 {hw}% / {aw}%",
+                    "glow":     False,
+                    "home_logo": p.get("home_logo", ""),
+                    "away_logo": p.get("away_logo", ""),
+                })
+        except Exception:
+            pass
+
+        # Model edge — reuses cached predictions
+        try:
+            best_edge = None
+            best_conf = 0
+            for code in ["epl", "laliga", "seriea"]:
+                for p in league_predictions(code).get("predictions", []):
+                    if p.get("confidence", 0) > best_conf:
+                        best_conf = p["confidence"]
+                        best_edge = {**p, "_league": LEAGUE_NAMES[code]}
+            if best_edge:
+                hw = round(best_edge.get("home_win_prob", 0) * 100)
+                aw = round(best_edge.get("away_win_prob", 0) * 100)
+                winner = best_edge["home_team"] if hw >= aw else best_edge["away_team"]
+                chips.append({
+                    "type":   "model_edge",
+                    "label":  f"Model Edge \u2192 {winner}",
+                    "detail": f"{best_conf}% confidence \u00b7 {best_edge['_league']}",
+                    "glow":   True,
+                    "home_logo": best_edge.get("home_logo", ""),
+                    "away_logo": best_edge.get("away_logo", ""),
+                })
+        except Exception:
+            pass
+
+        # Title race — reuses 24h standings cache
+        try:
+            rows = get_standings("epl")["standings"]
+            if rows and len(rows) >= 2:
+                leader = rows[0]
+                second = rows[1]
+                gap = leader["points"] - second["points"]
+                chips.append({
+                    "type":   "title_race",
+                    "label":  f"Title Race: {leader['team_name']} lead by {gap}pts",
+                    "detail": f"{second['team_name']} chasing \u00b7 Premier League",
+                    "glow":   False,
+                })
+        except Exception:
+            pass
+
+        result = {"mode": "quiet", "chips": chips, "match_count": 0}
+
+    _live_cache.set("live_summary", result)
+    return result
+
+
+@app.get("/api/live/featured")
+def get_live_featured():
+    """
+    Top fixture per league. 5min cache. Reuses prediction cache — zero extra API calls.
+    """
+    hit = _feat_cache.get("live_featured")
+    if hit:
+        return hit
+
+    featured = []
+    for code in list(LEAGUE_IDS.keys()):
+        try:
+            preds = league_predictions(code).get("predictions", [])
+            if not preds:
+                continue
+            top = max(preds, key=lambda x: x.get("confidence", 0))
+            featured.append({
+                "league":       LEAGUE_NAMES[code],
+                "league_code":  code,
+                "home_team":    top["home_team"],
+                "away_team":    top["away_team"],
+                "home_logo":    top.get("home_logo", ""),
+                "away_logo":    top.get("away_logo", ""),
+                "fixture_date": top.get("fixture_date", "TBD"),
+                "confidence":   top.get("confidence", 0),
+                "home_win_prob": top.get("home_win_prob", 0),
+                "draw_prob":     top.get("draw_prob", 0),
+                "away_win_prob": top.get("away_win_prob", 0),
+                "xg_home":      top.get("expected_home_goals", 0),
+                "xg_away":      top.get("expected_away_goals", 0),
+            })
+        except Exception:
+            pass
+
+    result = {"featured": featured, "count": len(featured)}
+    _feat_cache.set("live_featured", result)
+    return result
+
+
 # ── News proxy (NewsAPI.org) ─────────────────────────────────────────────────
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 

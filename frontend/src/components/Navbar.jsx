@@ -5,6 +5,7 @@
 
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import LiveTicker from "./LiveTicker";
 
 // ── SVG Icons ──────────────────────────────────
 const Icons = {
@@ -87,7 +88,6 @@ const NAV_ITEMS = [
   { to: "/games",                      label: "Games",       Icon: Icons.Games,      color: "#fb923c"                           },
 ];
 
-// FPL sub-pages shown in Fantasy dropdown
 const FPL_ITEMS = [
   { to: "/best-team",          label: "Best XI",          desc: "Optimal FPL starting 11"      },
   { to: "/squad-builder",      label: "Squad Builder",    desc: "Build your 15-man squad"       },
@@ -95,22 +95,15 @@ const FPL_ITEMS = [
   { to: "/fpl-table",          label: "FPL Table",        desc: "Live FPL leaderboard"          },
 ];
 
-// FPL sub-pages — used to detect active state for Fantasy pill
-const FPL_PATHS = [
-  "/best-team",
-  "/squad-builder",
-  "/gameweek-insights",
-  "/fpl-table",
-];
+const FPL_PATHS = ["/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table"];
+
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 2: Hooks + Logic
 // ═══════════════════════════════════════════════
 
-// ── Custom hook: scroll-aware hide/show ─────────
 function useScrollHide(threshold = 8) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
-
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
@@ -121,11 +114,9 @@ function useScrollHide(threshold = 8) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [threshold]);
-
   return hidden;
 }
 
-// ── Custom hook: close on outside click ────────
 function useClickOutside(ref, callback) {
   useEffect(() => {
     const handler = (e) => {
@@ -136,45 +127,22 @@ function useClickOutside(ref, callback) {
   }, [ref, callback]);
 }
 
-// ── Custom hook: lock body scroll ──────────────
 function useLockScroll(active) {
   useEffect(() => {
-    if (active) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = active ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [active]);
 }
 
-// ── Helper: is Fantasy pill active? ────────────
 function useFplActive() {
   const { pathname } = useLocation();
   return FPL_PATHS.some((p) => pathname.startsWith(p));
 }
 
-// ── Helper: get active item color ──────────────
-function useActiveColor() {
-  const { pathname } = useLocation();
-  const fplActive = useFplActive();
-
-  if (fplActive) return "#28d97a";
-  const match = NAV_ITEMS.find((item) => {
-    if (item.end) return pathname === item.to;
-    if (item.fplGroup) return false;
-    return pathname.startsWith(item.to);
-  });
-  return match?.color ?? "rgba(255,255,255,0.55)";
-}
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 3: JSX / Render
 // ═══════════════════════════════════════════════
 
-
-/* ══════════════════════════════════════════════
-   BOTTOM TAB BAR — mobile only
-══════════════════════════════════════════════ */
 const BOTTOM_TABS = [
   { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "rgba(255,255,255,0.7)", end: true },
   { to: "/predictions/premier-league", label: "Predict", Icon: Icons.Predict, color: "#60a5fa" },
@@ -186,45 +154,22 @@ const BOTTOM_TABS = [
 function BottomTabBar() {
   const location = useLocation();
   const fplActive = useFplActive();
-
   return (
-    <nav style={{
-      display: "flex",
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: 999,
-      background: "rgba(10,11,16,0.96)",
-      backdropFilter: "blur(24px)",
-      WebkitBackdropFilter: "blur(24px)",
-      borderTop: "1px solid rgba(255,255,255,0.08)",
-      padding: "6px 0 max(6px, env(safe-area-inset-bottom))",
-      justifyContent: "space-around",
-    }} className="sn-bottom-tabs">
+    <nav className="sn-bottom-tabs">
       {BOTTOM_TABS.map(item => {
         const active = item.fplGroup ? fplActive
           : item.end ? location.pathname === item.to
           : location.pathname.startsWith(item.to);
         return (
-          <NavLink key={item.to} to={item.to} end={item.end}
-            style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              gap: 3, padding: "4px 12px", borderRadius: 10,
-              color: active ? item.color : "rgba(255,255,255,0.35)",
-              textDecoration: "none", transition: "all .15s",
-              minWidth: 52,
-            }}>
-            <div style={{
-              padding: 6, borderRadius: 10,
-              background: active ? `${item.color}18` : "transparent",
-              transition: "all .15s",
-            }}>
-              <item.Icon />
-            </div>
-            <span style={{ fontSize: 9, fontWeight: active ? 800 : 600, letterSpacing: "0.02em" }}>
-              {item.label}
-            </span>
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={"sn-bottom-tab-link" + (active ? " active" : "")}
+            style={{ "--tab-color": item.color }}
+          >
+            <div className="sn-bottom-tab-icon"><item.Icon /></div>
+            <span className="sn-bottom-tab-label">{item.label}</span>
           </NavLink>
         );
       })}
@@ -236,29 +181,26 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState("");
-  const [fplOpen, setFplOpen] = useState(false);
-  const navRef = useRef(null);
+  const [searchVal, setSearchVal]   = useState("");
+  const [fplOpen, setFplOpen]       = useState(false);
+  const navRef    = useRef(null);
   const searchRef = useRef(null);
-  const inputRef = useRef(null);
-  const fplRef = useRef(null);
+  const inputRef  = useRef(null);
+  const fplRef    = useRef(null);
 
-  const hidden = useScrollHide();
+  const hidden    = useScrollHide();
   const fplActive = useFplActive();
 
   useClickOutside(searchRef, () => { setSearchOpen(false); setSearchVal(""); });
   useClickOutside(fplRef, () => setFplOpen(false));
   useLockScroll(mobileOpen);
 
-  // Focus input when search opens
   useEffect(() => {
     if (searchOpen) setTimeout(() => inputRef.current?.focus(), 60);
   }, [searchOpen]);
 
-  // Close drawers on route change
   useEffect(() => { setMobileOpen(false); setFplOpen(false); }, [location.pathname]);
 
-  // ── pill active check ────────────────────────
   const isPillActive = (item) => {
     if (item.fplGroup) return fplActive;
     if (item.end)      return location.pathname === item.to;
@@ -267,24 +209,21 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ── Bar ───────────────────────────────── */}
+      {/* ── Bar ─────────────────────────────── */}
       <header
         className={`sn-bar ${hidden ? "sn-bar--hidden" : ""} ${mobileOpen ? "sn-bar--open" : ""}`}
         ref={navRef}
       >
         <div className="sn-wrap">
 
-          {/* Logo */}
           <NavLink to="/" className="sn-brand" aria-label="StatinSite home">
             <Icons.Logo />
             <span>StatinSite</span>
           </NavLink>
 
-          {/* Desktop nav */}
           <nav className="sn-nav" aria-label="Main navigation">
             {NAV_ITEMS.map((item) => {
               const active = isPillActive(item);
-
               if (item.fplGroup) {
                 return (
                   <div key={item.to} style={{ position: "relative" }} ref={fplRef}>
@@ -298,7 +237,8 @@ export default function Navbar() {
                       <span>{item.label}</span>
                       <span className="sn-pill-tag">FPL</span>
                       <svg width="9" height="9" viewBox="0 0 10 10" fill="none"
-                        style={{ opacity: .5, marginLeft: 1, transition: "transform .15s", transform: fplOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        style={{ opacity: .5, marginLeft: 1, transition: "transform .15s",
+                                 transform: fplOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
                         <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
                     </button>
@@ -320,7 +260,6 @@ export default function Navbar() {
                   </div>
                 );
               }
-
               return (
                 <NavLink
                   key={item.to}
@@ -337,10 +276,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Right controls */}
           <div className="sn-controls">
-
-            {/* Search */}
             <div className={`sn-search ${searchOpen ? "sn-search--open" : ""}`} ref={searchRef}>
               {searchOpen ? (
                 <>
@@ -353,26 +289,18 @@ export default function Navbar() {
                     onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
                     aria-label="Search"
                   />
-                  <button
-                    className="sn-icon-btn"
+                  <button className="sn-icon-btn"
                     onClick={() => { setSearchOpen(false); setSearchVal(""); }}
-                    aria-label="Close search"
-                  >
+                    aria-label="Close search">
                     <Icons.Close />
                   </button>
                 </>
               ) : (
-                <button
-                  className="sn-icon-btn"
-                  onClick={() => setSearchOpen(true)}
-                  aria-label="Open search"
-                >
+                <button className="sn-icon-btn" onClick={() => setSearchOpen(true)} aria-label="Open search">
                   <Icons.Search />
                 </button>
               )}
             </div>
-
-            {/* Mobile menu toggle */}
             <button
               className={`sn-icon-btn sn-hamburger ${mobileOpen ? "sn-hamburger--open" : ""}`}
               onClick={() => setMobileOpen((v) => !v)}
@@ -381,12 +309,11 @@ export default function Navbar() {
             >
               {mobileOpen ? <Icons.Close /> : <Icons.Menu />}
             </button>
-
           </div>
         </div>
       </header>
 
-      {/* ── Mobile drawer ─────────────────────── */}
+      {/* ── Mobile drawer ───────────────────── */}
       {mobileOpen && (
         <div className="sn-drawer" role="dialog" aria-label="Mobile navigation">
           <nav>
@@ -402,9 +329,7 @@ export default function Navbar() {
                 >
                   <item.Icon />
                   <span>{item.label}</span>
-                  {item.fplGroup && (
-                    <span className="sn-pill-tag">FPL</span>
-                  )}
+                  {item.fplGroup && <span className="sn-pill-tag">FPL</span>}
                 </NavLink>
               );
             })}
@@ -412,17 +337,15 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* ── Mobile backdrop ───────────────────── */}
       {mobileOpen && (
-        <div
-          className="sn-backdrop"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
+        <div className="sn-backdrop" onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
-      {/* ── Bottom tab bar — mobile only */}
+
+      {/* ── Bottom tab bar — mobile only ──── */}
       <BottomTabBar />
 
+      {/* ── Live Intelligence Ticker — all pages ── */}
+      <LiveTicker />
     </>
   );
 }

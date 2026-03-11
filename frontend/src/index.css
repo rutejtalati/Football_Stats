@@ -103,7 +103,7 @@ img { display: block; }
 
 .sn-page-wrap {
   flex: 1;
-  padding-top: 82px; /* 48px navbar + 34px live ticker */
+  padding-top: 84px; /* 48px navbar + 34px live ticker */
   min-height: 0;
 }
 
@@ -327,13 +327,13 @@ img { display: block; }
 .sn-drawer,
 .sn-backdrop { display: none; }
 
-/* ── Live Ticker positioning ── */
+/* And update the ticker rule: */
 .sn-live-ticker {
   position: fixed;
   top: 48px;
   left: 0;
   right: 0;
-  height: 34px;
+  height: 36px;
   z-index: 150;
 }
 
@@ -352,7 +352,7 @@ img { display: block; }
   .sn-drawer {
     display: block;
     position: fixed;
-    top: 82px; /* below navbar + ticker */
+    top: 84px; /* below navbar + ticker */
     inset-inline: 0;
     bottom: 0;
     z-index: 199;

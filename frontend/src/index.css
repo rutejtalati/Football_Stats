@@ -352,7 +352,7 @@ img { display: block; }
   .sn-drawer {
     display: block;
     position: fixed;
-    top: 84px; /* below navbar + ticker */
+    top: 86px; /* below navbar + ticker */
     inset-inline: 0;
     bottom: 0;
     z-index: 199;
@@ -1905,7 +1905,7 @@ img { max-width: 100%; }
   .pi-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .sn-brand span { display: none; }
   .sn-live-ticker { height: 28px; }
-  .sn-page-wrap { padding-top: 76px !important; }
+  .sn-page-wrap { padding-top: 86px !important; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {

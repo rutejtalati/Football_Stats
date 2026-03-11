@@ -1904,7 +1904,7 @@ img { max-width: 100%; }
   .metric-cards-mini { grid-template-columns: 1fr !important; }
   .pi-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .sn-brand span { display: none; }
-.sn-live-ticker { height: 38px; }
+
   .sn-page-wrap { padding-top: 86px !important; } 
 
 @media (min-width: 769px) and (max-width: 1024px) {
@@ -1946,3 +1946,4 @@ img { max-width: 100%; }
   letter-spacing: 0.02em; font-family: 'Inter', sans-serif;
 }
 }
+

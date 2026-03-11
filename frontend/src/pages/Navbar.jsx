@@ -1,223 +1,408 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+// ═══════════════════════════════════════════════
+// NAVBAR v8 — PART 1: Icons + Constants
+// Linear.app pill style · Vercel typography
+// ═══════════════════════════════════════════════
 
-/* ─── SVG Icon System ──────────────────────────────────────── */
+import { NavLink, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+
+// ── SVG Icons ──────────────────────────────────
 const Icons = {
-  Home: () => (
+  Search: () => (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M1 6.5L8 1l7 5.5V15a.5.5 0 01-.5.5H10v-4.5H6V15.5H1.5A.5.5 0 011 15V6.5z"
-        stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   ),
-  SquadBuilder: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-      <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-      <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-      <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+  Close: () => (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   ),
-  LoadSquad: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M8 1v9M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M2 11.5v1.5a1 1 0 001 1h10a1 1 0 001-1v-1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>
-  ),
-  BestTeam: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M8 1.5l1.545 3.13 3.455.502-2.5 2.437.59 3.44L8 9.25l-3.09 1.759.59-3.44L3 5.132l3.455-.502L8 1.5z"
-        stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-      <path d="M4 14.5h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>
-  ),
-  Insights: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M1.5 12.5l4-5 3 3 4-6 2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="13.5" cy="6.5" r="1" fill="currentColor"/>
-    </svg>
-  ),
-  Predictions: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4"/>
-      <path d="M8 4.5v4l2.5 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Table: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-      <path d="M1 5h14M6 5v10" stroke="currentColor" strokeWidth="1.4"/>
-    </svg>
-  ),
-  League: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M8 1.5C4.5 3 2 5.5 2 8.5c0 3 2.5 5.5 6 6 3.5-.5 6-3 6-6 0-3-2.5-5.5-6-7z"
-        stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-      <path d="M2.5 6h11M2.5 10h11M8 1.5C6.5 4 6 6 6 8.5c0 2.5.5 4.5 2 6M8 1.5c1.5 2.5 2 4.5 2 7s-.5 4-2 5.5"
-        stroke="currentColor" strokeWidth="1.1" opacity="0.6"/>
-    </svg>
-  ),
-  Sun: () => (
+  Menu: () => (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.22 3.22l1.06 1.06M11.72 11.72l1.06 1.06M11.72 4.28l-1.06 1.06M4.28 11.72l-1.06 1.06"
-        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   ),
-  Moon: () => (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M13.5 10A6 6 0 016 2.5a6 6 0 100 11 6 6 0 007.5-3.5z"
-        stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+  Home: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M2 7L8 2l6 5v7a1 1 0 01-1 1H3a1 1 0 01-1-1V7z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M6 16v-5h4v5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  ),
+  Predict: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M2 13l3.5-5.5 3 2 3-4.5 3 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="13.5" cy="4" r="1.5" fill="currentColor" opacity=".7"/>
+    </svg>
+  ),
+  Fantasy: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1.5l1.5 3.1 3.5.5-2.5 2.4.6 3.4L8 9.3l-3.1 1.6.6-3.4L3 5.1l3.5-.5L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  ),
+  Players: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="5.5" r="2.8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M2.5 14c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  ),
+  News: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="2" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M4.5 5.5h7M4.5 8h7M4.5 10.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  GroundZero: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M2 5l6-3 6 3-6 3-6-3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+      <path d="M14 5v5M4 7.5V11c0 1.5 2 2.5 4 2.5s4-1 4-2.5V7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  ),
+  Games: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="4" width="14" height="8" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M5 8h3M6.5 6.5v3M11.5 7.5v1M10.5 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   ),
   Logo: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M12 1.5C12 1.5 8 7 8 12s4 10.5 4 10.5M12 1.5C12 1.5 16 7 16 12s-4 10.5-4 10.5M1.5 12h21M3.5 6.5h17M3.5 17.5h17"
-        stroke="currentColor" strokeWidth="1.2" opacity="0.7"/>
-    </svg>
-  ),
-  ChevronDown: () => (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="2" y="3" width="20" height="3" rx="1.5" fill="#60a5fa"/>
+      <rect x="2" y="8.5" width="13" height="3" rx="1.5" fill="#60a5fa" opacity=".65"/>
+      <rect x="2" y="14" width="16" height="3" rx="1.5" fill="#60a5fa" opacity=".4"/>
+      <rect x="2" y="19.5" width="9" height="2" rx="1" fill="#60a5fa" opacity=".25"/>
+      <rect x="19" y="14" width="3" height="7.5" rx="1.5" fill="#28d97a" opacity=".9"/>
     </svg>
   ),
 };
 
-/* ─── Nav Data ─────────────────────────────────────────────── */
-const navGroups = [
-  {
-    label: "FPL Tools",
-    items: [
-      { to: "/squad-builder",     text: "Squad Builder",      Icon: Icons.SquadBuilder },
-      { to: "/load-squad",        text: "Load Squad",         Icon: Icons.LoadSquad    },
-      { to: "/best-team",         text: "Best XI",            Icon: Icons.BestTeam     },
-      { to: "/gameweek-insights", text: "GW Insights",        Icon: Icons.Insights     },
-    ],
-  },
-  {
-    label: "Analytics",
-    items: [
-      { to: "/predictions", text: "Predictions", Icon: Icons.Predictions },
-      { to: "/fpl-table",   text: "EPL Table",   Icon: Icons.Table       },
-    ],
-  },
-  {
-    label: "Leagues",
-    items: [
-      { to: "/league/epl",    text: "EPL",     Icon: Icons.League, tag: "ENG" },
-      { to: "/league/laliga", text: "La Liga", Icon: Icons.League, tag: "ESP" },
-      { to: "/league/seriea", text: "Serie A", Icon: Icons.League, tag: "ITA" },
-      { to: "/league/ligue1", text: "Ligue 1", Icon: Icons.League, tag: "FRA" },
-    ],
-  },
+// ── Nav items ───────────────────────────────────
+const NAV_ITEMS = [
+  { to: "/",                           label: "Home",        Icon: Icons.Home,       color: "rgba(255,255,255,0.55)", end: true },
+  { to: "/predictions/premier-league", label: "Predictions", Icon: Icons.Predict,    color: "#60a5fa"                           },
+  { to: "/best-team",                  label: "Fantasy",     Icon: Icons.Fantasy,    color: "#28d97a", fplGroup: true            },
+  { to: "/player",                     label: "Players",     Icon: Icons.Players,    color: "#a78bfa"                           },
+  { to: "/news",                       label: "News",        Icon: Icons.News,       color: "#f472b6"                           },
+  { to: "/learn",                      label: "Ground Zero", Icon: Icons.GroundZero, color: "#fbbf24"                           },
+  { to: "/games",                      label: "Games",       Icon: Icons.Games,      color: "#fb923c"                           },
 ];
 
-/* ─── Scrolled shadow hook ─────────────────────────────────── */
-function useScrolled(threshold = 4) {
-  const [scrolled, setScrolled] = useState(false);
+// FPL sub-pages shown in Fantasy dropdown
+const FPL_ITEMS = [
+  { to: "/best-team",          label: "Best XI",          desc: "Optimal FPL starting 11"      },
+  { to: "/squad-builder",      label: "Squad Builder",    desc: "Build your 15-man squad"       },
+  { to: "/gameweek-insights",  label: "GW Insights",      desc: "Gameweek stats & analysis"     },
+  { to: "/fpl-table",          label: "FPL Table",        desc: "Live FPL leaderboard"          },
+];
+
+// FPL sub-pages — used to detect active state for Fantasy pill
+const FPL_PATHS = [
+  "/best-team",
+  "/squad-builder",
+  "/gameweek-insights",
+  "/fpl-table",
+];
+// ═══════════════════════════════════════════════
+// NAVBAR v8 — PART 2: Hooks + Logic
+// ═══════════════════════════════════════════════
+
+// ── Custom hook: scroll-aware hide/show ─────────
+function useScrollHide(threshold = 8) {
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold);
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < threshold) { setHidden(false); lastY.current = y; return; }
+      setHidden(y > lastY.current);
+      lastY.current = y;
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [threshold]);
-  return scrolled;
+
+  return hidden;
 }
 
-/* ─── Theme hook ───────────────────────────────────────────── */
-function useTheme() {
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem("theme") || "dark"
-  );
-  const [switching, setSwitching] = useState(false);
-
+// ── Custom hook: close on outside click ────────
+function useClickOutside(ref, callback) {
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggle = () => {
-    setSwitching(true);
-    setTimeout(() => setSwitching(false), 360);
-    setTheme((t) => (t === "dark" ? "light" : "dark"));
-  };
-
-  return { theme, toggle, switching };
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) callback();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [ref, callback]);
 }
 
-/* ─── Main Component ───────────────────────────────────────── */
-export default function Navbar() {
-  const scrolled   = useScrolled();
-  const { theme, toggle, switching } = useTheme();
-  const location   = useLocation();
+// ── Custom hook: lock body scroll ──────────────
+function useLockScroll(active) {
+  useEffect(() => {
+    if (active) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [active]);
+}
+
+// ── Helper: is Fantasy pill active? ────────────
+function useFplActive() {
+  const { pathname } = useLocation();
+  return FPL_PATHS.some((p) => pathname.startsWith(p));
+}
+
+// ── Helper: get active item color ──────────────
+function useActiveColor() {
+  const { pathname } = useLocation();
+  const fplActive = useFplActive();
+
+  if (fplActive) return "#28d97a";
+  const match = NAV_ITEMS.find((item) => {
+    if (item.end) return pathname === item.to;
+    if (item.fplGroup) return false;
+    return pathname.startsWith(item.to);
+  });
+  return match?.color ?? "rgba(255,255,255,0.55)";
+}
+// ═══════════════════════════════════════════════
+// NAVBAR v8 — PART 3: JSX / Render
+// ═══════════════════════════════════════════════
+
+
+/* ══════════════════════════════════════════════
+   BOTTOM TAB BAR — mobile only
+══════════════════════════════════════════════ */
+const BOTTOM_TABS = [
+  { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "rgba(255,255,255,0.7)", end: true },
+  { to: "/predictions/premier-league", label: "Predict", Icon: Icons.Predict, color: "#60a5fa" },
+  { to: "/best-team",                  label: "Fantasy", Icon: Icons.Fantasy, color: "#28d97a" },
+  { to: "/news",                       label: "News",    Icon: Icons.News,    color: "#f472b6" },
+  { to: "/games",                      label: "Games",   Icon: Icons.Games,   color: "#fb923c" },
+];
+
+function BottomTabBar() {
+  const location = useLocation();
+  const fplActive = useFplActive();
 
   return (
-    <header className={`topbar nb-bar ${scrolled ? "nb-scrolled" : ""}`}>
-      <div className="nb-inner">
-
-        {/* ── Brand ── */}
-        <NavLink to="/" className="nb-brand" aria-label="Home">
-          <div className="nb-logo-wrap">
-            <Icons.Logo />
-          </div>
-          <div className="nb-brand-text">
-            <span className="nb-brand-name">STAT<span className="nb-brand-accent">PITCH</span></span>
-            <span className="nb-brand-sub">Football Analytics</span>
-          </div>
-        </NavLink>
-
-        <div className="nb-divider" aria-hidden="true" />
-
-        {/* ── Nav Groups ── */}
-        <nav className="nb-nav" aria-label="Main navigation">
-          {navGroups.map((group, gi) => (
-            <div key={group.label} className="nb-group">
-              <span className="nb-group-label">{group.label}</span>
-              <div className="nb-group-items">
-                {group.items.map((item, ii) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/"}
-                    className={({ isActive }) =>
-                      `nb-pill ${isActive ? "nb-pill-active" : ""}`
-                    }
-                    style={{ animationDelay: `${gi * 60 + ii * 30}ms` }}
-                  >
-                    <span className="nb-pill-icon" aria-hidden="true">
-                      <item.Icon />
-                    </span>
-                    <span className="nb-pill-text">{item.text}</span>
-                    {item.tag && (
-                      <span className="nb-pill-tag">{item.tag}</span>
-                    )}
-                    <span className="nb-pill-shimmer" aria-hidden="true" />
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* ── Right cluster ── */}
-        <div className="nb-right">
-          <div className="nb-live-badge" title="Live data feed active">
-            <span className="nb-live-dot" />
-            <span className="nb-live-text">Live</span>
-          </div>
-
-          <button
-            className={`nb-theme-btn ${switching ? "nb-theme-switching" : ""}`}
-            onClick={toggle}
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+    <nav className="sn-bottom-tabs">
+      {BOTTOM_TABS.map(item => {
+        const active = item.fplGroup ? fplActive
+          : item.end ? location.pathname === item.to
+          : location.pathname.startsWith(item.to);
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={"sn-bottom-tab-link" + (active ? " active" : "")}
+            style={{ "--tab-color": item.color }}
           >
-            <span className="nb-theme-icon">
-              {theme === "dark" ? <Icons.Sun /> : <Icons.Moon />}
-            </span>
-          </button>
-        </div>
+            <div className="sn-bottom-tab-icon">
+              <item.Icon />
+            </div>
+            <span className="sn-bottom-tab-label">{item.label}</span>
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}
 
-      </div>
-    </header>
+export default function Navbar() {
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState("");
+  const [fplOpen, setFplOpen] = useState(false);
+  const navRef = useRef(null);
+  const searchRef = useRef(null);
+  const inputRef = useRef(null);
+  const fplRef = useRef(null);
+
+  const hidden = useScrollHide();
+  const fplActive = useFplActive();
+
+  useClickOutside(searchRef, () => { setSearchOpen(false); setSearchVal(""); });
+  useClickOutside(fplRef, () => setFplOpen(false));
+  useLockScroll(mobileOpen);
+
+  // Focus input when search opens
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => inputRef.current?.focus(), 60);
+  }, [searchOpen]);
+
+  // Close drawers on route change
+  useEffect(() => { setMobileOpen(false); setFplOpen(false); }, [location.pathname]);
+
+  // ── pill active check ────────────────────────
+  const isPillActive = (item) => {
+    if (item.fplGroup) return fplActive;
+    if (item.end)      return location.pathname === item.to;
+    return location.pathname.startsWith(item.to);
+  };
+
+  return (
+    <>
+      {/* ── Bar ───────────────────────────────── */}
+      <header
+        className={`sn-bar ${hidden ? "sn-bar--hidden" : ""} ${mobileOpen ? "sn-bar--open" : ""}`}
+        ref={navRef}
+      >
+        <div className="sn-wrap">
+
+          {/* Logo */}
+          <NavLink to="/" className="sn-brand" aria-label="StatinSite home">
+            <Icons.Logo />
+            <span>StatinSite</span>
+          </NavLink>
+
+          {/* Desktop nav */}
+          <nav className="sn-nav" aria-label="Main navigation">
+            {NAV_ITEMS.map((item) => {
+              const active = isPillActive(item);
+
+              if (item.fplGroup) {
+                return (
+                  <div key={item.to} style={{ position: "relative" }} ref={fplRef}>
+                    <button
+                      className={`sn-pill ${active ? "sn-pill--active" : ""}`}
+                      style={active ? { "--pill-color": item.color } : {}}
+                      onClick={() => setFplOpen(v => !v)}
+                      aria-expanded={fplOpen}
+                    >
+                      <item.Icon />
+                      <span>{item.label}</span>
+                      <span className="sn-pill-tag">FPL</span>
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none"
+                        style={{ opacity: .5, marginLeft: 1, transition: "transform .15s", transform: fplOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                    {fplOpen && (
+                      <div className="sn-fpl-dropdown">
+                        <div className="sn-fpl-dropdown-label">Fantasy Premier League</div>
+                        {FPL_ITEMS.map(sub => (
+                          <NavLink
+                            key={sub.to}
+                            to={sub.to}
+                            className={`sn-fpl-item ${location.pathname.startsWith(sub.to) ? "sn-fpl-item--active" : ""}`}
+                          >
+                            <div className="sn-fpl-item-name">{sub.label}</div>
+                            <div className="sn-fpl-item-desc">{sub.desc}</div>
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={`sn-pill ${active ? "sn-pill--active" : ""}`}
+                  style={active ? { "--pill-color": item.color } : {}}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <item.Icon />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          {/* Right controls */}
+          <div className="sn-controls">
+
+            {/* Search */}
+            <div className={`sn-search ${searchOpen ? "sn-search--open" : ""}`} ref={searchRef}>
+              {searchOpen ? (
+                <>
+                  <input
+                    ref={inputRef}
+                    className="sn-search-input"
+                    value={searchVal}
+                    onChange={(e) => setSearchVal(e.target.value)}
+                    placeholder="Search players, teams…"
+                    onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
+                    aria-label="Search"
+                  />
+                  <button
+                    className="sn-icon-btn"
+                    onClick={() => { setSearchOpen(false); setSearchVal(""); }}
+                    aria-label="Close search"
+                  >
+                    <Icons.Close />
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="sn-icon-btn"
+                  onClick={() => setSearchOpen(true)}
+                  aria-label="Open search"
+                >
+                  <Icons.Search />
+                </button>
+              )}
+            </div>
+
+            {/* Mobile menu toggle */}
+            <button
+              className={`sn-icon-btn sn-hamburger ${mobileOpen ? "sn-hamburger--open" : ""}`}
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <Icons.Close /> : <Icons.Menu />}
+            </button>
+
+          </div>
+        </div>
+      </header>
+
+      {/* ── Mobile drawer ─────────────────────── */}
+      {mobileOpen && (
+        <div className="sn-drawer" role="dialog" aria-label="Mobile navigation">
+          <nav>
+            {NAV_ITEMS.map((item) => {
+              const active = isPillActive(item);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={`sn-drawer-item ${active ? "sn-drawer-item--active" : ""}`}
+                  style={active ? { "--pill-color": item.color } : {}}
+                >
+                  <item.Icon />
+                  <span>{item.label}</span>
+                  {item.fplGroup && (
+                    <span className="sn-pill-tag">FPL</span>
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+      )}
+
+      {/* ── Mobile backdrop ───────────────────── */}
+      {mobileOpen && (
+        <div
+          className="sn-backdrop"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      {/* ── Bottom tab bar — mobile only */}
+      <BottomTabBar />
+
+    </>
   );
 }

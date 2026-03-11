@@ -66,15 +66,21 @@ export default function LiveTicker() {
   const { chips, isLive, loading } = useLiveTicker(75_000);
   const [paused, setPaused] = useState(false);
 
-  // Always render the shell so page offset is stable
   if (loading || chips.length === 0) {
     return (
-      <div style={{
-        position: "fixed", top: 48, left: 0, right: 0,
-        height: 38, zIndex: 199,
-        background: "rgba(4,6,12,0.97)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-      }} />
+      <div
+        className="sn-live-ticker"
+        style={{
+          position: "fixed",
+          top: 48,
+          left: 0,
+          right: 0,
+          height: 38,
+          zIndex: 199,
+          background: "rgba(4,6,12,0.97)",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+        }}
+      />
     );
   }
 
@@ -102,14 +108,8 @@ export default function LiveTicker() {
         .tk-track.tk-paused { animation-play-state: paused; }
       `}</style>
 
-      {/*
-        ┌─────────────────────────────────────────────┐
-        │  position:fixed  top:48px  z-index:199      │
-        │  NO transform / filter / contain on this    │
-        │  element or any ancestor in App.jsx         │
-        └─────────────────────────────────────────────┘
-      */}
       <div
+        className="sn-live-ticker"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         style={{
@@ -126,7 +126,6 @@ export default function LiveTicker() {
           alignItems: "center",
         }}
       >
-        {/* Left label pill */}
         <div style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "0 14px",
@@ -139,14 +138,12 @@ export default function LiveTicker() {
           }
         </div>
 
-        {/* Left fade mask */}
         <div style={{
           position: "absolute", left: 80, top: 0, bottom: 0, width: 28, zIndex: 1,
           background: "linear-gradient(to right, rgba(4,6,12,0.95), transparent)",
           pointerEvents: "none",
         }} />
 
-        {/* Scrolling chips */}
         <div style={{ flex: 1, overflow: "hidden", paddingLeft: 12 }}>
           <div className={`tk-track${paused ? " tk-paused" : ""}`}>
             {all.map((chip, i) => (
@@ -158,7 +155,6 @@ export default function LiveTicker() {
           </div>
         </div>
 
-        {/* Right fade mask */}
         <div style={{
           position: "absolute", right: 0, top: 0, bottom: 0, width: 40, zIndex: 1,
           background: "linear-gradient(to left, rgba(4,6,12,0.97), transparent)",

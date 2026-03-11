@@ -108,7 +108,6 @@ img { display: block; }
 }
 
 .app-shell > *:not(.sn-bar):not(.sn-mobile-drawer):not(.site-footer):not(.sn-live-ticker):first-of-type,
-.page-shell,
 .homepage-shell {
   padding-top: 60px;
 }

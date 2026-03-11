@@ -13,13 +13,12 @@ import PlayerBrowsePage     from "./pages/PlayerBrowsePage";
 import MiniGamesPage        from "./pages/MiniGamesPage";
 import GroundZeroPage       from "./pages/GroundZeroPage";
 import NewsTrackerPage      from "./pages/NewsTrackerPage";
+import TeamPage             from "./pages/TeamPage";
 
 const SLUG_MAP = {
   "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
   "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",
 };
-
-
 
 export default function App() {
   return (
@@ -48,6 +47,9 @@ export default function App() {
             <Route path="/league/ligue1"      element={<LeaguePage league="ligue1" />} />
             <Route path="/simulation/:league" element={<SeasonSimulator />} />
             <Route path="/simulation/epl"     element={<SeasonSimulator />} />
+
+            {/* Team pages — /team/:teamId/:league e.g. /team/33/epl */}
+            <Route path="/team/:teamId/:league" element={<TeamPage />} />
           </Routes>
         </div>
 

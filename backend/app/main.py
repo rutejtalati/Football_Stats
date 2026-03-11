@@ -465,6 +465,95 @@ def simulate_league(league:str):
     except ValueError as e: raise HTTPException(404,str(e))
 
 
+# ── Team Profile Bundle ───────────────────────────────────────────────────────
+# Single endpoint that aggregates all team page data in one call.
+# Avoids the frontend firing 5 parallel requests.
+# Cache: 24h (standings + stats + injuries all change slowly).
+
+@app.get("/api/team/{team_id}/profile")
+def get_team_profile(team_id: int, league: str = "epl"):
+    if league not in LEAGUE_IDS:
+        raise HTTPException(404, f"Unknown league: {league}")
+
+    cache_key = f"team_profile_{team_id}_{league}_{CURRENT_SEASON}"
+    hit = _long_cache.get(cache_key)
+    if hit:
+        return hit
+
+    lid = LEAGUE_IDS[league]
+
+    # 1. Team stats (already cached 24h individually)
+    stats = fetch_team_stats_full(team_id, lid)
+
+    # 2. Standings — find this team's row
+    standing_row = None
+    try:
+        rows = get_standings(league)["standings"]
+        standing_row = next((r for r in rows if r["team_id"] == team_id), None)
+    except Exception:
+        pass
+
+    # 3. Injuries (already cached 24h individually)
+    injuries = []
+    try:
+        injuries = get_team_injuries(team_id)["injuries"]
+    except Exception:
+        pass
+
+    # 4. Top scorers for the league — filter to this team
+    team_scorers = []
+    try:
+        all_scorers = get_top_scorers(league)["scorers"]
+        team_scorers = [s for s in all_scorers if s.get("team_name") == (standing_row or {}).get("team_name","")]
+    except Exception:
+        pass
+
+    # 5. Top assists for the league — filter to this team
+    team_assists = []
+    try:
+        all_assists = get_top_assists(league)["assists"]
+        team_assists = [a for a in all_assists if a.get("team_name") == (standing_row or {}).get("team_name","")]
+    except Exception:
+        pass
+
+    # 6. Upcoming fixtures — pull from predictions cache (already built)
+    upcoming = []
+    try:
+        preds = league_predictions(league)["predictions"]
+        upcoming = [
+            {
+                "home_team": p["home_team"],
+                "away_team": p["away_team"],
+                "home_logo": p["home_logo"],
+                "away_logo": p["away_logo"],
+                "fixture_date": p.get("fixture_date", "TBD"),
+                "home_win_prob": p.get("home_win_prob", 0),
+                "draw_prob": p.get("draw_prob", 0),
+                "away_win_prob": p.get("away_win_prob", 0),
+                "confidence": p.get("confidence", 0),
+            }
+            for p in preds
+            if p.get("home_id") == team_id or p.get("away_id") == team_id
+        ][:5]
+    except Exception:
+        pass
+
+    result = {
+        "team_id": team_id,
+        "league": league,
+        "league_name": LEAGUE_NAMES[league],
+        "standing": standing_row,
+        "stats": stats,
+        "injuries": injuries,
+        "top_scorers": team_scorers,
+        "top_assists": team_assists,
+        "upcoming_fixtures": upcoming,
+    }
+
+    _long_cache.set(cache_key, result)
+    return result
+
+
 # ── News proxy (NewsAPI.org) ─────────────────────────────────────────────────
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 

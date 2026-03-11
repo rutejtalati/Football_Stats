@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Navbar               from "./components/Navbar";
+import LiveTicker           from "./components/LiveTicker";
 import HomePage             from "./pages/HomePage";
 import LeaguePage           from "./pages/LeaguePage";
 import SeasonSimulator      from "./pages/SeasonSimulator";
@@ -25,6 +26,7 @@ export default function App() {
     <BrowserRouter>
       <div className="app-shell">
         <Navbar />
+        <LiveTicker />
         <div className="sn-page-wrap">
           <Routes>
             <Route path="/"                   element={<HomePage />} />

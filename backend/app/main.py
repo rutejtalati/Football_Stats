@@ -560,7 +560,7 @@ def _classify_article(title: str, description: str) -> str:
     text = f"{title} {description}".lower()
     if any(k in text for k in TRANSFER_KEYWORDS):
         return "transfer"
-    return "news"
+    return "headline"
 
 def _build_previews(predictions: list, league_code: str) -> list:
     items = []
@@ -576,7 +576,7 @@ def _build_previews(predictions: list, league_code: str) -> list:
         xga = round(p.get("expected_away_goals", 0), 2)
         items.append({
             "id": f"preview_{league_code}_{home}_{away}".replace(" ", "_"),
-            "type": "preview",
+            "type": "match_preview",
             "league": league_code,
             "title": f"{home} vs {away}",
             "description": f"Model confidence {conf}% · xG {xgh}–{xga} · {hw}% / {dw}% / {aw}%",
@@ -607,7 +607,7 @@ def _build_insights(predictions: list, league_code: str) -> list:
     xga = round(top.get("expected_away_goals", 0), 2)
     return [{
         "id": f"insight_{league_code}_{home}_{away}".replace(" ", "_"),
-        "type": "insight",
+        "type": "model_insight",
         "league": league_code,
         "title": f"Model Insight: {home} vs {away}",
         "description": (
@@ -694,8 +694,8 @@ def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
 
     # Sort: previews first, then insights, transfers, news
     def sort_key(item):
-        type_order = {"preview": 0, "insight": 1, "transfer": 2, "news": 3}
-        return (type_order.get(item.get("type", "news"), 3), item.get("publishedAt", ""))
+        type_order = {"match_preview": 0, "model_insight": 1, "transfer": 2, "headline": 3}
+        return (type_order.get(item.get("type", "headline"), 3), item.get("publishedAt", ""))
 
     feed_items.sort(key=sort_key)
 

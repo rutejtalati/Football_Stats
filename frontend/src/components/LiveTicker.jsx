@@ -128,7 +128,7 @@ export default function LiveTicker() {
   if (loading && chips.length === 0) return (
     <div style={{
       position: "fixed",
-      top: 48,
+      top: 49,
       left: 0,
       right: 0,
       height: 34,

@@ -1774,7 +1774,7 @@ img { max-width: 100%; }
     justify-content: space-around;
   }
 
-  .sn-page-wrap { padding-top: 82px !important; padding-bottom: 72px !important; }
+  .sn-page-wrap { padding-top: 86px !important; padding-bottom: 72px !important; }
   .sn-nav { display: none !important; }
   .sn-wrap { padding: 0 12px; }
   .sn-brand span { font-size: 13px; }

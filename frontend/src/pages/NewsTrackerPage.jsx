@@ -240,11 +240,15 @@ function HeroNewsCard({ article, onClick }) {
         <h2 style={{ margin: "0 0 10px", lineHeight: 1.25, fontSize: 20, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-0.02em", textShadow: article.image ? "0 2px 12px rgba(0,0,0,0.8)" : "none" }}>
           {article.title}
         </h2>
-        {article.summary && (
+        {article.standfirst && article.source_type === "internal" ? (
+          <p style={{ margin: "0 0 14px", fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.55, fontStyle: "italic", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textShadow: article.image ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>
+            {article.standfirst}
+          </p>
+        ) : article.summary ? (
           <p style={{ margin: "0 0 14px", fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textShadow: article.image ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>
             {article.summary}
           </p>
-        )}
+        ) : null}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'DM Mono',monospace" }}>{timeAgo(article.published_at)}</span>
           <span style={{ fontSize: 9, fontWeight: 800, color: lg.color, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 4 }}>
@@ -513,9 +517,27 @@ function SkeletonPreview() {
 /* ─────────────────────────────────────────────
    ARTICLE DRAWER
 ───────────────────────────────────────────── */
+// Render a body paragraph — handles **bold** markdown-style emphasis
+function ArticleBodyPara({ text, color = "rgba(255,255,255,0.62)" }) {
+  if (!text) return null;
+  // Split on **bold** markers
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return (
+    <p style={{ margin: "0 0 14px", fontSize: 13.5, color, lineHeight: 1.75, letterSpacing: "0.01em" }}>
+      {parts.map((part, i) =>
+        i % 2 === 1
+          ? <strong key={i} style={{ color: "#c8d8f0", fontWeight: 800 }}>{part}</strong>
+          : part
+      )}
+    </p>
+  );
+}
+
 function ArticleDrawer({ article, onClose }) {
   const cfg = typeCfg(article.type);
   const m   = article.meta || {};
+  const isInternal = article.source_type === "internal";
+  const body = Array.isArray(article.body) ? article.body : [];
 
   useEffect(() => {
     const h = e => { if (e.key === "Escape") onClose(); };
@@ -525,96 +547,178 @@ function ArticleDrawer({ article, onClose }) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 40, backdropFilter: "blur(4px)" }}/>
-      <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: Math.min(440, window.innerWidth), background: "#080e18", borderLeft: "1px solid rgba(255,255,255,0.08)", zIndex: 50, overflowY: "auto", animation: "ni-slideIn 0.22s ease", display: "flex", flexDirection: "column" }}>
-        <div style={{ height: 3, background: `linear-gradient(90deg,${cfg.color},${cfg.color}30)`, flexShrink: 0 }}/>
-        <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <TypePill type={article.type}/>
-              <LeagueTag code={article.league}/>
-            </div>
-            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: 4 }}>
-              <Icon.Close s={14}/>
-            </button>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 40, backdropFilter: "blur(5px)" }}/>
+      <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: Math.min(520, window.innerWidth), background: "#080e18", borderLeft: "1px solid rgba(255,255,255,0.07)", zIndex: 50, overflowY: "auto", animation: "ni-slideIn 0.22s ease", display: "flex", flexDirection: "column" }}>
+
+        {/* Colour bar */}
+        <div style={{ height: 3, background: `linear-gradient(90deg,${cfg.color},${cfg.color}22)`, flexShrink: 0 }}/>
+
+        {/* Header */}
+        <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            <TypePill type={article.type}/>
+            <LeagueTag code={article.league}/>
+            {isInternal && (
+              <span style={{ fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 4, background: "rgba(62,207,142,0.08)", border: "1px solid rgba(62,207,142,0.18)", color: "#3ecf8e" }}>STATINSITE ORIGINAL</span>
+            )}
           </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", padding: 4, flexShrink: 0 }}>
+            <Icon.Close s={14}/>
+          </button>
         </div>
-        <div style={{ padding: "20px 20px 40px", flex: 1 }}>
-          {article.image && (
-            <div style={{ borderRadius: 10, overflow: "hidden", marginBottom: 18, height: 180 }}>
+
+        <div style={{ padding: "22px 22px 48px", flex: 1 }}>
+
+          {/* Hero image (external only) */}
+          {article.image && !isInternal && (
+            <div style={{ borderRadius: 10, overflow: "hidden", marginBottom: 20, height: 190 }}>
               <img src={article.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.parentElement.style.display = "none"; }}/>
             </div>
           )}
-          <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#f0f6ff", lineHeight: 1.25, letterSpacing: "-0.015em" }}>{article.title}</h2>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-            <SourceBadge source={article.source}/>
-            <span style={{ fontSize: 8.5, color: "rgba(255,255,255,0.15)", fontFamily: "'DM Mono',monospace" }}>{timeAgo(article.published_at)}</span>
-          </div>
-          {article.summary && <p style={{ margin: "0 0 20px", fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.65 }}>{article.summary}</p>}
 
+          {/* Title */}
+          <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 900, color: "#f0f6ff", lineHeight: 1.2, letterSpacing: "-0.02em" }}>{article.title}</h2>
+
+          {/* Standfirst — italic intro line for internal articles */}
+          {article.standfirst && isInternal && (
+            <p style={{ margin: "0 0 14px", fontSize: 13, color: cfg.color, lineHeight: 1.55, fontStyle: "italic", borderLeft: `2px solid ${cfg.color}40`, paddingLeft: 12 }}>
+              {article.standfirst}
+            </p>
+          )}
+
+          {/* Meta row */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 20, flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <SourceBadge source={article.source}/>
+            <span style={{ fontSize: 8.5, color: "rgba(255,255,255,0.13)", fontFamily: "'DM Mono',monospace" }}>{timeAgo(article.published_at)}</span>
+          </div>
+
+          {/* ── Match Preview stats block ────────────────────────────── */}
           {article.type === "match_preview" && m.home_team && (
-            <div style={{ borderRadius: 10, padding: 16, background: "rgba(79,158,255,0.05)", border: "1px solid rgba(79,158,255,0.12)", marginBottom: 18 }}>
-              <div style={{ fontSize: 8, fontWeight: 900, color: "#1a4a7a", letterSpacing: "0.12em", marginBottom: 14 }}>MATCH ANALYSIS</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}><ClubBadge name={m.home_team} size={38}/><span style={{ fontSize: 11, fontWeight: 900, color: "#e8f0ff", textAlign: "center" }}>{m.home_team}</span></div>
-                <div style={{ fontSize: 10, fontWeight: 900, color: "#1a3a5a" }}>VS</div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}><ClubBadge name={m.away_team} size={38}/><span style={{ fontSize: 11, fontWeight: 900, color: "#e8f0ff", textAlign: "center" }}>{m.away_team}</span></div>
+            <div style={{ borderRadius: 10, padding: "14px 16px", background: "rgba(79,158,255,0.04)", border: "1px solid rgba(79,158,255,0.1)", marginBottom: 22 }}>
+              <div style={{ fontSize: 7.5, fontWeight: 900, color: "#1a4a7a", letterSpacing: "0.14em", marginBottom: 14 }}>MATCH ANALYSIS</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                  <ClubBadge name={m.home_team} size={36}/>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e8f0ff", textAlign: "center" }}>{m.home_team}</span>
+                  <span style={{ fontSize: 8, color: "rgba(255,255,255,0.25)" }}>Home</span>
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 900, color: "#1a3a5a", letterSpacing: "0.08em" }}>VS</div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                  <ClubBadge name={m.away_team} size={36}/>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e8f0ff", textAlign: "center" }}>{m.away_team}</span>
+                  <span style={{ fontSize: 8, color: "rgba(255,255,255,0.25)" }}>Away</span>
+                </div>
               </div>
               <ProbBar home={m.home_win} draw={m.draw} away={m.away_win}
-                homeLabel={(m.home_team || "").split(" ").pop()} awayLabel={(m.away_team || "").split(" ").pop()}/>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginTop: 14 }}>
+                homeLabel={(m.home_team || "").split(" ").pop()}
+                awayLabel={(m.away_team || "").split(" ").pop()}/>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 7, marginTop: 12 }}>
                 {[
-                  { l: "xG HOME", v: m.xg_home, c: "#3b9eff" },
-                  { l: "xG AWAY", v: m.xg_away, c: "#e05a5a" },
-                  { l: "CONFIDENCE", v: `${m.confidence}%`, c: "#4f9eff" },
-                  { l: "PREDICTION", v: (m.prediction || "—").split("(")[0].trim(), c: "#c8d8f0" },
+                  { l: "xG HOME",     v: m.xg_home,                    c: "#4f9eff" },
+                  { l: "xG AWAY",     v: m.xg_away,                    c: "#e05a5a" },
+                  { l: "CONFIDENCE",  v: `${m.confidence}%`,            c: "#4f9eff" },
+                  { l: "PREDICTION",  v: (m.prediction||"—").split("(")[0].trim(), c: "#c8d8f0" },
                 ].map(({ l, v, c }) => (
-                  <div key={l} style={{ padding: "9px 11px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ fontSize: 7.5, fontWeight: 900, color: "#1a3a5a", letterSpacing: "0.1em", marginBottom: 3 }}>{l}</div>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: c, fontFamily: "'DM Mono',monospace" }}>{v}</div>
+                  <div key={l} style={{ padding: "8px 10px", borderRadius: 7, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ fontSize: 7, fontWeight: 900, color: "#1a3a5a", letterSpacing: "0.12em", marginBottom: 3 }}>{l}</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: c, fontFamily: "'DM Mono',monospace" }}>{v}</div>
                   </div>
                 ))}
               </div>
               {article.url?.startsWith("/") && (
-                <a href={article.url} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14, padding: "10px 0", borderRadius: 8, background: "rgba(79,158,255,0.08)", border: "1px solid rgba(79,158,255,0.2)", color: "#4f9eff", fontSize: 11, fontWeight: 800, textDecoration: "none", letterSpacing: "0.05em" }}>Full Predictions →</a>
+                <a href={article.url} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, padding: "9px 0", borderRadius: 7, background: "rgba(79,158,255,0.06)", border: "1px solid rgba(79,158,255,0.16)", color: "#4f9eff", fontSize: 10.5, fontWeight: 800, textDecoration: "none", letterSpacing: "0.05em" }}>
+                  Full Predictions →
+                </a>
               )}
             </div>
           )}
 
-          {article.type === "model_insight" && m.insight_type === "title_race" && m.leader && (
-            <div style={{ borderRadius: 10, padding: 16, background: "rgba(62,207,142,0.04)", border: "1px solid rgba(62,207,142,0.1)", marginBottom: 18 }}>
-              <div style={{ fontSize: 8, fontWeight: 900, color: "#0a5a2a", letterSpacing: "0.12em", marginBottom: 14 }}>TITLE RACE ANALYSIS</div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
-                <div><div style={{ fontSize: 9, color: "#3ecf8e", fontWeight: 800, marginBottom: 2 }}>LEADER</div><div style={{ fontSize: 18, fontWeight: 900, color: "#e8f8f0" }}>{m.leader}</div></div>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#3ecf8e", fontFamily: "'DM Mono',monospace", lineHeight: 1 }}>{m.leader_pts}</div>
+          {/* ── Model Insight stats block ────────────────────────────── */}
+          {article.type === "model_insight" && m.leader && (
+            <div style={{ borderRadius: 10, padding: "14px 16px", background: "rgba(62,207,142,0.03)", border: "1px solid rgba(62,207,142,0.1)", marginBottom: 22 }}>
+              <div style={{ fontSize: 7.5, fontWeight: 900, color: "#0a5a2a", letterSpacing: "0.14em", marginBottom: 14 }}>
+                {m.insight_type === "upset_alert" ? "MODEL EDGE" : "TITLE RACE"}
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>+{m.gap} points clear of {m.second}</div>
+              {m.insight_type === "upset_alert" ? (
+                <div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Away Favourites</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#3ecf8e" }}>{m.away_team}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 4 }}>at {m.home_team} · {m.away_win_prob}% win probability</div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    {[
+                      { l: "xG EDGE", v: `${m.xg_away} vs ${m.xg_home}`, c: "#3ecf8e" },
+                      { l: "CONFIDENCE", v: `${m.confidence}%`, c: "#4f9eff" },
+                    ].map(({ l, v, c }) => (
+                      <div key={l} style={{ flex: 1, padding: "8px 10px", borderRadius: 7, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 7, fontWeight: 900, color: "#1a3a5a", letterSpacing: "0.12em", marginBottom: 3 }}>{l}</div>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: c, fontFamily: "'DM Mono',monospace" }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 9, color: "#3ecf8e", fontWeight: 800, marginBottom: 2 }}>LEAGUE LEADER</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "#e8f8f0" }}>{m.leader}</div>
+                    </div>
+                    <div style={{ fontSize: 38, fontWeight: 900, color: "#3ecf8e", fontFamily: "'DM Mono',monospace", lineHeight: 1 }}>{m.leader_pts}</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)" }}>+{m.gap} point{m.gap !== 1 ? "s" : ""} clear of {m.second}</div>
+                </div>
+              )}
               {article.url?.startsWith("/") && (
-                <a href={article.url} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14, padding: "10px 0", borderRadius: 8, background: "rgba(62,207,142,0.07)", border: "1px solid rgba(62,207,142,0.16)", color: "#3ecf8e", fontSize: 11, fontWeight: 800, textDecoration: "none", letterSpacing: "0.05em" }}>View Predictions →</a>
+                <a href={article.url} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, padding: "9px 0", borderRadius: 7, background: "rgba(62,207,142,0.06)", border: "1px solid rgba(62,207,142,0.15)", color: "#3ecf8e", fontSize: 10.5, fontWeight: 800, textDecoration: "none", letterSpacing: "0.05em" }}>
+                  View Predictions →
+                </a>
               )}
             </div>
           )}
 
+          {/* ── Full article body (StatinSite originals) ─────────────── */}
+          {isInternal && body.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 7.5, fontWeight: 900, color: "rgba(255,255,255,0.12)", letterSpacing: "0.16em", marginBottom: 16 }}>ANALYSIS</div>
+              {body.map((para, i) => (
+                <ArticleBodyPara key={i} text={para}/>
+              ))}
+            </div>
+          )}
+
+          {/* ── External article summary ─────────────────────────────── */}
+          {!isInternal && article.summary && (
+            <div style={{ marginBottom: 20 }}>
+              <ArticleBodyPara text={article.summary} color="rgba(255,255,255,0.55)"/>
+            </div>
+          )}
+
+          {/* ── Transfer details block ───────────────────────────────── */}
           {article.type === "transfer" && m.player && (
-            <div style={{ borderRadius: 10, padding: 16, background: "rgba(212,168,67,0.05)", border: "1px solid rgba(212,168,67,0.12)", marginBottom: 18 }}>
-              <div style={{ fontSize: 8, fontWeight: 900, color: "#6a4a10", letterSpacing: "0.12em", marginBottom: 14 }}>TRANSFER DETAILS</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: "#f0e8d0", marginBottom: 8 }}>{m.player}</div>
+            <div style={{ borderRadius: 10, padding: "14px 16px", background: "rgba(212,168,67,0.04)", border: "1px solid rgba(212,168,67,0.12)", marginBottom: 20 }}>
+              <div style={{ fontSize: 7.5, fontWeight: 900, color: "#6a4a10", letterSpacing: "0.14em", marginBottom: 12 }}>TRANSFER DETAILS</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: "#f0e8d0", marginBottom: 8 }}>{m.player}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#7a6030", marginBottom: 12 }}>
-                <span>{m.from_club}</span><Icon.Transfer s={10}/><span style={{ color: "#c8a840", fontWeight: 800 }}>{m.to_club}</span>
+                <span>{m.from_club}</span>
+                <Icon.Transfer s={10}/>
+                <span style={{ color: "#c8a840", fontWeight: 800 }}>{m.to_club}</span>
               </div>
               {m.fee && m.fee.toLowerCase() !== "n/a" && (
-                <div style={{ display: "inline-flex", padding: "4px 12px", borderRadius: 6, background: "rgba(212,168,67,0.1)", border: "1px solid rgba(212,168,67,0.2)", fontSize: 12, fontWeight: 800, color: "#d4a843" }}>{m.fee}</div>
+                <div style={{ display: "inline-flex", padding: "3px 11px", borderRadius: 5, background: "rgba(212,168,67,0.1)", border: "1px solid rgba(212,168,67,0.2)", fontSize: 12, fontWeight: 800, color: "#d4a843" }}>{m.fee}</div>
               )}
             </div>
           )}
 
-          {article.url && !article.url.startsWith("/") && (
-            <a href={article.url} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "12px 0", borderRadius: 9, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#4a7a9a", fontSize: 12, fontWeight: 800, textDecoration: "none", letterSpacing: "0.04em" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#7aaac8"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#4a7a9a"; }}>
+          {/* ── Read full story (external) ───────────────────────────── */}
+          {!isInternal && article.url && (
+            <a href={article.url} target="_blank" rel="noreferrer"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "12px 0", borderRadius: 9, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "#4a7a9a", fontSize: 11.5, fontWeight: 800, textDecoration: "none", letterSpacing: "0.04em" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#7aaac8"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#4a7a9a"; }}>
               Read Full Story <Icon.External s={11}/>
             </a>
           )}
+
         </div>
       </div>
     </>

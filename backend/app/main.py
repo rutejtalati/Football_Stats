@@ -547,14 +547,68 @@ def generate_ai_text(body: PromptRequest):
         raise HTTPException(502, f"AI generation failed: {str(e)}")
 
 
-# ── Intelligence Feed ─────────────────────────────────────────────────────────
-# Aggregates match previews, transfer news, and model insights into a single feed.
-# Called by NewsTrackerPage → /api/intelligence/feed
+
+# ══════════════════════════════════════════════════════════════════════════════
+# INTELLIGENCE FEED  —  /api/intelligence/feed
+# Article-generation pipeline for StatinSite Football Intelligence Hub.
+#
+# Generates three tiers of content:
+#   1. StatinSite originals  — match previews, model insights, title race reports
+#   2. External headlines    — NewsAPI articles classified as news or transfer
+#
+# Article schema (every item):
+#   id, type, league, source_type ("internal" | "external")
+#   title, standfirst, summary, body (list of paragraphs)
+#   published_at, url, image, source, meta
+# ══════════════════════════════════════════════════════════════════════════════
+
+import random
 
 TRANSFER_KEYWORDS = [
     "transfer", "signing", "deal", "bid", "loan", "fee", "move",
-    "joins", "agrees", "contract", "swap", "approached",
+    "joins", "agrees", "contract", "swap", "approached", "medical",
+    "completes", "seals", "unveiled",
 ]
+
+LEAGUE_FULL = {
+    "epl":        "Premier League",
+    "laliga":     "La Liga",
+    "seriea":     "Serie A",
+    "ligue1":     "Ligue 1",
+    "bundesliga": "Bundesliga",
+}
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _form_string(stats: dict, side: str) -> str:
+    """Return a human-readable recent form string from stats."""
+    if not stats:
+        return "unknown form"
+    ph = stats.get("played_home", 0)
+    pa = stats.get("played_away", 0)
+    played = ph + pa
+    if played == 0:
+        return "no data"
+    sh = stats.get("scored_home", 0) + stats.get("scored_away", 0)
+    ca = stats.get("conceded_home", 0) + stats.get("conceded_away", 0)
+    gpg = round(sh / max(played, 1), 2)
+    cpg = round(ca / max(played, 1), 2)
+    cs  = stats.get("clean_sheets", 0)
+    poss = stats.get("possession_avg", 50)
+    shots = stats.get("shots_pg", 0)
+    formation = stats.get("formation", "")
+    lines = []
+    lines.append(f"averaging {gpg} goals per game")
+    lines.append(f"conceding {cpg} per match")
+    if cs:
+        lines.append(f"{cs} clean sheets this season")
+    if poss:
+        lines.append(f"{poss}% average possession")
+    if shots:
+        lines.append(f"{shots} shots per game")
+    if formation:
+        lines.append(f"typically lining up in a {formation}")
+    return ", ".join(lines)
 
 def _classify_article(title: str, description: str) -> str:
     text = f"{title} {description}".lower()
@@ -562,117 +616,432 @@ def _classify_article(title: str, description: str) -> str:
         return "transfer"
     return "headline"
 
-def _build_previews(predictions: list, league_code: str) -> list:
-    items = []
-    for p in predictions[:4]:
-        home = p.get("home_team", "")
-        away = p.get("away_team", "")
-        date = p.get("fixture_date", "")
-        hw = round(p.get("home_win_prob", 0) * 100)
-        dw = round(p.get("draw_prob", 0) * 100)
-        aw = round(p.get("away_win_prob", 0) * 100)
-        conf = p.get("confidence", 0)
-        xgh = round(p.get("expected_home_goals", 0), 2)
-        xga = round(p.get("expected_away_goals", 0), 2)
-        # Determine predicted winner label
-        if hw > aw and hw > dw:
-            pred_label = f"{home} Win ({hw}%)"
-        elif aw > hw and aw > dw:
-            pred_label = f"{away} Win ({aw}%)"
-        else:
-            pred_label = f"Draw ({dw}%)"
-        items.append({
-            "id": f"preview_{league_code}_{home}_{away}".replace(" ", "_"),
-            "type": "match_preview",
-            "league": league_code,
-            "title": f"{home} vs {away}",
-            "summary": f"Model confidence {conf}% · xG {xgh}–{xga}",
-            "published_at": datetime.now(timezone.utc).isoformat(),
-            "url": f"/predictions/{league_code}",
-            "image": None,
-            "source": "StatinSite Model",
-            "meta": {
-                "home_team": home,
-                "away_team": away,
-                "home_win": hw,
-                "draw": dw,
-                "away_win": aw,
-                "xg_home": xgh,
-                "xg_away": xga,
-                "confidence": conf,
-                "fixture_date": date,
-                "prediction": pred_label,
-                "home_logo": p.get("home_logo", ""),
-                "away_logo": p.get("away_logo", ""),
-            },
-        })
-    return items
+def _winner_label(home: str, away: str, hw: int, dw: int, aw: int) -> str:
+    if hw > aw and hw > dw:
+        return f"{home} Win ({hw}%)"
+    elif aw > hw and aw > dw:
+        return f"{away} Win ({aw}%)"
+    else:
+        return f"Draw ({dw}%)"
 
-def _build_insights(predictions: list, league_code: str) -> list:
-    if not predictions:
-        return []
-    top = max(predictions, key=lambda x: x.get("confidence", 0))
-    home = top.get("home_team", "")
-    away = top.get("away_team", "")
-    conf = top.get("confidence", 0)
-    xgh = round(top.get("expected_home_goals", 0), 2)
-    xga = round(top.get("expected_away_goals", 0), 2)
+def _confidence_prose(conf: int) -> str:
+    if conf >= 75:
+        return "a high-confidence call"
+    elif conf >= 60:
+        return "a moderate-confidence selection"
+    else:
+        return "a close, hard-to-call fixture"
 
-    # Try to get standings for title race insight
-    meta = {"insight_type": "title_race"}
-    try:
-        standings = get_standings(league_code)["standings"]
-        if standings and len(standings) >= 2:
-            leader = standings[0]
-            second = standings[1]
-            gap = leader["points"] - second["points"]
-            meta.update({
-                "insight_type": "title_race",
-                "leader": leader["team_name"],
-                "second": second["team_name"],
-                "leader_pts": leader["points"],
-                "gap": gap,
-            })
-    except Exception:
-        # Fallback: just show the top prediction as a basic insight
-        meta = {
-            "insight_type": "title_race",
-            "leader": home,
-            "second": away,
-            "leader_pts": conf,
-            "gap": 0,
-        }
+def _xg_prose(xgh: float, xga: float, home: str, away: str) -> str:
+    diff = xgh - xga
+    if diff > 0.6:
+        return (f"The model projects a clear attacking edge for the home side, "
+                f"with an expected goals split of {xgh} to {xga} in {home}'s favour.")
+    elif diff < -0.6:
+        return (f"Despite playing away, {away} carry stronger attacking threat in the model, "
+                f"with projected xG of {xga} versus {xgh} for the home side.")
+    else:
+        return (f"The expected goals projection is closely contested at {xgh}–{xga}, "
+                f"underlining just how tight this match could be on the day.")
 
-    league_names = {"epl": "Premier League", "laliga": "La Liga", "seriea": "Serie A",
-                    "ligue1": "Ligue 1", "bundesliga": "Bundesliga"}
 
-    return [{
-        "id": f"insight_{league_code}_{home}_{away}".replace(" ", "_"),
-        "type": "model_insight",
+# ── Match Preview Article Builder ─────────────────────────────────────────────
+
+def _build_preview_article(p: dict, league_code: str, standings: list) -> dict:
+    home = p.get("home_team", "")
+    away = p.get("away_team", "")
+    date = p.get("fixture_date", "TBD")
+    hw   = round(p.get("home_win_prob", 0) * 100)
+    dw   = round(p.get("draw_prob", 0) * 100)
+    aw   = round(p.get("away_win_prob", 0) * 100)
+    conf = p.get("confidence", 0)
+    xgh  = round(p.get("expected_home_goals", 0), 2)
+    xga  = round(p.get("expected_away_goals", 0), 2)
+    hstats = p.get("home_stats") or {}
+    astats = p.get("away_stats") or {}
+    league_name = LEAGUE_FULL.get(league_code, league_code)
+    pred_label  = _winner_label(home, away, hw, dw, aw)
+    conf_prose  = _confidence_prose(conf)
+    xg_prose    = _xg_prose(xgh, xga, home, away)
+
+    # Standings context
+    home_rank = away_rank = home_pts = away_pts = None
+    for row in standings:
+        if row.get("team_name") == home:
+            home_rank = row.get("rank"); home_pts = row.get("points")
+        if row.get("team_name") == away:
+            away_rank = row.get("rank"); away_pts = row.get("points")
+
+    standings_line = ""
+    if home_rank and away_rank:
+        standings_line = (
+            f"{home} currently sit {_ordinal(home_rank)} in the {league_name} "
+            f"with {home_pts} points, while {away} are {_ordinal(away_rank)} "
+            f"with {away_pts} points."
+        )
+
+    # Form summaries
+    home_form = _form_string(hstats, "home")
+    away_form = _form_string(astats, "away")
+
+    # Build title
+    if hw > aw + 15:
+        title = f"{home} vs {away}: Home Dominance Expected in {league_name} Clash"
+    elif aw > hw + 15:
+        title = f"{home} vs {away}: {away} Travel as Favourites"
+    elif abs(hw - aw) <= 8:
+        title = f"{home} vs {away}: {league_name} Showdown Too Close to Call"
+    else:
+        title = f"{home} vs {away}: {league_name} Preview"
+
+    standfirst = (
+        f"StatinSite's Dixon-Coles model rates this {conf_prose}, "
+        f"projecting {pred_label} on {date}."
+    )
+
+    # Body paragraphs
+    body = []
+
+    # P1 — context
+    if standings_line:
+        body.append(standings_line + (
+            f" The fixture takes place on {date} and carries significant weight "
+            f"in the {league_name} standings."
+        ))
+    else:
+        body.append(
+            f"This {league_name} fixture on {date} presents an interesting matchup "
+            f"between two sides with contrasting recent trajectories."
+        )
+
+    # P2 — home team
+    if home_form and home_form != "no data":
+        body.append(
+            f"{home} come into this match {home_form}. "
+            + (f"Their home record this season has been a key asset, "
+               f"with {hstats.get('scored_home', 0)} goals scored in "
+               f"{hstats.get('played_home', 0)} home outings."
+               if hstats.get("played_home") else "")
+        )
+
+    # P3 — away team
+    if away_form and away_form != "no data":
+        body.append(
+            f"{away}, meanwhile, arrive {away_form}. "
+            + (f"On the road this campaign they have scored "
+               f"{astats.get('scored_away', 0)} goals in "
+               f"{astats.get('played_away', 0)} away matches."
+               if astats.get("played_away") else "")
+        )
+
+    # P4 — xG / model angle
+    body.append(xg_prose)
+
+    # P5 — probabilities and prediction
+    body.append(
+        f"The model assigns a {hw}% probability to a {home} victory, "
+        f"{dw}% to a draw, and {aw}% to {away} claiming all three points. "
+        f"With a confidence rating of {conf}%, this is {conf_prose} for the StatinSite model."
+    )
+
+    # P6 — verdict
+    if hw >= 55:
+        verdict = (
+            f"Home advantage and the underlying numbers both point toward {home}. "
+            f"Unless {away} can disrupt the rhythm early, expect {home} to control proceedings."
+        )
+    elif aw >= 55:
+        verdict = (
+            f"{away}'s away form and model edge suggest they are capable of taking "
+            f"something from this fixture. A disciplined performance could see them leave "
+            f"with all three points."
+        )
+    else:
+        verdict = (
+            f"With probabilities this evenly split, neither side holds a commanding advantage. "
+            f"This looks set to be a tightly contested affair where small margins will decide the outcome."
+        )
+    body.append(f"**Verdict:** {verdict}")
+
+    return {
+        "id": f"preview_{league_code}_{home}_{away}".replace(" ", "_"),
+        "type": "match_preview",
+        "source_type": "internal",
         "league": league_code,
-        "title": f"{league_names.get(league_code, league_code)} Title Race",
-        "summary": (
-            f"Top prediction this week: {home} vs {away} "
-            f"({conf}% confidence, xG {xgh}–{xga}). "
-            f"Dixon-Coles Poisson + Elo model."
-        ),
+        "title": title,
+        "standfirst": standfirst,
+        "summary": f"{pred_label} · xG {xgh}–{xga} · {conf}% confidence",
+        "body": body,
         "published_at": datetime.now(timezone.utc).isoformat(),
         "url": f"/predictions/{league_code}",
         "image": None,
         "source": "StatinSite Model",
-        "meta": meta,
-    }]
+        "meta": {
+            "home_team": home,
+            "away_team": away,
+            "home_win": hw,
+            "draw": dw,
+            "away_win": aw,
+            "xg_home": xgh,
+            "xg_away": xga,
+            "confidence": conf,
+            "fixture_date": date,
+            "prediction": pred_label,
+            "home_logo": p.get("home_logo", ""),
+            "away_logo": p.get("away_logo", ""),
+        },
+    }
 
+
+# ── Title Race / Model Insight Article Builder ────────────────────────────────
+
+def _build_title_race_article(
+    league_code: str, standings: list, predictions: list
+) -> dict:
+    league_name = LEAGUE_FULL.get(league_code, league_code)
+    if not standings or len(standings) < 3:
+        return None
+
+    leader  = standings[0]
+    second  = standings[1]
+    third   = standings[2]
+    gap12   = leader["points"] - second["points"]
+    gap23   = second["points"] - third["points"]
+    played  = leader.get("played", 0)
+    gd      = leader.get("goal_diff", 0)
+    form    = leader.get("form", "")
+
+    # Top upcoming prediction for this league
+    top_pred = None
+    if predictions:
+        top_pred = max(predictions, key=lambda x: x.get("confidence", 0))
+
+    # Build title
+    if gap12 >= 10:
+        title = f"{leader['team_name']} Pull Clear: {league_name} Title Race All But Over"
+    elif gap12 <= 2:
+        title = f"{league_name} Title Race: {leader['team_name']} and {second['team_name']} Locked in Battle"
+    else:
+        title = f"{league_name} Title Race: {leader['team_name']} Hold {gap12}-Point Lead"
+
+    standfirst = (
+        f"{leader['team_name']} lead {league_name} with {leader['points']} points "
+        f"after {played} games, {gap12} points clear of {second['team_name']}."
+    )
+
+    body = []
+
+    # P1 — overview
+    body.append(
+        f"{leader['team_name']} remain at the summit of {league_name} with "
+        f"{leader['points']} points from {played} matches, their goal difference "
+        f"of {'+' if gd >= 0 else ''}{gd} underlining their dominance this campaign."
+    )
+
+    # P2 — chaser
+    body.append(
+        f"{second['team_name']} occupy second place with {second['points']} points, "
+        f"{gap12} point{'s' if gap12 != 1 else ''} adrift of the leaders. "
+        + (f"{third['team_name']} sit a further {gap23} point{'s' if gap23 != 1 else ''} back in third, "
+           f"keeping the race for European places competitive."
+           if gap23 <= 5 else
+           f"The gap to {third['team_name']} in third stands at {gap23} points, "
+           f"suggesting the podium picture is already fairly settled.")
+    )
+
+    # P3 — form
+    if form:
+        recent = list(form[-5:])
+        wins   = recent.count("W")
+        draws  = recent.count("D")
+        losses = recent.count("L")
+        body.append(
+            f"Recent form for {leader['team_name']} reads "
+            f"{'–'.join(recent)} across their last five outings "
+            f"({wins}W {draws}D {losses}L), "
+            + ("a run that suggests they are hitting their stride at the right moment."
+               if wins >= 3 else
+               "a mixed sequence that has allowed the chasing pack to keep the pressure on.")
+        )
+
+    # P4 — model prediction angle
+    if top_pred:
+        tp_home = top_pred.get("home_team", "")
+        tp_away = top_pred.get("away_team", "")
+        tp_conf = top_pred.get("confidence", 0)
+        tp_xgh  = round(top_pred.get("expected_home_goals", 0), 2)
+        tp_xga  = round(top_pred.get("expected_away_goals", 0), 2)
+        body.append(
+            f"Looking ahead, the StatinSite model's highest-confidence fixture this "
+            f"gameweek is {tp_home} vs {tp_away} ({tp_conf}% confidence, "
+            f"projected xG {tp_xgh}–{tp_xga}). Results from key fixtures like this "
+            f"could yet reshape the top of the table."
+        )
+
+    # P5 — verdict
+    remaining = max(38 - played, 0)
+    if gap12 >= 10 and remaining < 15:
+        verdict = (
+            f"With {remaining} games remaining and a {gap12}-point cushion, "
+            f"{leader['team_name']} are in the driving seat. Barring a dramatic collapse, "
+            f"the {league_name} title looks destined for {leader['team_name']}."
+        )
+    elif gap12 <= 3:
+        verdict = (
+            f"At just {gap12} point{'s' if gap12 != 1 else ''} separating the top two, "
+            f"this title race is far from settled. Every fixture between now and the end "
+            f"of the season carries enormous weight."
+        )
+    else:
+        verdict = (
+            f"{leader['team_name']} hold a meaningful advantage, but {second['team_name']} "
+            f"will not give up without a fight. The next head-to-head fixture between these "
+            f"sides could prove pivotal."
+        )
+    body.append(f"**Model Verdict:** {verdict}")
+
+    return {
+        "id": f"insight_titlerace_{league_code}",
+        "type": "model_insight",
+        "source_type": "internal",
+        "league": league_code,
+        "title": title,
+        "standfirst": standfirst,
+        "summary": (
+            f"{leader['team_name']} lead by {gap12}pts. "
+            f"{second['team_name']} are closest challengers."
+        ),
+        "body": body,
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "url": f"/predictions/{league_code}",
+        "image": None,
+        "source": "StatinSite Model",
+        "meta": {
+            "insight_type": "title_race",
+            "leader": leader["team_name"],
+            "second": second["team_name"],
+            "leader_pts": leader["points"],
+            "gap": gap12,
+        },
+    }
+
+
+def _build_upset_alert(predictions: list, league_code: str) -> dict | None:
+    """Find a prediction where the away side is strong favourite — 'upset alert'."""
+    league_name = LEAGUE_FULL.get(league_code, league_code)
+    upsets = [
+        p for p in predictions
+        if p.get("away_win_prob", 0) > 0.55 and p.get("confidence", 0) >= 60
+    ]
+    if not upsets:
+        return None
+    p    = max(upsets, key=lambda x: x.get("away_win_prob", 0))
+    home = p.get("home_team", "")
+    away = p.get("away_team", "")
+    aw   = round(p.get("away_win_prob", 0) * 100)
+    hw   = round(p.get("home_win_prob", 0) * 100)
+    conf = p.get("confidence", 0)
+    xgh  = round(p.get("expected_home_goals", 0), 2)
+    xga  = round(p.get("expected_away_goals", 0), 2)
+    date = p.get("fixture_date", "TBD")
+
+    body = []
+    body.append(
+        f"StatinSite's model is flagging {away}'s trip to {home} on {date} "
+        f"as one of the most interesting fixtures in the {league_name} this gameweek. "
+        f"Despite playing away from home, {away} are rated as {aw}% favourites."
+    )
+    body.append(
+        f"The expected goals projection ({xgh}–{xga} in {away}'s favour) suggests the "
+        f"travelling side carry a genuine attacking edge. {home} are rated at only {hw}% "
+        f"to win on their own patch — a significant disadvantage."
+    )
+    body.append(
+        f"With {conf}% model confidence, this is a fixture where backing the away side "
+        f"offers strong statistical value. Keep an eye on {away}'s early rhythm — "
+        f"if they establish control in the opening exchanges, {home} could struggle to respond."
+    )
+    body.append(
+        f"**Model Edge:** {away} Away Win at {aw}% probability. xG edge: {xga} vs {xgh}. "
+        f"Confidence: {conf}%."
+    )
+
+    return {
+        "id": f"upset_{league_code}_{home}_{away}".replace(" ", "_"),
+        "type": "model_insight",
+        "source_type": "internal",
+        "league": league_code,
+        "title": f"Model Edge: {away} Favoured to Win Away at {home}",
+        "standfirst": (
+            f"StatinSite's model rates {away} as {aw}% favourites despite "
+            f"visiting {home} in {league_name} on {date}."
+        ),
+        "summary": f"{away} Away Win {aw}% · xG {xgh}–{xga} · Confidence {conf}%",
+        "body": body,
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "url": f"/predictions/{league_code}",
+        "image": None,
+        "source": "StatinSite Model",
+        "meta": {
+            "insight_type": "upset_alert",
+            "home_team": home,
+            "away_team": away,
+            "away_win_prob": aw,
+            "xg_home": xgh,
+            "xg_away": xga,
+            "confidence": conf,
+            "fixture_date": date,
+            "home_logo": p.get("home_logo", ""),
+            "away_logo": p.get("away_logo", ""),
+        },
+    }
+
+
+# ── External News Article Builder ─────────────────────────────────────────────
+
+def _build_external_article(a: dict) -> dict:
+    t = a.get("title", "")
+    d = a.get("description", "") or ""
+    content = a.get("content", "") or ""
+    # Use full content if available, else description
+    summary_text = content[:600] if len(content) > len(d) else d
+    return {
+        "id": f"ext_{hash(t) & 0xFFFFFF}",
+        "type": _classify_article(t, d),
+        "source_type": "external",
+        "league": "multi",
+        "title": t,
+        "standfirst": d[:200] if d else "",
+        "summary": summary_text[:400] if summary_text else d[:200],
+        "body": [],  # External articles link out — no generated body
+        "published_at": a.get("publishedAt", ""),
+        "url": a.get("url", ""),
+        "image": a.get("urlToImage", ""),
+        "source": a.get("source", {}).get("name", ""),
+        "author": a.get("author", ""),
+        "meta": None,
+    }
+
+
+# ── Utility ───────────────────────────────────────────────────────────────────
+
+def _ordinal(n: int) -> str:
+    if 11 <= (n % 100) <= 13:
+        return f"{n}th"
+    return f"{n}{['th','st','nd','rd','th'][min(n % 10, 4)]}"
+
+
+# ── Main Feed Endpoint ────────────────────────────────────────────────────────
 
 @app.get("/api/intelligence/feed")
 def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
     """
-    Returns a merged feed of:
-      - Match previews (from prediction model)
-      - Model insights (top confidence pick per league)
-      - News articles (from NewsAPI, classified as news/transfer)
+    Full article-generation pipeline.
+    Returns richer StatinSite originals (match previews, title race reports,
+    upset alerts) alongside external NewsAPI headlines.
+    Each item carries: title, standfirst, summary, body[], meta.
     """
-    cache_key = f"intelligence_feed_{leagues}_v1"
+    cache_key = f"intelligence_feed_v3_{leagues}"
     hit = _cache.get(cache_key)
     if hit:
         return hit
@@ -680,23 +1049,53 @@ def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
     league_list = [l.strip() for l in leagues.split(",") if l.strip() in LEAGUE_IDS]
     feed_items: List[dict] = []
 
-    # 1. Match previews + insights from prediction model
-    for code in league_list[:3]:
+    # ── 1. StatinSite originals ───────────────────────────────────────────────
+    for code in league_list[:3]:   # cap at 3 leagues to keep response fast
         try:
-            preds = league_predictions(code)
-            items = preds.get("predictions", [])
-            feed_items.extend(_build_previews(items, code))
-            feed_items.extend(_build_insights(items, code))
+            preds_resp = league_predictions(code)
+            predictions = preds_resp.get("predictions", [])
+        except Exception:
+            predictions = []
+
+        try:
+            standings = get_standings(code)["standings"]
+        except Exception:
+            standings = []
+
+        # a) Match preview articles (top 3 per league)
+        for p in predictions[:3]:
+            try:
+                article = _build_preview_article(p, code, standings)
+                feed_items.append(article)
+            except Exception:
+                pass
+
+        # b) Title race insight
+        try:
+            tr = _build_title_race_article(code, standings, predictions)
+            if tr:
+                feed_items.append(tr)
         except Exception:
             pass
 
-    # 2. News articles from NewsAPI
+        # c) Upset / model edge alert
+        try:
+            ua = _build_upset_alert(predictions, code)
+            if ua:
+                feed_items.append(ua)
+        except Exception:
+            pass
+
+    # ── 2. External headlines (NewsAPI) ───────────────────────────────────────
     if NEWS_API_KEY:
         try:
             r = requests.get(
                 "https://newsapi.org/v2/everything",
                 params={
-                    "q": "Premier League OR La Liga OR Serie A OR Bundesliga transfer signing",
+                    "q": (
+                        "Premier League OR La Liga OR Serie A OR Bundesliga "
+                        "transfer signing football"
+                    ),
                     "language": "en",
                     "sortBy": "publishedAt",
                     "pageSize": 20,
@@ -705,40 +1104,37 @@ def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
                 timeout=10,
             )
             r.raise_for_status()
-            articles = [
+            raw_articles = [
                 a for a in r.json().get("articles", [])
                 if a.get("title") and a["title"] != "[Removed]"
                 and a.get("urlToImage")
-            ][:16]
-            for a in articles:
-                t = a.get("title", "")
-                d = a.get("description", "") or ""
-                feed_items.append({
-                    "id": f"news_{hash(t) & 0xFFFFFF}",
-                    "type": _classify_article(t, d),
-                    "league": "multi",
-                    "title": t,
-                    "summary": d[:200] if d else "",
-                    "url": a.get("url", ""),
-                    "image": a.get("urlToImage", ""),
-                    "published_at": a.get("publishedAt", ""),
-                    "source": a.get("source", {}).get("name", ""),
-                    "author": a.get("author", ""),
-                    "meta": None,
-                })
+            ][:15]
+            for a in raw_articles:
+                feed_items.append(_build_external_article(a))
         except Exception:
             pass
 
-    # Sort: previews first, then insights, transfers, news
-    def sort_key(item):
-        type_order = {"match_preview": 0, "model_insight": 1, "transfer": 2, "headline": 3}
-        return (type_order.get(item.get("type", "headline"), 3), item.get("published_at", ""))
+    # ── 3. Sort ───────────────────────────────────────────────────────────────
+    # Internal originals first (previews → insights), then external by date
+    type_order = {
+        "match_preview":  0,
+        "model_insight":  1,
+        "transfer":       2,
+        "headline":       3,
+    }
 
-    feed_items.sort(key=sort_key)
+    def _sort_key(item):
+        base = type_order.get(item.get("type", "headline"), 3)
+        # Internal items always surface before external of the same type
+        internal = 0 if item.get("source_type") == "internal" else 1
+        return (base, internal, item.get("published_at", ""))
+
+    feed_items.sort(key=_sort_key)
 
     result = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "count": len(feed_items),
+        "schema_version": "v3",
         "items": feed_items,
     }
     _cache.set(cache_key, result)

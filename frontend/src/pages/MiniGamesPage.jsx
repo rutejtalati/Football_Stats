@@ -1,6 +1,17 @@
-// 
+import { useState, useEffect, useRef, useCallback } from "react";
 
-/* ── Mobile touch controls ────────────────────────── */
+
+/* ── Responsive hook ─────────────────────────────────────── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
+/* ── Mobile touch controls ─────────────────────────────────── */
 function TouchDpad({ onLeft, onRight, onUp, onDown, showUp=true, showDown=true }) {
   const btn = (label, handler, extra={}) => (
     <button
@@ -24,7 +35,6 @@ function TouchDpad({ onLeft, onRight, onUp, onDown, showUp=true, showDown=true }
         {showDown ? btn("↓", onDown) : <div style={{width:52}}/>}
         {btn("→", onRight)}
       </div>
-      {!showUp && !showDown && null}
     </div>
   );
 }
@@ -52,35 +62,11 @@ function MobileGameControls({ children, hint }) {
       padding:"12px 0 4px",
     }}>
       {children}
-      {hint && <div style={{fontSize:10,color:C.soft,textAlign:"center",opacity:0.6}}>{hint}</div>}
+      {hint && <div style={{fontSize:10,color:"#3a5272",textAlign:"center",opacity:0.6}}>{hint}</div>}
     </div>
   );
 }
 
-function useIsMobile() {
-  const [m, setM] = React.useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
-  React.useEffect(() => {
-    const h = () => setM(window.innerWidth < 768);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
-  return m;
-}
-MiniGamesPage.jsx — StatinSite Sports Arcade
-// Controls: SPACE/Click=action, ←→=move, WASD=alt move, Enter=start/restart, ESC=close
-import { useState, useEffect, useRef, useCallback } from "react";
-
-
-/* ── Responsive hook ─────────────────────────────────────── */
-function useIsMobile(bp = 640) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
-}
 /* ────────────── Design tokens ────────────── */
 const C = {
   bg:"#060a14", panel:"rgba(8,13,24,0.98)", line:"rgba(255,255,255,0.07)",

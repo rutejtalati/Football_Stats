@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 1: Icons + Constants
 // ═══════════════════════════════════════════════
-import LiveTicker from "../components/LiveTicker";
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
@@ -324,7 +323,6 @@ export default function Navbar() {
       </header>
 
       {/* ── Live ticker — fixed below navbar ──── */}
-      <LiveTicker />
 
       {/* ── Mobile drawer ─────────────────────── */}
       {mobileOpen && (

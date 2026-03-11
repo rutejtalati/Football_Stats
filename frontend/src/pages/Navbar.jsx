@@ -1,12 +1,10 @@
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 1: Icons + Constants
-// Linear.app pill style · Vercel typography
 // ═══════════════════════════════════════════════
 
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
-// ── SVG Icons ──────────────────────────────────
 const Icons = {
   Search: () => (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -65,6 +63,14 @@ const Icons = {
       <path d="M5 8h3M6.5 6.5v3M11.5 7.5v1M10.5 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   ),
+  Leagues: () => (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M8 2c0 0 2.5 2.5 2.5 6S8 14 8 14M8 2c0 0-2.5 2.5-2.5 6S8 14 8 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <path d="M2 8h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <path d="M2.8 5h10.4M2.8 11h10.4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".6"/>
+    </svg>
+  ),
   Logo: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <rect x="2" y="3" width="20" height="3" rx="1.5" fill="#60a5fa"/>
@@ -80,6 +86,7 @@ const Icons = {
 const NAV_ITEMS = [
   { to: "/",                           label: "Home",        Icon: Icons.Home,       color: "rgba(255,255,255,0.55)", end: true },
   { to: "/predictions/premier-league", label: "Predictions", Icon: Icons.Predict,    color: "#60a5fa"                           },
+  { to: "/leagues",                    label: "Leagues",     Icon: Icons.Leagues,    color: "#34d399"                           },
   { to: "/best-team",                  label: "Fantasy",     Icon: Icons.Fantasy,    color: "#28d97a", fplGroup: true            },
   { to: "/player",                     label: "Players",     Icon: Icons.Players,    color: "#a78bfa"                           },
   { to: "/news",                       label: "News",        Icon: Icons.News,       color: "#f472b6"                           },
@@ -87,7 +94,6 @@ const NAV_ITEMS = [
   { to: "/games",                      label: "Games",       Icon: Icons.Games,      color: "#fb923c"                           },
 ];
 
-// FPL sub-pages shown in Fantasy dropdown
 const FPL_ITEMS = [
   { to: "/best-team",          label: "Best XI",          desc: "Optimal FPL starting 11"      },
   { to: "/squad-builder",      label: "Squad Builder",    desc: "Build your 15-man squad"       },
@@ -95,18 +101,17 @@ const FPL_ITEMS = [
   { to: "/fpl-table",          label: "FPL Table",        desc: "Live FPL leaderboard"          },
 ];
 
-// FPL sub-pages — used to detect active state for Fantasy pill
 const FPL_PATHS = [
   "/best-team",
   "/squad-builder",
   "/gameweek-insights",
   "/fpl-table",
 ];
+
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 2: Hooks + Logic
 // ═══════════════════════════════════════════════
 
-// ── Custom hook: scroll-aware hide/show ─────────
 function useScrollHide(threshold = 8) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
@@ -125,7 +130,6 @@ function useScrollHide(threshold = 8) {
   return hidden;
 }
 
-// ── Custom hook: close on outside click ────────
 function useClickOutside(ref, callback) {
   useEffect(() => {
     const handler = (e) => {
@@ -136,7 +140,6 @@ function useClickOutside(ref, callback) {
   }, [ref, callback]);
 }
 
-// ── Custom hook: lock body scroll ──────────────
 function useLockScroll(active) {
   useEffect(() => {
     if (active) {
@@ -148,13 +151,11 @@ function useLockScroll(active) {
   }, [active]);
 }
 
-// ── Helper: is Fantasy pill active? ────────────
 function useFplActive() {
   const { pathname } = useLocation();
   return FPL_PATHS.some((p) => pathname.startsWith(p));
 }
 
-// ── Helper: get active item color ──────────────
 function useActiveColor() {
   const { pathname } = useLocation();
   const fplActive = useFplActive();
@@ -167,20 +168,17 @@ function useActiveColor() {
   });
   return match?.color ?? "rgba(255,255,255,0.55)";
 }
+
 // ═══════════════════════════════════════════════
 // NAVBAR v8 — PART 3: JSX / Render
 // ═══════════════════════════════════════════════
 
-
-/* ══════════════════════════════════════════════
-   BOTTOM TAB BAR — mobile only
-══════════════════════════════════════════════ */
 const BOTTOM_TABS = [
   { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "rgba(255,255,255,0.7)", end: true },
   { to: "/predictions/premier-league", label: "Predict", Icon: Icons.Predict, color: "#60a5fa" },
+  { to: "/leagues",                    label: "Leagues", Icon: Icons.Leagues, color: "#34d399" },
   { to: "/best-team",                  label: "Fantasy", Icon: Icons.Fantasy, color: "#28d97a" },
   { to: "/news",                       label: "News",    Icon: Icons.News,    color: "#f472b6" },
-  { to: "/games",                      label: "Games",   Icon: Icons.Games,   color: "#fb923c" },
 ];
 
 function BottomTabBar() {
@@ -230,15 +228,12 @@ export default function Navbar() {
   useClickOutside(fplRef, () => setFplOpen(false));
   useLockScroll(mobileOpen);
 
-  // Focus input when search opens
   useEffect(() => {
     if (searchOpen) setTimeout(() => inputRef.current?.focus(), 60);
   }, [searchOpen]);
 
-  // Close drawers on route change
   useEffect(() => { setMobileOpen(false); setFplOpen(false); }, [location.pathname]);
 
-  // ── pill active check ────────────────────────
   const isPillActive = (item) => {
     if (item.fplGroup) return fplActive;
     if (item.end)      return location.pathname === item.to;
@@ -400,9 +395,9 @@ export default function Navbar() {
           aria-hidden="true"
         />
       )}
-      {/* ── Bottom tab bar — mobile only */}
-      <BottomTabBar />
 
+      {/* ── Bottom tab bar — mobile only ──────── */}
+      <BottomTabBar />
     </>
   );
 }

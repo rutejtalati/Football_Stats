@@ -772,7 +772,8 @@ export default function NewsTrackerPage() {
         const res = await fetch(`${BACKEND}/api/intelligence/feed?limit=40`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setArticles(data.articles || data || []);
+        const raw = data.articles ?? data.feed ?? data.items ?? data.results ?? data;
+setArticles(Array.isArray(raw) ? raw : []);
         setLastUpdated(new Date());
       } catch (err) {
         setError(err.message);

@@ -574,25 +574,37 @@ def _build_previews(predictions: list, league_code: str) -> list:
         conf = p.get("confidence", 0)
         xgh = round(p.get("expected_home_goals", 0), 2)
         xga = round(p.get("expected_away_goals", 0), 2)
+        # Determine predicted winner label
+        if hw > aw and hw > dw:
+            pred_label = f"{home} Win ({hw}%)"
+        elif aw > hw and aw > dw:
+            pred_label = f"{away} Win ({aw}%)"
+        else:
+            pred_label = f"Draw ({dw}%)"
         items.append({
             "id": f"preview_{league_code}_{home}_{away}".replace(" ", "_"),
             "type": "match_preview",
             "league": league_code,
             "title": f"{home} vs {away}",
-            "description": f"Model confidence {conf}% · xG {xgh}–{xga} · {hw}% / {dw}% / {aw}%",
-            "home_team": home,
-            "away_team": away,
-            "home_win_prob": hw,
-            "draw_prob": dw,
-            "away_win_prob": aw,
-            "xg_home": xgh,
-            "xg_away": xga,
-            "confidence": conf,
-            "fixture_date": date,
-            "home_logo": p.get("home_logo", ""),
-            "away_logo": p.get("away_logo", ""),
-            "publishedAt": datetime.now(timezone.utc).isoformat(),
+            "summary": f"Model confidence {conf}% · xG {xgh}–{xga}",
+            "published_at": datetime.now(timezone.utc).isoformat(),
+            "url": f"/predictions/{league_code}",
+            "image": None,
             "source": "StatinSite Model",
+            "meta": {
+                "home_team": home,
+                "away_team": away,
+                "home_win": hw,
+                "draw": dw,
+                "away_win": aw,
+                "xg_home": xgh,
+                "xg_away": xga,
+                "confidence": conf,
+                "fixture_date": date,
+                "prediction": pred_label,
+                "home_logo": p.get("home_logo", ""),
+                "away_logo": p.get("away_logo", ""),
+            },
         })
     return items
 
@@ -605,26 +617,50 @@ def _build_insights(predictions: list, league_code: str) -> list:
     conf = top.get("confidence", 0)
     xgh = round(top.get("expected_home_goals", 0), 2)
     xga = round(top.get("expected_away_goals", 0), 2)
+
+    # Try to get standings for title race insight
+    meta = {"insight_type": "title_race"}
+    try:
+        standings = get_standings(league_code)["standings"]
+        if standings and len(standings) >= 2:
+            leader = standings[0]
+            second = standings[1]
+            gap = leader["points"] - second["points"]
+            meta.update({
+                "insight_type": "title_race",
+                "leader": leader["team_name"],
+                "second": second["team_name"],
+                "leader_pts": leader["points"],
+                "gap": gap,
+            })
+    except Exception:
+        # Fallback: just show the top prediction as a basic insight
+        meta = {
+            "insight_type": "title_race",
+            "leader": home,
+            "second": away,
+            "leader_pts": conf,
+            "gap": 0,
+        }
+
+    league_names = {"epl": "Premier League", "laliga": "La Liga", "seriea": "Serie A",
+                    "ligue1": "Ligue 1", "bundesliga": "Bundesliga"}
+
     return [{
         "id": f"insight_{league_code}_{home}_{away}".replace(" ", "_"),
         "type": "model_insight",
         "league": league_code,
-        "title": f"Model Insight: {home} vs {away}",
-        "description": (
-            f"Highest-confidence pick this week ({conf}%). "
-            f"Expected goals: {home} {xgh} – {xga} {away}. "
+        "title": f"{league_names.get(league_code, league_code)} Title Race",
+        "summary": (
+            f"Top prediction this week: {home} vs {away} "
+            f"({conf}% confidence, xG {xgh}–{xga}). "
             f"Dixon-Coles Poisson + Elo model."
         ),
-        "home_team": home,
-        "away_team": away,
-        "xg_home": xgh,
-        "xg_away": xga,
-        "confidence": conf,
-        "fixture_date": top.get("fixture_date", ""),
-        "home_logo": top.get("home_logo", ""),
-        "away_logo": top.get("away_logo", ""),
-        "publishedAt": datetime.now(timezone.utc).isoformat(),
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "url": f"/predictions/{league_code}",
+        "image": None,
         "source": "StatinSite Model",
+        "meta": meta,
     }]
 
 
@@ -682,12 +718,13 @@ def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
                     "type": _classify_article(t, d),
                     "league": "multi",
                     "title": t,
-                    "description": d[:200] if d else "",
+                    "summary": d[:200] if d else "",
                     "url": a.get("url", ""),
-                    "urlToImage": a.get("urlToImage", ""),
-                    "publishedAt": a.get("publishedAt", ""),
+                    "image": a.get("urlToImage", ""),
+                    "published_at": a.get("publishedAt", ""),
                     "source": a.get("source", {}).get("name", ""),
                     "author": a.get("author", ""),
+                    "meta": None,
                 })
         except Exception:
             pass
@@ -695,7 +732,7 @@ def get_intelligence_feed(leagues: str = "epl,laliga,seriea,bundesliga,ligue1"):
     # Sort: previews first, then insights, transfers, news
     def sort_key(item):
         type_order = {"match_preview": 0, "model_insight": 1, "transfer": 2, "headline": 3}
-        return (type_order.get(item.get("type", "headline"), 3), item.get("publishedAt", ""))
+        return (type_order.get(item.get("type", "headline"), 3), item.get("published_at", ""))
 
     feed_items.sort(key=sort_key)
 

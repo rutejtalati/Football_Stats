@@ -1,9 +1,20 @@
 // pages/PlayerBrowsePage.jsx
-// Browse all players — search, filter by position, click to open Player Insight
+// Browse all players — MOBILE RESPONSIVE
 
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFplBootstrap, getFplPredictorTable } from "../api/api";
+
+/* ── Responsive hook ── */
+function useIsMobile(bp = 640) {
+  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return m;
+}
 
 const SHIRT_IDS = {
   ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,IPS:40,
@@ -53,7 +64,8 @@ function Skel({ h=20, w="100%", r=8 }) {
 }
 
 export default function PlayerBrowsePage() {
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
+  const isMobile   = useIsMobile();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [gw, setGw]           = useState(29);
@@ -106,32 +118,52 @@ export default function PlayerBrowsePage() {
     return list;
   }, [players, posFilter, search, sortBy]);
 
+  // On mobile: fewer columns — hide FORM and OWN, keep PROJ + COST
+  const cols = isMobile
+    ? "1fr 52px 48px"
+    : "1fr 60px 60px 60px 60px";
+
   return (
-    <div style={{ background:"#000", minHeight:"100vh", padding:"20px 0" }}>
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"0 16px" }}>
+    <div style={{ background:"#000", minHeight:"100vh", padding: isMobile ? "14px 0 80px" : "20px 0 40px" }}>
+      <style>{`
+        @keyframes piSkeletonPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .pbp-row:active { background:rgba(103,177,255,0.1) !important; }
+      `}</style>
+      <div style={{ maxWidth:860, margin:"0 auto", padding: isMobile ? "0 10px" : "0 16px" }}>
 
         {/* Header */}
-        <div style={{ marginBottom:20 }}>
-          <h1 style={{ fontSize:26, fontWeight:900, color:"#f0f6ff", letterSpacing:"-0.02em", margin:0 }}>
+        <div style={{ marginBottom:16 }}>
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight:900, color:"#f0f6ff",
+            letterSpacing:"-0.02em", margin:0 }}>
             Player Insight
           </h1>
-          <div style={{ color:"#2a4a6a", fontSize:12, fontWeight:700, marginTop:4 }}>
-            {loading ? "Loading..." : `${players.length} players · GW${gw} projections · Click any player for full analysis`}
+          <div style={{ color:"#2a4a6a", fontSize:11, fontWeight:700, marginTop:4 }}>
+            {loading ? "Loading..." : `${players.length} players · GW${gw} · Tap any player for full analysis`}
           </div>
         </div>
 
         {/* Filters */}
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14, alignItems:"center" }}>
-          {/* Position pills */}
-          {["ALL","GK","DEF","MID","FWD"].map(p => (
-            <button key={p} onClick={() => setPos(p)} style={{
-              padding:"5px 13px", borderRadius:999, fontSize:11, fontWeight:800,
-              cursor:"pointer", transition:"all 0.15s ease", fontFamily:"inherit",
-              background: posFilter===p ? (POS_COLORS[p]||"rgba(103,177,255,0.22)") : "rgba(255,255,255,0.05)",
-              border: `1px solid ${posFilter===p ? (POS_COLORS[p]||"rgba(103,177,255,0.5)") : "rgba(255,255,255,0.08)"}`,
-              color: posFilter===p ? "#000" : "#4a7a9a",
-            }}>{p}</button>
-          ))}
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10, alignItems:"center" }}>
+          {/* Position pills — horizontal scroll on mobile */}
+          <div style={{
+            display:"flex", gap:5,
+            overflowX: isMobile ? "auto" : "visible",
+            WebkitOverflowScrolling:"touch",
+            scrollbarWidth:"none",
+            flexShrink:0,
+          }}>
+            {["ALL","GK","DEF","MID","FWD"].map(p => (
+              <button key={p} onClick={() => setPos(p)} style={{
+                padding: isMobile ? "6px 12px" : "5px 13px",
+                borderRadius:999, fontSize:11, fontWeight:800,
+                cursor:"pointer", fontFamily:"inherit", flexShrink:0,
+                background: posFilter===p ? (POS_COLORS[p]||"rgba(103,177,255,0.22)") : "rgba(255,255,255,0.05)",
+                border: `1px solid ${posFilter===p ? (POS_COLORS[p]||"rgba(103,177,255,0.5)") : "rgba(255,255,255,0.08)"}`,
+                color: posFilter===p ? "#000" : "#4a7a9a",
+                minHeight:36,
+              }}>{p}</button>
+            ))}
+          </div>
 
           {/* Search */}
           <input
@@ -139,7 +171,8 @@ export default function PlayerBrowsePage() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Search player or team…"
             style={{
-              flex:1, minWidth:160, padding:"6px 12px", borderRadius:10, fontSize:12,
+              flex:1, minWidth: isMobile ? "100%" : 160,
+              padding:"8px 12px", borderRadius:10, fontSize:14,
               background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)",
               color:"#e8f0ff", outline:"none", fontFamily:"inherit",
             }}
@@ -147,33 +180,35 @@ export default function PlayerBrowsePage() {
 
           {/* Sort */}
           <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{
-            padding:"6px 10px", borderRadius:10, fontSize:11, background:"#000",
+            padding: isMobile ? "8px 10px" : "6px 10px",
+            borderRadius:10, fontSize:11, background:"#000",
             border:"1px solid rgba(255,255,255,0.1)", color:"#c8d8f0",
             outline:"none", cursor:"pointer", fontFamily:"inherit",
+            minHeight:36, flexShrink:0,
           }}>
-            <option value="pts">⬆ Proj Pts</option>
+            <option value="pts">⬆ Pts</option>
             <option value="form">⬆ Form</option>
             <option value="cost">⬆ Cost</option>
-            <option value="own">⬆ Ownership</option>
+            <option value="own">⬆ Own%</option>
           </select>
         </div>
 
         {/* Column headers */}
         {!loading && (
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 60px 60px 60px 60px",
+          <div style={{ display:"grid", gridTemplateColumns:cols,
             gap:8, padding:"4px 14px", marginBottom:4 }}>
             <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em" }}>PLAYER</span>
             <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>PROJ</span>
-            <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>FORM</span>
+            {!isMobile && <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>FORM</span>}
             <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>COST</span>
-            <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>OWN%</span>
+            {!isMobile && <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>OWN%</span>}
           </div>
         )}
 
         {/* Player rows */}
         {loading ? (
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-            {Array.from({length:12}).map((_,i) => <Skel key={i} h={62} r={12} />)}
+            {Array.from({length:10}).map((_,i) => <Skel key={i} h={58} r={12} />)}
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ color:"#2a4a6a", textAlign:"center", padding:"40px 0", fontSize:14 }}>
@@ -192,19 +227,22 @@ export default function PlayerBrowsePage() {
 
               return (
                 <div key={p.player_id||p.id}
+                  className="pbp-row"
                   onClick={() => navigate(`/player/${p.player_id||p.id}`)}
                   style={{
-                    display:"grid", gridTemplateColumns:"1fr 60px 60px 60px 60px",
+                    display:"grid", gridTemplateColumns:cols,
                     gap:8, alignItems:"center",
-                    padding:"10px 14px", borderRadius:12, cursor:"pointer",
+                    padding: isMobile ? "8px 10px" : "10px 14px",
+                    borderRadius:12, cursor:"pointer",
                     background: i%2===0 ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.018)",
                     border:"1px solid rgba(255,255,255,0.05)",
                     transition:"all 0.13s ease",
+                    WebkitTapHighlightColor:"rgba(103,177,255,0.15)",
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = "rgba(103,177,255,0.07)";
                     e.currentTarget.style.borderColor = "rgba(103,177,255,0.2)";
-                    e.currentTarget.style.transform = "translateX(4px)";
+                    if (!isMobile) e.currentTarget.style.transform = "translateX(4px)";
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.background = i%2===0 ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.018)";
@@ -213,19 +251,20 @@ export default function PlayerBrowsePage() {
                   }}
                 >
                   {/* Player identity */}
-                  <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap: isMobile ? 8 : 10, minWidth:0 }}>
                     {/* Rank */}
-                    <span style={{ fontSize:10, fontWeight:800, color:"#1a3a5a", minWidth:20,
-                      fontFamily:"DM Mono, monospace" }}>
-                      {i+1}
-                    </span>
+                    {!isMobile && (
+                      <span style={{ fontSize:10, fontWeight:800, color:"#1a3a5a", minWidth:20,
+                        fontFamily:"DM Mono, monospace" }}>{i+1}</span>
+                    )}
 
-                    {/* Face photo or shirt */}
-                    <div style={{ position:"relative", width:34, height:34, flexShrink:0 }}>
+                    {/* Face or shirt */}
+                    <div style={{ position:"relative", width: isMobile?28:34, height: isMobile?28:34, flexShrink:0 }}>
                       {faceUrl ? (
                         <img src={faceUrl} alt={p.name}
-                          style={{ width:34, height:34, borderRadius:"50%", objectFit:"cover",
-                            objectPosition:"top", border:"1.5px solid rgba(255,255,255,0.12)",
+                          style={{ width:isMobile?28:34, height:isMobile?28:34, borderRadius:"50%",
+                            objectFit:"cover", objectPosition:"top",
+                            border:"1.5px solid rgba(255,255,255,0.12)",
                             background:"rgba(0,0,0,0.5)" }}
                           onError={e => {
                             e.currentTarget.style.display="none";
@@ -237,7 +276,7 @@ export default function PlayerBrowsePage() {
                         <img
                           src={`https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${shirtId}-66.png`}
                           alt={p.team}
-                          style={{ width:28, height:28, objectFit:"contain",
+                          style={{ width:isMobile?24:28, height:isMobile?24:28, objectFit:"contain",
                             display: faceUrl ? "none" : "block",
                             filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}
                           onError={e => { e.currentTarget.style.display="none"; }}
@@ -247,30 +286,44 @@ export default function PlayerBrowsePage() {
 
                     {/* Name + meta */}
                     <div style={{ minWidth:0 }}>
-                      <div style={{ fontSize:13, fontWeight:800, color:"#e8f0ff",
+                      <div style={{ fontSize: isMobile ? 12 : 13, fontWeight:800, color:"#e8f0ff",
                         whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                         {p.name}
                       </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:1 }}>
-                        <span style={{ fontSize:10, color:"#2a4a6a", fontWeight:700 }}>{p.team}</span>
-                        <span style={{ fontSize:9, fontWeight:900, color:posColor,
-                          background:`${posColor}22`, padding:"0 5px", borderRadius:4 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:1, flexWrap:"nowrap" }}>
+                        <span style={{ fontSize:9, color:"#2a4a6a", fontWeight:700 }}>{p.team}</span>
+                        <span style={{ fontSize:8, fontWeight:900, color:posColor,
+                          background:`${posColor}22`, padding:"0 4px", borderRadius:3 }}>
                           {p.position}
                         </span>
-                        <span style={{ fontSize:10, color:"#1a3a5a" }}>{p.next_opp}</span>
+                        {!isMobile && (
+                          <span style={{ fontSize:9, color:"#1a3a5a" }}>{p.next_opp}</span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <span style={{ textAlign:"right", fontSize:14, fontWeight:900, color:ptsColor,
-                    fontFamily:"DM Mono, monospace" }}>{pts.toFixed(1)}</span>
-                  <span style={{ textAlign:"right", fontSize:13, fontWeight:800, color:"#67b1ff",
-                    fontFamily:"DM Mono, monospace" }}>{Number(p.form||0).toFixed(1)}</span>
-                  <span style={{ textAlign:"right", fontSize:12, fontWeight:800, color:"#f2c94c",
-                    fontFamily:"DM Mono, monospace" }}>£{Number(p.cost||0).toFixed(1)}</span>
-                  <span style={{ textAlign:"right", fontSize:12, fontWeight:800, color:"#c8d8f0",
-                    fontFamily:"DM Mono, monospace" }}>{Number(p.selected_by_pct||0).toFixed(1)}%</span>
+                  {/* Proj pts */}
+                  <span style={{ textAlign:"right", fontSize: isMobile?13:14, fontWeight:900,
+                    color:ptsColor, fontFamily:"DM Mono, monospace" }}>{pts.toFixed(1)}</span>
+
+                  {/* Form — desktop only */}
+                  {!isMobile && (
+                    <span style={{ textAlign:"right", fontSize:13, fontWeight:800, color:"#67b1ff",
+                      fontFamily:"DM Mono, monospace" }}>{Number(p.form||0).toFixed(1)}</span>
+                  )}
+
+                  {/* Cost */}
+                  <span style={{ textAlign:"right", fontSize: isMobile?11:12, fontWeight:800,
+                    color:"#f2c94c", fontFamily:"DM Mono, monospace" }}>
+                    £{Number(p.cost||0).toFixed(1)}
+                  </span>
+
+                  {/* Ownership — desktop only */}
+                  {!isMobile && (
+                    <span style={{ textAlign:"right", fontSize:12, fontWeight:800, color:"#c8d8f0",
+                      fontFamily:"DM Mono, monospace" }}>{Number(p.selected_by_pct||0).toFixed(1)}%</span>
+                  )}
                 </div>
               );
             })}

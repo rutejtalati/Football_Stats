@@ -15,7 +15,7 @@ try:
             break
         _env = _env.parent
 except ImportError:
-    pass  # python-dotenv not installed â€” env vars must be set manually
+    pass  # python-dotenv not installed — env vars must be set manually
 
 import requests
 from fastapi import FastAPI, HTTPException
@@ -49,20 +49,20 @@ API_FOOTBALL_BASE = "https://v3.football.api-sports.io"
 FPL_BASE = "https://fantasy.premierleague.com/api"
 CURRENT_SEASON = 2025
 
-# â”€â”€ Bundesliga added (API-Football league ID: 78) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Bundesliga added (API-Football league ID: 78) ──────────────────────────
 LEAGUE_IDS = {
     "epl":        39,
     "laliga":     140,
     "seriea":     135,
     "ligue1":     61,
-    "bundesliga": 78,   # â† ADDED
+    "bundesliga": 78,   # ← ADDED
 }
 LEAGUE_NAMES = {
     "epl":        "Premier League",
     "laliga":     "La Liga",
     "seriea":     "Serie A",
     "ligue1":     "Ligue 1",
-    "bundesliga": "Bundesliga",   # â† ADDED
+    "bundesliga": "Bundesliga",   # ← ADDED
 }
 POSITION_MAP = {1:"GK",2:"DEF",3:"MID",4:"FWD"}
 
@@ -107,7 +107,7 @@ def parse_standings(raw):
     out = []
     for e in rows:
         t=e.get("team",{}); a=e.get("all",{}); h=e.get("home",{}); aw=e.get("away",{}); g=a.get("goals",{})
-        out.append({"rank":e.get("rank"),"team_id":t.get("id"),"team_name":t.get("name","â€”"),
+        out.append({"rank":e.get("rank"),"team_id":t.get("id"),"team_name":t.get("name","—"),
             "logo":t.get("logo",""),"played":a.get("played",0),"won":a.get("win",0),
             "drawn":a.get("draw",0),"lost":a.get("lose",0),"goals_for":g.get("for",0),
             "goals_against":g.get("against",0),"goal_diff":e.get("goalsDiff",0),
@@ -228,7 +228,7 @@ def next_team_fixtures(fixtures,team_id,start_gw,limit=6):
         elif fx["team_a"]==team_id: out.append({"event":ev,"opp_id":fx["team_h"],"is_home":False,"difficulty":fx["team_a_difficulty"]})
     out.sort(key=lambda x:x["event"]); return out[:limit]
 
-# â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Routes ──────────────────────────────────────────────────────────────────
 
 @app.get("/")
 def root(): return {"api":"StatPitch","version":"3.0.0"}
@@ -460,14 +460,11 @@ def get_fixture_stats(fixture_id:int): return api_get("/fixtures/statistics",{"f
 
 @app.get("/api/simulate/{league}")
 def simulate_league(league:str):
-    # Ensure bundesliga is supported â€” season_simulator must also know it
-    if league not in LEAGUE_IDS:
-        raise HTTPException(404, f"Unknown league: {league}")
     try: return {"league":league,"results":monte_carlo_league(league)}
     except ValueError as e: raise HTTPException(404,str(e))
 
 
-# â”€â”€ News proxy (NewsAPI.org) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── News proxy (NewsAPI.org) ──────────────────────────────────────────────────
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 LEAGUE_NEWS_QUERIES = {
@@ -475,9 +472,8 @@ LEAGUE_NEWS_QUERIES = {
     "laliga":     "La Liga football",
     "seriea":     "Serie A football",
     "ligue1":     "Ligue 1 football",
-    "bundesliga": "Bundesliga football",   # â† ADDED
+    "bundesliga": "Bundesliga football",   # ← ADDED
 }
-
 
 @app.get("/api/news/{league}")
 def get_league_news(league: str):
@@ -503,47 +499,3 @@ def get_league_news(league: str):
         return {"articles": articles}
     except Exception as e:
         raise HTTPException(502, f"News fetch failed: {str(e)}")
-
-
-# â”€â”€ AI Article Generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Calls OpenRouter from the backend â€” no CORS issues on frontend.
-# FREE models available at openrouter.ai (no credit card needed).
-# Set OPENROUTER_API_KEY in Render environment variables.
-from pydantic import BaseModel
-
-class PromptRequest(BaseModel):
-    prompt: str
-
-OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
-
-@app.post("/api/ai/generate")
-def generate_ai_text(body: PromptRequest):
-    if not OPENROUTER_KEY:
-        raise HTTPException(503, "OPENROUTER_API_KEY not configured on server")
-    try:
-        r = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {OPENROUTER_KEY}",
-                "HTTP-Referer": "https://www.statinsite.com",
-                "X-Title": "StatinSite",
-            },
-            json={
-                "model": "meta-llama/llama-3.1-8b-instruct:free",
-                "max_tokens": 1100,
-                "temperature": 0.7,
-                "messages": [{"role": "user", "content": body.prompt}],
-            },
-            timeout=30,
-        )
-        r.raise_for_status()
-        data = r.json()
-        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-        return {"text": text}
-    except requests.HTTPError as e:
-        raise HTTPException(502, f"OpenRouter error: {e.response.text[:300]}")
-    except Exception as e:
-        raise HTTPException(502, f"AI generation failed: {str(e)}")
-
-

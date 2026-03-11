@@ -1,71 +1,6 @@
+// MiniGamesPage.jsx — StatinSite Sports Arcade
+// Controls: SPACE/Click=action, ←→=move, WASD=alt move, Enter=start/restart, ESC=close
 import { useState, useEffect, useRef, useCallback } from "react";
-
-
-/* ── Responsive hook ─────────────────────────────────────── */
-function useIsMobile(bp = 640) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
-}
-/* ── Mobile touch controls ─────────────────────────────────── */
-function TouchDpad({ onLeft, onRight, onUp, onDown, showUp=true, showDown=true }) {
-  const btn = (label, handler, extra={}) => (
-    <button
-      onTouchStart={e=>{e.preventDefault();handler&&handler(true);}}
-      onTouchEnd={e=>{e.preventDefault();handler&&handler(false);}}
-      onMouseDown={()=>handler&&handler(true)}
-      onMouseUp={()=>handler&&handler(false)}
-      style={{
-        width:52,height:52,borderRadius:12,border:"1px solid rgba(255,255,255,0.15)",
-        background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.8)",
-        fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",
-        cursor:"pointer",userSelect:"none",WebkitUserSelect:"none",touchAction:"none",
-        ...extra
-      }}>{label}</button>
-  );
-  return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-      {showUp && btn("↑", onUp)}
-      <div style={{display:"flex",gap:4}}>
-        {btn("←", onLeft)}
-        {showDown ? btn("↓", onDown) : <div style={{width:52}}/>}
-        {btn("→", onRight)}
-      </div>
-    </div>
-  );
-}
-
-function TouchButton({ label, onPress, color="#28d97a", size=52 }) {
-  return (
-    <button
-      onTouchStart={e=>{e.preventDefault();onPress&&onPress();}}
-      onMouseDown={()=>onPress&&onPress()}
-      style={{
-        width:size,height:size,borderRadius:size/2,
-        border:`1px solid ${color}55`,
-        background:`${color}18`,color,
-        fontSize:size>48?16:13,fontWeight:900,
-        display:"flex",alignItems:"center",justifyContent:"center",
-        cursor:"pointer",userSelect:"none",WebkitUserSelect:"none",touchAction:"none",
-      }}>{label}</button>
-  );
-}
-
-function MobileGameControls({ children, hint }) {
-  return (
-    <div style={{
-      display:"flex",flexDirection:"column",alignItems:"center",gap:12,
-      padding:"12px 0 4px",
-    }}>
-      {children}
-      {hint && <div style={{fontSize:10,color:"#3a5272",textAlign:"center",opacity:0.6}}>{hint}</div>}
-    </div>
-  );
-}
 
 /* ────────────── Design tokens ────────────── */
 const C = {
@@ -100,6 +35,23 @@ function useGame(id) {
   const menu = useCallback(() => setPhase("menu"), []);
   return { phase, score, best, isNew, start, restart, addLive, finish, menu, scoreRef };
 }
+
+/* ────────────── Shared timer hook ────────────── */
+function useTimer(initial, onExpire, running) {
+  const [left, setLeft] = useState(initial);
+  const ref = useRef();
+  useEffect(() => { setLeft(initial); }, [initial]);
+  useEffect(() => {
+    if (!running) { clearInterval(ref.current); return; }
+    ref.current = setInterval(() => setLeft(t => {
+      if (t <= 1) { clearInterval(ref.current); onExpire(); return 0; }
+      return t - 1;
+    }), 1000);
+    return () => clearInterval(ref.current);
+  }, [running, onExpire]);
+  return left;
+}
+
 
 /* ────────────── Shared UI components ────────────── */
 const arcBtn = (col,full) => ({
@@ -473,31 +425,13 @@ export function PenaltyGame({ onScore }) {
     return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener("keydown",onKey);cv.removeEventListener("click",onClick);};
   },[doShoot,doRestart,doNext,onScore,W,H,GOAL]);
 
-  const isMobile = useIsMobile();
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:12}}>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{display:"block",borderRadius:12,maxWidth:"100%",height:"auto",cursor:"crosshair",
-          boxShadow:"0 0 40px rgba(40,217,122,0.15)",
-          maxWidth:"100%",height:"auto"}}/>
-      {isMobile ? (
-        <MobileGameControls hint="Move crosshair, then tap SHOOT">
-          <div style={{display:"flex",gap:12,alignItems:"center"}}>
-            <TouchDpad
-              showUp={true} showDown={true}
-              onLeft={h=>{if(h)gs.current.aimX=Math.max(70,gs.current.aimX-18);}}
-              onRight={h=>{if(h)gs.current.aimX=Math.min(390,gs.current.aimX+18);}}
-              onUp={h=>{if(h)gs.current.aimY=Math.max(50,gs.current.aimY-18);}}
-              onDown={h=>{if(h)gs.current.aimY=Math.min(160,gs.current.aimY+18);}}
-            />
-            <TouchButton label="⚽ SHOOT" onPress={doShoot} color="#28d97a" size={72}/>
-          </div>
-        </MobileGameControls>
-      ) : (
-        <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
-          <b style={{color:C.text}}>SPACE</b> or <b style={{color:C.text}}>TAP</b> to shoot · Mouse to aim
-        </div>
-      )}
+        style={{display:"block",borderRadius:12,cursor:"crosshair",boxShadow:"0 0 40px rgba(40,217,122,0.15)"}}/>
+      <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
+        <b style={{color:C.text}}>SPACE</b> or <b style={{color:C.text}}>TAP</b> to shoot when crosshair is in position
+      </div>
     </div>
   );
 }
@@ -669,24 +603,13 @@ export function TennisGame() {
     return()=>{cancelAnimationFrame(animRef.current);window.removeEventListener("keydown",kd);window.removeEventListener("keyup",ku);};
   },[W,H]);
 
-  const isMobileTennis = useIsMobile();
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:12}}>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{display:"block",borderRadius:12,boxShadow:"0 0 40px rgba(103,177,255,0.12)",maxWidth:"100%",height:"auto"}}/>
-      {isMobileTennis ? (
-        <MobileGameControls hint="Move your paddle · Tap START to begin">
-          <div style={{display:"flex",gap:16,alignItems:"center"}}>
-            <TouchButton label="◀" onPress={()=>{keys.current.ArrowLeft=true;setTimeout(()=>keys.current.ArrowLeft=false,120);}} color="#60a5fa" size={56}/>
-            <TouchButton label="START" onPress={()=>{const s=gs.current;if(s.phase==="intro"||s.phase==="over")reset();}} color="#28d97a" size={56}/>
-            <TouchButton label="▶" onPress={()=>{keys.current.ArrowRight=true;setTimeout(()=>keys.current.ArrowRight=false,120);}} color="#60a5fa" size={56}/>
-          </div>
-        </MobileGameControls>
-      ) : (
-        <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
-          <b style={{color:C.text}}>← → / A D</b> to move · <b style={{color:C.text}}>Enter</b> to start/restart
-        </div>
-      )}
+        style={{display:"block",borderRadius:12,boxShadow:"0 0 40px rgba(103,177,255,0.12)"}}/>
+      <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
+        <b style={{color:C.text}}>← → / A D</b> to move · <b style={{color:C.text}}>Enter</b> to start/restart
+      </div>
     </div>
   );
 }
@@ -926,7 +849,7 @@ export function BasketballGame() {
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:12}}>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{display:"block",borderRadius:12,maxWidth:"100%",height:"auto",boxShadow:"0 0 40px rgba(255,96,32,0.15)"}}/>
+        style={{display:"block",borderRadius:12,boxShadow:"0 0 40px rgba(255,96,32,0.15)"}}/>
       <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
         <b style={{color:C.text}}>Hold SPACE</b> to charge power · <b style={{color:C.text}}>Release</b> to shoot
       </div>
@@ -1142,7 +1065,7 @@ export function PitchHopperGame() {
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:12}}>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{display:"block",borderRadius:12,maxWidth:"100%",height:"auto",boxShadow:"0 0 40px rgba(40,217,122,0.12)"}}/>
+        style={{display:"block",borderRadius:12,boxShadow:"0 0 40px rgba(40,217,122,0.12)"}}/>
       <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
         <b style={{color:C.text}}>↑↓←→ / WASD</b> to move · Reach goal line · Avoid defenders · <b style={{color:C.text}}>Enter</b> to start
       </div>
@@ -1156,6 +1079,7 @@ export { C, useGame, GameMenu, GameResults, arcBtn, KEYFRAMES, getBest, saveBest
    GAME 5 — TIC TAC TOE  (click cells, strategic AI)
    ════════════════════════════════════════════════════════ */
 function TicTacToe() {
+  const isMobile = useIsMobile();
   const [board, setBoard]   = useState(Array(9).fill(null));
   const [xTurn, setXTurn]   = useState(true);
   const [status, setStatus] = useState("play"); // play|won|draw
@@ -1210,7 +1134,7 @@ function TicTacToe() {
         ))}
       </div>
       {/* Grid */}
-      <div id="game2048-canvas-area" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:isMobile?200:240}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:240}}>
         {board.map((cell,i)=>{
           const isWin=winLine&&winLine.includes(i);
           return (
@@ -1295,25 +1219,6 @@ function Game2048() {
     if(!hasMove) setOver(true);
   },[board,score,best,over,won]);
 
-  // Touch swipe for mobile
-  const touchStartRef = React.useRef(null);
-  React.useEffect(() => {
-    const el = document.getElementById('game2048-canvas-area');
-    if (!el) return;
-    const onTouchStart = e => { touchStartRef.current = {x:e.touches[0].clientX, y:e.touches[0].clientY}; };
-    const onTouchEnd = e => {
-      if (!touchStartRef.current) return;
-      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-      if (Math.abs(dx) > Math.abs(dy)) { if (dx > 30) move("ArrowRight"); else if (dx < -30) move("ArrowLeft"); }
-      else { if (dy > 30) move("ArrowDown"); else if (dy < -30) move("ArrowUp"); }
-      touchStartRef.current = null;
-    };
-    el.addEventListener('touchstart', onTouchStart, {passive:true});
-    el.addEventListener('touchend', onTouchEnd);
-    return () => { el.removeEventListener('touchstart', onTouchStart); el.removeEventListener('touchend', onTouchEnd); };
-  }, [move]);
-
   useEffect(()=>{
     const kd=e=>{
       const map={ArrowLeft:"left",ArrowRight:"right",ArrowUp:"up",ArrowDown:"down",
@@ -1345,7 +1250,7 @@ function Game2048() {
         ))}
       </div>
       {/* Grid */}
-      <div id="game2048-canvas-area" style={{touchAction:"none"}}><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,
         background:"rgba(255,255,255,0.04)",borderRadius:10,padding:6,
         border:`1px solid ${C.line}`,width:244}}>
         {board.map((v,i)=>(
@@ -1403,8 +1308,6 @@ function XgGuesser() {
     g.addLive(pts);setFb({diff:diff.toFixed(2),correct:sc.xg,pts,guess:guess.toFixed(2)});
   };
   const next=()=>{setFb(null);const n=round+1;if(n>=ROUNDS){g.finish(g.scoreRef.current);return;}setRound(n);setGuess(.50);};
-
-  const useTimer2=(s,cb,run)=>{const[l,sl]=useState(s);const r=useRef();useEffect(()=>{sl(s);},[s]);useEffect(()=>{if(!run){clearInterval(r.current);return;}r.current=setInterval(()=>sl(t=>{if(t<=1){clearInterval(r.current);cb();return 0;}return t-1;}),1000);return()=>clearInterval(r.current);},[run,cb]);return l;};
 
   if(g.phase==="menu")return<GameMenu title="xG Guesser" icon="🎯"
     desc="Estimate expected goals (0–1) for each shot. Closer = more points. 6 shots, 70 seconds!"
@@ -1902,7 +1805,7 @@ export function SnookerGame() {
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:12}}>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{display:"block",borderRadius:12,maxWidth:"100%",height:"auto",boxShadow:"0 0 40px rgba(40,217,122,0.12)",cursor:"crosshair"}}/>
+        style={{display:"block",borderRadius:12,boxShadow:"0 0 40px rgba(40,217,122,0.12)",cursor:"crosshair"}}/>
       <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
         <b style={{color:C.text}}>Move mouse</b> to aim · <b style={{color:C.text}}>Hold SPACE</b> for power · <b style={{color:C.text}}>Release</b> to shoot
       </div>
@@ -2072,7 +1975,7 @@ export function SprintRacer() {
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:12}}>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{display:"block",borderRadius:12,maxWidth:"100%",height:"auto",boxShadow:"0 0 40px rgba(242,201,76,0.12)",cursor:"pointer"}}/>
+        style={{display:"block",borderRadius:12,boxShadow:"0 0 40px rgba(242,201,76,0.12)",cursor:"pointer"}}/>
       <div style={{fontSize:10,color:C.soft,textAlign:"center"}}>
         <b style={{color:C.text}}>Tap SPACE / Click</b> repeatedly to sprint faster than the CPU
       </div>
@@ -2306,7 +2209,6 @@ function GameCard({ game, onOpen }) {
    MAIN PAGE
    ════════════════════════════════════════════════════════ */
 export default function MiniGamesPage() {
-  const isMobile = useIsMobile();
   const [active,  setActive]  = useState(null); // open game
   const [cat,     setCat]     = useState("All");
   const [scores,  setScores]  = useState(loadAll());

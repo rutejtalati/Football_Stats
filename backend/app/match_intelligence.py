@@ -1,573 +1,1063 @@
-"""
-backend/app/match_intelligence.py  —  StatinSite Match Intelligence v2
-═══════════════════════════════════════════════════════════════════════
-Aggregates all API-Football data for a single fixture into one response.
+// ═════════════════════════════════════════════════════
+// StatinSite  –  Match Intelligence Page
+// FotMob-style  /match/:fixtureId
+// ═════════════════════════════════════════════════════
 
-Route added to main.py:
-    GET /api/match-intelligence/{fixture_id}
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
-Fetches in parallel:
-    /fixtures                     core fixture + status + venue
-    /fixtures/events              timeline events
-    /fixtures/lineups             official lineup (if available)
-    /fixtures/statistics          match stats
-    /fixtures/headtohead          last 10 meetings
-    /injuries                     injury report for this fixture
-    /fixtures/players             per-player stats (for lineup model)
-    /teams/statistics × 2         season-level team stats
-    /venues                       full venue card
-    /players/squads × 2           team squads (for predicted lineup)
-    /fixtures?team=&last=7 × 2    recent form fixtures
+const BACKEND = "https://football-stats-lw4b.onrender.com";
 
-Cache TTLs (per key prefix):
-    fixture_core      600  s   10 min
-    events            300  s    5 min (live events tick fast)
-    statistics        300  s    5 min
-    lineups          1800  s   30 min
-    h2h             86400  s   24 h
-    injuries         21600  s    6 h
-    venue           604800  s    7 days
-    team_stats       86400  s   24 h
-    squad            86400  s   24 h
-    recent_fx         3600  s    1 h
-    player_stats      1800  s   30 min
-    full               300  s    5 min  (assembled response)
-"""
+const TABS = [
+  { id: "facts",      label: "Facts"      },
+  { id: "commentary", label: "Commentary" },
+  { id: "lineups",    label: "Lineups"    },
+  { id: "stats",      label: "Stats"      },
+  { id: "h2h",        label: "H2H"        },
+  { id: "model",      label: "Model"      },
+];
 
-import os
-import time
-import asyncio
-from typing import Any, Dict, List, Optional, Tuple
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
 
-import httpx
-from app.lineup_predictor import predict_lineup, detect_formation
+function pct(v) { return v != null ? `${v}%` : "—"; }
 
-# ── API-Football ──────────────────────────────────────────────────────
-API_KEY  = os.getenv("API_FOOTBALL_KEY", "")
-BASE_URL = "https://v3.football.api-sports.io"
-HEADERS  = {"x-apisports-key": API_KEY}
-SEASON   = int(os.getenv("CURRENT_SEASON", "2025"))
-
-# ── Cache ─────────────────────────────────────────────────────────────
-_store: Dict[str, Any]   = {}
-_times: Dict[str, float] = {}
-
-_TTL: Dict[str, int] = {
-    "fixture_core":  600,
-    "events":        300,
-    "statistics":    300,
-    "lineups":      1800,
-    "h2h":         86400,
-    "injuries":    21600,
-    "venue":      604800,
-    "team_stats":  86400,
-    "squad":       86400,
-    "recent_fx":    3600,
-    "player_stats": 1800,
-    "full":          300,
+function FormDot({ result }) {
+  const colors = { W: "#34d399", D: "#f59e0b", L: "#ff5252" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      width: 22, height: 22, borderRadius: "50%",
+      background: colors[result] || "rgba(255,255,255,0.08)",
+      fontSize: 9, fontWeight: 900, color: "#fff",
+    }}>
+      {result}
+    </span>
+  );
 }
 
-def _ttl(key: str) -> int:
-    return _TTL.get(key.split(":")[0], 600)
-
-def _get(key: str) -> Optional[Any]:
-    if key in _store and time.time() - _times[key] < _ttl(key):
-        return _store[key]
-    _store.pop(key, None); _times.pop(key, None)
-    return None
-
-def _set(key: str, v: Any):
-    _store[key] = v; _times[key] = time.time()
-
-
-# ══════════════════════════════════════════════════════════════════════
-# API FETCH HELPERS
-# ══════════════════════════════════════════════════════════════════════
-
-async def _api(c: httpx.AsyncClient, ep: str, params: Dict) -> Any:
-    try:
-        r = await c.get(f"{BASE_URL}/{ep}", headers=HEADERS, params=params, timeout=14.0)
-        if r.status_code == 200:
-            body = r.json()
-            return body.get("response", []) if isinstance(body, dict) else []
-    except Exception:
-        pass
-    return []
-
-async def _fixture_core(c, fid):
-    k = f"fixture_core:{fid}"
-    if (h := _get(k)) is not None: return h
-    raw = await _api(c, "fixtures", {"id": fid})
-    v = raw[0] if isinstance(raw, list) and raw else {}
-    _set(k, v); return v
-
-async def _events(c, fid):
-    k = f"events:{fid}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "fixtures/events", {"fixture": fid})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _lineups(c, fid):
-    k = f"lineups:{fid}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "fixtures/lineups", {"fixture": fid})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _statistics(c, fid):
-    k = f"statistics:{fid}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "fixtures/statistics", {"fixture": fid})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _h2h(c, t1, t2):
-    k = f"h2h:{min(t1,t2)}-{max(t1,t2)}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "fixtures/headtohead", {"h2h": f"{t1}-{t2}", "last": 10})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _injuries(c, fid):
-    k = f"injuries:{fid}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "injuries", {"fixture": fid})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _venue(c, vid):
-    if not vid: return {}
-    k = f"venue:{vid}"
-    if (h := _get(k)) is not None: return h
-    raw = await _api(c, "venues", {"id": vid})
-    v = raw[0] if isinstance(raw, list) and raw else {}
-    _set(k, v); return v
-
-async def _team_stats(c, tid, lid):
-    k = f"team_stats:{tid}:{lid}"
-    if (h := _get(k)) is not None: return h
-    raw = await _api(c, "teams/statistics", {"team": tid, "league": lid, "season": SEASON})
-    v = raw if isinstance(raw, dict) else (raw[0] if isinstance(raw, list) and raw else {})
-    _set(k, v); return v
-
-async def _squad(c, tid):
-    k = f"squad:{tid}"
-    if (h := _get(k)) is not None: return h
-    raw = await _api(c, "players/squads", {"team": tid})
-    v = (raw[0].get("players", []) if isinstance(raw, list) and raw and isinstance(raw[0], dict) else [])
-    _set(k, v); return v
-
-async def _recent_fixtures(c, tid, lid):
-    k = f"recent_fx:{tid}:{lid}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "fixtures", {"team": tid, "league": lid, "season": SEASON, "status": "FT", "last": 7})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _player_stats_for_fixture(c, fid):
-    k = f"player_stats:{fid}"
-    if (h := _get(k)) is not None: return h
-    v = await _api(c, "fixtures/players", {"fixture": fid})
-    v = v if isinstance(v, list) else []
-    _set(k, v); return v
-
-async def _recent_lineups_for_team(c, tid, lid):
-    """Fetch lineups from last 5 completed fixtures for a team."""
-    k = f"lineups:team:{tid}:{lid}"
-    if (h := _get(k)) is not None: return h
-    recent = await _recent_fixtures(c, tid, lid)
-    result = []
-    for fx in recent[:5]:
-        fid = ((fx.get("fixture") or {}).get("id"))
-        if fid:
-            raw = await _api(c, "fixtures/lineups", {"fixture": fid, "team": tid})
-            if isinstance(raw, list) and raw:
-                result.append(raw[0])
-    _set(k, result); return result
-
-
-# ══════════════════════════════════════════════════════════════════════
-# NORMALIZERS
-# ══════════════════════════════════════════════════════════════════════
-
-def _n_header(core: Dict) -> Dict:
-    fx  = core.get("fixture", {}) or {}
-    lg  = core.get("league",  {}) or {}
-    hm  = (core.get("teams",  {}) or {}).get("home", {}) or {}
-    aw  = (core.get("teams",  {}) or {}).get("away", {}) or {}
-    gls = core.get("goals",   {}) or {}
-    sc  = core.get("score",   {}) or {}
-    vn  = fx.get("venue", {}) or {}
-    return {
-        "fixture_id":   fx.get("id"),
-        "date":         fx.get("date"),
-        "timestamp":    fx.get("timestamp"),
-        "status":       (fx.get("status") or {}).get("long", "Not Started"),
-        "status_short": (fx.get("status") or {}).get("short", "NS"),
-        "elapsed":      (fx.get("status") or {}).get("elapsed"),
-        "referee":      fx.get("referee"),
-        "timezone":     fx.get("timezone"),
-        "venue_name":   vn.get("name"),
-        "venue_city":   vn.get("city"),
-        "league":       {"id": lg.get("id"), "name": lg.get("name"), "season": lg.get("season"), "round": lg.get("round"), "logo": lg.get("logo"), "flag": lg.get("flag"), "country": lg.get("country")},
-        "home":         {"id": hm.get("id"), "name": hm.get("name"), "logo": hm.get("logo"), "winner": hm.get("winner")},
-        "away":         {"id": aw.get("id"), "name": aw.get("name"), "logo": aw.get("logo"), "winner": aw.get("winner")},
-        "score": {
-            "home": gls.get("home"), "away": gls.get("away"),
-            "ht_home":  (sc.get("halftime")  or {}).get("home"), "ht_away":  (sc.get("halftime")  or {}).get("away"),
-            "ft_home":  (sc.get("fulltime")  or {}).get("home"), "ft_away":  (sc.get("fulltime")  or {}).get("away"),
-            "et_home":  (sc.get("extratime") or {}).get("home"), "et_away":  (sc.get("extratime") or {}).get("away"),
-            "pen_home": (sc.get("penalty")   or {}).get("home"), "pen_away": (sc.get("penalty")   or {}).get("away"),
-        },
-    }
-
-
-def _n_events(raw: List) -> List[Dict]:
-    out = []
-    for e in raw or []:
-        t = e.get("team", {}) or {}; p = e.get("player", {}) or {}; a = e.get("assist", {}) or {}; tm = e.get("time", {}) or {}
-        out.append({"minute": tm.get("elapsed"), "extra": tm.get("extra"), "team_id": t.get("id"), "team_name": t.get("name"), "team_logo": t.get("logo"), "player_id": p.get("id"), "player_name": p.get("name"), "assist_id": a.get("id"), "assist_name": a.get("name"), "type": e.get("type"), "detail": e.get("detail"), "comments": e.get("comments")})
-    return sorted(out, key=lambda x: (x.get("minute") or 0, x.get("extra") or 0))
-
-
-def _n_official_lineups(raw: List) -> List[Dict]:
-    out = []
-    for lu in raw or []:
-        team = lu.get("team", {}) or {}; coach = lu.get("coach", {}) or {}
-        def _p(obj): p = (obj.get("player") or {}); return {"id": p.get("id"), "name": p.get("name"), "number": p.get("number"), "pos": p.get("pos"), "grid": p.get("grid")}
-        out.append({"team_id": team.get("id"), "team_name": team.get("name"), "team_logo": team.get("logo"), "formation": lu.get("formation"), "coach": {"id": coach.get("id"), "name": coach.get("name"), "photo": coach.get("photo")}, "start_xi": [_p(p) for p in lu.get("startXI", []) or []], "subs": [_p(p) for p in lu.get("substitutes", []) or []], "predicted": False})
-    return out
-
-
-def _n_statistics(raw: List, hid: int, aid: int) -> Dict:
-    hd, ad = {}, {}
-    for ts in raw or []:
-        tgt = hd if (ts.get("team") or {}).get("id") == hid else ad
-        for s in ts.get("statistics") or []: tgt[s.get("type", "")] = s.get("value")
-    def b(k): return {"home": hd.get(k), "away": ad.get(k)}
-    return {
-        "shots_total": b("Total Shots"), "shots_on_target": b("Shots on Goal"), "shots_off_target": b("Shots off Goal"),
-        "shots_inside_box": b("Shots insidebox"), "shots_outside_box": b("Shots outsidebox"), "shots_blocked": b("Blocked Shots"),
-        "fouls": b("Fouls"), "corner_kicks": b("Corner Kicks"), "offsides": b("Offsides"),
-        "possession": b("Ball Possession"), "yellow_cards": b("Yellow Cards"), "red_cards": b("Red Cards"),
-        "goalkeeper_saves": b("Goalkeeper Saves"), "total_passes": b("Total passes"),
-        "accurate_passes": b("Passes accurate"), "pass_accuracy": b("Passes %"), "expected_goals": b("expected_goals"),
-    }
-
-
-def _n_h2h(raw: List, hid: int, aid: int) -> Dict:
-    results = []; hw = dw = aw = 0
-    for fx in raw or []:
-        teams = fx.get("teams", {}) or {}; goals = fx.get("goals", {}) or {}; lg = fx.get("league", {}) or {}; f = fx.get("fixture", {}) or {}
-        hg = goals.get("home") or 0; ag = goals.get("away") or 0
-        h_id = (teams.get("home") or {}).get("id")
-        wid  = h_id if hg > ag else ((teams.get("away") or {}).get("id") if ag > hg else None)
-        results.append({"fixture_id": f.get("id"), "date": (f.get("date") or "")[:10], "league": lg.get("name"), "home_team": (teams.get("home") or {}).get("name"), "home_logo": (teams.get("home") or {}).get("logo"), "away_team": (teams.get("away") or {}).get("name"), "away_logo": (teams.get("away") or {}).get("logo"), "home_goals": hg, "away_goals": ag})
-        if wid == hid: hw += 1
-        elif wid == aid: aw += 1
-        else: dw += 1
-    return {"count": len(results), "home_wins": hw, "draws": dw, "away_wins": aw, "results": results}
-
-
-def _n_injuries(raw: List, hid: int, aid: int) -> Dict:
-    hi, ai = [], []
-    for inj in raw or []:
-        p = inj.get("player") or {}; t = inj.get("team") or {}; tid = t.get("id")
-        entry = {"player_id": p.get("id"), "player_name": p.get("name"), "player_photo": p.get("photo"), "type": p.get("type"), "reason": p.get("reason")}
-        if tid == hid: hi.append(entry)
-        elif tid == aid: ai.append(entry)
-    return {"home": hi, "away": ai}
-
-
-def _n_venue(raw: Dict) -> Dict:
-    if not raw: return {}
-    return {"id": raw.get("id"), "name": raw.get("name"), "city": raw.get("city"), "country": raw.get("country"), "capacity": raw.get("capacity"), "surface": raw.get("surface"), "image": raw.get("image"), "address": raw.get("address")}
-
-
-def _n_team_stats(raw: Dict) -> Dict:
-    if not raw: return {}
-    gf = (raw.get("goals") or {}).get("for",     {}) or {}
-    ga = (raw.get("goals") or {}).get("against",  {}) or {}
-    fx = raw.get("fixtures", {}) or {}
-    return {
-        "played":   (fx.get("played")  or {}).get("total"), "wins":   (fx.get("wins")    or {}).get("total"),
-        "draws":    (fx.get("draws")   or {}).get("total"), "losses": (fx.get("loses")   or {}).get("total"),
-        "goals_for_avg":       (gf.get("average") or {}).get("total"),
-        "goals_against_avg":   (ga.get("average") or {}).get("total"),
-        "goals_for_total":     (gf.get("total")   or {}).get("total"),
-        "goals_against_total": (ga.get("total")   or {}).get("total"),
-        "clean_sheets":        (raw.get("clean_sheet")    or {}).get("total"),
-        "failed_to_score":     (raw.get("failed_to_score") or {}).get("total"),
-        "form":                raw.get("form"),
-        "lineups_used": [{"formation": l.get("formation"), "played": l.get("played")} for l in (raw.get("lineups") or [])[:4]],
-        "avg_goals_home": (gf.get("average") or {}).get("home"),
-        "avg_goals_away": (gf.get("average") or {}).get("away"),
-        "biggest_wins":   (raw.get("biggest") or {}).get("wins"),
-        "biggest_losses": (raw.get("biggest") or {}).get("loses"),
-    }
-
-
-def _n_recent_form(fxs: List, tid: int) -> List[Dict]:
-    out = []
-    for fx in fxs or []:
-        teams = fx.get("teams", {}) or {}; goals = fx.get("goals", {}) or {}; lg = fx.get("league", {}) or {}; f = fx.get("fixture", {}) or {}
-        hm = teams.get("home") or {}; aw = teams.get("away") or {}
-        is_home = hm.get("id") == tid
-        gf = (goals.get("home") if is_home else goals.get("away")) or 0
-        ga = (goals.get("away") if is_home else goals.get("home")) or 0
-        opp = (aw if is_home else hm).get("name", "")
-        result = "W" if gf > ga else ("L" if gf < ga else "D")
-        out.append({"date": (f.get("date") or "")[:10], "opponent": opp, "home_away": "H" if is_home else "A", "goals_for": gf, "goals_against": ga, "result": result, "league": lg.get("name")})
-    return out
-
-
-# ══════════════════════════════════════════════════════════════════════
-# INSIGHTS ENGINE
-# ══════════════════════════════════════════════════════════════════════
-
-def _generate_insights(header, h2h, home_stats, away_stats, home_form, away_form, injuries, prediction) -> List[Dict]:
-    insights = []
-    hname = (header.get("home") or {}).get("name", "Home")
-    aname = (header.get("away") or {}).get("name", "Away")
-
-    def pts(form_list):
-        return sum(3 if r.get("result") == "W" else (1 if r.get("result") == "D" else 0) for r in form_list[:5])
-
-    hp5 = pts(home_form); ap5 = pts(away_form)
-
-    # Form trends
-    if hp5 >= 12:
-        insights.append({"type": "form", "icon": "🔥", "title": f"{hname} in outstanding form", "body": f"{hname} have collected {hp5}/15 points in their last 5 matches.", "severity": "positive"})
-    elif hp5 <= 4:
-        insights.append({"type": "form", "icon": "⚠️", "title": f"{hname} struggling", "body": f"{hname} have taken only {hp5}/15 points — under pressure at home.", "severity": "warning"})
-    if ap5 >= 12:
-        insights.append({"type": "form", "icon": "🔥", "title": f"{aname} arriving in form", "body": f"{aname} have taken {ap5}/15 points recently — dangerous travelers.", "severity": "positive"})
-    elif ap5 <= 4:
-        insights.append({"type": "form", "icon": "📉", "title": f"{aname} poor run", "body": f"{aname} have won only {sum(1 for r in away_form[:5] if r.get('result')=='W')} of their last 5.", "severity": "warning"})
-
-    # H2H trends
-    cnt = h2h.get("count", 0)
-    if cnt >= 5:
-        hw = h2h.get("home_wins", 0); aw_h2h = h2h.get("away_wins", 0); dw = h2h.get("draws", 0)
-        tot = hw + aw_h2h + dw or 1
-        if hw / tot >= 0.6:
-            insights.append({"type": "h2h", "icon": "📊", "title": f"{hname} dominate this fixture", "body": f"{hname} have won {hw} of the last {cnt} meetings ({round(hw/tot*100)}%).", "severity": "info"})
-        elif aw_h2h / tot >= 0.6:
-            insights.append({"type": "h2h", "icon": "📊", "title": f"{aname} hold strong H2H edge", "body": f"{aname} have won {aw_h2h} of the last {cnt} meetings ({round(aw_h2h/tot*100)}%).", "severity": "info"})
-        total_g = sum((r.get("home_goals", 0) + r.get("away_goals", 0)) for r in h2h.get("results", []))
-        avg_g = total_g / cnt
-        if avg_g >= 3.0:
-            insights.append({"type": "goals", "icon": "⚽", "title": "Typically a high-scoring H2H", "body": f"These teams average {avg_g:.1f} goals per meeting. Expect an open game.", "severity": "info"})
-        elif avg_g <= 1.5:
-            insights.append({"type": "goals", "icon": "🔒", "title": "Tight H2H historically", "body": f"Only {avg_g:.1f} goals per game on average — tactical battle expected.", "severity": "info"})
-
-    # Injuries
-    h_inj = len(injuries.get("home", [])); a_inj = len(injuries.get("away", []))
-    if h_inj >= 3:
-        insights.append({"type": "injury", "icon": "🏥", "title": f"{hname} hit by injuries", "body": f"{hname} are missing {h_inj} players — could disrupt their usual shape.", "severity": "warning"})
-    elif h_inj == 1 or h_inj == 2:
-        insights.append({"type": "injury", "icon": "🩹", "title": f"{hname} have {h_inj} doubt(s)", "body": f"{', '.join(p['player_name'] for p in injuries['home'])} listed as doubtful.", "severity": "neutral"})
-    if a_inj >= 3:
-        insights.append({"type": "injury", "icon": "🏥", "title": f"{aname} travelling with depleted squad", "body": f"{aname} are without {a_inj} first-team players.", "severity": "warning"})
-
-    # Model edge
-    pred = prediction or {}
-    hp = pred.get("p_home_win", pred.get("home_win_prob", 0))
-    ap = pred.get("p_away_win", pred.get("away_win_prob", 0))
-    conf = pred.get("confidence", 0)
-    if conf >= 68:
-        fav = hname if hp > ap else aname
-        fav_pct = round(max(hp, ap) * 100)
-        insights.append({"type": "model", "icon": "🤖", "title": f"Strong model signal for {fav}", "body": f"Model rates {fav} at {fav_pct}% with {conf}% confidence — above-average clarity.", "severity": "positive"})
-
-    # Betting markets
-    btts = pred.get("btts", 0)
-    if btts >= 0.65:
-        insights.append({"type": "market", "icon": "🎯", "title": "Both teams to score likely", "body": f"Model rates BTTS at {round(btts*100)}% — both attacks look sharp.", "severity": "positive"})
-    o25 = pred.get("over_2_5", 0)
-    if o25 >= 0.68:
-        insights.append({"type": "market", "icon": "📈", "title": "Over 2.5 goals favoured", "body": f"Model puts over 2.5 goals at {round(o25*100)}% based on combined attack/defence rates.", "severity": "positive"})
-
-    # Defensive context
-    h_cs = (home_stats.get("clean_sheets") or 0); h_pl = (home_stats.get("played") or 1)
-    if h_cs / h_pl >= 0.4:
-        insights.append({"type": "defence", "icon": "🛡️", "title": f"{hname} solid at home", "body": f"{h_cs} clean sheets in {h_pl} games ({round(h_cs/h_pl*100)}%) — hard to break down.", "severity": "info"})
-
-    return insights[:8]
-
-
-# ══════════════════════════════════════════════════════════════════════
-# PREDICTED LINEUPS BUILDER
-# ══════════════════════════════════════════════════════════════════════
-
-def _build_predicted_lineup_response(
-    predicted: Dict, team_id: int, team_name: str, team_logo: str
-) -> Dict:
-    """Wrap a predict_lineup() result in the standard lineup response shape."""
-    return {
-        "team_id":    team_id,
-        "team_name":  team_name,
-        "team_logo":  team_logo,
-        "formation":  predicted["formation"],
-        "coach":      {},
-        "start_xi": [
-            {"id": p["player_id"], "name": p["name"], "number": p.get("number"), "pos": p["pos"], "grid": p["grid"], "confidence": p["confidence"], "reason": p["reason"]}
-            for p in predicted["start_xi"]
-        ],
-        "subs": [
-            {"id": p["player_id"], "name": p["name"], "number": p.get("number"), "pos": p["pos"], "confidence": p["confidence"], "reason": p["reason"]}
-            for p in predicted["bench"]
-        ],
-        "unavailable": predicted.get("unavailable", []),
-        "predicted":   True,
-        "confidence":  predicted["confidence"],
-    }
-
-
-# ══════════════════════════════════════════════════════════════════════
-# MAIN ENTRY POINT
-# ══════════════════════════════════════════════════════════════════════
-
-async def get_match_intelligence(
-    fixture_id: int,
-    prediction: Optional[Dict] = None,
-) -> Dict:
-    """
-    Unified match intelligence response for one fixture.
-
-    Behavior:
-      - Live / completed: uses official lineup from API-Football
-      - Upcoming (NS / TBD): runs lineup prediction model
-      - All cases: generates insights and merges prediction from caller
-    """
-    full_key = f"full:{fixture_id}"
-    if (cached := _get(full_key)) is not None:
-        return cached
-
-    async with httpx.AsyncClient() as c:
-
-        # ── Phase 1: core (sequential — need IDs) ────────────────────
-        core = await _fixture_core(c, fixture_id)
-        if not core:
-            return {"error": "Fixture not found", "fixture_id": fixture_id}
-
-        home_id  = ((core.get("teams") or {}).get("home") or {}).get("id", 0)
-        away_id  = ((core.get("teams") or {}).get("away") or {}).get("id", 0)
-        lid      = (core.get("league") or {}).get("id", 0)
-        venue_id = ((core.get("fixture") or {}).get("venue") or {}).get("id", 0)
-        s_short  = ((core.get("fixture") or {}).get("status") or {}).get("short", "NS")
-        upcoming = s_short in ("NS", "TBD", "PST")
-
-        # ── Phase 2: fire all requests in parallel ────────────────────
-        (
-            events_raw, lineups_raw, stats_raw,
-            h2h_raw, injuries_raw,
-            h_ts_raw, a_ts_raw,
-            venue_raw,
-            h_recent_fx, a_recent_fx,
-        ) = await asyncio.gather(
-            _events(c, fixture_id),
-            _lineups(c, fixture_id),
-            _statistics(c, fixture_id),
-            _h2h(c, home_id, away_id),
-            _injuries(c, fixture_id),
-            _team_stats(c, home_id, lid),
-            _team_stats(c, away_id, lid),
-            _venue(c, venue_id),
-            _recent_fixtures(c, home_id, lid),
-            _recent_fixtures(c, away_id, lid),
-        )
-
-        # ── Phase 3: predicted lineup (upcoming only) ─────────────────
-        home_predicted = None
-        away_predicted = None
-
-        if upcoming and not lineups_raw:
-            (
-                h_squad, a_squad,
-                h_recent_lu, a_recent_lu,
-            ) = await asyncio.gather(
-                _squad(c, home_id),
-                _squad(c, away_id),
-                _recent_lineups_for_team(c, home_id, lid),
-                _recent_lineups_for_team(c, away_id, lid),
-            )
-
-            # Enrich recent fixtures with per-player stats
-            async def enrich(fx_list):
-                out = []
-                for fx in fx_list[:5]:
-                    fid = ((fx.get("fixture") or {}).get("id"))
-                    if fid:
-                        ps = await _player_stats_for_fixture(c, fid)
-                        out.append({**fx, "players": ps})
-                    else:
-                        out.append(fx)
-                return out
-
-            h_enriched, a_enriched = await asyncio.gather(
-                enrich(h_recent_fx), enrich(a_recent_fx)
-            )
-
-            home_inj_list = [
-                {"player": {"id": p["player_id"], "type": p.get("type", "Injury")}}
-                for p in _n_injuries(injuries_raw, home_id, away_id).get("home", [])
-            ]
-            away_inj_list = [
-                {"player": {"id": p["player_id"], "type": p.get("type", "Injury")}}
-                for p in _n_injuries(injuries_raw, home_id, away_id).get("away", [])
-            ]
-
-            home_predicted = predict_lineup(h_squad, h_enriched, h_recent_lu, home_inj_list)
-            away_predicted = predict_lineup(a_squad, a_enriched, a_recent_lu, away_inj_list)
-
-    # ── Normalise ─────────────────────────────────────────────────────
-    header    = _n_header(core)
-    events    = _n_events(events_raw)
-    stats     = _n_statistics(stats_raw, home_id, away_id)
-    h2h       = _n_h2h(h2h_raw, home_id, away_id)
-    injuries  = _n_injuries(injuries_raw, home_id, away_id)
-    venue     = _n_venue(venue_raw)
-    h_season  = _n_team_stats(h_ts_raw)
-    a_season  = _n_team_stats(a_ts_raw)
-    h_form    = _n_recent_form(h_recent_fx, home_id)
-    a_form    = _n_recent_form(a_recent_fx, away_id)
-
-    # ── Lineups: official → predicted → empty ─────────────────────────
-    if lineups_raw:
-        lineups = _n_official_lineups(lineups_raw)
-    elif home_predicted and away_predicted:
-        lineups = [
-            _build_predicted_lineup_response(home_predicted, home_id, header["home"]["name"], header["home"]["logo"]),
-            _build_predicted_lineup_response(away_predicted, away_id, header["away"]["name"], header["away"]["logo"]),
-        ]
-    else:
-        lineups = []
-
-    insights = _generate_insights(header, h2h, h_season, a_season, h_form, a_form, injuries, prediction or {})
-
-    result = {
-        "header":            header,
-        "events":            events,
-        "lineups":           lineups,
-        "statistics":        stats,
-        "h2h":               h2h,
-        "injuries":          injuries,
-        "venue":             venue,
-        "home_season_stats": h_season,
-        "away_season_stats": a_season,
-        "home_recent_form":  h_form,
-        "away_recent_form":  a_form,
-        "insights":          insights,
-        "prediction":        prediction or {},
-        "_meta": {
-            "fixture_id":           fixture_id,
-            "is_upcoming":          upcoming,
-            "has_official_lineups": bool(lineups_raw),
-            "fetched_at":           time.time(),
-        },
-    }
-
-    _set(full_key, result)
-    return result
+function SectionTitle({ children }) {
+  return (
+    <div style={{
+      fontSize: 9, fontWeight: 900, letterSpacing: "0.14em",
+      color: "#3a5070", textTransform: "uppercase",
+      marginBottom: 12, marginTop: 24,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Card({ children, style }) {
+  return (
+    <div style={{
+      background: "linear-gradient(160deg,#0d1525,#080e1a)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 14,
+      padding: 16,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Stat Bar
+// ─────────────────────────────────────────────
+
+function StatBar({ label, home, away }) {
+  const total = (Number(home) || 0) + (Number(away) || 0);
+  const homePct = total > 0 ? Math.round((Number(home) / total) * 100) : 50;
+  const awayPct = 100 - homePct;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between",
+        fontSize: 11, fontWeight: 700, color: "#9fb4d6",
+        marginBottom: 5,
+      }}>
+        <span style={{ color: "#60a5fa" }}>{home ?? "—"}</span>
+        <span style={{ color: "#4a6080", fontSize: 9, letterSpacing: "0.06em" }}>{label}</span>
+        <span style={{ color: "#f97316" }}>{away ?? "—"}</span>
+      </div>
+      <div style={{
+        display: "flex", height: 5, borderRadius: 999, overflow: "hidden",
+        background: "rgba(255,255,255,0.04)",
+        gap: 1,
+      }}>
+        <div style={{
+          width: `${homePct}%`, height: "100%",
+          background: "linear-gradient(90deg,#1d4ed8,#60a5fa)",
+          borderRadius: "999px 0 0 999px", transition: "width 0.8s ease",
+        }} />
+        <div style={{
+          width: `${awayPct}%`, height: "100%",
+          background: "linear-gradient(90deg,#ea6c1a,#f97316)",
+          borderRadius: "0 999px 999px 0", transition: "width 0.8s ease",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// FACTS TAB
+// ─────────────────────────────────────────────
+
+function FactsTab({ data }) {
+  const { header, insights = [], home_recent_form = [], away_recent_form = [] } = data;
+
+  return (
+    <div>
+      <SectionTitle>Recent Form</SectionTitle>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7fa3", marginBottom: 8 }}>
+              {header?.home_team}
+            </div>
+            <div style={{ display: "flex", gap: 5 }}>
+              {home_recent_form.slice(0, 5).map((r, i) => <FormDot key={i} result={r} />)}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7fa3", marginBottom: 8 }}>
+              {header?.away_team}
+            </div>
+            <div style={{ display: "flex", gap: 5, justifyContent: "flex-end" }}>
+              {away_recent_form.slice(0, 5).map((r, i) => <FormDot key={i} result={r} />)}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {insights.length > 0 && (
+        <>
+          <SectionTitle>Key Insights</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {insights.map((insight, i) => (
+              <Card key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <span style={{
+                  fontSize: 16, lineHeight: 1, marginTop: 1,
+                }}>
+                  {["⚡","📊","🎯","🔥","💡"][i % 5]}
+                </span>
+                <span style={{ fontSize: 13, color: "#c8d8f0", lineHeight: 1.5 }}>
+                  {insight}
+                </span>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// EVENT ICON
+// ─────────────────────────────────────────────
+
+function EventIcon({ type, detail }) {
+  const t = (type || "").toLowerCase();
+  const d = (detail || "").toLowerCase();
+
+  if (t === "goal" && d.includes("own"))    return <span title="Own Goal">⚽🔴</span>;
+  if (t === "goal" && d.includes("pen"))    return <span title="Penalty">⚽🎯</span>;
+  if (t === "goal")                          return <span title="Goal">⚽</span>;
+  if (t === "card" && d.includes("yellow")) return <span title="Yellow Card">🟨</span>;
+  if (t === "card" && d.includes("red"))    return <span title="Red Card">🟥</span>;
+  if (t === "card" && d.includes("yellow red")) return <span title="Second Yellow">🟨🟥</span>;
+  if (t === "subst")                         return <span title="Substitution">🔄</span>;
+  if (t === "var")                           return <span title="VAR">📺</span>;
+  return <span>•</span>;
+}
+
+// ─────────────────────────────────────────────
+// COMMENTARY TAB
+// ─────────────────────────────────────────────
+
+function CommentaryTab({ data }) {
+  const events = [...(data.events || [])].sort((a, b) => (b.minute || 0) - (a.minute || 0));
+
+  if (events.length === 0) {
+    return (
+      <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center", paddingTop: 40 }}>
+        No events recorded yet.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {events.map((e, i) => {
+        const isHome = e.team === data.header?.home_team || e.team_id === data.header?.home_id;
+        return (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.04)",
+            }}
+          >
+            {/* minute */}
+            <span style={{
+              fontSize: 11, fontWeight: 900,
+              color: "#3a5070",
+              minWidth: 32, flexShrink: 0,
+              paddingTop: 1,
+            }}>
+              {e.minute}{e.extra_minute ? `+${e.extra_minute}` : ""}'
+            </span>
+
+            {/* icon */}
+            <span style={{ fontSize: 15, flexShrink: 0 }}>
+              <EventIcon type={e.type} detail={e.detail} />
+            </span>
+
+            {/* detail */}
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700,
+                color: isHome ? "#60a5fa" : "#f97316",
+              }}>
+                {e.player}
+              </div>
+              {e.assist && (
+                <div style={{ fontSize: 10, color: "#3a5070", marginTop: 2 }}>
+                  Assist: {e.assist}
+                </div>
+              )}
+              {e.detail && (
+                <div style={{ fontSize: 10, color: "#4a6080", marginTop: 1 }}>
+                  {e.detail}
+                </div>
+              )}
+            </div>
+
+            {/* team side */}
+            <span style={{
+              fontSize: 9, fontWeight: 800,
+              color: isHome ? "#1d4ed8" : "#c2510a",
+              opacity: 0.7,
+              letterSpacing: "0.06em",
+              flexShrink: 0,
+            }}>
+              {isHome ? "HOME" : "AWAY"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PITCH + LINEUPS TAB
+// ─────────────────────────────────────────────
+
+function PlayerMarker({ player, isHome }) {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+    }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: "50%",
+        background: isHome
+          ? "linear-gradient(135deg,#1d4ed8,#3b82f6)"
+          : "linear-gradient(135deg,#c2410c,#f97316)",
+        border: "2px solid rgba(255,255,255,0.2)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 9, fontWeight: 900, color: "#fff",
+      }}>
+        {player.number || "?"}
+      </div>
+      <span style={{
+        fontSize: 9, fontWeight: 700,
+        color: "#c8d8f0",
+        maxWidth: 60, textAlign: "center",
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {player.name?.split(" ").pop()}
+      </span>
+    </div>
+  );
+}
+
+function LineupsTab({ data }) {
+  const { lineups = {} } = data;
+  const home = lineups.home || {};
+  const away = lineups.away || {};
+
+  const homePlayers  = home.startXI  || [];
+  const awayPlayers  = away.startXI  || [];
+  const homeBench    = home.bench    || [];
+  const awayBench    = away.bench    || [];
+
+  // Group by row for basic pitch layout
+  function groupByRow(players) {
+    const rows = {};
+    players.forEach(p => {
+      const row = p.grid?.split(":")[0] || "1";
+      if (!rows[row]) rows[row] = [];
+      rows[row].push(p);
+    });
+    return Object.values(rows);
+  }
+
+  const homeRows = groupByRow(homePlayers);
+  const awayRows = groupByRow(awayPlayers);
+
+  return (
+    <div>
+      {/* Pitch */}
+      <div style={{
+        background: "linear-gradient(180deg,#0a2010 0%,#0d2c14 50%,#0a2010 100%)",
+        borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)",
+        padding: "20px 16px",
+        position: "relative", overflow: "hidden",
+        marginBottom: 20,
+      }}>
+        {/* pitch lines */}
+        <div style={{
+          position: "absolute", inset: 0, opacity: 0.12,
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)
+          `,
+          backgroundSize: "40px 40px",
+        }} />
+        <div style={{
+          position: "absolute", top: "50%", left: "5%", right: "5%",
+          height: 1, background: "rgba(255,255,255,0.12)",
+        }} />
+
+        {/* Formation labels */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, position: "relative" }}>
+          <span style={{ fontSize: 10, fontWeight: 900, color: "#3b82f6", opacity: 0.7 }}>
+            {home.formation || "—"}  {home.team_name}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 900, color: "#f97316", opacity: 0.7 }}>
+            {away.team_name}  {away.formation || "—"}
+          </span>
+        </div>
+
+        {homePlayers.length === 0 && awayPlayers.length === 0 ? (
+          <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
+            Lineups not yet announced.
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 12 }}>
+            {/* Home XI */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+              {homeRows.map((row, ri) => (
+                <div key={ri} style={{ display: "flex", justifyContent: "space-around" }}>
+                  {row.map((p, pi) => <PlayerMarker key={pi} player={p} isHome={true} />)}
+                </div>
+              ))}
+            </div>
+            {/* divider */}
+            <div style={{ width: 1, background: "rgba(255,255,255,0.08)" }} />
+            {/* Away XI */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column-reverse", gap: 12 }}>
+              {awayRows.map((row, ri) => (
+                <div key={ri} style={{ display: "flex", justifyContent: "space-around" }}>
+                  {row.map((p, pi) => <PlayerMarker key={pi} player={p} isHome={false} />)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bench */}
+      {(homeBench.length > 0 || awayBench.length > 0) && (
+        <>
+          <SectionTitle>Bench</SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <Card>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#3b82f6", marginBottom: 10 }}>
+                {home.team_name}
+              </div>
+              {homeBench.map((p, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "5px 0",
+                  borderBottom: i < homeBench.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700,
+                    color: "#3a5070", minWidth: 18,
+                  }}>{p.number}</span>
+                  <span style={{ fontSize: 11, color: "#9fb4d6" }}>{p.name}</span>
+                </div>
+              ))}
+            </Card>
+            <Card>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#f97316", marginBottom: 10 }}>
+                {away.team_name}
+              </div>
+              {awayBench.map((p, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "5px 0",
+                  borderBottom: i < awayBench.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700,
+                    color: "#3a5070", minWidth: 18,
+                  }}>{p.number}</span>
+                  <span style={{ fontSize: 11, color: "#9fb4d6" }}>{p.name}</span>
+                </div>
+              ))}
+            </Card>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// STATS TAB
+// ─────────────────────────────────────────────
+
+const STAT_LABELS = {
+  "Ball Possession":          "Possession %",
+  "expected_goals":           "Expected Goals (xG)",
+  "Total Shots":              "Total Shots",
+  "Shots on Goal":            "Shots on Target",
+  "Shots off Goal":           "Shots off Target",
+  "Blocked Shots":            "Blocked Shots",
+  "Corner Kicks":             "Corners",
+  "Fouls":                    "Fouls",
+  "Yellow Cards":             "Yellow Cards",
+  "Red Cards":                "Red Cards",
+  "Total passes":             "Total Passes",
+  "Passes accurate":          "Accurate Passes",
+  "Passes %":                 "Pass Accuracy %",
+  "Goalkeeper Saves":         "Saves",
+  "Offsides":                 "Offsides",
+};
+
+function StatsTab({ data }) {
+  const stats = data.statistics || {};
+  const homeStats = stats.home || [];
+  const awayStats = stats.away || [];
+
+  // Merge into { label: { home, away } }
+  const merged = {};
+  homeStats.forEach(s => {
+    const key = s.type;
+    if (!merged[key]) merged[key] = {};
+    merged[key].home = s.value;
+  });
+  awayStats.forEach(s => {
+    const key = s.type;
+    if (!merged[key]) merged[key] = {};
+    merged[key].away = s.value;
+  });
+
+  const entries = Object.entries(merged);
+
+  if (entries.length === 0) {
+    return (
+      <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center", paddingTop: 40 }}>
+        Statistics not yet available.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Team labels */}
+      <div style={{
+        display: "flex", justifyContent: "space-between",
+        marginBottom: 16,
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#60a5fa" }}>
+          {data.header?.home_team}
+        </span>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#f97316" }}>
+          {data.header?.away_team}
+        </span>
+      </div>
+
+      <Card>
+        {entries.map(([key, val]) => (
+          <StatBar
+            key={key}
+            label={STAT_LABELS[key] || key}
+            home={val.home}
+            away={val.away}
+          />
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// H2H TAB
+// ─────────────────────────────────────────────
+
+function H2HTab({ data }) {
+  const h2h = data.h2h || {};
+  const matches = h2h.matches || [];
+  const summary = h2h.summary || {};
+
+  return (
+    <div>
+      {/* Summary */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", textAlign: "center" }}>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#60a5fa" }}>
+              {summary.home_wins ?? "—"}
+            </div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+              {data.header?.home_team} Wins
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f6ff" }}>
+              {summary.draws ?? "—"}
+            </div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>Draws</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#f97316" }}>
+              {summary.away_wins ?? "—"}
+            </div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+              {data.header?.away_team} Wins
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Match list */}
+      <SectionTitle>Previous Meetings</SectionTitle>
+      {matches.length === 0 ? (
+        <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center" }}>No H2H data.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {matches.map((m, i) => (
+            <Card key={i} style={{ padding: "10px 14px" }}>
+              <div style={{
+                display: "flex", alignItems: "center",
+                gap: 8, fontSize: 11,
+              }}>
+                <span style={{ fontSize: 9, color: "#3a5070", minWidth: 72 }}>
+                  {m.date ? new Date(m.date).toLocaleDateString([], { year: "2-digit", month: "short", day: "numeric" }) : "—"}
+                </span>
+                <span style={{ flex: 1, color: "#9fb4d6", textAlign: "right" }}>
+                  {m.home_team}
+                </span>
+                <span style={{
+                  fontWeight: 900, color: "#f0f6ff",
+                  padding: "2px 10px",
+                  background: "rgba(255,255,255,0.06)",
+                  borderRadius: 6, fontSize: 13,
+                  minWidth: 48, textAlign: "center",
+                }}>
+                  {m.home_score} – {m.away_score}
+                </span>
+                <span style={{ flex: 1, color: "#9fb4d6" }}>
+                  {m.away_team}
+                </span>
+                <span style={{ fontSize: 9, color: "#3a5070", minWidth: 60, textAlign: "right" }}>
+                  {m.league}
+                </span>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Probability Gauge
+// ─────────────────────────────────────────────
+
+function ProbGauge({ label, value, color }) {
+  return (
+    <div style={{
+      flex: 1,
+      display: "flex", flexDirection: "column", alignItems: "center",
+      gap: 6,
+    }}>
+      <div style={{
+        width: 80, height: 80, borderRadius: "50%",
+        background: `conic-gradient(${color} ${value * 3.6}deg, rgba(255,255,255,0.05) 0deg)`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative",
+      }}>
+        <div style={{
+          width: 60, height: 60, borderRadius: "50%",
+          background: "#080e1a",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 18, fontWeight: 900, color: color,
+        }}>
+          {value}%
+        </div>
+      </div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#3a5070", textAlign: "center" }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MODEL TAB
+// ─────────────────────────────────────────────
+
+function ModelTab({ data }) {
+  const pred = data.prediction || {};
+
+  return (
+    <div>
+      {/* Win probabilities */}
+      <SectionTitle>Win Probabilities</SectionTitle>
+      <Card>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <ProbGauge label={`${data.header?.home_team} Win`} value={pred.home_win ?? 0} color="#60a5fa" />
+          <ProbGauge label="Draw"                            value={pred.draw      ?? 0} color="#f0f6ff" />
+          <ProbGauge label={`${data.header?.away_team} Win`} value={pred.away_win ?? 0} color="#f97316" />
+        </div>
+      </Card>
+
+      {/* xG */}
+      {(pred.xg_home != null || pred.xg_away != null) && (
+        <>
+          <SectionTitle>Expected Goals</SectionTitle>
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#60a5fa" }}>
+                  {pred.xg_home}
+                </div>
+                <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+                  {data.header?.home_team}
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: "#3a5070", fontWeight: 700 }}>xG</div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#f97316" }}>
+                  {pred.xg_away}
+                </div>
+                <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+                  {data.header?.away_team}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {/* Markets */}
+      <SectionTitle>Markets</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {[
+          { label: "Over 2.5 Goals",  value: pred.over25 },
+          { label: "BTTS",            value: pred.btts   },
+          { label: "Under 2.5 Goals", value: pred.under25 != null ? pred.under25 : pred.over25 != null ? 100 - pred.over25 : null },
+          { label: "Clean Sheet (H)", value: pred.clean_sheet_home },
+        ].filter(m => m.value != null).map((m, i) => (
+          <Card key={i} style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#34d399" }}>{m.value}%</div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>{m.label}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Top scorelines */}
+      {pred.scorelines?.length > 0 && (
+        <>
+          <SectionTitle>Top Predicted Scorelines</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {pred.scorelines.slice(0, 5).map((s, i) => (
+              <Card key={i} style={{
+                display: "flex", justifyContent: "space-between",
+                alignItems: "center", padding: "8px 14px",
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 900, color: "#f0f6ff" }}>
+                  {s.score}
+                </span>
+                <div style={{
+                  height: 4, flex: 1, margin: "0 14px",
+                  background: "rgba(255,255,255,0.04)", borderRadius: 999, overflow: "hidden",
+                }}>
+                  <div style={{
+                    width: `${s.probability}%`, height: "100%",
+                    background: "linear-gradient(90deg,#34d399,#60a5fa)",
+                  }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#34d399" }}>
+                  {s.probability}%
+                </span>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// RIGHT SIDEBAR
+// ─────────────────────────────────────────────
+
+function Sidebar({ data }) {
+  const { venue, prediction, home_season_stats, away_season_stats, insights = [], header } = data;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+      {/* Venue */}
+      {venue && (
+        <Card>
+          <SectionTitle>Venue</SectionTitle>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#c8d8f0", marginBottom: 6 }}>
+            {venue.name}
+          </div>
+          <div style={{ fontSize: 11, color: "#4a6080", lineHeight: 1.8 }}>
+            {venue.city && <div>📍 {venue.city}</div>}
+            {venue.capacity && <div>🏟 {Number(venue.capacity).toLocaleString()} capacity</div>}
+            {venue.surface && <div>🌿 {venue.surface}</div>}
+          </div>
+        </Card>
+      )}
+
+      {/* Quick probabilities */}
+      {prediction && (
+        <Card>
+          <SectionTitle>Probabilities</SectionTitle>
+          {[
+            { label: header?.home_team + " Win", val: prediction.home_win, color: "#60a5fa" },
+            { label: "Draw",                     val: prediction.draw,     color: "#f0f6ff" },
+            { label: header?.away_team + " Win", val: prediction.away_win, color: "#f97316" },
+          ].map((p, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between",
+                fontSize: 10, fontWeight: 700, color: "#6b7fa3", marginBottom: 4,
+              }}>
+                <span>{p.label}</span>
+                <span style={{ color: p.color }}>{p.val ?? "—"}%</span>
+              </div>
+              <div style={{
+                height: 4, background: "rgba(255,255,255,0.04)",
+                borderRadius: 999, overflow: "hidden",
+              }}>
+                <div style={{
+                  width: `${p.val || 0}%`, height: "100%",
+                  background: p.color, opacity: 0.7,
+                  transition: "width 0.8s ease",
+                }} />
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Season form */}
+      {(home_season_stats || away_season_stats) && (
+        <Card>
+          <SectionTitle>Season Form</SectionTitle>
+          {[
+            { team: header?.home_team, stats: home_season_stats, color: "#60a5fa" },
+            { team: header?.away_team, stats: away_season_stats, color: "#f97316" },
+          ].map(({ team, stats, color }, i) => stats && (
+            <div key={i} style={{ marginBottom: i === 0 ? 14 : 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color, marginBottom: 6 }}>{team}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4 }}>
+                {[
+                  { label: "P", val: stats.played },
+                  { label: "W", val: stats.wins   },
+                  { label: "D", val: stats.draws  },
+                  { label: "L", val: stats.losses },
+                ].map((s, j) => (
+                  <div key={j} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#f0f6ff" }}>{s.val ?? "—"}</div>
+                    <div style={{ fontSize: 8, color: "#3a5070", fontWeight: 700 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Top insights */}
+      {insights.length > 0 && (
+        <Card>
+          <SectionTitle>Top Insights</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {insights.slice(0, 3).map((ins, i) => (
+              <div key={i} style={{
+                fontSize: 11, color: "#7a9bc0", lineHeight: 1.5,
+                paddingLeft: 10,
+                borderLeft: "2px solid rgba(96,165,250,0.3)",
+              }}>
+                {ins}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────
+
+export default function MatchIntelligencePage() {
+  const { fixtureId } = useParams();
+  const navigate      = useNavigate();
+
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+  const [tab,     setTab]     = useState("facts");
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(d => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [fixtureId]);
+
+  if (loading) {
+    return (
+      <div style={{
+        background: "#060a12", minHeight: "100vh",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 16,
+      }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          border: "2px solid rgba(96,165,250,0.2)",
+          borderTopColor: "#60a5fa",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <div style={{ color: "#4a6080", fontSize: 13 }}>Loading match intelligence…</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        background: "#060a12", minHeight: "100vh",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 16, padding: 24,
+      }}>
+        <div style={{ color: "#ff5252", fontSize: 14 }}>Failed to load: {error}</div>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "#9fb4d6", borderRadius: 8, padding: "8px 18px",
+            cursor: "pointer", fontSize: 12,
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+    );
+  }
+
+  const header = data?.header || {};
+  const isLive = ["1H","2H","HT","ET","BT","P"].includes(header.status);
+
+  return (
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse {
+          0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+        }
+        * { box-sizing: border-box; }
+      `}</style>
+
+      <div style={{
+        background: "#060a12", minHeight: "100vh",
+        fontFamily: "'Inter', sans-serif",
+      }}>
+
+        {/* ── Hero header ── */}
+        <div style={{
+          background: "linear-gradient(180deg,#0d1a2e 0%,#060a12 100%)",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          padding: "24px 24px 0",
+        }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+
+            {/* back button */}
+            <button
+              onClick={() => navigate(-1)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "#3a5070", fontSize: 12, padding: 0, marginBottom: 20,
+                display: "flex", alignItems: "center", gap: 4,
+              }}
+            >
+              ← Live Centre
+            </button>
+
+            {/* match scoreline */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 16, marginBottom: 20,
+            }}>
+
+              {/* home */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, maxWidth: 160 }}>
+                {header.home_logo && (
+                  <img src={header.home_logo} style={{ width: 48, height: 48, objectFit: "contain" }}
+                    onError={e => (e.currentTarget.style.display = "none")} />
+                )}
+                <span style={{ fontSize: 13, fontWeight: 800, color: "#c8d8f0", textAlign: "center" }}>
+                  {header.home_team}
+                </span>
+              </div>
+
+              {/* score / kickoff */}
+              <div style={{ textAlign: "center", flexShrink: 0 }}>
+                {header.home_score != null ? (
+                  <div style={{ fontSize: 40, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-0.02em" }}>
+                    {header.home_score} – {header.away_score}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#4a6080" }}>
+                    {header.kickoff
+                      ? new Date(header.kickoff).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : "vs"}
+                  </div>
+                )}
+
+                {/* live badge */}
+                {isLive && (
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    gap: 5, marginTop: 6,
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ff5252", animation: "pulse 1.2s infinite" }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#ff5252" }}>
+                      {header.status === "HT" ? "Half Time" : `${header.minute}'`}
+                    </span>
+                  </div>
+                )}
+
+                {header.status === "FT" && (
+                  <div style={{ fontSize: 10, color: "#3a5070", marginTop: 4, fontWeight: 800, letterSpacing: "0.08em" }}>
+                    FULL TIME
+                  </div>
+                )}
+
+                {header.league_name && (
+                  <div style={{ fontSize: 9, color: "#2e3d52", marginTop: 8, letterSpacing: "0.1em", fontWeight: 700 }}>
+                    {header.league_name}
+                  </div>
+                )}
+              </div>
+
+              {/* away */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, maxWidth: 160 }}>
+                {header.away_logo && (
+                  <img src={header.away_logo} style={{ width: 48, height: 48, objectFit: "contain" }}
+                    onError={e => (e.currentTarget.style.display = "none")} />
+                )}
+                <span style={{ fontSize: 13, fontWeight: 800, color: "#c8d8f0", textAlign: "center" }}>
+                  {header.away_team}
+                </span>
+              </div>
+
+            </div>
+
+            {/* ── Tab bar ── */}
+            <div style={{
+              display: "flex", gap: 0,
+              borderBottom: "1px solid rgba(255,255,255,0.05)",
+              overflowX: "auto",
+            }}>
+              {TABS.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "10px 16px",
+                    fontSize: 12, fontWeight: 700,
+                    color: tab === t.id ? "#60a5fa" : "#3a5070",
+                    borderBottom: `2px solid ${tab === t.id ? "#60a5fa" : "transparent"}`,
+                    transition: "color 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── Body ── */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 24px" }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 300px",
+            gap: 20,
+          }}>
+
+            {/* Main content */}
+            <div>
+              {tab === "facts"      && <FactsTab      data={data} />}
+              {tab === "commentary" && <CommentaryTab data={data} />}
+              {tab === "lineups"    && <LineupsTab    data={data} />}
+              {tab === "stats"      && <StatsTab      data={data} />}
+              {tab === "h2h"        && <H2HTab        data={data} />}
+              {tab === "model"      && <ModelTab      data={data} />}
+            </div>
+
+            {/* Sidebar */}
+            <div>
+              <Sidebar data={data} />
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}

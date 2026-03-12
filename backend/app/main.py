@@ -2,7 +2,8 @@
 from typing import Dict, List, Optional
 import os, time, asyncio
 from pathlib import Path
-
+from app.routes.lineups import router as lineups_router
+app.include_router(lineups_router)
 # ── Load .env automatically ───────────────────────────────────────────────────
 try:
     from dotenv import load_dotenv

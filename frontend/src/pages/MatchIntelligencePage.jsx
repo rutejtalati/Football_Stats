@@ -2,7 +2,7 @@
 // StatinSite  –  Match Intelligence Page
 // FotMob-style  /match/:fixtureId
 // ═════════════════════════════════════════════════════
-import MatchLineups from "./MatchLineups";
+import MatchLineups from "../components/MatchLineups";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 

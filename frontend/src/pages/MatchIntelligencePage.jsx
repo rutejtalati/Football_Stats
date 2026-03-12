@@ -2,7 +2,7 @@
 // StatinSite  –  Match Intelligence Page
 // FotMob-style  /match/:fixtureId
 // ═════════════════════════════════════════════════════
-
+import MatchLineups from "./MatchLineups";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -291,7 +291,7 @@ function PlayerMarker({ player, isHome }) {
     </div>
   );
 }
-
+{tab === "lineups" && <MatchLineups fixtureId={fixtureId} />}
 function LineupsTab({ data }) {
   const { lineups = {} } = data;
   const home = lineups.home || {};

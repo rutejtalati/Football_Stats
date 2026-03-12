@@ -837,8 +837,7 @@ export default function MatchIntelligencePage() {
     setLoading(true);
     setError(null);
 
-    fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)
-      .then(r => {
+fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)      .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })

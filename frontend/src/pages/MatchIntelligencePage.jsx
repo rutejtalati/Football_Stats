@@ -1,4 +1,3 @@
-from app.match_intelligence import get_match_intelligence
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,9 +83,7 @@ function PitchPlayer({ player, side }) {
     </div>
   );
 }
-@app.get("/api/match-intelligence/{fixture_id}")
-async def match_intelligence_endpoint(fixture_id: int):
-    return await get_match_intelligence(fixture_id)
+
 function PitchFormation({ lineup, side }) {
   const xi = lineup?.start_xi || [];
   // Group by grid row

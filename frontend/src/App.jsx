@@ -18,6 +18,8 @@ import GroundZeroPage       from "./pages/GroundZeroPage";
 import NewsTrackerPage      from "./pages/NewsTrackerPage";
 import TeamPage             from "./pages/TeamPage";
 import MatchIntelligencePage from "./pages/MatchIntelligencePage";
+import MatchIntelligencePage from "./pages/MatchIntelligencePage";
+
 import LiveMatchPage        from "./pages/LiveMatchPage";
 const SLUG_MAP = {
   "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
@@ -59,6 +61,7 @@ export default function App() {
             {/* Team pages — /team/:teamId/:league e.g. /team/33/epl */}
             <Route path="/match/:fixtureId" element={<LiveMatchPage />} />
             <Route path="/team/:teamId/:league" element={<TeamPage />} />
+          <Route path="/match/:fixtureId" element={<MatchIntelligencePage />} />
           </Routes>
         </div>
 

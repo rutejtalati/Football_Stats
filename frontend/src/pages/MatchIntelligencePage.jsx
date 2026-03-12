@@ -1,448 +1,258 @@
-import { useState, useEffect, useRef } from "react";
+// ═════════════════════════════════════════════════════
+// StatinSite  –  Match Intelligence Page
+// FotMob-style  /match/:fixtureId
+// ═════════════════════════════════════════════════════
+
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE || "https://football-stats-lw4b.onrender.com";
+
+const BACKEND = "https://football-stats-lw4b.onrender.com";
 
 const TABS = [
-  { id: "preview",    label: "Preview"    },
+  { id: "facts",      label: "Facts"      },
   { id: "commentary", label: "Commentary" },
   { id: "lineups",    label: "Lineups"    },
   { id: "stats",      label: "Stats"      },
   { id: "h2h",        label: "H2H"        },
-  { id: "injuries",   label: "Injuries"   },
   { id: "model",      label: "Model"      },
 ];
 
-const LIVE_STATUSES = ["1H", "2H", "HT", "ET", "BT", "P", "INT", "LIVE"];
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-function pct(v) { return `${Math.round((v || 0) * 100)}%`; }
-function fmtDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-}
-function fmtTime(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-}
-function fmtCountdown(iso) {
-  if (!iso) return null;
-  const diff = new Date(iso) - Date.now();
-  if (diff <= 0) return null;
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  if (h > 48) return `${Math.floor(h / 24)}d`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
-function resultColor(r) {
-  if (r === "W") return "#10b981";
-  if (r === "L") return "#ef4444";
-  return "#6b7280";
-}
-function severityColor(s) {
-  if (s === "positive") return "#10b981";
-  if (s === "warning")  return "#f59e0b";
-  if (s === "info")     return "#60a5fa";
-  return "#9ca3af";
-}
+function pct(v) { return v != null ? `${v}%` : "—"; }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SKELETON
-// ─────────────────────────────────────────────────────────────────────────────
-function Skeleton({ w = "100%", h = 16, r = 6 }) {
+function FormDot({ result }) {
+  const colors = { W: "#34d399", D: "#f59e0b", L: "#ff5252" };
   return (
-    <div style={{ width: w, height: h, borderRadius: r, background: "linear-gradient(90deg,#1a1a1a 25%,#242424 50%,#1a1a1a 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
+    <span style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      width: 22, height: 22, borderRadius: "50%",
+      background: colors[result] || "rgba(255,255,255,0.08)",
+      fontSize: 9, fontWeight: 900, color: "#fff",
+    }}>
+      {result}
+    </span>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PITCH LINEUP COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-function PitchPlayer({ player, side }) {
-  const col = side === "home" ? "#10b981" : "#60a5fa";
+function SectionTitle({ children }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "default" }}>
-      <div style={{ width: 36, height: 36, borderRadius: "50%", background: col, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#000", border: "2px solid rgba(255,255,255,0.15)", position: "relative" }}>
-        {player.number || "?"}
-        {player.confidence && (
-          <div style={{ position: "absolute", bottom: -2, right: -2, width: 12, height: 12, borderRadius: "50%", background: player.confidence >= 80 ? "#10b981" : player.confidence >= 60 ? "#f59e0b" : "#6b7280", border: "1px solid #111", fontSize: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff" }}>
-            {player.confidence >= 80 ? "✓" : "~"}
+    <div style={{
+      fontSize: 9, fontWeight: 900, letterSpacing: "0.14em",
+      color: "#3a5070", textTransform: "uppercase",
+      marginBottom: 12, marginTop: 24,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Card({ children, style }) {
+  return (
+    <div style={{
+      background: "linear-gradient(160deg,#0d1525,#080e1a)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 14,
+      padding: 16,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Stat Bar
+// ─────────────────────────────────────────────
+
+function StatBar({ label, home, away }) {
+  const total = (Number(home) || 0) + (Number(away) || 0);
+  const homePct = total > 0 ? Math.round((Number(home) / total) * 100) : 50;
+  const awayPct = 100 - homePct;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between",
+        fontSize: 11, fontWeight: 700, color: "#9fb4d6",
+        marginBottom: 5,
+      }}>
+        <span style={{ color: "#60a5fa" }}>{home ?? "—"}</span>
+        <span style={{ color: "#4a6080", fontSize: 9, letterSpacing: "0.06em" }}>{label}</span>
+        <span style={{ color: "#f97316" }}>{away ?? "—"}</span>
+      </div>
+      <div style={{
+        display: "flex", height: 5, borderRadius: 999, overflow: "hidden",
+        background: "rgba(255,255,255,0.04)",
+        gap: 1,
+      }}>
+        <div style={{
+          width: `${homePct}%`, height: "100%",
+          background: "linear-gradient(90deg,#1d4ed8,#60a5fa)",
+          borderRadius: "999px 0 0 999px", transition: "width 0.8s ease",
+        }} />
+        <div style={{
+          width: `${awayPct}%`, height: "100%",
+          background: "linear-gradient(90deg,#ea6c1a,#f97316)",
+          borderRadius: "0 999px 999px 0", transition: "width 0.8s ease",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// FACTS TAB
+// ─────────────────────────────────────────────
+
+function FactsTab({ data }) {
+  const { header, insights = [], home_recent_form = [], away_recent_form = [] } = data;
+
+  return (
+    <div>
+      <SectionTitle>Recent Form</SectionTitle>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7fa3", marginBottom: 8 }}>
+              {header?.home_team}
+            </div>
+            <div style={{ display: "flex", gap: 5 }}>
+              {home_recent_form.slice(0, 5).map((r, i) => <FormDot key={i} result={r} />)}
+            </div>
           </div>
-        )}
-      </div>
-      <span style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 600, maxWidth: 64, textAlign: "center", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {(player.name || "").split(" ").pop()}
-      </span>
-    </div>
-  );
-}
-
-function PitchFormation({ lineup, side }) {
-  const xi = lineup?.start_xi || [];
-  // Group by grid row
-  const rows = {};
-  xi.forEach(p => {
-    const row = (p.grid || "1:1").split(":")[0];
-    if (!rows[row]) rows[row] = [];
-    rows[row].push(p);
-  });
-
-  const rowKeys = Object.keys(rows).sort((a, b) => {
-    // home team: GK at bottom (row 1 = bottom), away: GK at top
-    return side === "home" ? b - a : a - b;
-  });
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px 8px" }}>
-      <div style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: side === "home" ? "#10b981" : "#60a5fa", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
-        {lineup?.team_name}
-        {lineup?.formation && <span style={{ marginLeft: 8, opacity: 0.7 }}>{lineup.formation}</span>}
-        {lineup?.predicted && <span style={{ marginLeft: 6, fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 5px", borderRadius: 3 }}>PREDICTED</span>}
-      </div>
-      {rowKeys.map(row => (
-        <div key={row} style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
-          {(rows[row] || []).map(p => <PitchPlayer key={p.id || p.player_id || p.name} player={p} side={side} />)}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7fa3", marginBottom: 8 }}>
+              {header?.away_team}
+            </div>
+            <div style={{ display: "flex", gap: 5, justifyContent: "flex-end" }}>
+              {away_recent_form.slice(0, 5).map((r, i) => <FormDot key={i} result={r} />)}
+            </div>
+          </div>
         </div>
-      ))}
+      </Card>
+
+      {insights.length > 0 && (
+        <>
+          <SectionTitle>Key Insights</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {insights.map((insight, i) => (
+              <Card key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <span style={{
+                  fontSize: 16, lineHeight: 1, marginTop: 1,
+                }}>
+                  {["⚡","📊","🎯","🔥","💡"][i % 5]}
+                </span>
+                <span style={{ fontSize: 13, color: "#c8d8f0", lineHeight: 1.5 }}>
+                  {insight}
+                </span>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function LineupsTab({ lineups, header }) {
-  const home = lineups?.find(l => l.team_id === header?.home?.id) || lineups?.[0];
-  const away = lineups?.find(l => l.team_id === header?.away?.id) || lineups?.[1];
+// ─────────────────────────────────────────────
+// EVENT ICON
+// ─────────────────────────────────────────────
 
-  if (!home && !away) {
+function EventIcon({ type, detail }) {
+  const t = (type || "").toLowerCase();
+  const d = (detail || "").toLowerCase();
+
+  if (t === "goal" && d.includes("own"))    return <span title="Own Goal">⚽🔴</span>;
+  if (t === "goal" && d.includes("pen"))    return <span title="Penalty">⚽🎯</span>;
+  if (t === "goal")                          return <span title="Goal">⚽</span>;
+  if (t === "card" && d.includes("yellow")) return <span title="Yellow Card">🟨</span>;
+  if (t === "card" && d.includes("red"))    return <span title="Red Card">🟥</span>;
+  if (t === "card" && d.includes("yellow red")) return <span title="Second Yellow">🟨🟥</span>;
+  if (t === "subst")                         return <span title="Substitution">🔄</span>;
+  if (t === "var")                           return <span title="VAR">📺</span>;
+  return <span>•</span>;
+}
+
+// ─────────────────────────────────────────────
+// COMMENTARY TAB
+// ─────────────────────────────────────────────
+
+function CommentaryTab({ data }) {
+  const events = [...(data.events || [])].sort((a, b) => (b.minute || 0) - (a.minute || 0));
+
+  if (events.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>
-        <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-        <p style={{ margin: 0 }}>Lineups not yet announced</p>
+      <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center", paddingTop: 40 }}>
+        No events recorded yet.
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Pitch */}
-      <div style={{ background: "linear-gradient(180deg,#0d2b1a 0%,#0f3320 50%,#0d2b1a 100%)", borderRadius: 12, overflow: "hidden", marginBottom: 20, border: "1px solid #1a3a28", position: "relative" }}>
-        {/* Pitch markings */}
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-          <div style={{ width: "80%", height: "1px", background: "rgba(255,255,255,0.06)" }} />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-          <PitchFormation lineup={home} side="home" />
-          <PitchFormation lineup={away} side="away" />
-        </div>
-      </div>
-
-      {/* Bench */}
-      {(home?.subs?.length > 0 || away?.subs?.length > 0) && (
-        <div style={{ marginBottom: 20 }}>
-          <h4 style={{ color: "#9ca3af", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 12px" }}>Substitutes</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            {[home, away].map((lu, idx) => (
-              <div key={idx}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: idx === 0 ? "#10b981" : "#60a5fa", marginBottom: 8 }}>{lu?.team_name}</div>
-                {(lu?.subs || []).map(p => (
-                  <div key={p.id || p.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #1a1a1a" }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#9ca3af", flexShrink: 0 }}>{p.number || "—"}</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{p.name}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 10, color: "#4b5563" }}>{p.pos}</span>
-                    {p.confidence && <span style={{ fontSize: 9, color: "#f59e0b" }}>{p.confidence}%</span>}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Unavailable */}
-      {[home, away].some(l => l?.unavailable?.length > 0) && (
-        <div>
-          <h4 style={{ color: "#9ca3af", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 12px" }}>Unavailable</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            {[home, away].map((lu, idx) => (
-              <div key={idx}>
-                {(lu?.unavailable || []).map(p => (
-                  <div key={p.player_id || p.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #1a1a1a" }}>
-                    <span style={{ fontSize: 14 }}>🏥</span>
-                    <div>
-                      <div style={{ fontSize: 12, color: "#e2e8f0" }}>{p.name}</div>
-                      <div style={{ fontSize: 10, color: "#ef4444" }}>{p.reason}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STATS TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function StatBar({ label, home, away }) {
-  const h = parseFloat(String(home || "0").replace("%", "")) || 0;
-  const a = parseFloat(String(away || "0").replace("%", "")) || 0;
-  const total = h + a || 1;
-  const hPct = h / total * 100;
-  const aPct = a / total * 100;
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{home ?? "—"}</span>
-        <span style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{away ?? "—"}</span>
-      </div>
-      <div style={{ display: "flex", height: 4, borderRadius: 2, overflow: "hidden", background: "#1a1a1a" }}>
-        <div style={{ width: `${hPct}%`, background: "#10b981", transition: "width 0.6s ease" }} />
-        <div style={{ width: `${aPct}%`, background: "#60a5fa", transition: "width 0.6s ease" }} />
-      </div>
-    </div>
-  );
-}
-
-function StatsTab({ statistics, header }) {
-  const st = statistics;
-  if (!st || Object.keys(st).length === 0) {
-    return <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>No statistics available yet</div>;
-  }
-
-  const rows = [
-    { key: "possession",       label: "Possession" },
-    { key: "shots_total",      label: "Total Shots" },
-    { key: "shots_on_target",  label: "Shots on Target" },
-    { key: "shots_inside_box", label: "Shots Inside Box" },
-    { key: "expected_goals",   label: "xG" },
-    { key: "corner_kicks",     label: "Corners" },
-    { key: "fouls",            label: "Fouls" },
-    { key: "offsides",         label: "Offsides" },
-    { key: "yellow_cards",     label: "Yellow Cards" },
-    { key: "red_cards",        label: "Red Cards" },
-    { key: "goalkeeper_saves", label: "Saves" },
-    { key: "pass_accuracy",    label: "Pass Accuracy" },
-    { key: "total_passes",     label: "Total Passes" },
-  ];
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "center", gap: 32, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#10b981" }} />
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>{header?.home?.name}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#60a5fa" }} />
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>{header?.away?.name}</span>
-        </div>
-      </div>
-      {rows.filter(r => st[r.key]?.home != null || st[r.key]?.away != null).map(r => (
-        <StatBar key={r.key} label={r.label} home={st[r.key]?.home} away={st[r.key]?.away} />
-      ))}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// H2H TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function H2HTab({ h2h, header }) {
-  if (!h2h || h2h.count === 0) {
-    return <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>No head-to-head history found</div>;
-  }
-  const total = (h2h.home_wins + h2h.draws + h2h.away_wins) || 1;
-  return (
-    <div>
-      {/* Summary */}
-      <div style={{ background: "#111", borderRadius: 10, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-          {[
-            { label: header?.home?.name, val: h2h.home_wins, col: "#10b981" },
-            { label: "Draws", val: h2h.draws, col: "#6b7280" },
-            { label: header?.away?.name, val: h2h.away_wins, col: "#60a5fa" },
-          ].map(({ label, val, col }) => (
-            <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: col }}>{val}</div>
-              <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ width: `${h2h.home_wins / total * 100}%`, background: "#10b981" }} />
-          <div style={{ width: `${h2h.draws / total * 100}%`, background: "#374151" }} />
-          <div style={{ width: `${h2h.away_wins / total * 100}%`, background: "#60a5fa" }} />
-        </div>
-      </div>
-
-      {/* Results list */}
-      {(h2h.results || []).map((r, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid #111" }}>
-          <div style={{ fontSize: 10, color: "#4b5563", width: 52, flexShrink: 0 }}>{r.date}</div>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
-            <span style={{ fontSize: 12, color: "#e2e8f0", textAlign: "right" }}>{r.home_team}</span>
-          </div>
-          <div style={{ background: "#1a1a1a", borderRadius: 6, padding: "4px 10px", fontWeight: 800, fontSize: 13, color: "#fff", flexShrink: 0 }}>
-            {r.home_goals} – {r.away_goals}
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={{ fontSize: 12, color: "#e2e8f0" }}>{r.away_team}</span>
-          </div>
-          <div style={{ fontSize: 9, color: "#4b5563", width: 60, textAlign: "right", flexShrink: 0, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{r.league}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// INJURIES TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function InjuriesTab({ injuries, header }) {
-  const home = injuries?.home || [];
-  const away = injuries?.away || [];
-  if (home.length === 0 && away.length === 0) {
-    return <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>No injury report available</div>;
-  }
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-      {[{ name: header?.home?.name, list: home, col: "#10b981" }, { name: header?.away?.name, list: away, col: "#60a5fa" }].map(({ name, list, col }) => (
-        <div key={name}>
-          <h4 style={{ fontSize: 12, fontWeight: 700, color: col, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.08em" }}>{name}</h4>
-          {list.length === 0 && <p style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>No injuries reported</p>}
-          {list.map((p, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid #111" }}>
-              {p.player_photo ? <img src={p.player_photo} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", background: "#1a1a1a" }} /> : <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>🏥</div>}
-              <div>
-                <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>{p.player_name}</div>
-                <div style={{ fontSize: 10, color: "#ef4444" }}>{p.type || p.reason || "Injured"}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MODEL TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function ProbBar({ label, prob, color }) {
-  const p = Math.round((prob || 0) * 100);
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>{label}</span>
-        <span style={{ fontSize: 16, fontWeight: 800, color }}>{p}%</span>
-      </div>
-      <div style={{ height: 6, borderRadius: 3, background: "#1a1a1a", overflow: "hidden" }}>
-        <div style={{ width: `${p}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.8s ease" }} />
-      </div>
-    </div>
-  );
-}
-
-function ModelTab({ prediction, header }) {
-  const pred = prediction || {};
-  if (!pred.p_home_win && !pred.home_win_prob) {
-    return <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>No model prediction available for this fixture</div>;
-  }
-  const hp = pred.p_home_win || pred.home_win_prob || 0;
-  const dp = pred.p_draw    || pred.draw_prob    || 0;
-  const ap = pred.p_away_win|| pred.away_win_prob|| 0;
-
-  return (
-    <div>
-      <div style={{ background: "#111", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <h4 style={{ margin: "0 0 16px", fontSize: 11, color: "#6b7280", letterSpacing: "0.1em", textTransform: "uppercase" }}>Win Probability</h4>
-        <ProbBar label={header?.home?.name} prob={hp} color="#10b981" />
-        <ProbBar label="Draw" prob={dp} color="#6b7280" />
-        <ProbBar label={header?.away?.name} prob={ap} color="#60a5fa" />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-        {[
-          { label: "xG Home",     val: pred.xg_home || pred.expected_home_goals, fmt: v => Number(v).toFixed(2), col: "#10b981" },
-          { label: "xG Away",     val: pred.xg_away || pred.expected_away_goals, fmt: v => Number(v).toFixed(2), col: "#60a5fa" },
-          { label: "Over 2.5",    val: pred.over_2_5,   fmt: v => pct(v), col: "#f59e0b" },
-          { label: "Over 3.5",    val: pred.over_3_5,   fmt: v => pct(v), col: "#f59e0b" },
-          { label: "BTTS",        val: pred.btts,        fmt: v => pct(v), col: "#a78bfa" },
-          { label: "Home Clean Sheet", val: pred.home_clean_sheet, fmt: v => pct(v), col: "#34d399" },
-          { label: "Away Clean Sheet", val: pred.away_clean_sheet, fmt: v => pct(v), col: "#93c5fd" },
-          { label: "Confidence",  val: pred.confidence,  fmt: v => `${v}%`, col: "#fbbf24" },
-        ].filter(x => x.val != null).map(({ label, val, fmt, col }) => (
-          <div key={label} style={{ background: "#111", borderRadius: 8, padding: "12px 14px" }}>
-            <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{label}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: col }}>{fmt(val)}</div>
-          </div>
-        ))}
-      </div>
-
-      {pred.top_scores && (
-        <div style={{ background: "#111", borderRadius: 12, padding: 16 }}>
-          <h4 style={{ margin: "0 0 12px", fontSize: 11, color: "#6b7280", letterSpacing: "0.1em", textTransform: "uppercase" }}>Most Likely Scores</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {pred.top_scores.slice(0, 9).map((s, i) => (
-              <div key={i} style={{ background: i === 0 ? "rgba(16,185,129,0.12)" : "#0d0d0d", borderRadius: 6, padding: "8px 4px", textAlign: "center", border: i === 0 ? "1px solid rgba(16,185,129,0.3)" : "1px solid #1a1a1a" }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: i === 0 ? "#10b981" : "#e2e8f0" }}>{s.score}</div>
-                <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{Math.round(s.prob * 100)}%</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// COMMENTARY / EVENTS TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function EventIcon({ type, detail }) {
-  if (type === "Goal") return "⚽";
-  if (type === "Card" && detail?.includes("Red")) return "🟥";
-  if (type === "Card") return "🟨";
-  if (type === "subst") return "🔄";
-  if (type === "Var") return "📺";
-  return "•";
-}
-
-function CommentaryTab({ events, header }) {
-  if (!events || events.length === 0) {
-    return <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>No match events yet</div>;
-  }
-  return (
-    <div>
-      {[...events].reverse().map((e, i) => {
-        const isHome = e.team_id === header?.home?.id;
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {events.map((e, i) => {
+        const isHome = e.team === data.header?.home_team || e.team_id === data.header?.home_id;
         return (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderBottom: "1px solid #0d0d0d" }}>
-            <div style={{ width: 36, flexShrink: 0, textAlign: "center" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b" }}>{e.minute}{e.extra ? `+${e.extra}` : ""}′</span>
-            </div>
-            {isHome && <div style={{ flex: 1 }} />}
-            <div style={{ flex: 1, textAlign: isHome ? "right" : "left" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: isHome ? "flex-end" : "flex-start" }}>
-                <span style={{ fontSize: 16 }}><EventIcon type={e.type} detail={e.detail} /></span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>{e.player_name}</div>
-                  {e.assist_name && <div style={{ fontSize: 10, color: "#6b7280" }}>Assist: {e.assist_name}</div>}
-                  {e.detail && <div style={{ fontSize: 10, color: "#4b5563" }}>{e.detail}</div>}
-                </div>
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.04)",
+            }}
+          >
+            {/* minute */}
+            <span style={{
+              fontSize: 11, fontWeight: 900,
+              color: "#3a5070",
+              minWidth: 32, flexShrink: 0,
+              paddingTop: 1,
+            }}>
+              {e.minute}{e.extra_minute ? `+${e.extra_minute}` : ""}'
+            </span>
+
+            {/* icon */}
+            <span style={{ fontSize: 15, flexShrink: 0 }}>
+              <EventIcon type={e.type} detail={e.detail} />
+            </span>
+
+            {/* detail */}
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700,
+                color: isHome ? "#60a5fa" : "#f97316",
+              }}>
+                {e.player}
               </div>
+              {e.assist && (
+                <div style={{ fontSize: 10, color: "#3a5070", marginTop: 2 }}>
+                  Assist: {e.assist}
+                </div>
+              )}
+              {e.detail && (
+                <div style={{ fontSize: 10, color: "#4a6080", marginTop: 1 }}>
+                  {e.detail}
+                </div>
+              )}
             </div>
-            {!isHome && <div style={{ flex: 1 }} />}
+
+            {/* team side */}
+            <span style={{
+              fontSize: 9, fontWeight: 800,
+              color: isHome ? "#1d4ed8" : "#c2510a",
+              opacity: 0.7,
+              letterSpacing: "0.06em",
+              flexShrink: 0,
+            }}>
+              {isHome ? "HOME" : "AWAY"}
+            </span>
           </div>
         );
       })}
@@ -450,431 +260,804 @@ function CommentaryTab({ events, header }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PREVIEW TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function FormPill({ result }) {
+// ─────────────────────────────────────────────
+// PITCH + LINEUPS TAB
+// ─────────────────────────────────────────────
+
+function PlayerMarker({ player, isHome }) {
   return (
-    <div style={{ width: 22, height: 22, borderRadius: "50%", background: resultColor(result), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: result === "D" ? "#fff" : "#000" }}>
-      {result}
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+    }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: "50%",
+        background: isHome
+          ? "linear-gradient(135deg,#1d4ed8,#3b82f6)"
+          : "linear-gradient(135deg,#c2410c,#f97316)",
+        border: "2px solid rgba(255,255,255,0.2)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 9, fontWeight: 900, color: "#fff",
+      }}>
+        {player.number || "?"}
+      </div>
+      <span style={{
+        fontSize: 9, fontWeight: 700,
+        color: "#c8d8f0",
+        maxWidth: 60, textAlign: "center",
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {player.name?.split(" ").pop()}
+      </span>
     </div>
   );
 }
 
-function PreviewTab({ data }) {
-  const { home_recent_form, away_recent_form, insights, header } = data;
+function LineupsTab({ data }) {
+  const { lineups = {} } = data;
+  const home = lineups.home || {};
+  const away = lineups.away || {};
+
+  const homePlayers  = home.startXI  || [];
+  const awayPlayers  = away.startXI  || [];
+  const homeBench    = home.bench    || [];
+  const awayBench    = away.bench    || [];
+
+  // Group by row for basic pitch layout
+  function groupByRow(players) {
+    const rows = {};
+    players.forEach(p => {
+      const row = p.grid?.split(":")[0] || "1";
+      if (!rows[row]) rows[row] = [];
+      rows[row].push(p);
+    });
+    return Object.values(rows);
+  }
+
+  const homeRows = groupByRow(homePlayers);
+  const awayRows = groupByRow(awayPlayers);
 
   return (
     <div>
-      {/* Insights */}
-      {insights?.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 12px" }}>Key Insights</h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {insights.map((ins, i) => (
-              <div key={i} style={{ background: "#0d0d0d", borderRadius: 10, padding: "12px 14px", borderLeft: `3px solid ${severityColor(ins.severity)}` }}>
-                <div style={{ display: "flex", align: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 14 }}>{ins.icon}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0" }}>{ins.title}</span>
+      {/* Pitch */}
+      <div style={{
+        background: "linear-gradient(180deg,#0a2010 0%,#0d2c14 50%,#0a2010 100%)",
+        borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)",
+        padding: "20px 16px",
+        position: "relative", overflow: "hidden",
+        marginBottom: 20,
+      }}>
+        {/* pitch lines */}
+        <div style={{
+          position: "absolute", inset: 0, opacity: 0.12,
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)
+          `,
+          backgroundSize: "40px 40px",
+        }} />
+        <div style={{
+          position: "absolute", top: "50%", left: "5%", right: "5%",
+          height: 1, background: "rgba(255,255,255,0.12)",
+        }} />
+
+        {/* Formation labels */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, position: "relative" }}>
+          <span style={{ fontSize: 10, fontWeight: 900, color: "#3b82f6", opacity: 0.7 }}>
+            {home.formation || "—"}  {home.team_name}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 900, color: "#f97316", opacity: 0.7 }}>
+            {away.team_name}  {away.formation || "—"}
+          </span>
+        </div>
+
+        {homePlayers.length === 0 && awayPlayers.length === 0 ? (
+          <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
+            Lineups not yet announced.
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 12 }}>
+            {/* Home XI */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+              {homeRows.map((row, ri) => (
+                <div key={ri} style={{ display: "flex", justifyContent: "space-around" }}>
+                  {row.map((p, pi) => <PlayerMarker key={pi} player={p} isHome={true} />)}
                 </div>
-                <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>{ins.body}</p>
+              ))}
+            </div>
+            {/* divider */}
+            <div style={{ width: 1, background: "rgba(255,255,255,0.08)" }} />
+            {/* Away XI */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column-reverse", gap: 12 }}>
+              {awayRows.map((row, ri) => (
+                <div key={ri} style={{ display: "flex", justifyContent: "space-around" }}>
+                  {row.map((p, pi) => <PlayerMarker key={pi} player={p} isHome={false} />)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bench */}
+      {(homeBench.length > 0 || awayBench.length > 0) && (
+        <>
+          <SectionTitle>Bench</SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <Card>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#3b82f6", marginBottom: 10 }}>
+                {home.team_name}
               </div>
-            ))}
+              {homeBench.map((p, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "5px 0",
+                  borderBottom: i < homeBench.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700,
+                    color: "#3a5070", minWidth: 18,
+                  }}>{p.number}</span>
+                  <span style={{ fontSize: 11, color: "#9fb4d6" }}>{p.name}</span>
+                </div>
+              ))}
+            </Card>
+            <Card>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#f97316", marginBottom: 10 }}>
+                {away.team_name}
+              </div>
+              {awayBench.map((p, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "5px 0",
+                  borderBottom: i < awayBench.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700,
+                    color: "#3a5070", minWidth: 18,
+                  }}>{p.number}</span>
+                  <span style={{ fontSize: 11, color: "#9fb4d6" }}>{p.name}</span>
+                </div>
+              ))}
+            </Card>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// STATS TAB
+// ─────────────────────────────────────────────
+
+const STAT_LABELS = {
+  "Ball Possession":          "Possession %",
+  "expected_goals":           "Expected Goals (xG)",
+  "Total Shots":              "Total Shots",
+  "Shots on Goal":            "Shots on Target",
+  "Shots off Goal":           "Shots off Target",
+  "Blocked Shots":            "Blocked Shots",
+  "Corner Kicks":             "Corners",
+  "Fouls":                    "Fouls",
+  "Yellow Cards":             "Yellow Cards",
+  "Red Cards":                "Red Cards",
+  "Total passes":             "Total Passes",
+  "Passes accurate":          "Accurate Passes",
+  "Passes %":                 "Pass Accuracy %",
+  "Goalkeeper Saves":         "Saves",
+  "Offsides":                 "Offsides",
+};
+
+function StatsTab({ data }) {
+  const stats = data.statistics || {};
+  const homeStats = stats.home || [];
+  const awayStats = stats.away || [];
+
+  // Merge into { label: { home, away } }
+  const merged = {};
+  homeStats.forEach(s => {
+    const key = s.type;
+    if (!merged[key]) merged[key] = {};
+    merged[key].home = s.value;
+  });
+  awayStats.forEach(s => {
+    const key = s.type;
+    if (!merged[key]) merged[key] = {};
+    merged[key].away = s.value;
+  });
+
+  const entries = Object.entries(merged);
+
+  if (entries.length === 0) {
+    return (
+      <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center", paddingTop: 40 }}>
+        Statistics not yet available.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Team labels */}
+      <div style={{
+        display: "flex", justifyContent: "space-between",
+        marginBottom: 16,
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#60a5fa" }}>
+          {data.header?.home_team}
+        </span>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#f97316" }}>
+          {data.header?.away_team}
+        </span>
+      </div>
+
+      <Card>
+        {entries.map(([key, val]) => (
+          <StatBar
+            key={key}
+            label={STAT_LABELS[key] || key}
+            home={val.home}
+            away={val.away}
+          />
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// H2H TAB
+// ─────────────────────────────────────────────
+
+function H2HTab({ data }) {
+  const h2h = data.h2h || {};
+  const matches = h2h.matches || [];
+  const summary = h2h.summary || {};
+
+  return (
+    <div>
+      {/* Summary */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", textAlign: "center" }}>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#60a5fa" }}>
+              {summary.home_wins ?? "—"}
+            </div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+              {data.header?.home_team} Wins
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f6ff" }}>
+              {summary.draws ?? "—"}
+            </div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>Draws</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#f97316" }}>
+              {summary.away_wins ?? "—"}
+            </div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+              {data.header?.away_team} Wins
+            </div>
           </div>
         </div>
-      )}
+      </Card>
 
-      {/* Recent form */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {[
-          { name: header?.home?.name, form: home_recent_form, col: "#10b981" },
-          { name: header?.away?.name, form: away_recent_form, col: "#60a5fa" },
-        ].map(({ name, form, col }) => (
-          <div key={name} style={{ background: "#0d0d0d", borderRadius: 10, padding: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{name}</div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-              {(form || []).slice(0, 5).map((r, i) => <FormPill key={i} result={r.result} />)}
-            </div>
-            {(form || []).slice(0, 5).map((r, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #111", fontSize: 11 }}>
-                <span style={{ color: "#4b5563" }}>{r.home_away} {r.opponent}</span>
-                <span style={{ fontWeight: 700, color: resultColor(r.result) }}>{r.goals_for}–{r.goals_against}</span>
+      {/* Match list */}
+      <SectionTitle>Previous Meetings</SectionTitle>
+      {matches.length === 0 ? (
+        <div style={{ color: "#3a5070", fontSize: 13, textAlign: "center" }}>No H2H data.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {matches.map((m, i) => (
+            <Card key={i} style={{ padding: "10px 14px" }}>
+              <div style={{
+                display: "flex", alignItems: "center",
+                gap: 8, fontSize: 11,
+              }}>
+                <span style={{ fontSize: 9, color: "#3a5070", minWidth: 72 }}>
+                  {m.date ? new Date(m.date).toLocaleDateString([], { year: "2-digit", month: "short", day: "numeric" }) : "—"}
+                </span>
+                <span style={{ flex: 1, color: "#9fb4d6", textAlign: "right" }}>
+                  {m.home_team}
+                </span>
+                <span style={{
+                  fontWeight: 900, color: "#f0f6ff",
+                  padding: "2px 10px",
+                  background: "rgba(255,255,255,0.06)",
+                  borderRadius: 6, fontSize: 13,
+                  minWidth: 48, textAlign: "center",
+                }}>
+                  {m.home_score} – {m.away_score}
+                </span>
+                <span style={{ flex: 1, color: "#9fb4d6" }}>
+                  {m.away_team}
+                </span>
+                <span style={{ fontSize: 9, color: "#3a5070", minWidth: 60, textAlign: "right" }}>
+                  {m.league}
+                </span>
               </div>
-            ))}
-          </div>
-        ))}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Probability Gauge
+// ─────────────────────────────────────────────
+
+function ProbGauge({ label, value, color }) {
+  return (
+    <div style={{
+      flex: 1,
+      display: "flex", flexDirection: "column", alignItems: "center",
+      gap: 6,
+    }}>
+      <div style={{
+        width: 80, height: 80, borderRadius: "50%",
+        background: `conic-gradient(${color} ${value * 3.6}deg, rgba(255,255,255,0.05) 0deg)`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative",
+      }}>
+        <div style={{
+          width: 60, height: 60, borderRadius: "50%",
+          background: "#080e1a",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 18, fontWeight: 900, color: color,
+        }}>
+          {value}%
+        </div>
+      </div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#3a5070", textAlign: "center" }}>
+        {label}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RIGHT RAIL
-// ─────────────────────────────────────────────────────────────────────────────
-function RightRail({ data }) {
-  const { prediction, venue, header, home_season_stats, away_season_stats, insights } = data;
-  const pred = prediction || {};
+// ─────────────────────────────────────────────
+// MODEL TAB
+// ─────────────────────────────────────────────
+
+function ModelTab({ data }) {
+  const pred = data.prediction || {};
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
+    <div>
       {/* Win probabilities */}
-      {(pred.p_home_win || pred.home_win_prob) && (
-        <div style={{ background: "#0d0d0d", borderRadius: 10, padding: 14, border: "1px solid #1a1a1a" }}>
-          <h5 style={{ margin: "0 0 10px", fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>Model Probability</h5>
-          {[
-            { label: header?.home?.name, val: pred.p_home_win || pred.home_win_prob || 0, col: "#10b981" },
-            { label: "Draw",             val: pred.p_draw || pred.draw_prob || 0, col: "#6b7280" },
-            { label: header?.away?.name, val: pred.p_away_win || pred.away_win_prob || 0, col: "#60a5fa" },
-          ].map(({ label, val, col }) => (
-            <div key={label} style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                <span style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100 }}>{label}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: col }}>{Math.round(val * 100)}%</span>
+      <SectionTitle>Win Probabilities</SectionTitle>
+      <Card>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <ProbGauge label={`${data.header?.home_team} Win`} value={pred.home_win ?? 0} color="#60a5fa" />
+          <ProbGauge label="Draw"                            value={pred.draw      ?? 0} color="#f0f6ff" />
+          <ProbGauge label={`${data.header?.away_team} Win`} value={pred.away_win ?? 0} color="#f97316" />
+        </div>
+      </Card>
+
+      {/* xG */}
+      {(pred.xg_home != null || pred.xg_away != null) && (
+        <>
+          <SectionTitle>Expected Goals</SectionTitle>
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#60a5fa" }}>
+                  {pred.xg_home}
+                </div>
+                <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+                  {data.header?.home_team}
+                </div>
               </div>
-              <div style={{ height: 3, borderRadius: 2, background: "#1a1a1a" }}>
-                <div style={{ width: `${Math.round(val * 100)}%`, height: "100%", background: col, borderRadius: 2 }} />
+              <div style={{ fontSize: 12, color: "#3a5070", fontWeight: 700 }}>xG</div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#f97316" }}>
+                  {pred.xg_away}
+                </div>
+                <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>
+                  {data.header?.away_team}
+                </div>
               </div>
             </div>
-          ))}
-          {pred.confidence && <div style={{ marginTop: 8, fontSize: 10, color: "#4b5563", textAlign: "right" }}>Confidence: <span style={{ color: "#f59e0b" }}>{pred.confidence}%</span></div>}
-        </div>
+          </Card>
+        </>
       )}
 
-      {/* Quick markets */}
-      {pred.btts != null && (
-        <div style={{ background: "#0d0d0d", borderRadius: 10, padding: 14, border: "1px solid #1a1a1a" }}>
-          <h5 style={{ margin: "0 0 10px", fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>Markets</h5>
-          {[
-            { label: "Over 2.5", val: pred.over_2_5 },
-            { label: "BTTS",     val: pred.btts },
-            { label: "Over 3.5", val: pred.over_3_5 },
-          ].filter(x => x.val != null).map(({ label, val }) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #111", fontSize: 12 }}>
-              <span style={{ color: "#9ca3af" }}>{label}</span>
-              <span style={{ fontWeight: 700, color: val >= 0.6 ? "#10b981" : val >= 0.4 ? "#f59e0b" : "#9ca3af" }}>{pct(val)}</span>
-            </div>
-          ))}
-          {pred.most_likely_score && (
-            <div style={{ marginTop: 10, textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Most Likely Score</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#e2e8f0" }}>{pred.most_likely_score}</div>
-            </div>
-          )}
-        </div>
+      {/* Markets */}
+      <SectionTitle>Markets</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {[
+          { label: "Over 2.5 Goals",  value: pred.over25 },
+          { label: "BTTS",            value: pred.btts   },
+          { label: "Under 2.5 Goals", value: pred.under25 != null ? pred.under25 : pred.over25 != null ? 100 - pred.over25 : null },
+          { label: "Clean Sheet (H)", value: pred.clean_sheet_home },
+        ].filter(m => m.value != null).map((m, i) => (
+          <Card key={i} style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#34d399" }}>{m.value}%</div>
+            <div style={{ fontSize: 9, color: "#3a5070", marginTop: 4, fontWeight: 700 }}>{m.label}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Top scorelines */}
+      {pred.scorelines?.length > 0 && (
+        <>
+          <SectionTitle>Top Predicted Scorelines</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {pred.scorelines.slice(0, 5).map((s, i) => (
+              <Card key={i} style={{
+                display: "flex", justifyContent: "space-between",
+                alignItems: "center", padding: "8px 14px",
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 900, color: "#f0f6ff" }}>
+                  {s.score}
+                </span>
+                <div style={{
+                  height: 4, flex: 1, margin: "0 14px",
+                  background: "rgba(255,255,255,0.04)", borderRadius: 999, overflow: "hidden",
+                }}>
+                  <div style={{
+                    width: `${s.probability}%`, height: "100%",
+                    background: "linear-gradient(90deg,#34d399,#60a5fa)",
+                  }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#34d399" }}>
+                  {s.probability}%
+                </span>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// RIGHT SIDEBAR
+// ─────────────────────────────────────────────
+
+function Sidebar({ data }) {
+  const { venue, prediction, home_season_stats, away_season_stats, insights = [], header } = data;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
       {/* Venue */}
-      {venue?.name && (
-        <div style={{ background: "#0d0d0d", borderRadius: 10, padding: 14, border: "1px solid #1a1a1a" }}>
-          <h5 style={{ margin: "0 0 10px", fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>Venue</h5>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{venue.name}</div>
-          <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 8 }}>{venue.city}{venue.country ? `, ${venue.country}` : ""}</div>
-          {[
-            { label: "Capacity", val: venue.capacity?.toLocaleString() },
-            { label: "Surface",  val: venue.surface },
-          ].filter(x => x.val).map(({ label, val }) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0" }}>
-              <span style={{ color: "#4b5563" }}>{label}</span>
-              <span style={{ color: "#9ca3af", textTransform: "capitalize" }}>{val}</span>
-            </div>
-          ))}
-        </div>
+      {venue && (
+        <Card>
+          <SectionTitle>Venue</SectionTitle>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#c8d8f0", marginBottom: 6 }}>
+            {venue.name}
+          </div>
+          <div style={{ fontSize: 11, color: "#4a6080", lineHeight: 1.8 }}>
+            {venue.city && <div>📍 {venue.city}</div>}
+            {venue.capacity && <div>🏟 {Number(venue.capacity).toLocaleString()} capacity</div>}
+            {venue.surface && <div>🌿 {venue.surface}</div>}
+          </div>
+        </Card>
       )}
 
-      {/* Season stats snapshot */}
-      {(home_season_stats?.played || away_season_stats?.played) && (
-        <div style={{ background: "#0d0d0d", borderRadius: 10, padding: 14, border: "1px solid #1a1a1a" }}>
-          <h5 style={{ margin: "0 0 10px", fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>Season Form</h5>
+      {/* Quick probabilities */}
+      {prediction && (
+        <Card>
+          <SectionTitle>Probabilities</SectionTitle>
           {[
-            { name: header?.home?.name, stats: home_season_stats, col: "#10b981" },
-            { name: header?.away?.name, stats: away_season_stats, col: "#60a5fa" },
-          ].map(({ name, stats, col }) => (
-            <div key={name} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: col, marginBottom: 4 }}>{name}</div>
-              <div style={{ display: "flex", gap: 8 }}>
+            { label: header?.home_team + " Win", val: prediction.home_win, color: "#60a5fa" },
+            { label: "Draw",                     val: prediction.draw,     color: "#f0f6ff" },
+            { label: header?.away_team + " Win", val: prediction.away_win, color: "#f97316" },
+          ].map((p, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between",
+                fontSize: 10, fontWeight: 700, color: "#6b7fa3", marginBottom: 4,
+              }}>
+                <span>{p.label}</span>
+                <span style={{ color: p.color }}>{p.val ?? "—"}%</span>
+              </div>
+              <div style={{
+                height: 4, background: "rgba(255,255,255,0.04)",
+                borderRadius: 999, overflow: "hidden",
+              }}>
+                <div style={{
+                  width: `${p.val || 0}%`, height: "100%",
+                  background: p.color, opacity: 0.7,
+                  transition: "width 0.8s ease",
+                }} />
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Season form */}
+      {(home_season_stats || away_season_stats) && (
+        <Card>
+          <SectionTitle>Season Form</SectionTitle>
+          {[
+            { team: header?.home_team, stats: home_season_stats, color: "#60a5fa" },
+            { team: header?.away_team, stats: away_season_stats, color: "#f97316" },
+          ].map(({ team, stats, color }, i) => stats && (
+            <div key={i} style={{ marginBottom: i === 0 ? 14 : 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color, marginBottom: 6 }}>{team}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4 }}>
                 {[
-                  { label: "P", val: stats?.played },
-                  { label: "W", val: stats?.wins },
-                  { label: "D", val: stats?.draws },
-                  { label: "L", val: stats?.losses },
-                ].filter(x => x.val != null).map(({ label, val }) => (
-                  <div key={label} style={{ textAlign: "center", flex: 1, background: "#111", borderRadius: 5, padding: "4px 0" }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0" }}>{val}</div>
-                    <div style={{ fontSize: 9, color: "#4b5563" }}>{label}</div>
+                  { label: "P", val: stats.played },
+                  { label: "W", val: stats.wins   },
+                  { label: "D", val: stats.draws  },
+                  { label: "L", val: stats.losses },
+                ].map((s, j) => (
+                  <div key={j} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#f0f6ff" }}>{s.val ?? "—"}</div>
+                    <div style={{ fontSize: 8, color: "#3a5070", fontWeight: 700 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
-              {stats?.goals_for_avg && (
-                <div style={{ fontSize: 10, color: "#4b5563", marginTop: 4 }}>
-                  Avg goals: <span style={{ color: "#9ca3af" }}>{stats.goals_for_avg} scored / {stats.goals_against_avg} conceded</span>
-                </div>
-              )}
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
-      {/* Top 3 insights */}
-      {insights?.length > 0 && (
-        <div style={{ background: "#0d0d0d", borderRadius: 10, padding: 14, border: "1px solid #1a1a1a" }}>
-          <h5 style={{ margin: "0 0 10px", fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>Insights</h5>
-          {insights.slice(0, 3).map((ins, i) => (
-            <div key={i} style={{ display: "flex", gap: 8, padding: "6px 0", borderBottom: i < 2 ? "1px solid #111" : "none" }}>
-              <span style={{ fontSize: 12 }}>{ins.icon}</span>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#e2e8f0" }}>{ins.title}</div>
-                <div style={{ fontSize: 10, color: "#4b5563", lineHeight: 1.4 }}>{ins.body}</div>
+      {/* Top insights */}
+      {insights.length > 0 && (
+        <Card>
+          <SectionTitle>Top Insights</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {insights.slice(0, 3).map((ins, i) => (
+              <div key={i} style={{
+                fontSize: 11, color: "#7a9bc0", lineHeight: 1.5,
+                paddingLeft: 10,
+                borderLeft: "2px solid rgba(96,165,250,0.3)",
+              }}>
+                {ins}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Card>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HERO HEADER
-// ─────────────────────────────────────────────────────────────────────────────
-function MatchHero({ header, isLive, elapsed }) {
-  const score = header?.score || {};
-  const countdown = fmtCountdown(header?.date);
-
-  return (
-    <div style={{ background: "linear-gradient(180deg,#0a0a0a 0%,#111 100%)", padding: "28px 24px 20px", borderBottom: "1px solid #1a1a1a" }}>
-      {/* League + round */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
-        {header?.league?.logo && <img src={header.league.logo} alt="" style={{ height: 16, objectFit: "contain" }} />}
-        <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          {header?.league?.name}
-          {header?.league?.round && <span style={{ color: "#4b5563" }}> · {header.league.round}</span>}
-        </span>
-        {isLive && (
-          <span style={{ background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, letterSpacing: "0.06em", animation: "pulse 1.5s infinite" }}>LIVE</span>
-        )}
-      </div>
-
-      {/* Teams + score */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, maxWidth: 560, margin: "0 auto" }}>
-        {/* Home */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-          {header?.home?.logo && <img src={header.home.logo} alt="" style={{ height: 52, objectFit: "contain" }} />}
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", textAlign: "center", lineHeight: 1.3 }}>{header?.home?.name}</span>
-        </div>
-
-        {/* Score block */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-          {(isLive || score.home != null) ? (
-            <>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 42, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{score.home ?? "—"}</span>
-                <span style={{ fontSize: 28, color: "#374151", fontWeight: 300 }}>–</span>
-                <span style={{ fontSize: 42, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{score.away ?? "—"}</span>
-              </div>
-              {isLive && elapsed && (
-                <div style={{ fontSize: 12, color: "#10b981", fontWeight: 700, marginTop: 4 }}>{elapsed}′</div>
-              )}
-              {score.ht_home != null && (
-                <div style={{ fontSize: 10, color: "#4b5563", marginTop: 4 }}>HT: {score.ht_home}–{score.ht_away}</div>
-              )}
-            </>
-          ) : countdown ? (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Kicks off in</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#f59e0b" }}>{countdown}</div>
-              <div style={{ fontSize: 11, color: "#4b5563", marginTop: 4 }}>{fmtDate(header?.date)} · {fmtTime(header?.date)}</div>
-            </div>
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 20, color: "#4b5563" }}>vs</div>
-              <div style={{ fontSize: 11, color: "#4b5563", marginTop: 6 }}>{fmtDate(header?.date)}</div>
-              <div style={{ fontSize: 13, color: "#9ca3af", fontWeight: 600 }}>{fmtTime(header?.date)}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Away */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-          {header?.away?.logo && <img src={header.away.logo} alt="" style={{ height: 52, objectFit: "contain" }} />}
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", textAlign: "center", lineHeight: 1.3 }}>{header?.away?.name}</span>
-        </div>
-      </div>
-
-      {/* Venue + referee */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
-        {header?.venue_name && (
-          <span style={{ fontSize: 11, color: "#4b5563" }}>📍 {header.venue_name}{header.venue_city ? `, ${header.venue_city}` : ""}</span>
-        )}
-        {header?.referee && (
-          <span style={{ fontSize: 11, color: "#4b5563" }}>🧑‍⚖️ {header.referee}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // MAIN PAGE
-// ─────────────────────────────────────────────────────────────────────────────
-const SESSION_CACHE = {};
-const CACHE_TTL = 5 * 60 * 1000;
+// ─────────────────────────────────────────────
 
 export default function MatchIntelligencePage() {
   const { fixtureId } = useParams();
-  const navigate = useNavigate();
-  const [data, setData]       = useState(null);
+  const navigate      = useNavigate();
+
+  const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [activeTab, setActiveTab] = useState("preview");
-  const tabBarRef = useRef(null);
+  const [error,   setError]   = useState(null);
+  const [tab,     setTab]     = useState("facts");
 
   useEffect(() => {
-    if (!fixtureId) return;
-    const cacheKey = `mi_v2_${fixtureId}`;
-    const cached = SESSION_CACHE[cacheKey];
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      setData(cached.data); setLoading(false); return;
-    }
-    setLoading(true); setError(null);
-    fetch(`${API_BASE}/api/match-intelligence/${fixtureId}`)
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => {
-        SESSION_CACHE[cacheKey] = { data: d, ts: Date.now() };
-        setData(d); setLoading(false);
+    setLoading(true);
+    setError(null);
+
+    fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
       })
-      .catch(e => { setError(e.message); setLoading(false); });
+      .then(d => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, [fixtureId]);
 
-  // Auto-switch to commentary for live matches
-  useEffect(() => {
-    if (data && LIVE_STATUSES.includes(data.header?.status_short)) {
-      setActiveTab("commentary");
-    }
-  }, [data]);
-
-  const isLive = data && LIVE_STATUSES.includes(data.header?.status_short);
-
-  // Available tabs based on data
-  const availableTabs = TABS.filter(t => {
-    if (t.id === "commentary") return data?.events?.length > 0;
-    if (t.id === "stats")      return data?.statistics && Object.values(data.statistics).some(v => v?.home != null);
-    if (t.id === "model")      return data?.prediction && Object.keys(data.prediction).length > 0;
-    return true;
-  });
-
-  function renderTabContent() {
-    if (!data) return null;
-    switch (activeTab) {
-      case "preview":    return <PreviewTab data={data} />;
-      case "commentary": return <CommentaryTab events={data.events} header={data.header} />;
-      case "lineups":    return <LineupsTab lineups={data.lineups} header={data.header} />;
-      case "stats":      return <StatsTab statistics={data.statistics} header={data.header} />;
-      case "h2h":        return <H2HTab h2h={data.h2h} header={data.header} />;
-      case "injuries":   return <InjuriesTab injuries={data.injuries} header={data.header} />;
-      case "model":      return <ModelTab prediction={data.prediction} header={data.header} />;
-      default:           return null;
-    }
+  if (loading) {
+    return (
+      <div style={{
+        background: "#060a12", minHeight: "100vh",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 16,
+      }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          border: "2px solid rgba(96,165,250,0.2)",
+          borderTopColor: "#60a5fa",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <div style={{ color: "#4a6080", fontSize: 13 }}>Loading match intelligence…</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
+
+  if (error) {
+    return (
+      <div style={{
+        background: "#060a12", minHeight: "100vh",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 16, padding: 24,
+      }}>
+        <div style={{ color: "#ff5252", fontSize: 14 }}>Failed to load: {error}</div>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "#9fb4d6", borderRadius: 8, padding: "8px 18px",
+            cursor: "pointer", fontSize: 12,
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+    );
+  }
+
+  const header = data?.header || {};
+  const isLive = ["1H","2H","HT","ET","BT","P"].includes(header.status);
 
   return (
     <>
       <style>{`
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        @keyframes fadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .mi-tab { background: none; border: none; cursor: pointer; padding: 10px 14px; font-size: 12px; font-weight: 600; color: #4b5563; transition: color 0.2s; white-space: nowrap; border-bottom: 2px solid transparent; }
-        .mi-tab:hover { color: #9ca3af; }
-        .mi-tab.active { color: #e2e8f0; border-bottom-color: #10b981; }
-        .mi-content { animation: fadeIn 0.2s ease; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse {
+          0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+        }
+        * { box-sizing: border-box; }
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: "#000", paddingTop: 86, color: "#e2e8f0", fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif" }}>
+      <div style={{
+        background: "#060a12", minHeight: "100vh",
+        fontFamily: "'Inter', sans-serif",
+      }}>
 
-        {/* Back button */}
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 16px 0" }}>
-          <button onClick={() => navigate(-1)} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6, padding: 0 }}>
-            ← Back
-          </button>
+        {/* ── Hero header ── */}
+        <div style={{
+          background: "linear-gradient(180deg,#0d1a2e 0%,#060a12 100%)",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          padding: "24px 24px 0",
+        }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+
+            {/* back button */}
+            <button
+              onClick={() => navigate(-1)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "#3a5070", fontSize: 12, padding: 0, marginBottom: 20,
+                display: "flex", alignItems: "center", gap: 4,
+              }}
+            >
+              ← Live Centre
+            </button>
+
+            {/* match scoreline */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 16, marginBottom: 20,
+            }}>
+
+              {/* home */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, maxWidth: 160 }}>
+                {header.home_logo && (
+                  <img src={header.home_logo} style={{ width: 48, height: 48, objectFit: "contain" }}
+                    onError={e => (e.currentTarget.style.display = "none")} />
+                )}
+                <span style={{ fontSize: 13, fontWeight: 800, color: "#c8d8f0", textAlign: "center" }}>
+                  {header.home_team}
+                </span>
+              </div>
+
+              {/* score / kickoff */}
+              <div style={{ textAlign: "center", flexShrink: 0 }}>
+                {header.home_score != null ? (
+                  <div style={{ fontSize: 40, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-0.02em" }}>
+                    {header.home_score} – {header.away_score}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#4a6080" }}>
+                    {header.kickoff
+                      ? new Date(header.kickoff).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : "vs"}
+                  </div>
+                )}
+
+                {/* live badge */}
+                {isLive && (
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    gap: 5, marginTop: 6,
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ff5252", animation: "pulse 1.2s infinite" }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#ff5252" }}>
+                      {header.status === "HT" ? "Half Time" : `${header.minute}'`}
+                    </span>
+                  </div>
+                )}
+
+                {header.status === "FT" && (
+                  <div style={{ fontSize: 10, color: "#3a5070", marginTop: 4, fontWeight: 800, letterSpacing: "0.08em" }}>
+                    FULL TIME
+                  </div>
+                )}
+
+                {header.league_name && (
+                  <div style={{ fontSize: 9, color: "#2e3d52", marginTop: 8, letterSpacing: "0.1em", fontWeight: 700 }}>
+                    {header.league_name}
+                  </div>
+                )}
+              </div>
+
+              {/* away */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, maxWidth: 160 }}>
+                {header.away_logo && (
+                  <img src={header.away_logo} style={{ width: 48, height: 48, objectFit: "contain" }}
+                    onError={e => (e.currentTarget.style.display = "none")} />
+                )}
+                <span style={{ fontSize: 13, fontWeight: 800, color: "#c8d8f0", textAlign: "center" }}>
+                  {header.away_team}
+                </span>
+              </div>
+
+            </div>
+
+            {/* ── Tab bar ── */}
+            <div style={{
+              display: "flex", gap: 0,
+              borderBottom: "1px solid rgba(255,255,255,0.05)",
+              overflowX: "auto",
+            }}>
+              {TABS.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "10px 16px",
+                    fontSize: 12, fontWeight: 700,
+                    color: tab === t.id ? "#60a5fa" : "#3a5070",
+                    borderBottom: `2px solid ${tab === t.id ? "#60a5fa" : "transparent"}`,
+                    transition: "color 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+          </div>
         </div>
 
-        {loading && (
-          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }}>
-            {/* Header skeleton */}
-            <div style={{ padding: "28px 24px 20px", borderBottom: "1px solid #1a1a1a" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><Skeleton w={120} h={14} /></div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 560, margin: "0 auto" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><Skeleton w={52} h={52} r={50} /><Skeleton w={90} h={14} /></div>
-                <Skeleton w={120} h={40} />
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><Skeleton w={52} h={52} r={50} /><Skeleton w={90} h={14} /></div>
-              </div>
+        {/* ── Body ── */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 24px" }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 300px",
+            gap: 20,
+          }}>
+
+            {/* Main content */}
+            <div>
+              {tab === "facts"      && <FactsTab      data={data} />}
+              {tab === "commentary" && <CommentaryTab data={data} />}
+              {tab === "lineups"    && <LineupsTab    data={data} />}
+              {tab === "stats"      && <StatsTab      data={data} />}
+              {tab === "h2h"        && <H2HTab        data={data} />}
+              {tab === "model"      && <ModelTab      data={data} />}
             </div>
-            <div style={{ padding: 24, display: "flex", gap: 24 }}>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
-                {[1,2,3,4].map(i => <Skeleton key={i} h={80} />)}
-              </div>
-              <div style={{ width: 280, display: "flex", flexDirection: "column", gap: 12 }}>
-                {[1,2,3].map(i => <Skeleton key={i} h={100} />)}
-              </div>
+
+            {/* Sidebar */}
+            <div>
+              <Sidebar data={data} />
             </div>
+
           </div>
-        )}
+        </div>
 
-        {error && !loading && (
-          <div style={{ textAlign: "center", padding: "60px 24px" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-            <p style={{ color: "#6b7280" }}>Failed to load match data: {error}</p>
-            <button onClick={() => window.location.reload()} style={{ marginTop: 12, background: "#10b981", border: "none", borderRadius: 8, padding: "10px 20px", color: "#000", fontWeight: 700, cursor: "pointer" }}>Retry</button>
-          </div>
-        )}
-
-        {data && !loading && (
-          <>
-            {/* Hero */}
-            <MatchHero header={data.header} isLive={isLive} elapsed={data.header?.elapsed} />
-
-            {/* Tab bar */}
-            <div ref={tabBarRef} style={{ background: "#0a0a0a", borderBottom: "1px solid #1a1a1a", position: "sticky", top: 48, zIndex: 40 }}>
-              <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", overflowX: "auto", display: "flex", scrollbarWidth: "none" }}>
-                {availableTabs.map(t => (
-                  <button key={t.id} className={`mi-tab${activeTab === t.id ? " active" : ""}`} onClick={() => setActiveTab(t.id)}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Body */}
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 16px" }}>
-              <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-
-                {/* Main content */}
-                <div className="mi-content" key={activeTab} style={{ flex: 1, minWidth: 0 }}>
-                  {renderTabContent()}
-                </div>
-
-                {/* Right rail (desktop only) */}
-                <div style={{ width: 280, flexShrink: 0, display: "none" }} className="mi-rail">
-                  <RightRail data={data} />
-                </div>
-              </div>
-
-              {/* Mobile right rail */}
-              <div style={{ marginTop: 24 }} className="mi-rail-mobile">
-                <h3 style={{ fontSize: 11, fontWeight: 700, color: "#4b5563", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 14px" }}>Match Info</h3>
-                <RightRail data={data} />
-              </div>
-            </div>
-          </>
-        )}
       </div>
-
-      <style>{`
-        @media (min-width: 900px) {
-          .mi-rail { display: flex !important; flex-direction: column; }
-          .mi-rail-mobile { display: none !important; }
-        }
-      `}</style>
     </>
   );
 }

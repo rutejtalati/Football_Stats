@@ -1,5 +1,5 @@
-﻿// pages/NewsTrackerPage.jsx  — Premium Editorial Redesign
-import { useState, useEffect } from "react";
+﻿// pages/NewsTrackerPage.jsx  — Premium Editorial Redesign + Article Drawer
+import { useState, useEffect, useCallback } from "react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
@@ -79,7 +79,7 @@ function timeAgo(ts) {
 }
 
 // ── Win probability bar ──────────────────────────────────────
-function WinProbBar({ home, draw, away, homeTeam, awayTeam }) {
+function WinProbBar({ home, draw, away, homeTeam, awayTeam, large = false }) {
   const h = Math.round((home || 0) * 100);
   const d = Math.round((draw || 0) * 100);
   const a = Math.round((away || 0) * 100);
@@ -87,20 +87,20 @@ function WinProbBar({ home, draw, away, homeTeam, awayTeam }) {
 
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <span style={{ fontSize: 13, fontWeight: 800, color: winner === "home" ? "#f0f6ff" : "#4a6a8a", maxWidth: "35%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: large ? 10 : 6 }}>
+        <span style={{ fontSize: large ? 15 : 13, fontWeight: 800, color: winner === "home" ? "#f0f6ff" : "#4a6a8a", maxWidth: "35%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {homeTeam}
         </span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 900, color: winner === "home" ? "#38bdf8" : "#2a4a6a" }}>{h}%</span>
-          <span style={{ fontSize: 10, color: "#1a3a5a", fontWeight: 700 }}>{d}% D</span>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 900, color: winner === "away" ? "#f87171" : "#2a4a6a" }}>{a}%</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: large ? 16 : 13, fontWeight: 900, color: winner === "home" ? "#38bdf8" : "#2a4a6a" }}>{h}%</span>
+          <span style={{ fontSize: large ? 11 : 10, color: "#1a3a5a", fontWeight: 700 }}>{d}% D</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: large ? 16 : 13, fontWeight: 900, color: winner === "away" ? "#f87171" : "#2a4a6a" }}>{a}%</span>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 800, color: winner === "away" ? "#f0f6ff" : "#4a6a8a", maxWidth: "35%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
+        <span style={{ fontSize: large ? 15 : 13, fontWeight: 800, color: winner === "away" ? "#f0f6ff" : "#4a6a8a", maxWidth: "35%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
           {awayTeam}
         </span>
       </div>
-      <div style={{ display: "flex", height: 5, borderRadius: 999, overflow: "hidden", gap: 1 }}>
+      <div style={{ display: "flex", height: large ? 7 : 5, borderRadius: 999, overflow: "hidden", gap: 1 }}>
         <div style={{ width: `${h}%`, background: "linear-gradient(90deg,#1d6fa4,#38bdf8)", borderRadius: "999px 0 0 999px", transition: "width .6s ease" }} />
         <div style={{ width: `${d}%`, background: "rgba(255,255,255,0.12)" }} />
         <div style={{ width: `${a}%`, background: "linear-gradient(90deg,#dc4f4f,#f87171)", borderRadius: "0 999px 999px 0", transition: "width .6s ease" }} />
@@ -109,14 +109,299 @@ function WinProbBar({ home, draw, away, homeTeam, awayTeam }) {
   );
 }
 
+// ── Article Drawer ────────────────────────────────────────────
+function ArticleDrawer({ article, onClose }) {
+  const isOpen = !!article;
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    // Lock body scroll
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
+  if (!article) return null;
+
+  const theme      = getInsightTheme(article.title);
+  const league     = getLeague(article);
+  const typeMeta   = TYPE_META[article.type] || TYPE_META.headline;
+  const isExternal = article.source_type === "external";
+  const isPreview  = article.type === "match_preview";
+
+  const homeTeam = article.home_team || article.meta?.home_team;
+  const awayTeam = article.away_team || article.meta?.away_team;
+  const homeProb = article.home_win_prob  || (article.meta?.home_win  ?? 0) / 100;
+  const drawProb = article.draw_prob      || (article.meta?.draw      ?? 0) / 100;
+  const awayProb = article.away_win_prob  || (article.meta?.away_win  ?? 0) / 100;
+  const xgHome   = (article.expected_home_goals ?? article.meta?.xg_home)?.toFixed(2);
+  const xgAway   = (article.expected_away_goals ?? article.meta?.xg_away)?.toFixed(2);
+  const conf     = article.confidence_score
+    ? Math.round(article.confidence_score * 100)
+    : article.meta?.confidence ?? null;
+
+  const bodyParagraphs = Array.isArray(article.body)
+    ? article.body.filter(p => typeof p === "string" && p.trim().length > 0).map(p => p.replace(/\*\*/g, ""))
+    : [];
+
+  const accentColor = isPreview ? league.color : theme.accent;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+          animation: "drawerBackdropIn .25s ease both",
+        }}
+      />
+
+      {/* Drawer panel */}
+      <div
+        style={{
+          position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 1001,
+          width: "min(640px, 100vw)",
+          background: "linear-gradient(170deg, rgba(8,14,26,0.99), rgba(4,8,18,0.99))",
+          borderLeft: `1px solid ${accentColor}25`,
+          boxShadow: `-8px 0 60px rgba(0,0,0,0.6), -1px 0 0 ${accentColor}10`,
+          overflowY: "auto",
+          overflowX: "hidden",
+          animation: "drawerSlideIn .3s cubic-bezier(.22,1,.36,1) both",
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255,255,255,.08) transparent",
+        }}
+      >
+        {/* Top accent line */}
+        <div style={{ height: 2, background: `linear-gradient(90deg, ${accentColor}, transparent)`, flexShrink: 0 }} />
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: "sticky", top: 0, left: "100%", zIndex: 10,
+            float: "right", margin: "16px 20px 0 0",
+            width: 36, height: 36, borderRadius: "50%",
+            background: "rgba(255,255,255,.07)",
+            border: "1px solid rgba(255,255,255,.12)",
+            color: "#7a9ab8", fontSize: 18, lineHeight: 1,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all .15s ease",
+            flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.12)"; e.currentTarget.style.color = "#f0f6ff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.07)"; e.currentTarget.style.color = "#7a9ab8"; }}
+        >
+          ✕
+        </button>
+
+        <div style={{ padding: "20px 32px 48px", clear: "both" }}>
+
+          {/* Badges */}
+          <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", color: accentColor, textTransform: "uppercase", background: `${accentColor}12`, border: `1px solid ${accentColor}30`, borderRadius: 5, padding: "3px 8px" }}>
+              {isPreview ? "MATCH PREVIEW" : (theme.tag || typeMeta.label.toUpperCase())}
+            </span>
+            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: league.color, textTransform: "uppercase", background: league.bg, border: `1px solid ${league.color}30`, borderRadius: 5, padding: "3px 8px" }}>
+              {league.abbr}
+            </span>
+            {article.source && (
+              <span style={{ fontSize: 9, fontWeight: 700, color: "#2a4a6a", fontFamily: "'JetBrains Mono',monospace", marginLeft: "auto" }}>
+                {article.source}
+              </span>
+            )}
+            <span style={{ fontSize: 9, fontWeight: 700, color: "#1a3a5a", fontFamily: "'JetBrains Mono',monospace" }}>
+              {timeAgo(article.published_at)}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h2 style={{
+            fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 900,
+            color: "#f0f6ff", lineHeight: 1.2, letterSpacing: "-0.02em",
+            margin: "0 0 14px",
+          }}>
+            {article.title}
+          </h2>
+
+          {/* Standfirst */}
+          {article.standfirst && (
+            <p style={{
+              fontFamily: "'Inter',sans-serif", fontSize: 16, lineHeight: 1.65,
+              color: "#8aabb8", margin: "0 0 24px",
+              borderLeft: `3px solid ${accentColor}40`,
+              paddingLeft: 16,
+            }}>
+              {article.standfirst}
+            </p>
+          )}
+
+          {/* Match preview stats block */}
+          {isPreview && homeTeam && awayTeam && (
+            <div style={{
+              borderRadius: 16, padding: "20px 24px", marginBottom: 28,
+              background: "rgba(255,255,255,.03)",
+              border: `1px solid ${league.color}20`,
+            }}>
+              {/* Team header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                  {article.home_logo && <img src={article.home_logo} alt={homeTeam} style={{ width: 40, height: 40, objectFit: "contain", marginBottom: 4 }} onError={e => e.currentTarget.style.display = "none"} />}
+                  <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 900, color: homeProb >= awayProb ? "#f0f6ff" : "#4a6a8a" }}>{homeTeam}</span>
+                  {xgHome && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: "#2a6a9a", fontWeight: 700 }}>xG {xgHome}</span>}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "0 16px" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, fontWeight: 900, color: "rgba(255,255,255,.12)", letterSpacing: "0.1em" }}>VS</span>
+                  {conf != null && (
+                    <span style={{ fontSize: 9, fontWeight: 800, color: conf > 70 ? "#34d399" : conf > 50 ? "#fbbf24" : "#f87171", letterSpacing: "0.06em" }}>
+                      {conf}% CONF
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flex: 1 }}>
+                  {article.away_logo && <img src={article.away_logo} alt={awayTeam} style={{ width: 40, height: 40, objectFit: "contain", marginBottom: 4 }} onError={e => e.currentTarget.style.display = "none"} />}
+                  <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 900, color: awayProb > homeProb ? "#f0f6ff" : "#4a6a8a", textAlign: "right" }}>{awayTeam}</span>
+                  {xgAway && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: "#2a6a9a", fontWeight: 700 }}>xG {xgAway}</span>}
+                </div>
+              </div>
+
+              <WinProbBar home={homeProb} draw={drawProb} away={awayProb} homeTeam={homeTeam} awayTeam={awayTeam} large={true} />
+
+              {/* Most likely score */}
+              {article.meta?.most_likely_score && (
+                <div style={{ marginTop: 16, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.05)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: "#1a3a5a", letterSpacing: "0.1em" }}>MOST LIKELY</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 14, fontWeight: 900, color: accentColor }}>{article.meta.most_likely_score}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Summary stat pill */}
+          {article.summary && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "7px 14px", borderRadius: 999, marginBottom: 28,
+              background: "rgba(255,255,255,.04)",
+              border: "1px solid rgba(255,255,255,.08)",
+              fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 700, color: "#c8d8f0",
+            }}>
+              📊 {article.summary}
+            </div>
+          )}
+
+          {/* Body paragraphs — internal articles */}
+          {!isExternal && bodyParagraphs.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {bodyParagraphs.map((para, i) => (
+                <p key={i} style={{
+                  fontFamily: "'Inter',sans-serif",
+                  fontSize: 15,
+                  lineHeight: 1.75,
+                  color: i === bodyParagraphs.length - 1 ? "#c8d8f0" : "#6a8aa8",
+                  margin: 0,
+                  fontWeight: i === bodyParagraphs.length - 1 ? 600 : 400,
+                  // Verdict paragraph gets slightly lighter treatment
+                  ...(i === bodyParagraphs.length - 1 && {
+                    borderTop: "1px solid rgba(255,255,255,.06)",
+                    paddingTop: 16,
+                    marginTop: 4,
+                  }),
+                }}>
+                  {para}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* External article — no body, just link out */}
+          {isExternal && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {article.image && (
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  style={{ width: "100%", borderRadius: 12, objectFit: "cover", maxHeight: 220, border: "1px solid rgba(255,255,255,.06)" }}
+                  onError={e => e.currentTarget.style.display = "none"}
+                />
+              )}
+              <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 15, lineHeight: 1.7, color: "#6a8aa8", margin: 0 }}>
+                {article.standfirst || article.summary || "Read the full story at the original source."}
+              </p>
+              {article.url && (
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "10px 20px", borderRadius: 999,
+                    background: accentColor,
+                    color: "#000", fontFamily: "'Inter',sans-serif",
+                    fontSize: 13, fontWeight: 800, letterSpacing: "0.04em",
+                    textDecoration: "none", width: "fit-content",
+                    transition: "opacity .15s ease",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  Read full article →
+                </a>
+              )}
+              {article.author && (
+                <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "#1a3a5a", margin: 0, fontWeight: 600 }}>
+                  By {article.author} · {article.source}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* No body fallback for internal articles */}
+          {!isExternal && bodyParagraphs.length === 0 && (
+            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: "#2a4a6a", margin: 0, fontStyle: "italic" }}>
+              Full analysis not available for this article.
+            </p>
+          )}
+
+          {/* Meta insight stats from meta field */}
+          {article.meta && !isPreview && (
+            <div style={{ marginTop: 28, padding: "14px 16px", borderRadius: 12, background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.05)", display: "flex", flexWrap: "wrap", gap: 20 }}>
+              {[
+                article.meta.leader       && { label: "Leader",     value: article.meta.leader },
+                article.meta.gap != null  && { label: "Gap",        value: `${article.meta.gap} pts` },
+                article.meta.leader_pts   && { label: "Points",     value: article.meta.leader_pts },
+                article.meta.confidence   && { label: "Confidence", value: `${article.meta.confidence}%` },
+              ].filter(Boolean).map((s, i) => (
+                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 15, fontWeight: 900, color: accentColor }}>{s.value}</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: "#1a3a5a", letterSpacing: "0.08em", textTransform: "uppercase" }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Hero card ────────────────────────────────────────────────
-function HeroCard({ article }) {
+function HeroCard({ article, onClick }) {
   const theme  = getInsightTheme(article.title);
   const league = getLeague(article);
   const [hov, setHov] = useState(false);
 
   return (
     <div
+      onClick={() => onClick(article)}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         position: "relative", borderRadius: 24, overflow: "hidden", minHeight: 320,
@@ -131,7 +416,6 @@ function HeroCard({ article }) {
       <div style={{ position:"absolute",top:0,right:0,width:280,height:280,backgroundImage:"radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px)",backgroundSize:"18px 18px",maskImage:"radial-gradient(ellipse at top right,black 30%,transparent 75%)",WebkitMaskImage:"radial-gradient(ellipse at top right,black 30%,transparent 75%)",pointerEvents:"none" }} />
       <div style={{ position:"absolute",top:0,left:32,right:32,height:2,background:`linear-gradient(90deg,${theme.accent},transparent)`,borderRadius:"0 0 2px 2px" }} />
 
-      {/* Badges */}
       <div style={{ position:"absolute",top:24,left:32,display:"flex",gap:8,alignItems:"center" }}>
         {[
           { label:"Featured", color:theme.accent, bg:`${theme.accent}15`, border:`${theme.accent}35` },
@@ -164,7 +448,7 @@ function HeroCard({ article }) {
 }
 
 // ── Match preview card ───────────────────────────────────────
-function MatchPreviewCard({ article, size = "standard" }) {
+function MatchPreviewCard({ article, size = "standard", onClick }) {
   const [hov, setHov] = useState(false);
   const league     = getLeague(article);
   const isFeatured = size === "feature";
@@ -188,6 +472,7 @@ function MatchPreviewCard({ article, size = "standard" }) {
 
   return (
     <div
+      onClick={() => onClick(article)}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         position:"relative", borderRadius:20, overflow:"hidden",
@@ -200,8 +485,6 @@ function MatchPreviewCard({ article, size = "standard" }) {
       }}
     >
       <div style={{ height:2, background:`linear-gradient(90deg,${league.color},transparent)` }} />
-
-      {/* Header */}
       <div style={{ padding: isFeatured?"20px 24px 0":"16px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <span style={{ fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:league.color,textTransform:"uppercase",background:league.bg,border:`1px solid ${league.color}30`,borderRadius:5,padding:"2px 7px" }}>{league.abbr}</span>
@@ -209,8 +492,6 @@ function MatchPreviewCard({ article, size = "standard" }) {
         </div>
         <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:"#1a3a5a",fontWeight:700 }}>{timeAgo(article.published_at)}</span>
       </div>
-
-      {/* Teams */}
       <div style={{ padding: isFeatured?"16px 24px":"12px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
         <div style={{ flex:1,display:"flex",flexDirection:"column",gap:4 }}>
           {homeLogo && <img src={homeLogo} alt={homeTeam} style={{ width:32,height:32,objectFit:"contain",marginBottom:4 }} onError={e=>e.currentTarget.style.display="none"} />}
@@ -227,19 +508,13 @@ function MatchPreviewCard({ article, size = "standard" }) {
           <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#2a6a9a",fontWeight:700 }}>xG {xgAway}</span>
         </div>
       </div>
-
-      {/* Prob bar */}
       <div style={{ padding:"0 20px" }}>
         <WinProbBar home={homeProb} draw={drawProb} away={awayProb} homeTeam={homeTeam} awayTeam={awayTeam} />
       </div>
-
-      {/* Verdict */}
       <div style={{ margin:"12px 20px 0",padding:"10px 14px",borderRadius:12,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.05)",display:"flex",alignItems:"flex-start",gap:8 }}>
         <span style={{ fontSize:8,fontWeight:900,letterSpacing:"0.1em",color:"#34d399",textTransform:"uppercase",flexShrink:0,paddingTop:1 }}>MODEL</span>
         <span style={{ fontFamily:"'Inter',sans-serif",fontSize:12,color:"#7a9ab8",lineHeight:1.45 }}>{verdict.slice(0,120)}{verdict.length>120?"…":""}</span>
       </div>
-
-      {/* Stat strip */}
       <div style={{ padding:"12px 20px 16px",display:"flex",gap:12,alignItems:"center",borderTop:"1px solid rgba(255,255,255,.04)",marginTop:12 }}>
         {favoured && (
           <div style={{ display:"flex",alignItems:"center",gap:5 }}>
@@ -263,13 +538,12 @@ function MatchPreviewCard({ article, size = "standard" }) {
 }
 
 // ── Model insight card ───────────────────────────────────────
-function ModelInsightCard({ article, size = "standard" }) {
+function ModelInsightCard({ article, size = "standard", onClick }) {
   const [hov, setHov] = useState(false);
   const theme      = getInsightTheme(article.title);
   const league     = getLeague(article);
   const isFeatured = size === "feature";
 
-  // Build stat strip from meta
   const metaStats = [];
   if (article.meta?.leader_pts)  metaStats.push({ label: "Points",     value: article.meta.leader_pts });
   if (article.meta?.gap != null) metaStats.push({ label: "Gap",        value: `${article.meta.gap}pts` });
@@ -280,6 +554,7 @@ function ModelInsightCard({ article, size = "standard" }) {
 
   return (
     <div
+      onClick={() => onClick(article)}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         position:"relative", borderRadius:20, overflow:"hidden",
@@ -293,23 +568,17 @@ function ModelInsightCard({ article, size = "standard" }) {
       <div style={{ position:"absolute",inset:0,pointerEvents:"none",background:theme.grad,opacity:hov?1:0.7,transition:"opacity .3s" }} />
       <div style={{ position:"absolute",top:0,right:0,width:160,height:160,backgroundImage:"radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px)",backgroundSize:"14px 14px",maskImage:"radial-gradient(ellipse at top right,black 20%,transparent 70%)",WebkitMaskImage:"radial-gradient(ellipse at top right,black 20%,transparent 70%)",pointerEvents:"none" }} />
       <div style={{ height:2,background:`linear-gradient(90deg,${theme.accent},transparent)` }} />
-
       <div style={{ padding:isFeatured?"20px 24px":"16px 20px",position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column" }}>
-        {/* Badges */}
         <div style={{ display:"flex",gap:6,alignItems:"center",marginBottom:12 }}>
           <span style={{ fontSize:9,fontWeight:900,letterSpacing:"0.14em",color:theme.accent,textTransform:"uppercase",background:`${theme.accent}12`,border:`1px solid ${theme.accent}30`,borderRadius:5,padding:"2px 7px" }}>{theme.tag}</span>
           <span style={{ fontSize:9,fontWeight:900,letterSpacing:"0.1em",color:league.color,textTransform:"uppercase",background:league.bg,border:`1px solid ${league.color}30`,borderRadius:5,padding:"2px 7px" }}>{league.abbr}</span>
           <span style={{ marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#1a3a5a",fontWeight:700 }}>{timeAgo(article.published_at)}</span>
         </div>
-
         <h3 style={{ fontFamily:"'Sora',sans-serif",fontSize:isFeatured?20:16,fontWeight:900,color:"#f0f6ff",lineHeight:1.25,letterSpacing:"-0.01em",margin:"0 0 10px" }}>{article.title}</h3>
-
         <p style={{ fontFamily:"'Inter',sans-serif",fontSize:13,color:"#4a6a8a",lineHeight:1.55,margin:"0 0 16px",flex:1 }}>
           {article.standfirst || (article.summary?.slice(0, isFeatured?200:120))}
           {!article.standfirst && article.summary?.length > (isFeatured?200:120) ? "…" : ""}
         </p>
-
-        {/* Stat strip from meta */}
         {keyStats.length > 0 && (
           <div style={{ display:"flex",gap:16,padding:"10px 12px",borderRadius:10,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.05)",marginBottom:12 }}>
             {keyStats.map((s,i) => (
@@ -326,7 +595,6 @@ function ModelInsightCard({ article, size = "standard" }) {
             )}
           </div>
         )}
-
         <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
           <span style={{ fontSize:11,fontWeight:700,color:"#1a3a5a",fontFamily:"'Inter',sans-serif" }}>Model Insight · StatinSite</span>
           <span style={{ fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.04em" }}>Read →</span>
@@ -337,13 +605,14 @@ function ModelInsightCard({ article, size = "standard" }) {
 }
 
 // ── Compact card ─────────────────────────────────────────────
-function CompactCard({ article }) {
+function CompactCard({ article, onClick }) {
   const [hov, setHov] = useState(false);
   const typeMeta = TYPE_META[article.type] || TYPE_META.headline;
   const league   = getLeague(article);
 
   return (
     <div
+      onClick={() => onClick(article)}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         display:"flex",gap:14,alignItems:"flex-start",padding:"14px 16px",borderRadius:14,
@@ -433,12 +702,16 @@ function EmptyState({ message = "No articles found" }) {
 // MAIN PAGE
 // ════════════════════════════════════════════════════════════
 export default function NewsTrackerPage() {
-  const [articles,     setArticles]     = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState(null);
-  const [activeType,   setActiveType]   = useState("all");
-  const [activeLeague, setActiveLeague] = useState("all");
-  const [lastUpdated,  setLastUpdated]  = useState(null);
+  const [articles,      setArticles]      = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
+  const [activeType,    setActiveType]    = useState("all");
+  const [activeLeague,  setActiveLeague]  = useState("all");
+  const [lastUpdated,   setLastUpdated]   = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
+  const openArticle  = useCallback((article) => setSelectedArticle(article), []);
+  const closeArticle = useCallback(() => setSelectedArticle(null), []);
 
   useEffect(() => {
     async function load() {
@@ -498,11 +771,16 @@ export default function NewsTrackerPage() {
   return (
     <div style={{ minHeight:"100vh", background:"#000", fontFamily:"'Sora',sans-serif" }}>
       <style>{`
-        @keyframes niShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        @keyframes niFadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes tickerPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+        @keyframes niShimmer      { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        @keyframes niFadeUp       { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes tickerPulse    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+        @keyframes drawerSlideIn  { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes drawerBackdropIn { from{opacity:0} to{opacity:1} }
         .ni-card-enter { animation: niFadeUp .4s cubic-bezier(.22,1,.36,1) both; }
       `}</style>
+
+      {/* Article Drawer */}
+      <ArticleDrawer article={selectedArticle} onClose={closeArticle} />
 
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px 80px" }}>
 
@@ -564,7 +842,7 @@ export default function NewsTrackerPage() {
             {/* Hero */}
             {hero && (
               <div className="ni-card-enter" style={{ marginBottom:40 }}>
-                <HeroCard article={hero} />
+                <HeroCard article={hero} onClick={openArticle} />
               </div>
             )}
 
@@ -575,7 +853,7 @@ export default function NewsTrackerPage() {
                 <div style={{ display:"grid", gridTemplateColumns: previews.length===1?"1fr":previews.length===2?"1fr 1fr":"1.4fr 1fr 1fr", gap:16 }}>
                   {previews.slice(0,3).map((a,i) => (
                     <div key={a.id||i} className="ni-card-enter" style={{ animationDelay:`${i*.08}s` }}>
-                      <MatchPreviewCard article={a} size={i===0?"feature":"standard"} />
+                      <MatchPreviewCard article={a} size={i===0?"feature":"standard"} onClick={openArticle} />
                     </div>
                   ))}
                 </div>
@@ -583,7 +861,7 @@ export default function NewsTrackerPage() {
                   <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginTop:16 }}>
                     {previews.slice(3,6).map((a,i) => (
                       <div key={a.id||i} className="ni-card-enter" style={{ animationDelay:`${(i+3)*.08}s` }}>
-                        <MatchPreviewCard article={a} size="standard" />
+                        <MatchPreviewCard article={a} size="standard" onClick={openArticle} />
                       </div>
                     ))}
                   </div>
@@ -607,7 +885,7 @@ export default function NewsTrackerPage() {
                 <div style={{ display:"grid", gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr", gap:16 }}>
                   {insights.slice(0,6).map((a,i) => (
                     <div key={a.id||i} className="ni-card-enter" style={{ animationDelay:`${i*.08}s` }}>
-                      <ModelInsightCard article={a} size={i===0&&insights.length>2?"feature":"standard"} />
+                      <ModelInsightCard article={a} size={i===0&&insights.length>2?"feature":"standard"} onClick={openArticle} />
                     </div>
                   ))}
                 </div>
@@ -621,7 +899,7 @@ export default function NewsTrackerPage() {
                 <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
                   {transfers.slice(0,8).map((a,i) => (
                     <div key={a.id||i} className="ni-card-enter" style={{ animationDelay:`${i*.05}s` }}>
-                      <CompactCard article={a} />
+                      <CompactCard article={a} onClick={openArticle} />
                     </div>
                   ))}
                 </div>

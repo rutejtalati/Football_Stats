@@ -717,7 +717,7 @@ function MatchHero({ header, isLive, elapsed }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-const SESSION_CACHE: Record<string, { data: any; ts: number }> = {};
+const SESSION_CACHE = {};
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default function MatchIntelligencePage() {

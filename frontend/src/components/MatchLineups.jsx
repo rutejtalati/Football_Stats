@@ -249,15 +249,18 @@ export default function MatchLineups({ fixtureId, headerData }) {
     setLoading(true);
     setError(null);
 
-    fetch(`${BACKEND}/api/match-lineup/${fixtureId}`)
-      .then(r => {
+fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)      .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then(d => {
-        setData(d);
-        setLoading(false);
-      })
+     .then(d => {
+  setData({
+    mode: "official",
+    home: d.lineups.home,
+    away: d.lineups.away
+  });
+  setLoading(false);
+})
       .catch(err => {
         setError(err.message);
         setLoading(false);

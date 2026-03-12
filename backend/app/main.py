@@ -20,7 +20,11 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi import FastAPI
 from app.routes.lineups import router as lineups_router
+
+app = FastAPI(title="StatPitch API", version="3.0.0")
+
 app.include_router(lineups_router)
 from app.models.season_simulator import monte_carlo_league
 from app.football_engine import EloRatings, TTLCache, predict_match, LEAGUE_AVG_GOALS, FALLBACK_AVG

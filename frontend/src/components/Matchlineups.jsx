@@ -484,40 +484,5 @@ function TeamDetailView({ team, color, mode }) {
 }
 
 // Re-export BenchRow for use in TeamDetailView
-function BenchRow({ player, color }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "7px 12px",
-      background: "linear-gradient(160deg,#0d1525,#080e1a)",
-      border: "1px solid rgba(255,255,255,0.04)",
-      borderRadius: 8, marginBottom: 4,
-    }}>
-      <div style={{
-        width: 22, height: 22, borderRadius: "50%",
-        background: color + "22", border: `1.5px solid ${color}55`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 9, fontWeight: 900, color,
-        flexShrink: 0,
-      }}>
-        {player.number || "—"}
-      </div>
-      {player.photo && (
-        <img src={player.photo} style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }}
-          onError={e => e.currentTarget.style.display = "none"} />
-      )}
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#c8d8f0" }}>{player.name}</div>
-        <div style={{ fontSize: 9, color: "#3a5070", fontWeight: 700 }}>{player.pos}</div>
-      </div>
-      {player.rating && (
-        <div style={{
-          fontSize: 11, fontWeight: 900,
-          color: player.rating >= 7.5 ? "#34d399" : player.rating >= 6.5 ? "#f59e0b" : "#6b7fa3",
-        }}>
-          {Number(player.rating).toFixed(1)}
-        </div>
-      )}
-    </div>
-  );
-}
+  
+     

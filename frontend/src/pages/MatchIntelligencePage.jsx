@@ -291,7 +291,6 @@ function PlayerMarker({ player, isHome }) {
     </div>
   );
 }
-{tab === "lineups" && <MatchLineups fixtureId={fixtureId} />}
 function LineupsTab({ data }) {
   const { lineups = {} } = data;
   const home = lineups.home || {};
@@ -1043,7 +1042,7 @@ export default function MatchIntelligencePage() {
             <div>
               {tab === "facts"      && <FactsTab      data={data} />}
               {tab === "commentary" && <CommentaryTab data={data} />}
-              {tab === "lineups"    && <LineupsTab    data={data} />}
+{tab === "lineups" && <MatchLineups fixtureId={fixtureId} />}
               {tab === "stats"      && <StatsTab      data={data} />}
               {tab === "h2h"        && <H2HTab        data={data} />}
               {tab === "model"      && <ModelTab      data={data} />}

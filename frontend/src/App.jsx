@@ -3,6 +3,8 @@ import Navbar               from "./components/Navbar";
 import LiveTicker           from "./components/LiveTicker";
 import HomePage             from "./pages/HomePage";
 import LeaguePage           from "./pages/LeaguePage";
+import LeaguesPage          from "./pages/LeaguesPage";
+import LivePage             from "./pages/LivePage";
 import SeasonSimulator      from "./pages/SeasonSimulator";
 import FplTablePage         from "./pages/FplTablePage";
 import GameweekInsightsPage from "./pages/GameweekInsightsPage";
@@ -14,10 +16,8 @@ import PlayerBrowsePage     from "./pages/PlayerBrowsePage";
 import MiniGamesPage        from "./pages/MiniGamesPage";
 import GroundZeroPage       from "./pages/GroundZeroPage";
 import NewsTrackerPage      from "./pages/NewsTrackerPage";
-import LeaguesPage           from "./pages/LeaguesPage";
-import LiveMatchPage from "./pages/LiveMatchPage";
 import TeamPage             from "./pages/TeamPage";
-
+import LiveMatchPage        from "./pages/LiveMatchPage";
 const SLUG_MAP = {
   "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
   "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",
@@ -46,6 +46,8 @@ export default function App() {
             <Route path="/predictions/:league"
               element={<PredictionsPage slugMap={SLUG_MAP} />} />
             <Route path="/leagues" element={<LeaguesPage />} />
+            <Route path="/live"               element={<LivePage />} />
+<Route path="/leagues"            element={<LeaguesPage />} />
             <Route path="/league/epl"         element={<LeaguePage league="epl" />} />
             <Route path="/league/laliga"      element={<LeaguePage league="laliga" />} />
             <Route path="/league/seriea"      element={<LeaguePage league="seriea" />} />

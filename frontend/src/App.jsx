@@ -14,6 +14,7 @@ import PlayerBrowsePage     from "./pages/PlayerBrowsePage";
 import MiniGamesPage        from "./pages/MiniGamesPage";
 import GroundZeroPage       from "./pages/GroundZeroPage";
 import NewsTrackerPage      from "./pages/NewsTrackerPage";
+import LeaguesPage           from "./pages/LeaguesPage";
 import TeamPage             from "./pages/TeamPage";
 
 const SLUG_MAP = {
@@ -43,7 +44,7 @@ export default function App() {
               element={<Navigate to="/predictions/premier-league" replace />} />
             <Route path="/predictions/:league"
               element={<PredictionsPage slugMap={SLUG_MAP} />} />
-            <Route path="/leagues" element={<Navigate to="/league/epl" replace />} />
+            <Route path="/leagues" element={<LeaguesPage />} />
             <Route path="/league/epl"         element={<LeaguePage league="epl" />} />
             <Route path="/league/laliga"      element={<LeaguePage league="laliga" />} />
             <Route path="/league/seriea"      element={<LeaguePage league="seriea" />} />
@@ -69,4 +70,6 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
+
 

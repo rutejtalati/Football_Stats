@@ -35,6 +35,7 @@ export const getFixtureOdds       = (fid)   => fetchJson(`/api/odds/${fid}`, "Od
 export const getApiPrediction     = (fid)   => fetchJson(`/api/apipred/${fid}`, "API prediction");
 export const getTeamStats         = (tid,lg) => fetchJson(`/api/team/${tid}/stats?league=${lg}`, "Team stats");
 export const getTeamInjuries      = (tid)   => fetchJson(`/api/injuries/team/${tid}`, "Team injuries");
-
+export const getMatchIntelligence = (fid) =>
+  fetchJson(`/api/match-intelligence/${fid}`, "Match intelligence");
 // ── News ──────────────────────────────────────────────────────
 export const getLeagueNews        = (lg)    => fetchJson(`/api/news/${lg}`, "News");

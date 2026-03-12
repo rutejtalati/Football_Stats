@@ -2,7 +2,7 @@
 from typing import Dict, List, Optional
 import os, time
 from pathlib import Path
-
+from app.match_intelligence import get_match_intelligence
 # Load .env automatically so NEWS_API_KEY and API_FOOTBALL_KEY work without
 # manually setting $env: in PowerShell every time.
 try:
@@ -234,6 +234,10 @@ def root(): return {"api":"StatPitch","version":"3.0.0"}
 
 @app.get("/health")
 def health(): return {"status":"ok","season":CURRENT_SEASON}
+
+@app.get("/api/match-intelligence/{fixture_id}")
+async def match_intelligence_endpoint(fixture_id: int):
+    return await get_match_intelligence(fixture_id)
 
 @app.get("/api/season-check")
 def season_check(): return {"current_season":CURRENT_SEASON}

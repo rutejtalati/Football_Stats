@@ -2,8 +2,7 @@
 // StatinSite  –  Match Intelligence Page
 // FotMob-style  /match/:fixtureId
 // ═════════════════════════════════════════════════════
-import MatchLineups from "../components/MatchLineups";
-import { useState, useEffect } from "react";
+import MatchLineups from "../components/MatchLineups.jsx";
 import { useParams, useNavigate } from "react-router-dom";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";

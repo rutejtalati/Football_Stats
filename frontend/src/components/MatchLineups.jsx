@@ -1,6 +1,6 @@
 // ═════════════════════════════════════════════════════
 // MatchLineups.jsx  –  FotMob-style Lineups tab
-// Handles predicted + official modes
+// Crash-proof · backend-agnostic · debug-ready
 // ═════════════════════════════════════════════════════
 
 import { useState, useEffect } from "react";
@@ -9,184 +9,73 @@ import { posColor } from "../utils/formationMap";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";
 
-// ─────────────────────────────────────────────
-// Injury / Doubt row
-// ─────────────────────────────────────────────
 
-function InjuryRow({ player }) {
-  const isInjured   = player.status === "injured"   || player.type === "Injury";
-  const isSuspended = player.status === "suspended";
-  const isDoubtful  = player.status === "doubtful";
+// ═════════════════════════════════════════════════════
+// NORMALISATION HELPERS
+// ═════════════════════════════════════════════════════
 
-  const icon  = isInjured ? "❌" : isSuspended ? "🟥" : "❓";
-  const color = isInjured ? "#ff5252" : isSuspended ? "#f59e0b" : "#9fb4d6";
-
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "8px 12px",
-      borderBottom: "1px solid rgba(255,255,255,0.04)",
-    }}>
-      <span style={{ fontSize: 13 }}>{icon}</span>
-      {player.photo && (
-        <img src={player.photo} style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }}
-          onError={e => e.currentTarget.style.display = "none"} />
-      )}
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color }}>
-          {player.name}
-        </div>
-        {player.reason && (
-          <div style={{ fontSize: 10, color: "#3a5070", marginTop: 1 }}>
-            {player.reason}
-          </div>
-        )}
-      </div>
-      <span style={{
-        fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
-        color: color,
-        opacity: 0.7,
-        textTransform: "uppercase",
-      }}>
-        {isInjured ? "Injured" : isSuspended ? "Suspended" : "Doubtful"}
-      </span>
-    </div>
-  );
+function normalizePlayer(entry) {
+  if (!entry) return {};
+  const p = entry.player ?? entry;
+  const id     = p.id          ?? p.player_id    ?? null;
+  const name   = p.name        ?? "";
+  const number = p.number      ?? p.shirt_number ?? null;
+  const pos    = p.pos         ?? p.position     ?? "";
+  const photo  = p.photo       ?? p.image        ?? "";
+  const grid   = p.grid        ?? null;
+  const rating = p.rating != null ? Number(p.rating) : null;
+  if (!grid) console.warn(`[MatchLineups] Player missing grid position: "${name || id}"`);
+  return { id, name, number, pos, photo, grid, rating };
 }
 
-// ─────────────────────────────────────────────
-// Bench player row
-// ─────────────────────────────────────────────
+function normalizeTeam(raw) {
+  if (!raw) return null;
 
-function BenchRow({ player, color }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "7px 12px",
-      borderBottom: "1px solid rgba(255,255,255,0.03)",
-      transition: "background 0.15s",
-      borderRadius: 6,
-    }}
-    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
-    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-    >
-      {/* Jersey number */}
-      <div style={{
-        width: 22, height: 22, borderRadius: "50%",
-        background: color + "22",
-        border: `1.5px solid ${color}55`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 9, fontWeight: 900, color,
-        flexShrink: 0,
-      }}>
-        {player.number || "—"}
-      </div>
+  const team_name =
+    raw.team_name  ??
+    raw.team?.name ??
+    raw.name       ??
+    "";
 
-      {/* Photo */}
-      {player.photo && (
-        <img src={player.photo} style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-          onError={e => e.currentTarget.style.display = "none"} />
-      )}
+  const logo =
+    raw.logo       ??
+    raw.team?.logo ??
+    "";
 
-      {/* Name + pos */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#c8d8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {player.name}
-        </div>
-        <div style={{ fontSize: 9, color: "#3a5070", fontWeight: 700, marginTop: 1 }}>
-          {player.pos}
-        </div>
-      </div>
+  const rawXI =
+    raw.starting_xi ??
+    raw.startXI     ??
+    raw.start_xi    ??
+    [];
 
-      {/* Rating */}
-      {player.rating && (
-        <div style={{
-          fontSize: 11, fontWeight: 900,
-          color: player.rating >= 7.5 ? "#34d399" : player.rating >= 6.5 ? "#f59e0b" : "#6b7fa3",
-        }}>
-          {Number(player.rating).toFixed(1)}
-        </div>
-      )}
-    </div>
-  );
+  const starting_xi = Array.isArray(rawXI) ? rawXI.map(normalizePlayer) : [];
+
+  const rawBench =
+    raw.bench       ??
+    raw.substitutes ??
+    raw.subs        ??
+    [];
+
+  const bench = Array.isArray(rawBench) ? rawBench.map(normalizePlayer) : [];
+
+  return {
+    team_name,
+    logo,
+    formation:   raw.formation   ?? "",
+    coach:       raw.coach       ?? "",
+    coach_photo: raw.coach_photo ?? "",
+    starting_xi,
+    bench,
+    injuries:    Array.isArray(raw.injuries)    ? raw.injuries    : [],
+    doubts:      Array.isArray(raw.doubts)      ? raw.doubts      : [],
+    recent_form: Array.isArray(raw.recent_form) ? raw.recent_form : [],
+  };
 }
 
-// ─────────────────────────────────────────────
-// Team panel (bench + injuries)
-// ─────────────────────────────────────────────
 
-function TeamPanel({ team, color, mode }) {
-  const injuries    = team?.injuries      || [];
-  const doubts      = team?.doubts        || [];
-  const bench       = team?.bench         || [];
-  const coach       = team?.coach;
-
-  return (
-    <div style={{
-      background: "linear-gradient(160deg,#0d1525,#080e1a)",
-      border: "1px solid rgba(255,255,255,0.06)",
-      borderRadius: 14,
-      overflow: "hidden",
-    }}>
-      {/* Coach */}
-      {coach && (
-        <div style={{
-          padding: "10px 12px",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <span style={{ fontSize: 10, color: "#3a5070", fontWeight: 700 }}>COACH</span>
-          {team.coach_photo && (
-            <img src={team.coach_photo} style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }}
-              onError={e => e.currentTarget.style.display = "none"} />
-          )}
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#9fb4d6" }}>{coach}</span>
-        </div>
-      )}
-
-      {/* Injuries/doubts — shown in predicted mode */}
-      {mode === "predicted" && (injuries.length > 0 || doubts.length > 0) && (
-        <div>
-          <div style={{
-            padding: "8px 12px 4px",
-            fontSize: 9, fontWeight: 900, letterSpacing: "0.1em",
-            color: "#3a5070", textTransform: "uppercase",
-          }}>
-            Injuries / Doubts
-          </div>
-          {injuries.map((p, i) => <InjuryRow key={i} player={{ ...p, status: "injured" }} />)}
-          {doubts.map((p, i) => <InjuryRow key={i} player={{ ...p, status: "doubtful" }} />)}
-        </div>
-      )}
-
-      {/* Bench */}
-      {bench.length > 0 && (
-        <div>
-          <div style={{
-            padding: "8px 12px 4px",
-            fontSize: 9, fontWeight: 900, letterSpacing: "0.1em",
-            color: "#3a5070", textTransform: "uppercase",
-          }}>
-            {mode === "predicted" ? "Expected Bench" : "Bench"}
-          </div>
-          {bench.map((p, i) => (
-            <BenchRow key={i} player={p} color={color} />
-          ))}
-        </div>
-      )}
-
-      {bench.length === 0 && injuries.length === 0 && doubts.length === 0 && (
-        <div style={{ padding: "16px 12px", color: "#2e3d52", fontSize: 12, textAlign: "center" }}>
-          No data available.
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Mode banner
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════
+// SUB-COMPONENTS
+// ═════════════════════════════════════════════════════
 
 function ModeBanner({ mode, announcedAt }) {
   if (mode === "official") {
@@ -212,7 +101,6 @@ function ModeBanner({ mode, announcedAt }) {
       </div>
     );
   }
-
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 8,
@@ -223,9 +111,7 @@ function ModeBanner({ mode, announcedAt }) {
     }}>
       <span style={{ color: "#f59e0b", fontSize: 14 }}>⏳</span>
       <div>
-        <span style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b" }}>
-          Predicted Lineup
-        </span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b" }}>Predicted Lineup</span>
         <span style={{ fontSize: 10, color: "#4a6080", marginLeft: 8 }}>
           Official XI announced ~45 min before kickoff
         </span>
@@ -234,200 +120,203 @@ function ModeBanner({ mode, announcedAt }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// Main MatchLineups component
-// ─────────────────────────────────────────────
-
-export default function MatchLineups({ fixtureId, headerData }) {
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
-  const [view,    setView]    = useState("pitch"); // "pitch" | "home" | "away"
-
-  useEffect(() => {
-    if (!fixtureId) return;
-    setLoading(true);
-    setError(null);
-
-fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-     .then(d => {
-
-  const normalizeTeam = (team) => ({
-    team_name: team.team_name,
-    logo: team.logo,
-    formation: team.formation,
-    coach: team.coach,
-
-    // IMPORTANT FIX
-    starting_xi: team.startXI || [],
-    bench: team.bench || [],
-
-    injuries: team.injuries || [],
-    doubts: team.doubts || []
-  });
-
-  setData({
-    mode: "official",
-    home: normalizeTeam(d.lineups.home),
-    away: normalizeTeam(d.lineups.away)
-  });
-
-  setLoading(false);
-})
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [fixtureId]);
-
-  if (loading) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", gap: 14 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%",
-          border: "2px solid rgba(96,165,250,0.2)", borderTopColor: "#60a5fa",
-          animation: "spin 0.8s linear infinite",
-        }} />
-        <div style={{ color: "#3a5070", fontSize: 12 }}>Loading lineups…</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{
-        color: "#ff5252", fontSize: 12,
-        background: "rgba(255,82,82,0.06)",
-        border: "1px solid rgba(255,82,82,0.15)",
-        borderRadius: 10, padding: "12px 16px",
-      }}>
-        Failed to load lineups: {error}
-      </div>
-    );
-  }
-
-  if (!data) return null;
-
-  const { mode, home, away } = data;
-
-  // Tab styles
-  const tabStyle = (active) => ({
-    padding: "6px 16px",
-    borderRadius: 999,
-    border: "none",
-    cursor: "pointer",
-    fontSize: 11, fontWeight: 700,
-    background: active ? "rgba(96,165,250,0.12)" : "transparent",
-    color: active ? "#60a5fa" : "#3a5070",
-    transition: "all 0.15s",
-  });
-
+function InjuryRow({ player }) {
+  if (!player) return null;
+  const s     = player.status ?? "injured";
+  const isInj = s === "injured" || player.type === "Injury";
+  const isSusp = s === "suspended";
+  const icon  = isInj ? "❌" : isSusp ? "🟥" : "❓";
+  const color = isInj ? "#ff5252" : isSusp ? "#f59e0b" : "#9fb4d6";
+  const label = isInj ? "Injured" : isSusp ? "Suspended" : "Doubtful";
   return (
-    <div>
-      <ModeBanner mode={mode} announcedAt={data.announced_at} />
-
-      {/* View tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-        {[
-          { id: "pitch", label: "Pitch View" },
-          { id: "home",  label: home?.team_name || "Home" },
-          { id: "away",  label: away?.team_name || "Away" },
-        ].map(t => (
-          <button key={t.id} style={tabStyle(view === t.id)} onClick={() => setView(t.id)}>
-            {t.label}
-          </button>
-        ))}
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "8px 12px",
+      borderBottom: "1px solid rgba(255,255,255,0.04)",
+    }}>
+      <span style={{ fontSize: 13 }}>{icon}</span>
+      {player.photo && (
+        <img src={player.photo}
+          style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }}
+          onError={e => (e.currentTarget.style.display = "none")} />
+      )}
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color }}>{player.name ?? "—"}</div>
+        {player.reason && (
+          <div style={{ fontSize: 10, color: "#3a5070", marginTop: 1 }}>{player.reason}</div>
+        )}
       </div>
+      <span style={{ fontSize: 9, fontWeight: 800, color, opacity: 0.7, textTransform: "uppercase" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
 
-      {/* Pitch view */}
-      {view === "pitch" && (
-        <div>
-          <Pitch home={home} away={away} mode={mode} />
-
-          {/* Both benches below pitch */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
-            <TeamPanel team={home} color="#60a5fa" mode={mode} />
-            <TeamPanel team={away} color="#f97316" mode={mode} />
-          </div>
+function BenchRow({ player, color }) {
+  if (!player) return null;
+  const rating = player.rating;
+  return (
+    <div
+      style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "7px 12px",
+        background: "linear-gradient(160deg,#0d1525,#080e1a)",
+        border: "1px solid rgba(255,255,255,0.04)",
+        borderRadius: 8, marginBottom: 4,
+        transition: "filter 0.15s",
+      }}
+      onMouseEnter={e => (e.currentTarget.style.filter = "brightness(1.15)")}
+      onMouseLeave={e => (e.currentTarget.style.filter = "none")}
+    >
+      <div style={{
+        width: 22, height: 22, borderRadius: "50%",
+        background: color + "22", border: `1.5px solid ${color}55`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 9, fontWeight: 900, color, flexShrink: 0,
+      }}>
+        {player.number ?? "—"}
+      </div>
+      {player.photo && (
+        <img src={player.photo}
+          style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+          onError={e => (e.currentTarget.style.display = "none")} />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 12, fontWeight: 700, color: "#c8d8f0",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {player.name || "—"}
         </div>
-      )}
-
-      {/* Home detail view */}
-      {view === "home" && (
-        <TeamDetailView team={home} color="#60a5fa" mode={mode} />
-      )}
-
-      {/* Away detail view */}
-      {view === "away" && (
-        <TeamDetailView team={away} color="#f97316" mode={mode} />
+        <div style={{ fontSize: 9, color: posColor(player.pos ?? ""), fontWeight: 700, marginTop: 1 }}>
+          {player.pos ?? ""}
+        </div>
+      </div>
+      {rating != null && (
+        <div style={{
+          fontSize: 11, fontWeight: 900,
+          color: rating >= 7.5 ? "#34d399" : rating >= 6.5 ? "#f59e0b" : "#6b7fa3",
+        }}>
+          {rating.toFixed(1)}
+        </div>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-// Full team detail view (starting XI list)
-// ─────────────────────────────────────────────
+function TeamPanel({ team, color, mode }) {
+  if (!team) return null;
+  const { injuries = [], doubts = [], bench = [], coach, coach_photo } = team;
+  return (
+    <div style={{
+      background: "linear-gradient(160deg,#0d1525,#080e1a)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 14, overflow: "hidden",
+    }}>
+      {coach && (
+        <div style={{
+          padding: "10px 12px",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 10, color: "#3a5070", fontWeight: 700 }}>COACH</span>
+          {coach_photo && (
+            <img src={coach_photo}
+              style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }}
+              onError={e => (e.currentTarget.style.display = "none")} />
+          )}
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#9fb4d6" }}>{coach}</span>
+        </div>
+      )}
+
+      {mode === "predicted" && (injuries.length > 0 || doubts.length > 0) && (
+        <div>
+          <div style={{
+            padding: "8px 12px 4px",
+            fontSize: 9, fontWeight: 900, letterSpacing: "0.1em",
+            color: "#3a5070", textTransform: "uppercase",
+          }}>
+            Injuries / Doubts
+          </div>
+          {injuries.map((p, i) => <InjuryRow key={i} player={{ ...p, status: "injured" }} />)}
+          {doubts.map((p, i) => <InjuryRow key={i} player={{ ...p, status: "doubtful" }} />)}
+        </div>
+      )}
+
+      {bench.length > 0 && (
+        <div style={{ padding: "4px 8px 8px" }}>
+          <div style={{
+            padding: "8px 4px 4px",
+            fontSize: 9, fontWeight: 900, letterSpacing: "0.1em",
+            color: "#3a5070", textTransform: "uppercase",
+          }}>
+            {mode === "predicted" ? "Expected Bench" : "Bench"}
+          </div>
+          {bench.map((p, i) => <BenchRow key={p?.id ?? i} player={p} color={color} />)}
+        </div>
+      )}
+
+      {bench.length === 0 && injuries.length === 0 && doubts.length === 0 && (
+        <div style={{ padding: "16px 12px", color: "#2e3d52", fontSize: 12, textAlign: "center" }}>
+          No data available.
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TeamDetailView({ team, color, mode }) {
-  const xi       = team?.starting_xi || [];
-  const bench    = team?.bench       || [];
-  const injuries = team?.injuries    || [];
-  const doubts   = team?.doubts      || [];
+  if (!team) return null;
+  const {
+    starting_xi = [], bench = [], injuries = [], doubts = [],
+    team_name, logo, formation, coach,
+  } = team;
 
-  const byPos = (arr, posGroup) => arr.filter(p => {
-    const pos = (p.pos || "").toUpperCase();
-    if (posGroup === "GK")  return pos === "GK";
-    if (posGroup === "DEF") return ["CB","LB","RB","LWB","RWB","DEF"].includes(pos);
-    if (posGroup === "MID") return ["CM","CDM","CAM","LM","RM","MID","DM","AM"].includes(pos);
-    if (posGroup === "FWD") return ["ST","LW","RW","CF","SS","FWD","ATT"].includes(pos);
-    return false;
+  const byGroup = (arr, grp) => (arr ?? []).filter(p => {
+    const pos = (p?.pos ?? "").toUpperCase();
+    if (grp === "GK")  return pos === "GK";
+    if (grp === "DEF") return ["CB","LB","RB","LWB","RWB","DEF"].includes(pos);
+    if (grp === "MID") return ["CM","CDM","CAM","LM","RM","MID","DM","AM"].includes(pos);
+    return ["ST","LW","RW","CF","SS","FWD","ATT"].includes(pos);
   });
 
   const sections = [
-    { label: "Goalkeeper",  group: "GK"  },
-    { label: "Defenders",   group: "DEF" },
-    { label: "Midfielders", group: "MID" },
-    { label: "Forwards",    group: "FWD" },
+    { label: "Goalkeeper",  grp: "GK"  },
+    { label: "Defenders",   grp: "DEF" },
+    { label: "Midfielders", grp: "MID" },
+    { label: "Forwards",    grp: "FWD" },
   ];
 
   return (
     <div>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10, marginBottom: 16,
-      }}>
-        {team?.logo && (
-          <img src={team.logo} style={{ width: 28, height: 28, objectFit: "contain" }}
-            onError={e => e.currentTarget.style.display = "none"} />
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        {logo && (
+          <img src={logo} style={{ width: 28, height: 28, objectFit: "contain" }}
+            onError={e => (e.currentTarget.style.display = "none")} />
         )}
         <div>
-          <div style={{ fontSize: 14, fontWeight: 900, color: color }}>{team?.team_name}</div>
+          <div style={{ fontSize: 14, fontWeight: 900, color }}>{team_name}</div>
           <div style={{ fontSize: 10, color: "#3a5070", marginTop: 2 }}>
-            {mode === "predicted" ? "Predicted" : "Official"} · {team?.formation || "—"}
-            {team?.coach ? ` · ${team.coach}` : ""}
+            {mode === "predicted" ? "Predicted" : "Official"} · {formation || "—"}
+            {coach ? ` · ${coach}` : ""}
           </div>
         </div>
       </div>
 
-      {/* Starting XI by position */}
-      {sections.map(({ label, group }) => {
-        const players = byPos(xi, group);
-        if (players.length === 0) return null;
+      {sections.map(({ label, grp }) => {
+        const players = byGroup(starting_xi, grp);
+        if (!players.length) return null;
         return (
-          <div key={group} style={{ marginBottom: 12 }}>
+          <div key={grp} style={{ marginBottom: 12 }}>
             <div style={{
               fontSize: 9, fontWeight: 900, letterSpacing: "0.1em",
-              color: "#3a5070", textTransform: "uppercase",
-              marginBottom: 4,
+              color: "#3a5070", textTransform: "uppercase", marginBottom: 4,
             }}>
               {label}
             </div>
             {players.map((p, i) => (
-              <div key={i} style={{
+              <div key={p?.id ?? i} style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "8px 12px",
                 background: "linear-gradient(160deg,#0d1525,#080e1a)",
@@ -438,25 +327,25 @@ function TeamDetailView({ team, color, mode }) {
                   width: 22, height: 22, borderRadius: "50%",
                   background: color + "22", border: `1.5px solid ${color}55`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 9, fontWeight: 900, color,
-                  flexShrink: 0,
+                  fontSize: 9, fontWeight: 900, color, flexShrink: 0,
                 }}>
-                  {p.number || "—"}
+                  {p?.number ?? "—"}
                 </div>
-                {p.photo && (
-                  <img src={p.photo} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
-                    onError={e => e.currentTarget.style.display = "none"} />
+                {p?.photo && (
+                  <img src={p.photo}
+                    style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
+                    onError={e => (e.currentTarget.style.display = "none")} />
                 )}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#c8d8f0" }}>{p.name}</div>
-                  <div style={{ fontSize: 9, color: posColor(p.pos), marginTop: 1 }}>{p.pos}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#c8d8f0" }}>{p?.name ?? "—"}</div>
+                  <div style={{ fontSize: 9, color: posColor(p?.pos ?? ""), marginTop: 1 }}>{p?.pos ?? ""}</div>
                 </div>
-                {p.rating && (
+                {p?.rating != null && (
                   <div style={{
                     fontSize: 14, fontWeight: 900,
                     color: p.rating >= 7.5 ? "#34d399" : p.rating >= 6.5 ? "#f59e0b" : "#6b7fa3",
                   }}>
-                    {Number(p.rating).toFixed(1)}
+                    {p.rating.toFixed(1)}
                   </div>
                 )}
               </div>
@@ -465,7 +354,6 @@ function TeamDetailView({ team, color, mode }) {
         );
       })}
 
-      {/* Bench */}
       {bench.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           <div style={{
@@ -474,13 +362,10 @@ function TeamDetailView({ team, color, mode }) {
           }}>
             {mode === "predicted" ? "Expected Bench" : "Bench"}
           </div>
-          {bench.map((p, i) => (
-            <BenchRow key={i} player={p} color={color} />
-          ))}
+          {bench.map((p, i) => <BenchRow key={p?.id ?? i} player={p} color={color} />)}
         </div>
       )}
 
-      {/* Injuries / Doubts */}
       {mode === "predicted" && (injuries.length > 0 || doubts.length > 0) && (
         <div style={{ marginBottom: 12 }}>
           <div style={{
@@ -491,7 +376,8 @@ function TeamDetailView({ team, color, mode }) {
           </div>
           <div style={{
             background: "linear-gradient(160deg,#0d1525,#080e1a)",
-            border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 12, overflow: "hidden",
           }}>
             {injuries.map((p, i) => <InjuryRow key={i} player={{ ...p, status: "injured" }} />)}
             {doubts.map((p, i) => <InjuryRow key={i} player={{ ...p, status: "doubtful" }} />)}
@@ -502,6 +388,163 @@ function TeamDetailView({ team, color, mode }) {
   );
 }
 
-// Re-export BenchRow for use in TeamDetailView
-  
-     
+
+// ═════════════════════════════════════════════════════
+// MAIN COMPONENT  (single definition — no duplicates)
+// ═════════════════════════════════════════════════════
+
+export default function MatchLineups({ fixtureId }) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+  const [view,    setView]    = useState("pitch");
+
+  // ── Fetch + normalize ─────────────────────
+  useEffect(() => {
+    if (!fixtureId) return;
+
+    setLoading(true);
+    setError(null);
+    setData(null);
+
+    fetch(`${BACKEND}/api/match-lineup/${fixtureId}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(d => {
+        console.log("[MatchLineups] Raw API response:", d);
+
+        // Support both endpoint shapes:
+        //   /api/match-lineup        → { mode, home, away }
+        //   /api/match-intelligence  → { lineups: { home, away }, ... }
+        const rawHome = d?.home ?? d?.lineups?.home ?? null;
+        const rawAway = d?.away ?? d?.lineups?.away ?? null;
+
+        const normalizedHome = normalizeTeam(rawHome);
+        const normalizedAway = normalizeTeam(rawAway);
+
+        console.log("[MatchLineups] Normalized home lineup:", normalizedHome);
+        console.log("[MatchLineups] Normalized away lineup:", normalizedAway);
+
+        // Smart mode detection
+        const homeHasXI = (normalizedHome?.starting_xi?.length ?? 0) > 0;
+        const awayHasXI = (normalizedAway?.starting_xi?.length ?? 0) > 0;
+
+        const mode =
+          d?.mode === "official"  ? "official"  :
+          d?.mode === "predicted" ? "predicted" :
+          (homeHasXI || awayHasXI) ? "official"  :
+          "predicted";
+
+        setData({ mode, announced_at: d?.announced_at ?? null, home: normalizedHome, away: normalizedAway });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("[MatchLineups] Fetch error:", err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [fixtureId]);
+
+  // ── Loading ───────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", gap: 14 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: "50%",
+          border: "2px solid rgba(96,165,250,0.2)",
+          borderTopColor: "#60a5fa",
+          animation: "mi_spin 0.8s linear infinite",
+        }} />
+        <div style={{ color: "#3a5070", fontSize: 12 }}>Loading lineups…</div>
+        <style>{`@keyframes mi_spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // ── Error ─────────────────────────────────
+  if (error) {
+    return (
+      <div style={{
+        padding: "20px", borderRadius: 14,
+        background: "rgba(255,82,82,0.06)",
+        border: "1px solid rgba(255,82,82,0.15)",
+        textAlign: "center",
+      }}>
+        <div style={{ fontSize: 20, marginBottom: 8 }}>⚠</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#ff5252", marginBottom: 4 }}>
+          Unable to load lineups
+        </div>
+        <div style={{ fontSize: 11, color: "#3a5070" }}>Please refresh or try again later.</div>
+      </div>
+    );
+  }
+
+  // ── Not yet available ─────────────────────
+  if (!data || (!data.home && !data.away)) {
+    return (
+      <div style={{
+        padding: "32px 20px", borderRadius: 14,
+        background: "linear-gradient(160deg,#0d1525,#080e1a)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        textAlign: "center",
+      }}>
+        <div style={{ fontSize: 22, marginBottom: 10 }}>⏳</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#6b7fa3", marginBottom: 6 }}>
+          Lineups not available yet
+        </div>
+        <div style={{ fontSize: 11, color: "#3a5070" }}>
+          Official lineups are released approximately 45 minutes before kickoff.
+        </div>
+      </div>
+    );
+  }
+
+  const { mode, announced_at, home, away } = data;
+
+  const tabBtn = (id, label) => (
+    <button
+      key={id}
+      onClick={() => setView(id)}
+      style={{
+        padding: "6px 16px", borderRadius: 999, border: "none",
+        cursor: "pointer", fontSize: 11, fontWeight: 700,
+        background: view === id ? "rgba(96,165,250,0.12)" : "transparent",
+        color: view === id ? "#60a5fa" : "#3a5070",
+        transition: "all 0.15s",
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div>
+      <ModeBanner mode={mode} announcedAt={announced_at} />
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {tabBtn("pitch", "Pitch View")}
+        {tabBtn("home",  home?.team_name || "Home")}
+        {tabBtn("away",  away?.team_name || "Away")}
+      </div>
+
+      {view === "pitch" && (
+        <>
+          <Pitch
+            home={home ?? { starting_xi: [], bench: [] }}
+            away={away ?? { starting_xi: [], bench: [] }}
+            mode={mode}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+            <TeamPanel team={home} color="#60a5fa" mode={mode} />
+            <TeamPanel team={away} color="#f97316" mode={mode} />
+          </div>
+        </>
+      )}
+
+      {view === "home" && <TeamDetailView team={home} color="#60a5fa" mode={mode} />}
+      {view === "away" && <TeamDetailView team={away} color="#f97316" mode={mode} />}
+    </div>
+  );
+}

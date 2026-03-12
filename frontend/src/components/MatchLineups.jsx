@@ -254,11 +254,27 @@ fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)      .then(r => {
         return r.json();
       })
      .then(d => {
+
+  const normalizeTeam = (team) => ({
+    team_name: team.team_name,
+    logo: team.logo,
+    formation: team.formation,
+    coach: team.coach,
+
+    // IMPORTANT FIX
+    starting_xi: team.startXI || [],
+    bench: team.bench || [],
+
+    injuries: team.injuries || [],
+    doubts: team.doubts || []
+  });
+
   setData({
     mode: "official",
-    home: d.lineups.home,
-    away: d.lineups.away
+    home: normalizeTeam(d.lineups.home),
+    away: normalizeTeam(d.lineups.away)
   });
+
   setLoading(false);
 })
       .catch(err => {

@@ -56,21 +56,46 @@ LEAGUE_IMAGES: Dict[str, str] = {
     "ucl":        "https://upload.wikimedia.org/wikipedia/commons/f/f5/UEFA_Champions_League.svg",
     "uel":        "https://upload.wikimedia.org/wikipedia/commons/d/d7/UEFA_Europa_League_logo.svg",
 }
-RSS_SOURCES: List[Tuple[str, str]] = [
-    ("The Guardian",         "https://www.theguardian.com/football/rss"),
-    ("Goal.com",             "https://www.goal.com/en/feeds/news"),
-    ("We Ain't Got No Fans", "https://weaintgotnofans.com/feed/"),
-    ("Arseblog",             "https://arseblog.com/feed/"),
-    ("This Is Anfield",      "https://www.thisisanfield.com/feed/"),
-    ("The Busby Babe",       "https://thebusbybabe.sbnation.com/rss/index.xml"),
-    ("Bitter & Blue",        "https://bitterandblue.sbnation.com/rss/index.xml"),
-    ("Cartilage Free",       "https://cartilagefreecaptain.sbnation.com/rss/index.xml"),
+# Tuple: (display_name, url, source_category)
+RSS_SOURCES: List[Tuple[str, str, str]] = [
+    # Breaking news
+    ("BBC Sport",            "https://feeds.bbci.co.uk/sport/football/rss.xml",        "news"),
+    ("Sky Sports Football",  "https://www.skysports.com/rss/12040",                    "news"),
+    ("Goal.com",             "https://www.goal.com/en/feeds/news",                     "news"),
+    ("ESPN FC",              "https://www.espn.com/espn/rss/soccer/news",              "news"),
+    # Tactical / analysis
+    ("The Guardian",         "https://www.theguardian.com/football/rss",               "analysis"),
+    # Transfer
+    ("Sky Transfers",        "https://www.skysports.com/rss/12726",                    "transfer"),
+    ("Football Italia",      "https://www.football-italia.net/rss.xml",                "transfer"),
+    # Fan media
+    ("Arseblog",             "https://arseblog.com/feed/",                             "fan"),
+    ("This Is Anfield",      "https://www.thisisanfield.com/feed/",                    "fan"),
+    ("The Busby Babe",       "https://thebusbybabe.sbnation.com/rss/index.xml",        "fan"),
+    ("Bitter & Blue",        "https://bitterandblue.sbnation.com/rss/index.xml",       "fan"),
+    ("Cartilage Free",       "https://cartilagefreecaptain.sbnation.com/rss/index.xml","fan"),
+    ("We Ain't Got No Fans", "https://weaintgotnofans.com/feed/",                      "fan"),
 ]
+
+# Keyword sets for automatic article categorisation
+RSS_CATEGORY_KEYWORDS: Dict[str, List[str]] = {
+    "transfer": ["transfer","signing","signs","signed","deal","fee","bid","move",
+                 "joins","arrival","departure","linked","interest","contract","loan"],
+    "injury":   ["injury","injured","out","absence","return","fitness","knock",
+                 "hamstring","muscle","unavailable","doubt","ruled out","surgery"],
+    "manager":  ["manager","sacked","appointed","resign","resigns","coach","leaves",
+                 "new manager","takeover","board","chairman","dismissal"],
+    "analysis": ["tactical","analysis","formation","pressing","stats","data","xg",
+                 "expected goals","breakdown","preview","review","performance"],
+    "news":     [],  # fallback
+}
+
 CLUBS = [
     "Arsenal","Chelsea","Liverpool","Manchester City","Manchester United",
     "Tottenham","Newcastle","Aston Villa","West Ham","Brighton",
     "Real Madrid","Barcelona","Atletico","Bayern","Dortmund",
     "Juventus","Inter","Milan","PSG","Marseille","Napoli","Roma",
+    "Everton","Wolves","Fulham","Brentford","Crystal Palace",
 ]
 
 # ── Cache ──────────────────────────────────────────────────────────────────────
@@ -517,58 +542,110 @@ def _rss_image(entry) -> Optional[str]:
             if m and m.group(1).startswith("http"): return m.group(1)
     return None
 
-async def _fetch_rss(name: str, url: str) -> List[dict]:
-    key=f"rss:{url}"
-    hit=_cget(key,TTL_RSS)
+def _categorise_rss(title: str, summary: str, source_cat: str) -> str:
+    """Detect article category from title/summary keywords."""
+    text = (title + " " + summary).lower()
+    for cat, keywords in RSS_CATEGORY_KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            return cat
+    # Fall back to source category (transfer sources → transfer, etc.)
+    return source_cat if source_cat in RSS_CATEGORY_KEYWORDS else "news"
+
+
+async def _fetch_rss(name: str, url: str, source_cat: str = "news",
+                     cutoff_hours: int = 36) -> List[dict]:
+    key = f"rss:{url}:{cutoff_hours}"
+    hit = _cget(key, TTL_RSS)
     if hit is not None: return hit
-    items=[]; cutoff=datetime.now(timezone.utc)-timedelta(hours=36)
+
+    items: List[dict] = []
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=cutoff_hours)
+
     try:
-        async with httpx.AsyncClient(timeout=10,follow_redirects=True) as c:
-            r=await c.get(url,headers={"User-Agent":"StatinSite/2.0"})
-        if r.status_code!=200:
-            _cset(key,items); return items
-        root=ET.fromstring(r.text)
-        na="http://www.w3.org/2005/Atom"
-        entries=root.findall(".//item") or root.findall(f".//{{{na}}}entry")
-        for entry in entries[:10]:
-            def _t(tag):
-                for ns in ("",f"{{{na}}}"):
-                    el=entry.find(f"{ns}{tag}")
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as c:
+            r = await c.get(url, headers={"User-Agent": "StatinSite/2.0"})
+        if r.status_code != 200:
+            _cset(key, items); return items
+
+        root    = ET.fromstring(r.text)
+        na      = "http://www.w3.org/2005/Atom"
+        entries = root.findall(".//item") or root.findall(f".//{{{na}}}entry")
+
+        for entry in entries[:12]:
+            def _t(tag: str) -> str:
+                for ns in ("", f"{{{na}}}"):
+                    el = entry.find(f"{ns}{tag}")
                     if el is not None and el.text: return el.text.strip()
                 return ""
-            title=_t("title")
-            if not title: continue
-            link_el=entry.find("link") or entry.find(f"{{{na}}}link")
-            link=(link_el.get("href") or link_el.text or "").strip() if link_el is not None else ""
-            pub_raw=_t("pubDate") or _t("published") or _t("updated") or ""
-            pub_dt=None
-            for fmt in ("%a, %d %b %Y %H:%M:%S %z","%a, %d %b %Y %H:%M:%S GMT",
-                        "%Y-%m-%dT%H:%M:%S%z","%Y-%m-%dT%H:%M:%SZ"):
-                try:
-                    pub_dt=datetime.strptime(pub_raw[:30],fmt).replace(tzinfo=timezone.utc); break
-                except Exception: pass
-            if pub_dt and pub_dt<cutoff: continue
-            pub_str=pub_dt.isoformat() if pub_dt else datetime.now(timezone.utc).isoformat()
-            raw_s=_t("description") or _t("summary") or _t("content")
-            clean=re.sub(r"<[^>]+>","",raw_s)[:300].strip()
-            items.append({
-                "id":str(uuid.uuid5(uuid.NAMESPACE_URL,link or title)),
-                "type":"headline","league":"general",
-                "title":title,"standfirst":clean or title,"summary":clean or title,
-                "body":[clean] if clean else [],
-                "published_at":pub_str,"source_type":"external","source":name,
-                "url":link,"image":_rss_image(entry),"meta":{},
-            })
-    except Exception: pass
-    _cset(key,items); return items
 
-def _trending(rss_items,n=6):
-    counter:Counter=Counter()
-    for item in rss_items:
-        text=(item.get("title","")+item.get("standfirst","")).lower()
-        for club in CLUBS:
-            if club.lower() in text: counter[club]+=1
-    return [c for c,_ in counter.most_common(n)]
+            title = _t("title")
+            if not title: continue
+
+            link_el = entry.find("link") or entry.find(f"{{{na}}}link")
+            link    = (link_el.get("href") or link_el.text or "").strip() if link_el is not None else ""
+
+            pub_raw = _t("pubDate") or _t("published") or _t("updated") or ""
+            pub_dt  = None
+            for fmt in ("%a, %d %b %Y %H:%M:%S %z", "%a, %d %b %Y %H:%M:%S GMT",
+                        "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%SZ"):
+                try:
+                    pub_dt = datetime.strptime(pub_raw[:30], fmt).replace(tzinfo=timezone.utc); break
+                except Exception: pass
+
+            if pub_dt and pub_dt < cutoff: continue
+
+            pub_str  = pub_dt.isoformat() if pub_dt else datetime.now(timezone.utc).isoformat()
+            raw_s    = _t("description") or _t("summary") or _t("content")
+            clean    = re.sub(r"<[^>]+>", "", raw_s)[:300].strip()
+            category = _categorise_rss(title, clean, source_cat)
+
+            items.append({
+                "id":           str(uuid.uuid5(uuid.NAMESPACE_URL, link or title)),
+                "type":         category,
+                "league":       "general",
+                "title":        title,
+                "standfirst":   clean or title,
+                "summary":      clean or title,
+                "body":         [clean] if clean else [],
+                "published_at": pub_str,
+                "source_type":  "external",
+                "source":       name,
+                "source_cat":   source_cat,
+                "url":          link,
+                "image":        _rss_image(entry),
+                "meta":         {},
+            })
+    except Exception:
+        pass
+
+    _cset(key, items)
+    return items
+
+
+async def _all_rss(cutoff_hours: int = 36) -> List[dict]:
+    key = f"gen:rss:all:{cutoff_hours}"
+    hit = _cget(key, TTL_RSS)
+    if hit is not None: return hit
+
+    results = await asyncio.gather(
+        *[_fetch_rss(n, u, cat, cutoff_hours) for n, u, cat in RSS_SOURCES]
+    )
+    items: List[dict] = [i for sub in results for i in sub]
+
+    # Deduplicate by normalised title
+    seen: set = set(); deduped: List[dict] = []
+    for item in items:
+        t = item["title"].lower().strip()
+        if t not in seen:
+            seen.add(t); deduped.append(item)
+
+    # 36h fallback: if fewer than 5 items, retry at 72h
+    if cutoff_hours == 36 and len(deduped) < 5:
+        _cset(key, deduped)
+        return await _all_rss(cutoff_hours=72)
+
+    _cset(key, deduped)
+    return deduped
 
 # ── Item factories ─────────────────────────────────────────────────────────────
 
@@ -804,17 +881,16 @@ async def _standings_for(slug,lid) -> List[dict]:
     if mi: items.append(mi)
     _cset(key,items); return items
 
-async def _all_rss() -> List[dict]:
-    key="gen:rss:all"
-    hit=_cget(key,TTL_RSS)
-    if hit is not None: return hit
-    results=await asyncio.gather(*[_fetch_rss(n,u) for n,u in RSS_SOURCES])
-    items=[i for sub in results for i in sub]
-    seen=set(); deduped=[]
-    for item in items:
-        t=item["title"].lower().strip()
-        if t not in seen: seen.add(t); deduped.append(item)
-    _cset(key,deduped); return deduped
+
+
+def _trending(rss_items: List[dict], n: int = 8) -> List[str]:  # noqa: default is 8
+    counter: Counter = Counter()
+    for item in rss_items:
+        text = (item.get("title", "") + " " + item.get("standfirst", "")).lower()
+        for club in CLUBS:
+            if club.lower() in text:
+                counter[club] += 1
+    return [c for c, _ in counter.most_common(n)]
 
 # ── Feed endpoint ──────────────────────────────────────────────────────────────
 

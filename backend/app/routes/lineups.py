@@ -225,21 +225,45 @@ async def _predict_for_team(
     async def fetch_injuries():
         try:
             d = await _call("/injuries", {"team": team_id, "season": season})
-            injured, doubtful = [], []
+            # Deduplicate by player ID — API returns one record per injury spell,
+            # so the same player can appear multiple times across the season.
+            # We keep only the MOST RECENT entry per player (last in list wins).
+            seen_injured:   dict = {}  # pid → entry
+            seen_doubtful:  dict = {}
+
             for e in d.get("response", []):
-                p = e.get("player", {})
+                p        = e.get("player", {})
+                pid      = p.get("id")
+                if not pid:
+                    continue
+                inj_type = (e.get("type") or "Injury").strip()
+                reason   = (e.get("reason") or "").strip()
+
+                # Classify: suspended = card-related, doubtful = doubt/questionable
+                inj_type_lower = inj_type.lower()
+                reason_lower   = reason.lower()
+                if "suspend" in inj_type_lower or "suspension" in reason_lower or "card" in reason_lower:
+                    status = "suspended"
+                elif "doubt" in inj_type_lower or "question" in inj_type_lower:
+                    status = "doubtful"
+                else:
+                    status = "injured"
+
                 entry = {
-                    "id":     p.get("id"),
+                    "id":     pid,
                     "name":   p.get("name", ""),
                     "photo":  p.get("photo", ""),
-                    "reason": e.get("reason", ""),
-                    "type":   e.get("type", "Injury"),
+                    "reason": reason,
+                    "type":   inj_type,
+                    "status": status,
                 }
-                if e.get("type") == "Injury":
-                    injured.append(entry)
+
+                if status == "injured":
+                    seen_injured[pid] = entry
                 else:
-                    doubtful.append(entry)
-            return injured, doubtful
+                    seen_doubtful[pid] = entry
+
+            return list(seen_injured.values()), list(seen_doubtful.values())
         except Exception as e:
             print(f"[lineup_engine] injuries fetch failed: {e}")
             return [], []
@@ -248,6 +272,15 @@ async def _predict_for_team(
         try:
             d = await _call("/coachs", {"team": team_id})
             resp = d.get("response", [])
+            # Find the currently active coach (no dateEnd or dateEnd is None)
+            for coach_entry in resp:
+                career = coach_entry.get("career", [])
+                for spell in career:
+                    if spell.get("team", {}).get("id") == team_id:
+                        if spell.get("end") is None:  # still active
+                            c = coach_entry
+                            return c.get("name", ""), c.get("photo", "")
+            # Fallback: just take first result
             if resp:
                 return resp[0].get("name", ""), resp[0].get("photo", "")
         except Exception:
@@ -378,19 +411,38 @@ async def get_match_lineup(fixture_id: int):
     if has_official:
         print(f"[lineups] Official lineups found for fixture {fixture_id}")
 
+        def _parse_inj(response):
+            seen = {}
+            for e in response:
+                p    = e.get("player", {})
+                pid  = p.get("id")
+                if not pid:
+                    continue
+                inj_type     = (e.get("type") or "Injury").strip()
+                reason       = (e.get("reason") or "").strip()
+                tl           = inj_type.lower()
+                rl           = reason.lower()
+                if "suspend" in tl or "suspension" in rl or "card" in rl:
+                    status = "suspended"
+                elif "doubt" in tl or "question" in tl:
+                    status = "doubtful"
+                else:
+                    status = "injured"
+                seen[pid] = {"id": pid, "name": p.get("name",""), "photo": p.get("photo",""),
+                             "reason": reason, "type": inj_type, "status": status}
+            return list(seen.values())
+
         async def home_inj():
             try:
                 d = await _call("/injuries", {"team": home_id, "season": season})
-                return [{"id": e["player"].get("id"), "name": e["player"].get("name",""), "photo": e["player"].get("photo",""), "reason": e.get("reason",""), "type": e.get("type","Injury")}
-                        for e in d.get("response", [])]
+                return _parse_inj(d.get("response", []))
             except Exception:
                 return []
 
         async def away_inj():
             try:
                 d = await _call("/injuries", {"team": away_id, "season": season})
-                return [{"id": e["player"].get("id"), "name": e["player"].get("name",""), "photo": e["player"].get("photo",""), "reason": e.get("reason",""), "type": e.get("type","Injury")}
-                        for e in d.get("response", [])]
+                return _parse_inj(d.get("response", []))
             except Exception:
                 return []
 

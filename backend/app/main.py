@@ -246,9 +246,9 @@ def _compute_prediction_from_stats(home_stats:dict, away_stats:dict) -> dict:
 # ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
 
-@app.get("/"); 
-def root(): return {"api":"StatinSite","version":"4.0.0"}
-
+@app.get("/")
+def root():
+    return {"api": "StatinSite", "version": "4.0.0"}
 @app.get("/health")
 def health(): return {"status":"ok","season":CURRENT_SEASON,"version":"4.0.0"}
 

@@ -17,7 +17,6 @@ API_KEY        = os.getenv("API_FOOTBALL_KEY", "")
 API_BASE       = "https://v3.football.api-sports.io"
 CURRENT_SEASON = 2025
 
-# Lineups are typically announced ~60 min before kickoff
 ANNOUNCE_WINDOW_MINUTES = 60
 
 
@@ -26,7 +25,6 @@ ANNOUNCE_WINDOW_MINUTES = 60
 # ─────────────────────────────────────────────
 
 async def _call(path: str, params: dict) -> dict:
-    """Single async API-Football request."""
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get(
             f"{API_BASE}/{path.lstrip('/')}",
@@ -71,6 +69,20 @@ _FORMATION_SLOTS = {
     "3-4-2-1": ["GK","CB","CB","CB","LM","CM","CM","RM","CAM","CAM","ST"],
 }
 
+# ── Grid positions per formation (row:col) — must match slot order above ──
+_FORMATION_GRIDS = {
+    "4-3-3":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","4:1","4:2","4:3"],
+    "4-4-2":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","4:1","4:2"],
+    "4-2-3-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","3:5","4:1"],
+    "3-4-3":   ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","4:1","4:2","4:3"],
+    "3-5-2":   ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","3:5","4:1","4:2"],
+    "4-5-1":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","3:5","4:1"],
+    "4-1-4-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","3:5","4:1"],
+    "5-3-2":   ["1:1","2:1","2:2","2:3","2:4","2:5","3:1","3:2","3:3","4:1","4:2"],
+    "4-3-2-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","4:1","4:2","4:3"],
+    "3-4-2-1": ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","4:1","4:2","4:3"],
+}
+
 
 def _norm_pos(raw: str) -> str:
     return _POS_MAP.get((raw or "").strip(), (raw or "MID").strip().upper()[:3])
@@ -99,7 +111,7 @@ def _norm_player_official(entry: dict) -> dict:
         "number": p.get("number"),
         "photo":  p.get("photo", ""),
         "pos":    _norm_pos(p.get("pos", "MID")),
-        "grid":   p.get("grid"),
+        "grid":   p.get("grid"),   # official API provides this directly
         "rating": None,
     }
 
@@ -109,13 +121,6 @@ def _norm_player_official(entry: dict) -> dict:
 # ─────────────────────────────────────────────
 
 def _score_player(stats: dict) -> float:
-    """
-    score = 0.40 * minutes_weight
-          + 0.25 * rating
-          + 0.20 * form (proxy: rating again)
-          + 0.10 * goal_contrib
-          + 0.05 * consistency
-    """
     games    = stats.get("games", {})
     goals    = stats.get("goals", {})
     appeared = max(games.get("appearences") or 0, 1)
@@ -124,9 +129,9 @@ def _score_player(stats: dict) -> float:
     g        = goals.get("total") or 0
     a        = goals.get("assists") or 0
 
-    min_w  = min(minutes / (appeared * 90), 1.0)
-    form   = min(rating / 10.0, 1.0)
-    gc     = min((g + a) / appeared, 1.0)
+    min_w   = min(minutes / (appeared * 90), 1.0)
+    form    = min(rating / 10.0, 1.0)
+    gc      = min((g + a) / appeared, 1.0)
     consist = min(appeared / 20.0, 1.0)
 
     return round(0.40 * min_w + 0.25 * form + 0.20 * form + 0.10 * gc + 0.05 * consist, 4)
@@ -145,6 +150,7 @@ def _pos_group(pos: str) -> str:
 
 def _build_xi(players: list, formation: str, excluded_ids: set) -> tuple:
     slots     = _FORMATION_SLOTS.get(formation, _FORMATION_SLOTS["4-3-3"])
+    grids     = _FORMATION_GRIDS.get(formation, _FORMATION_GRIDS["4-3-3"])  # ← ADDED
     available = [p for p in players if p["id"] not in excluded_ids]
 
     by_grp: dict = {"GK": [], "DEF": [], "MID": [], "FWD": []}
@@ -154,13 +160,14 @@ def _build_xi(players: list, formation: str, excluded_ids: set) -> tuple:
         by_grp[grp].sort(key=lambda x: -(x.get("score") or 0))
 
     xi, used = [], set()
-    for slot in slots:
+    for slot_idx, slot in enumerate(slots):                        # ← ADDED slot_idx
         grp  = _pos_group(slot)
         pool = [p for p in by_grp.get(grp, []) if p["id"] not in used]
         if not pool:
             pool = [p for p in available if p["id"] not in used]
         if pool:
-            chosen = {**pool[0], "pos": slot}
+            grid   = grids[slot_idx] if slot_idx < len(grids) else f"{slot_idx+1}:1"  # ← ADDED
+            chosen = {**pool[0], "pos": slot, "grid": grid}       # ← ADDED grid
             xi.append(chosen)
             used.add(pool[0]["id"])
 
@@ -176,8 +183,6 @@ async def _predict_for_team(
     team_id: int, season: int,
     team_name: str, team_logo: str,
 ) -> dict:
-    """Run the full prediction pipeline for one team."""
-
     print(f"[lineup_engine] Predicting lineup for team {team_id} season {season}")
 
     async def fetch_squad():
@@ -334,23 +339,11 @@ def _normalise_official(raw: dict, injuries: list, doubts: list) -> dict:
 
 @router.get("/match-lineup/{fixture_id}")
 async def get_match_lineup(fixture_id: int):
-    """
-    Returns normalised lineup data.
-
-    Response:
-    {
-        mode: "official" | "predicted",
-        announced_at: str | null,
-        home: { team_name, logo, formation, coach, starting_xi, bench, injuries, doubts, recent_form },
-        away: { ... }
-    }
-    """
     if not API_KEY:
         raise HTTPException(500, "API_FOOTBALL_KEY not configured")
 
     print(f"[lineups] GET /api/match-lineup/{fixture_id}")
 
-    # ── Fetch fixture + official lineups in parallel ──
     async def get_fixture():
         d = await _call("/fixtures", {"id": fixture_id})
         return (d.get("response") or [{}])[0]
@@ -372,26 +365,14 @@ async def get_match_lineup(fixture_id: int):
     teams    = fixture.get("teams",   {})
     league   = fixture.get("league",  {})
 
-    home_team    = teams.get("home", {})
-    away_team    = teams.get("away", {})
-    home_id      = home_team.get("id")
-    away_id      = away_team.get("id")
-    league_id    = league.get("id")
-    season       = league.get("season") or CURRENT_SEASON
-    kickoff      = fix.get("date")
+    home_team = teams.get("home", {})
+    away_team = teams.get("away", {})
+    home_id   = home_team.get("id")
+    away_id   = away_team.get("id")
+    season    = league.get("season") or CURRENT_SEASON
+    kickoff   = fix.get("date")
 
-    # ── Decide mode ───────────────────────────
     has_official = len(official_raw) >= 2
-
-    if not has_official and kickoff:
-        try:
-            ko  = datetime.fromisoformat(kickoff.replace("Z", "+00:00"))
-            now = datetime.now(timezone.utc)
-            mins_until = (ko - now).total_seconds() / 60
-            if mins_until <= ANNOUNCE_WINDOW_MINUTES:
-                has_official = False  # window passed but no lineups yet → still predict
-        except Exception:
-            pass
 
     # ── Official path ─────────────────────────
     if has_official:
@@ -418,14 +399,11 @@ async def get_match_lineup(fixture_id: int):
         home_raw = next((l for l in official_raw if l.get("team",{}).get("id") == home_id), official_raw[0] if official_raw else {})
         away_raw = next((l for l in official_raw if l.get("team",{}).get("id") == away_id), official_raw[1] if len(official_raw) > 1 else {})
 
-        home_data = _normalise_official(home_raw, home_injuries, [])
-        away_data = _normalise_official(away_raw, away_injuries, [])
-
         return {
             "mode":         "official",
             "announced_at": kickoff,
-            "home":         home_data,
-            "away":         away_data,
+            "home":         _normalise_official(home_raw, home_injuries, []),
+            "away":         _normalise_official(away_raw, away_injuries, []),
         }
 
     # ── Predicted path ────────────────────────

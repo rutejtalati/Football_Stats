@@ -522,7 +522,12 @@ async def _predict_for_team(
         # Recency bonus: consistent starter in last 5 games scores ~(1+0.8+0.64+0.51+0.41)×30 ≈ 101
         recency = starter_recency.get(pid, 0.0) * 30.0
 
-        final = round(base + recency, 3)
+        # Consecutive starts bonus (manager preference signal): +3 if started 3+ in a row
+        # starter_recency keys only exist if player appeared, so we check the last 3 weights
+        # 0.8^0=1.0, 0.8^1=0.8, 0.8^2=0.64 → sum=2.44 if started all 3
+        consec_bonus = 3.0 if starter_recency.get(pid, 0.0) >= 2.4 else 0.0
+
+        final = round(base + recency + consec_bonus, 3)
         if final < 0.5:
             final = 0.5  # baseline so new signings aren't ranked below 0
 

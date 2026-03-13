@@ -64,7 +64,7 @@ const FBP = {
   news:     { bg:"#030608", accent:"#64748b" },
 };
 function getFB(t){ const k=t==="match_preview"?"preview":(t==="model_insight"||t==="title_race")?"insight":(TM[t]?.fb||"news"); return FBP[k]||FBP.news; }
-function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>" +lines+ "</svg>")}`)`; }
+function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>" +lines+ "</svg>")}")`; }
 function fbBg(fb){
   if(fb===FBP.transfer) return fbSvg(fb,"<line x1='200' y1='0' x2='0' y2='220' stroke='rgba(245,158,11,.07)'/><line x1='200' y1='0' x2='80' y2='220' stroke='rgba(245,158,11,.05)'/><line x1='200' y1='0' x2='320' y2='220' stroke='rgba(245,158,11,.05)'/><line x1='200' y1='0' x2='400' y2='220' stroke='rgba(245,158,11,.07)'/>");
   if(fb===FBP.injury)   return fbSvg(fb,"<circle cx='200' cy='110' r='55' fill='none' stroke='rgba(248,113,113,.08)'/><circle cx='200' cy='110' r='90' fill='none' stroke='rgba(248,113,113,.05)'/><circle cx='200' cy='110' r='130' fill='none' stroke='rgba(248,113,113,.03)'/>");

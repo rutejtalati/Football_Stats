@@ -14,12 +14,13 @@ const POLL_INTERVAL = 60_000; // 60 s — stops once official lineups arrive
 // NORMALISATION
 // ═════════════════════════════════════════════════════
 
-function normalizePlayer(entry) {
+// FIXED — grid warning only when explicitly needed (caller decides)
+function normalizePlayer(entry, warnIfNoGrid = false) {
   if (!entry) return {};
   const p      = entry.player ?? entry;
   const rating = p.rating != null ? Number(p.rating) : null;
-  if (!p.grid) console.warn(`[MatchLineups] Player missing grid: "${p.name || p.id}"`);
-  return {
+  if (warnIfNoGrid && !p.grid) console.warn(`[MatchLineups] Player missing grid: "${p.name || p.id}"`);
+return {
     id:     p.id          ?? p.player_id    ?? null,
     name:   p.name        ?? "",
     number: p.number      ?? p.shirt_number ?? null,
@@ -40,8 +41,8 @@ function normalizeTeam(raw) {
     formation:   raw.formation   ?? "",
     coach:       raw.coach       ?? "",
     coach_photo: raw.coach_photo ?? "",
-    starting_xi: Array.isArray(rawXI)    ? rawXI.map(normalizePlayer)    : [],
-    bench:       Array.isArray(rawBench) ? rawBench.map(normalizePlayer) : [],
+    starting_xi: Array.isArray(rawXI)    ? rawXI.map(p => normalizePlayer(p, true))  : [],
+bench:       Array.isArray(rawBench) ? rawBench.map(p => normalizePlayer(p, false)) : [],
     injuries:    Array.isArray(raw.injuries)    ? raw.injuries    : [],
     doubts:      Array.isArray(raw.doubts)      ? raw.doubts      : [],
     recent_form: Array.isArray(raw.recent_form) ? raw.recent_form : [],

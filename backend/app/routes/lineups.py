@@ -70,17 +70,29 @@ _FORMATION_SLOTS = {
 }
 
 # ── Grid positions per formation (row:col) — must match slot order above ──
+# Row 1=GK, row 2=DEF, row 3=first MID line, row 4=second MID line (if any), last row=FWD
+# Cols are numbered left-to-right for that row
 _FORMATION_GRIDS = {
-    "4-3-3":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","4:1","4:2","4:3"],
+    # GK, CB CB LB RB, CM CM CM, LW RW ST
+    "4-3-3":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","4:1","4:3","4:2"],
+    # GK, CB CB LB RB, LM CM CM RM, ST ST
     "4-4-2":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","4:1","4:2"],
-    "4-2-3-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","3:5","4:1"],
+    # GK, CB CB LB RB, CDM CDM, LW CAM RW, ST
+    "4-2-3-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","4:1","4:2","4:3","5:1"],
+    # GK, CB CB CB, LM CM CM RM, LW ST RW
     "3-4-3":   ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","4:1","4:2","4:3"],
+    # GK, CB CB CB, LWB CM CM CM RWB, ST ST
     "3-5-2":   ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","3:5","4:1","4:2"],
+    # GK, CB CB LB RB, LM CM CM CM RM, ST
     "4-5-1":   ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","3:5","4:1"],
-    "4-1-4-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","3:4","3:5","4:1"],
+    # GK, CB CB LB RB, CDM, LM CM CM RM, ST
+    "4-1-4-1": ["1:1","2:1","2:2","2:3","2:4","3:1","4:1","4:2","4:3","4:4","5:1"],
+    # GK, CB CB CB LWB RWB, CM CM CM, ST ST
     "5-3-2":   ["1:1","2:1","2:2","2:3","2:4","2:5","3:1","3:2","3:3","4:1","4:2"],
-    "4-3-2-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","4:1","4:2","4:3"],
-    "3-4-2-1": ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","4:1","4:2","4:3"],
+    # GK, CB CB LB RB, CM CM CM, SS SS, ST
+    "4-3-2-1": ["1:1","2:1","2:2","2:3","2:4","3:1","3:2","3:3","4:1","4:2","5:1"],
+    # GK, CB CB CB, LM CM CM RM, CAM CAM, ST
+    "3-4-2-1": ["1:1","2:1","2:2","2:3","3:1","3:2","3:3","3:4","4:1","4:2","5:1"],
 }
 
 
@@ -226,28 +238,24 @@ async def _predict_for_team(
     team_name: str, team_logo: str,
 ) -> dict:
     """
-    Predict XI using standard API-Football Pro endpoints:
+    Predict XI correctly:
 
-    Data pulled (3 parallel calls only — avoids rate limits):
-      1. /players/squads          → full squad roster + position + photo
-      2. /players                 → season stats (minutes, rating, goals, assists)
-      3. /fixtures (last 10 FT)   → formation detection, recent form, AND startXI data
-                                    (fixtures response includes lineups when available)
-      4. /injuries                → current unavailability
-      5. /coachs                  → active coach
+    KEY INSIGHT — /injuries returns ENTIRE season history.
+    A player who started any of the last 3 matches CANNOT be currently injured.
+    We use starter_recency (from /fixtures/lineups) to override false injury flags.
 
-    Scoring formula per player:
-      base_score  = 0.4*(avg_mins_pct) + 0.3*(avg_rating/10) + 0.2*(goal_contrib/app) + 0.1*(appearances/30)
-      start_bonus = sum over last 10 matches of: 0.8^match_index if they started
-      final_score = base_score * 40 + start_bonus
-
-    This ensures: players who start regularly AND have good season stats rank highest.
-    New signings with few season stats but recent starts still rank via start_bonus.
+    API calls per team:
+      1. /players/squads          → squad roster + position + photo
+      2. /players page 1+2        → season stats for all ~30+ players  
+      3. /fixtures last 10 FT     → form + fixture IDs
+      4. /fixtures/lineups × 5   → who actually started recently (key signal)
+      5. /injuries                → injury list (filtered by recency check)
+      6. /coachs                  → active coach
     """
     from collections import Counter
     print(f"[lineup_engine] Predicting for {team_name} ({team_id})")
 
-    # ── 1. Squad roster ────────────────────────────────────────────────
+    # ── 1. Squad roster ───────────────────────────────────────────────
     async def fetch_squad():
         try:
             d = await _call("/players/squads", {"team": team_id})
@@ -255,76 +263,70 @@ async def _predict_for_team(
         except Exception as e:
             print(f"[lineup_engine] squad failed: {e}"); return []
 
-    # ── 2. Season player stats ─────────────────────────────────────────
+    # ── 2. Season player stats — fetch BOTH pages ────────────────────
     async def fetch_season_stats():
-        try:
-            d = await _call("/players", {"team": team_id, "season": season, "page": 1})
-            stats = {}
-            for entry in d.get("response", []):
-                pid  = (entry.get("player") or {}).get("id")
-                stat = (entry.get("statistics") or [{}])[0]
-                if not pid: continue
-                g = stat.get("games") or {}
-                gl= stat.get("goals") or {}
-                stats[pid] = {
-                    "minutes":   int(g.get("minutes")     or 0),
-                    "appeared":  int(g.get("appearences") or 0),
-                    "rating":    float(g.get("rating")    or 0),
-                    "goals":     int(gl.get("total")      or 0),
-                    "assists":   int(gl.get("assists")     or 0),
-                }
-            return stats
-        except Exception as e:
-            print(f"[lineup_engine] season stats failed: {e}"); return {}
+        stats = {}
+        async def _fetch_page(page):
+            try:
+                d = await _call("/players", {"team": team_id, "season": season, "page": page})
+                for entry in d.get("response", []):
+                    pid  = (entry.get("player") or {}).get("id")
+                    stat = (entry.get("statistics") or [{}])[0]
+                    if not pid: continue
+                    g  = stat.get("games") or {}
+                    gl = stat.get("goals") or {}
+                    stats[pid] = {
+                        "minutes":   int(g.get("minutes")     or 0),
+                        "appeared":  int(g.get("appearences") or 0),
+                        "rating":    float(g.get("rating")    or 0),
+                        "goals":     int(gl.get("total")      or 0),
+                        "assists":   int(gl.get("assists")     or 0),
+                    }
+            except Exception as e:
+                print(f"[lineup_engine] stats page {page} failed: {e}")
+        await asyncio.gather(_fetch_page(1), _fetch_page(2))
+        return stats
 
-    # ── 3. Recent fixtures: formation + form + who started ────────────
+    # ── 3+4. Recent fixtures + lineups (formation, form, starters) ───
     async def fetch_recent_data():
-        """
-        Single call to /fixtures gets last 10 FT results.
-        Then ONE call per fixture to /fixtures/lineups gets startXI.
-        We cap at 5 lineup fetches (most recent 5 games) to stay well within rate limits.
-        """
         try:
             d = await _call("/fixtures", {
                 "team": team_id, "season": season,
                 "last": 10, "status": "FT",
             })
-            fixtures = d.get("response", [])
-
-            # Formation + form from fixture results
-            formations, form_list = [], []
+            fixtures  = d.get("response", [])
+            form_list = []
             fixture_ids = []
             for fx in fixtures:
-                fix_info = fx.get("fixture", {})
-                fixture_ids.append(fix_info.get("id"))
-                t  = fx.get("teams",  {}); g = fx.get("goals", {})
+                fid = fx.get("fixture", {}).get("id")
+                fixture_ids.append(fid)
+                t = fx.get("teams", {}); g = fx.get("goals", {})
                 is_home  = t.get("home",{}).get("id") == team_id
-                scored   = g.get("home",0) if is_home else g.get("away",0)
-                conceded = g.get("away",0) if is_home else g.get("home",0)
+                scored   = (g.get("home") or 0) if is_home else (g.get("away") or 0)
+                conceded = (g.get("away") or 0) if is_home else (g.get("home") or 0)
                 form_list.append("W" if scored > conceded else "D" if scored == conceded else "L")
 
-            # Fetch lineups for last 5 matches only (5 extra calls max)
-            starter_recency: dict = {}  # pid → recency_score (higher = started more recently)
+            # Fetch actual startXI from last 5 lineups
+            formations: list      = []
+            starter_recency: dict = {}   # pid → cumulative recency score
 
             async def get_lineup(fid, match_idx):
                 if not fid: return
                 try:
                     ld = await _call("/fixtures/lineups", {"fixture": fid})
-                    weight = 0.8 ** match_idx   # most recent = 1.0, drops off fast
+                    weight = 0.8 ** match_idx
                     for team_data in ld.get("response", []):
                         if team_data.get("team", {}).get("id") != team_id:
                             continue
-                        formation_str = team_data.get("formation", "")
-                        if formation_str:
-                            formations.append(_norm_formation(formation_str))
+                        f = team_data.get("formation", "")
+                        if f: formations.append(_norm_formation(f))
                         for entry in team_data.get("startXI", []):
                             pid = (entry.get("player") or {}).get("id")
                             if pid:
-                                starter_recency[pid] = starter_recency.get(pid, 0) + weight
+                                starter_recency[pid] = starter_recency.get(pid, 0.0) + weight
                 except Exception:
                     pass
 
-            # Fetch lineups for most recent 5 fixtures in parallel
             await asyncio.gather(*[
                 get_lineup(fid, idx)
                 for idx, fid in enumerate(fixture_ids[:5])
@@ -337,11 +339,11 @@ async def _predict_for_team(
             print(f"[lineup_engine] recent data failed: {e}")
             return "4-3-3", [], {}
 
-    # ── 4. Injuries ────────────────────────────────────────────────────
+    # ── 5. Injuries — but will be filtered against recent starters ────
     async def fetch_injuries():
         try:
             d = await _call("/injuries", {"team": team_id, "season": season})
-            seen_inj, seen_dbt = {}, {}
+            seen: dict = {}
             for e in d.get("response", []):
                 p   = e.get("player", {})
                 pid = p.get("id")
@@ -357,12 +359,13 @@ async def _predict_for_team(
                     status = "injured"
                 rec = {"id": pid, "name": p.get("name",""), "photo": p.get("photo",""),
                        "reason": reason, "type": inj_type, "status": status}
-                (seen_inj if status == "injured" else seen_dbt)[pid] = rec
-            return list(seen_inj.values()), list(seen_dbt.values())
+                # Keep most recent entry per player
+                seen[pid] = rec
+            return seen   # return dict keyed by pid for easy lookup
         except Exception as e:
-            print(f"[lineup_engine] injuries failed: {e}"); return [], []
+            print(f"[lineup_engine] injuries failed: {e}"); return {}
 
-    # ── 5. Active coach ────────────────────────────────────────────────
+    # ── 6. Active coach ───────────────────────────────────────────────
     async def fetch_coach():
         try:
             d = await _call("/coachs", {"team": team_id})
@@ -378,7 +381,7 @@ async def _predict_for_team(
 
     # ── Parallel fetch ────────────────────────────────────────────────
     (squad, season_stats, (formation, recent_form, starter_recency),
-     (injured, doubtful), (coach, coach_photo)) = await asyncio.gather(
+     injury_dict, (coach, coach_photo)) = await asyncio.gather(
         fetch_squad(),
         fetch_season_stats(),
         fetch_recent_data(),
@@ -386,9 +389,36 @@ async def _predict_for_team(
         fetch_coach(),
     )
 
-    injured_ids = {p["id"] for p in injured + doubtful if p.get("id")}
+    # ── KEY FIX: Filter injury list using starter_recency ─────────────
+    # /injuries returns entire season history. A player who started any of
+    # the last 3 matches CANNOT still be injured — remove false positives.
+    # "last 3" = starter_recency[pid] > 0 since weight for match 3 = 0.8^2 = 0.512
+    # Any player with recency > 0 started at least one of the last 5 games.
+    RECENCY_THRESHOLD = 0.1   # any recent start clears injury flag
 
-    # ── Score each player ─────────────────────────────────────────────
+    active_injured: dict  = {}
+    active_doubtful: dict = {}
+    false_positive_count  = 0
+
+    for pid, rec in injury_dict.items():
+        if starter_recency.get(pid, 0) >= RECENCY_THRESHOLD:
+            # Player started recently → they recovered, ignore historical injury entry
+            false_positive_count += 1
+            continue
+        if rec["status"] in ("injured", "suspended"):
+            active_injured[pid]  = rec
+        else:
+            active_doubtful[pid] = rec
+
+    print(f"[lineup_engine] {team_name}: injuries raw={len(injury_dict)}, "
+          f"false_positives={false_positive_count}, "
+          f"active_injured={len(active_injured)}, active_doubtful={len(active_doubtful)}")
+
+    injured   = list(active_injured.values())
+    doubtful  = list(active_doubtful.values())
+    injured_ids = {p["id"] for p in injured}  # only truly injured are excluded
+
+    # ── Score each squad player ───────────────────────────────────────
     _squad_pos_map = {
         "Goalkeeper": "GK", "Defender": "DEF",
         "Midfielder": "MID", "Attacker": "FWD",
@@ -409,21 +439,21 @@ async def _predict_for_team(
         goals    = s.get("goals",    0)
         assists  = s.get("assists",  0)
 
-        # Season aggregate score (0–1 range each component)
-        min_pct    = min(minutes / max(appeared * 90, 1), 1.0) if appeared > 1 else 0.0
+        # Season base score (normalised 0-1 → scaled to 0-40)
+        min_pct    = min(minutes / max(appeared * 90, 1), 1.0) if s.get("appeared",0) > 0 else 0.0
         rat_score  = min(rating / 10.0, 1.0)
         gc_score   = min((goals + assists) / max(appeared, 1), 1.0)
         app_score  = min(appeared / 30.0, 1.0)
         base_score = (0.40 * min_pct + 0.30 * rat_score + 0.20 * gc_score + 0.10 * app_score) * 40.0
 
-        # Recency bonus: who actually started recently (0.8^i per start, up to ~5 matches)
-        recency = starter_recency.get(pid, 0.0) * 30.0
+        # Recency bonus — who actually started recently (dominates over season stats)
+        # A player who started all 5 last games scores: sum(0.8^i, i=0..4) ≈ 3.36 × 30 = ~101
+        recency_bonus = starter_recency.get(pid, 0.0) * 30.0
 
-        # Final score: recency-weighted starts dominate over pure season stats
-        final = round(base_score + recency, 3)
+        final = round(base_score + recency_bonus, 3)
 
-        # Small baseline so players with zero stats aren't completely ignored
-        if final < 0.5 and appeared > 0:
+        # Tiny baseline for squad players with no data (youth/new signing)
+        if final < 0.5:
             final = 0.5
 
         players.append({
@@ -433,15 +463,15 @@ async def _predict_for_team(
             "photo":       sp.get("photo", ""),
             "pos":         pos,
             "score":       final,
-            "rating":      rating or None,
+            "rating":      rating if rating > 0 else None,
             "nationality": sp.get("nationality", ""),
         })
 
-    print(f"[lineup_engine] {team_name}: {len(players)} squad players, formation={formation}")
-    # Debug top 5 per group
+    # Debug: log top picks per group
+    print(f"[lineup_engine] {team_name}: {len(players)} players, formation={formation}")
     for grp in ("GK","DEF","MID","FWD"):
-        top = sorted([p for p in players if _pos_group(p["pos"])==grp],
-                     key=lambda x:-x["score"])[:5]
+        top = sorted([p for p in players if _pos_group(p["pos"]) == grp],
+                     key=lambda x: -x["score"])[:5]
         print(f"  {grp}: {[(p['name'], round(p['score'],1)) for p in top]}")
 
     starting_xi, bench = _build_xi(players, formation, injured_ids)

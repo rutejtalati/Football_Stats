@@ -1,27 +1,43 @@
-// PlayerDot.jsx
-// grid format: "row:col"
-// row = which line (1=GK, ascending toward attack)
-// col = horizontal position (left to right)
-//
-// FIX: previous version had left/top swapped (left used x=row, top used y=col)
-//      and used *10 which didn't center players in their column slot.
+// PlayerDot.jsx — presentational marker
+// All coordinate logic lives in Pitch.jsx.
 
-export default function PlayerDot({ x, y, name, totalRows = 4, totalCols = 4 }) {
-  // x = row (vertical), y = col (horizontal)
-  // Convert to % coordinates, centering each player in their cell
-  const leftPct = ((y - 0.5) / totalCols) * 100;
-  const topPct  = ((x - 0.5) / totalRows) * 100;
-
-  const style = {
-    position:  "absolute",
-    left:      `${leftPct}%`,
-    top:       `${topPct}%`,
-    transform: "translate(-50%, -50%)",
-  };
-
+export default function PlayerDot({ x, y, name, color = "#60a5fa" }) {
   return (
-    <div style={style} className="player-dot">
-      {name}
+    <div style={{
+      position:      "absolute",
+      left:          `${y}%`,
+      top:           `${x}%`,
+      transform:     "translate(-50%, -50%)",
+      display:       "flex",
+      flexDirection: "column",
+      alignItems:    "center",
+      gap:           3,
+      pointerEvents: "none",
+    }}>
+      <div style={{
+        width:          28,
+        height:         28,
+        borderRadius:   "50%",
+        border:         `2px solid ${color}`,
+        background:     "rgba(0,0,0,0.6)",
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "center",
+        fontSize:       9,
+        fontWeight:     700,
+        color,
+      }}>
+        {(name || "?")[0]}
+      </div>
+      <span style={{
+        fontSize:   8,
+        fontWeight: 700,
+        color:      "rgba(220,235,255,0.8)",
+        whiteSpace: "nowrap",
+        textShadow: "0 1px 3px rgba(0,0,0,0.9)",
+      }}>
+        {name}
+      </span>
     </div>
   );
 }

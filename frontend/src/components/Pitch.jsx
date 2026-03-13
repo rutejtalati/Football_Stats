@@ -17,6 +17,32 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
+// ── Team color map ───────────────────────────────────────
+const TEAM_COLORS = {
+  "Arsenal": "#EF0107", "Aston Villa": "#95BFE5", "Bournemouth": "#DA291C",
+  "Brentford": "#E30613", "Brighton": "#0057B8", "Chelsea": "#034694",
+  "Crystal Palace": "#1B458F", "Everton": "#003399", "Fulham": "#888888",
+  "Ipswich": "#3A64A3", "Leicester": "#0053A0", "Liverpool": "#C8102E",
+  "Manchester City": "#6CABDD", "Manchester United": "#DA291C",
+  "Newcastle": "#241F20", "Nottingham Forest": "#DD0000",
+  "Southampton": "#D71920", "Tottenham": "#132257",
+  "West Ham": "#7A263A", "Wolves": "#FDB913",
+  "Barcelona": "#A50044", "Real Madrid": "#FEBE10", "Atletico Madrid": "#CB3524",
+  "Inter": "#010E80", "AC Milan": "#FB090B", "Juventus": "#111111",
+  "PSG": "#003F7F", "Bayern Munich": "#DC052D", "Borussia Dortmund": "#FDE100",
+};
+
+function getTeamColor(teamName, fallback = "#60a5fa") {
+  if (!teamName) return fallback;
+  const direct = TEAM_COLORS[teamName];
+  if (direct) return direct;
+  const key = Object.keys(TEAM_COLORS).find(k =>
+    teamName.toLowerCase().includes(k.toLowerCase()) ||
+    k.toLowerCase().includes(teamName.toLowerCase())
+  );
+  return key ? TEAM_COLORS[key] : fallback;
+}
+
 // ────────────────────────────────────────────────────────
 // gridToPercent  — core coordinate transform
 //
@@ -47,12 +73,12 @@ function gridToPercent(gridStr, formation, isAway) {
     ? 50
     : 8 + ((col - 1) / (colsInRow - 1)) * 84;
 
-  // Y: row 1 (GK) → y=88% for home / y=12% for away
-  //    last row (FWD) → y=12% for home / y=88% for away
+  // Y: hard-separated halves — home 54%–92%, away 8%–46%
+  // This guarantees teams NEVER overlap across the halfway line.
   const frac = (row - 1) / Math.max(totalRows - 1, 1);
   const y    = isAway
-    ? 12 + frac * 76
-    : 88 - frac * 76;
+    ? 8  + frac * 38   // away:  GK at 8%,  FWD at 46%
+    : 92 - frac * 38;  // home:  GK at 92%, FWD at 54%
 
   return { x: +x.toFixed(1), y: +y.toFixed(1) };
 }
@@ -66,15 +92,10 @@ function PlayerToken({ player, color, pitchW, pitchH, onClick }) {
   const [imgErr, setImgErr] = useState(false);
 
   const lastName = (player.name || "?").split(" ").pop();
-  const rating   = player.rating ? Number(player.rating) : null;
 
   // Convert % → px, centre the token
   const leftPx = (player._x / 100) * pitchW - D / 2;
   const topPx  = (player._y / 100) * pitchH - D / 2;
-
-  const ratingColor = rating
-    ? rating >= 7.5 ? "#34d399" : rating >= 6.5 ? "#f59e0b" : "#64748b"
-    : null;
 
   return (
     <div
@@ -93,18 +114,6 @@ function PlayerToken({ player, color, pitchW, pitchH, onClick }) {
         animationDelay:  `${player._delay || 0}ms`,
       }}
     >
-      {/* Rating pill — floats above avatar */}
-      {rating && (
-        <div style={{
-          fontSize: 7, fontWeight: 900, lineHeight: 1,
-          padding: "1px 3px", borderRadius: 3, marginBottom: 1,
-          background: ratingColor, color: "#000",
-          whiteSpace: "nowrap", pointerEvents: "none",
-        }}>
-          {rating.toFixed(1)}
-        </div>
-      )}
-
       {/* Avatar */}
       <div style={{
         width:        D,
@@ -179,7 +188,27 @@ function PlayerToken({ player, color, pitchW, pitchH, onClick }) {
 // ────────────────────────────────────────────────────────
 function PitchMarkings() {
   return (
-    <svg
+    <>
+      {/* Tactical zone shading */}
+      <div style={{ position:"absolute", inset:0, pointerEvents:"none" }}>
+        {/* Away defensive third (top) */}
+        <div style={{
+          position:"absolute", left:0, right:0, top:0, height:"33%",
+          background:"rgba(251,146,60,0.04)", borderBottom:"1px solid rgba(251,146,60,0.06)",
+        }}/>
+        {/* Midfield zone */}
+        <div style={{
+          position:"absolute", left:0, right:0, top:"33%", height:"34%",
+          background:"rgba(100,130,255,0.03)",
+        }}/>
+        {/* Home defensive third (bottom) */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, height:"33%",
+          background:"rgba(96,165,250,0.04)", borderTop:"1px solid rgba(96,165,250,0.06)",
+        }}/>
+      </div>
+
+      <svg
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
       style={{
@@ -220,6 +249,7 @@ function PitchMarkings() {
           fill="rgba(255,255,255,0.015)" stroke="none"/>
       ))}
     </svg>
+    </>
   );
 }
 
@@ -316,6 +346,15 @@ export default function Pitch({ home, away, mode }) {
     return () => ro.disconnect();
   }, []);
 
+  const homeColor = getTeamColor(home?.team_name, "#60a5fa");
+  const awayColor = getTeamColor(away?.team_name, "#fb923c");
+
+  // Log prediction model (requirement)
+  if (mode) {
+    const modelUsed = mode === "official" ? "Official API Lineup" : "Recency Weighted XI Predictor";
+    console.log("Lineup prediction model:", modelUsed);
+  }
+
   // Attach _x, _y, _delay to each player
   const mapPlayers = useCallback((xi, formation, isAway, baseDelay) =>
     (xi || []).map((p, i) => {
@@ -355,13 +394,13 @@ export default function Pitch({ home, away, mode }) {
               style={{ width:18, height:18, objectFit:"contain" }}
               onError={e => (e.currentTarget.style.display = "none")} />
           )}
-          <span style={{ fontSize:11, fontWeight:800, color:"#60a5fa" }}>
+          <span style={{ fontSize:11, fontWeight:800, color:homeColor }}>
             {home?.team_name}
           </span>
           <span style={{
             fontSize:9, fontWeight:700,
-            color:"rgba(96,165,250,0.65)",
-            background:"rgba(96,165,250,0.09)",
+            color:`${homeColor}aa`,
+            background:`${homeColor}15`,
             padding:"1px 7px", borderRadius:999,
           }}>
             {home?.formation || "—"}
@@ -386,13 +425,13 @@ export default function Pitch({ home, away, mode }) {
           )}
           <span style={{
             fontSize:9, fontWeight:700,
-            color:"rgba(249,115,22,0.65)",
-            background:"rgba(249,115,22,0.09)",
+            color:`${awayColor}aa`,
+            background:`${awayColor}15`,
             padding:"1px 7px", borderRadius:999,
           }}>
             {away?.formation || "—"}
           </span>
-          <span style={{ fontSize:11, fontWeight:800, color:"#f97316" }}>
+          <span style={{ fontSize:11, fontWeight:800, color:awayColor }}>
             {away?.team_name}
           </span>
           {away?.logo && (
@@ -445,13 +484,13 @@ export default function Pitch({ home, away, mode }) {
             <>
               {homePlayers.map((p, i) => (
                 <PlayerToken key={`h${i}`}
-                  player={p} color="#60a5fa"
+                  player={p} color={homeColor}
                   pitchW={size.w} pitchH={size.h}
                   onClick={setSelected} />
               ))}
               {awayPlayers.map((p, i) => (
                 <PlayerToken key={`a${i}`}
-                  player={p} color="#fb923c"
+                  player={p} color={awayColor}
                   pitchW={size.w} pitchH={size.h}
                   onClick={setSelected} />
               ))}
@@ -463,8 +502,8 @@ export default function Pitch({ home, away, mode }) {
       {/* ── Bench rows (outside the pitch) ── */}
       {!noLineups && (
         <div style={{ marginTop: 2 }}>
-          <BenchRow players={home?.bench} color="#60a5fa" label={home?.team_name || "Home"} />
-          <BenchRow players={away?.bench} color="#fb923c" label={away?.team_name || "Away"} />
+          <BenchRow players={home?.bench} color={homeColor} label={home?.team_name || "Home"} />
+          <BenchRow players={away?.bench} color={awayColor} label={away?.team_name || "Away"} />
         </div>
       )}
 
@@ -499,20 +538,6 @@ export default function Pitch({ home, away, mode }) {
               {selected.nationality    ? ` · ${selected.nationality}` : ""}
             </div>
           </div>
-          {selected.rating > 0 && (
-            <div style={{
-              marginLeft: "auto",
-              fontSize:   20,
-              fontWeight: 900,
-              color: Number(selected.rating) >= 7.5
-                ? "#34d399"
-                : Number(selected.rating) >= 6.5
-                  ? "#f59e0b"
-                  : "#64748b",
-            }}>
-              {Number(selected.rating).toFixed(1)}
-            </div>
-          )}
         </div>
       )}
     </>

@@ -58,16 +58,17 @@ LEAGUE_IMAGES: Dict[str, str] = {
 }
 # Tuple: (display_name, url, source_category)
 RSS_SOURCES: List[Tuple[str, str, str]] = [
-    # Breaking news
+    # General football news
     ("BBC Sport",            "https://feeds.bbci.co.uk/sport/football/rss.xml",        "news"),
     ("Sky Sports Football",  "https://www.skysports.com/rss/12040",                    "news"),
     ("Goal.com",             "https://www.goal.com/en/feeds/news",                     "news"),
     ("ESPN FC",              "https://www.espn.com/espn/rss/soccer/news",              "news"),
-    # Tactical / analysis
+    # Analysis
     ("The Guardian",         "https://www.theguardian.com/football/rss",               "analysis"),
-    # Transfer
+    # Transfers
     ("Sky Transfers",        "https://www.skysports.com/rss/12726",                    "transfer"),
     ("Football Italia",      "https://www.football-italia.net/rss.xml",                "transfer"),
+    ("Marca",                "https://www.marca.com/rss/futbol/internacional/fichajes.xml","transfer"),
     # Fan media
     ("Arseblog",             "https://arseblog.com/feed/",                             "fan"),
     ("This Is Anfield",      "https://www.thisisanfield.com/feed/",                    "fan"),
@@ -596,21 +597,28 @@ async def _fetch_rss(name: str, url: str, source_cat: str = "news",
 
             pub_str  = pub_dt.isoformat() if pub_dt else datetime.now(timezone.utc).isoformat()
             raw_s    = _t("description") or _t("summary") or _t("content")
-            clean    = re.sub(r"<[^>]+>", "", raw_s)[:300].strip()
-            category = _categorise_rss(title, clean, source_cat)
+            # Full cleaned text for article page; short excerpt for card
+            full_text = re.sub(r"<[^>]+>", "", raw_s).strip()
+            excerpt   = full_text[:280].strip()
+            # Split full text into paragraphs for article rendering
+            paragraphs = [p.strip() for p in re.split(r'\n{2,}|\. {2,}', full_text) if p.strip()]
+            if not paragraphs and full_text:
+                paragraphs = [full_text]
+            category = _categorise_rss(title, excerpt, source_cat)
 
             items.append({
                 "id":           str(uuid.uuid5(uuid.NAMESPACE_URL, link or title)),
                 "type":         category,
                 "league":       "general",
                 "title":        title,
-                "standfirst":   clean or title,
-                "summary":      clean or title,
-                "body":         [clean] if clean else [],
+                "standfirst":   excerpt or title,
+                "summary":      excerpt or title,
+                "body":         paragraphs,
                 "published_at": pub_str,
                 "source_type":  "external",
                 "source":       name,
                 "source_cat":   source_cat,
+                "author":       name,
                 "url":          link,
                 "image":        _rss_image(entry),
                 "meta":         {},
@@ -718,6 +726,7 @@ def _make_preview(fx, hs, as_, slug, h2h: Optional[dict] = None) -> dict:
         "published_at": kickoff,
         "source_type":  "internal",
         "source":       "StatinSite Model",
+        "author":       "Rutej Talati",
         "url":          None,
         "image":        h_logo or LEAGUE_IMAGES.get(slug),
         "meta": {
@@ -753,7 +762,7 @@ def _make_title_race(standings,slug) -> Optional[dict]:
         "title":f"{lgname} Title Race: {l.get('team_name','')} in front",
         "standfirst":standfirst,"summary":summary,"body":body,
         "published_at":datetime.now(timezone.utc).isoformat(),
-        "source_type":"internal","source":"StatinSite Model",
+        "source_type":"internal","source":"StatinSite Model","author":"Rutej Talati",
         "url":None,"image":LEAGUE_IMAGES.get(slug),
         "meta":{"leader":l.get("team_name"),"second":s.get("team_name"),
                 "gap":gap,"leader_pts":l.get("points",0),
@@ -776,9 +785,7 @@ def _make_model_insight(standings,slug) -> Optional[dict]:
         "title":f"Model Insight: {name} on fire in {lgname}",
         "standfirst":sf,"summary":summary,"body":body,
         "published_at":datetime.now(timezone.utc).isoformat(),
-        "source_type":"internal","source":"StatinSite Model",
-        "url":None,"image":LEAGUE_IMAGES.get(slug),
-        "meta":{"team":name,"form":form,"points":best.get("points",0),"rank":best.get("rank",1)},
+        "source_type":"internal","source":"StatinSite Model","author":"Rutej Talati",
     }
 
 # ── Data fetchers ──────────────────────────────────────────────────────────────
@@ -896,19 +903,23 @@ def _trending(rss_items: List[dict], n: int = 8) -> List[str]:  # noqa: default 
 
 PREVIEW_LEAGUES   = ["epl","laliga","seriea","bundesliga","ligue1","ucl"]
 STANDINGS_LEAGUES = ["epl","laliga","seriea","bundesliga","ligue1"]
+COVERAGE_LEAGUES  = ["epl","laliga","seriea","bundesliga","ligue1","ucl","uel"]
 MAX_PER_LEAGUE    = 3
+MIN_PER_LEAGUE    = 2   # guarantee at least this many per league in final feed
 
 def _dt(s:str)->datetime:
     try: return datetime.fromisoformat(s.replace("Z","+00:00"))
     except Exception: return datetime.min.replace(tzinfo=timezone.utc)
 
+
 @router.get("/feed")
-async def intelligence_feed(limit: int = Query(40, ge=1, le=100)):
+async def intelligence_feed(limit: int = Query(60, ge=1, le=100)):
     """
-    Multi-source football intelligence feed.
-    Returns mode, count, items[], and trending_clubs[].
+    Unified newsroom feed — all content types interleaved.
+    Guarantees ≥ 2 items per major league.
+    Returns mode, count, items[], trending_clubs[], transfer_items[].
     """
-    gen_key=f"gen:feed:{limit}"
+    gen_key=f"gen:feed2:{limit}"
     hit=_cget(gen_key,TTL_GEN)
     if hit is not None: return hit
 
@@ -926,13 +937,14 @@ async def intelligence_feed(limit: int = Query(40, ge=1, le=100)):
             (rss_items if item.get("source_type")=="external" else internal).append(item)
 
     trending=_trending(rss_items)
+    transfer_items=[a for a in rss_items if a.get("type")=="transfer"]
 
-    # Priority sort: previews first, then title_race, then model_insight
+    # Sort
     TYPE_ORDER={"match_preview":0,"title_race":1,"model_insight":2}
     internal.sort(key=lambda x:(TYPE_ORDER.get(x.get("type"),9),-_dt(x.get("published_at","")).timestamp()))
     rss_items.sort(key=lambda x:-_dt(x.get("published_at","")).timestamp())
 
-    # League cap: ≤ 3 internal items per league in first 15 slots
+    # League cap on internal items
     lc:Counter=Counter(); capped=[]; overflow=[]
     for item in internal:
         lg=item.get("league","")
@@ -940,17 +952,108 @@ async def intelligence_feed(limit: int = Query(40, ge=1, le=100)):
         else: overflow.append(item)
     internal=capped+overflow
 
-    # Interleave: 1 internal → 2 RSS
+    # Interleave all types into one unified feed: 1 internal → 2 RSS
     out:List[dict]=[]; ri=0
     for item in internal:
         out.append(item)
         for _ in range(2):
             if ri<len(rss_items): out.append(rss_items[ri]); ri+=1
     out.extend(rss_items[ri:])
-    final=out[:limit]
 
-    result={"mode":"live","count":len(final),"items":final,"trending_clubs":trending}
+    # League coverage guarantee — ensure ≥ MIN_PER_LEAGUE per league in final slice
+    league_counts:Counter=Counter()
+    for item in out[:limit]:
+        league_counts[item.get("league","")] += 1
+
+    # For any league under the minimum, inject missing items from overflow
+    all_items_by_league: Dict[str,List[dict]] = {}
+    for item in (internal+rss_items):
+        all_items_by_league.setdefault(item.get("league",""),[]).append(item)
+
+    extras:List[dict]=[]
+    for lg in COVERAGE_LEAGUES:
+        deficit = MIN_PER_LEAGUE - league_counts.get(lg,0)
+        if deficit > 0:
+            candidates=[a for a in all_items_by_league.get(lg,[]) if a not in out[:limit]]
+            extras.extend(candidates[:deficit])
+
+    final=(out[:limit]+extras)[:limit+len(extras)]
+
+    result={
+        "mode":"live","count":len(final),"items":final,
+        "trending_clubs":trending,
+        "transfer_items":transfer_items[:12],
+    }
     _cset(gen_key,result); return result
+
+
+@router.get("/transfer-summary")
+async def transfer_summary():
+    """Daily transfer briefing — aggregates transfer RSS into a short editorial."""
+    key="gen:transfer:summary"
+    hit=_cget(key,TTL_GEN)
+    if hit is not None: return hit
+
+    rss=await _all_rss()
+    transfers=[a for a in rss if a.get("type")=="transfer"][:8]
+    if not transfers:
+        return {"items":[],"generated_at":datetime.now(timezone.utc).isoformat()}
+
+    briefing=[]
+    for t in transfers:
+        briefing.append({
+            "headline": t["title"],
+            "excerpt":  t["standfirst"],
+            "source":   t["source"],
+            "url":      t.get("url"),
+            "image":    t.get("image"),
+            "published_at": t["published_at"],
+        })
+    result={"items":briefing,"generated_at":datetime.now(timezone.utc).isoformat()}
+    _cset(key,result); return result
+
+
+@router.get("/ticker")
+async def intelligence_ticker():
+    """
+    Live ticker items — model signals + RSS headlines + transfer alerts.
+    Colour-coded by type: green=positive, red=injury/negative, blue=insight, amber=transfer.
+    """
+    key="gen:ticker"
+    hit=_cget(key,TTL_GEN//3)   # refresh 3x more often
+    if hit is not None: return hit
+
+    rss=await _all_rss()
+    # Gather recent standing data for model signals
+    standing_tasks=[_standings_for(s,LEAGUE_IDS[s]) for s in STANDINGS_LEAGUES]
+    standing_results=await asyncio.gather(*standing_tasks,return_exceptions=True)
+    internal_items:List[dict]=[item for r in standing_results if isinstance(r,list) for item in r]
+
+    items:List[dict]=[]
+
+    # Model insight signals
+    for art in internal_items[:6]:
+        if art.get("type")=="model_insight":
+            team=art.get("meta",{}).get("team","")
+            pts=art.get("meta",{}).get("points",0)
+            form=art.get("meta",{}).get("form","")
+            lg=LEAGUE_NAMES.get(art.get("league",""),"")
+            items.append({"text":f"StatinSite Insight — {team} collecting strong form points ({form}) in {lg}","color":"green","type":"insight"})
+        elif art.get("type")=="title_race":
+            leader=art.get("meta",{}).get("leader","")
+            gap=art.get("meta",{}).get("gap",0)
+            lg=LEAGUE_NAMES.get(art.get("league",""),"")
+            items.append({"text":f"StatinSite Insight — {leader} lead {lg} title race by {gap} point{'s' if gap!=1 else ''}","color":"blue","type":"insight"})
+
+    # RSS headlines
+    for art in rss[:20]:
+        t=art.get("type","news")
+        color="amber" if t=="transfer" else "red" if t=="injury" else "blue" if t=="analysis" else "green"
+        label="Transfer" if t=="transfer" else "Injury Update" if t=="injury" else "News"
+        items.append({"text":f"{label} — {art['title']}","color":color,"type":t,"url":art.get("url")})
+
+    result={"items":items[:30],"generated_at":datetime.now(timezone.utc).isoformat()}
+    _cset(key,result); return result
 
 @router.get("/health")
 async def intelligence_health():

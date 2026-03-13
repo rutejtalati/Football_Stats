@@ -64,7 +64,7 @@ const FBP = {
   news:     { bg:"#030608", accent:"#64748b" },
 };
 function getFB(t){ const k=t==="match_preview"?"preview":(t==="model_insight"||t==="title_race")?"insight":(TM[t]?.fb||"news"); return FBP[k]||FBP.news; }
-function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>"+lines+"</svg>")}")`; }
+function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>" +lines+ "</svg>")}`)`; }
 function fbBg(fb){
   if(fb===FBP.transfer) return fbSvg(fb,"<line x1='200' y1='0' x2='0' y2='220' stroke='rgba(245,158,11,.07)'/><line x1='200' y1='0' x2='80' y2='220' stroke='rgba(245,158,11,.05)'/><line x1='200' y1='0' x2='320' y2='220' stroke='rgba(245,158,11,.05)'/><line x1='200' y1='0' x2='400' y2='220' stroke='rgba(245,158,11,.07)'/>");
   if(fb===FBP.injury)   return fbSvg(fb,"<circle cx='200' cy='110' r='55' fill='none' stroke='rgba(248,113,113,.08)'/><circle cx='200' cy='110' r='90' fill='none' stroke='rgba(248,113,113,.05)'/><circle cx='200' cy='110' r='130' fill='none' stroke='rgba(248,113,113,.03)'/>");
@@ -375,7 +375,8 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
           <div>
             <div style={{display:"flex",gap:10,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
               {!article.image&&!isPreview&&<CatBadge type={article.type} league={article.league}/>}
-              {article.source&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#2a4a6a",fontWeight:700}}>{article.source}</span>}
+              {article.author&&<span style={{fontFamily:"'Sora',sans-serif",fontSize:11,fontWeight:800,color:"#c8d8f0"}}>{article.author}</span>}
+              {article.source&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#2a4a6a",fontWeight:700}}>{article.source_type==="external"?"via "+article.source:"StatinSite Intelligence Desk"}</span>}
               <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#1a3a5a",fontWeight:700}}>{timeAgo(article.published_at)}</span>
             </div>
             <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:28,fontWeight:900,color:"#f0f6ff",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 14px"}}>{article.title}</h1>
@@ -387,9 +388,11 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
                   <p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"#5a7a9a",margin:0,fontWeight:i===paras.length-1?600:400,...(i===paras.length-1?{borderTop:"1px solid rgba(255,255,255,0.05)",paddingTop:18}:{})}}>{p}</p>
                 ))}
               </div>)}
-            {isExt&&(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-              <p style={{fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.75,color:"#5a7a9a",margin:0}}>{article.standfirst||article.summary}</p>
-              {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#000",fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content"}}>Read full article →</a>}
+            {isExt&&(<div style={{display:"flex",flexDirection:"column",gap:18,marginBottom:32}}>
+              {paras.length>0
+                ?paras.map((p,i)=><p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"#5a7a9a",margin:0}}>{p}</p>)
+                :<p style={{fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.75,color:"#5a7a9a",margin:0}}>{article.standfirst||article.summary}</p>}
+              {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#000",fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
             </div>)}
             {ms&&(<div style={{marginTop:32,padding:"18px 20px",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid "+accent+"14"}}>
               <div style={{fontSize:9,fontWeight:900,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:16}}>Key Statistics</div>
@@ -473,8 +476,76 @@ function SectionHead({title,sub,accent="#38bdf8",count}){
   </div>);
 }
 
+// ── Live Intelligence Ticker ─────────────────────────────────
+function IntelligenceTicker(){
+  const[items,setItems]=useState([]);
+  const[pos,setPos]=useState(0);
+  useEffect(()=>{
+    fetch(BACKEND+'/api/intelligence/ticker').then(r=>r.ok?r.json():null).then(d=>{if(d?.items)setItems(d.items);}).catch(()=>{});
+  },[]);
+  useEffect(()=>{
+    if(!items.length)return;
+    const t=setInterval(()=>setPos(p=>(p+1)%items.length),4500);
+    return()=>clearInterval(t);
+  },[items.length]);
+  if(!items.length)return null;
+  const COLORS={green:"#34d399",red:"#f87171",blue:"#38bdf8",amber:"#f59e0b"};
+  return(<div style={{width:"100%",background:"rgba(255,255,255,0.02)",borderBottom:"1px solid rgba(255,255,255,0.06)",borderTop:"1px solid rgba(255,255,255,0.06)",padding:"8px 0",overflow:"hidden",position:"relative",marginBottom:24}}>
+    <div style={{display:"flex",alignItems:"center",gap:0}}>
+      <div style={{flexShrink:0,padding:"0 16px",borderRight:"1px solid rgba(255,255,255,0.08)",marginRight:16}}>
+        <span style={{fontSize:8,fontWeight:900,color:"#38bdf8",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live</span>
+      </div>
+      <div style={{flex:1,overflow:"hidden"}}>
+        <div style={{display:"flex",gap:40,animation:"tickerScroll 40s linear infinite",whiteSpace:"nowrap"}}>
+          {[...items,...items].map((item,i)=>{
+            const c=COLORS[item.color]||"#94a3b8";
+            return(<span key={i} style={{fontSize:11,fontWeight:600,color:c,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <span style={{width:4,height:4,borderRadius:"50%",background:c,display:"inline-block",flexShrink:0}}/>
+              {item.text}
+            </span>);
+          })}
+        </div>
+      </div>
+    </div>
+    <style>{"@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}"}</style>
+  </div>);
+}
+
+// ── Transfer Hub Sidebar ──────────────────────────────────────
+function TransferHub({items}){
+  const[open,setOpen]=useState(null);
+  if(!items?.length)return null;
+  return(<div style={{background:"rgba(10,16,30,0.98)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:16,overflow:"hidden"}}>
+    <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(245,158,11,0.12)",display:"flex",alignItems:"center",gap:10}}>
+      <div style={{width:3,height:20,borderRadius:2,background:"linear-gradient(180deg,#f59e0b,transparent)",flexShrink:0}}/>
+      <span style={{fontFamily:"'Sora',sans-serif",fontSize:14,fontWeight:900,color:"#f0f6ff"}}>Transfer Hub</span>
+      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#f59e0b",fontWeight:700,marginLeft:"auto"}}>{items.length}</span>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:0}}>
+      {items.slice(0,8).map((t,i)=>(
+        <a key={i} href={t.url||"#"} target="_blank" rel="noopener noreferrer"
+          style={{display:"flex",gap:10,padding:"10px 14px",borderBottom:i<7?"1px solid rgba(255,255,255,0.04)":"none",textDecoration:"none",transition:"background 0.15s ease"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(245,158,11,0.05)"}
+          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          {t.image
+            ?<img src={t.image} alt="" style={{width:44,height:36,objectFit:"cover",borderRadius:6,flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
+            :<div style={{width:44,height:36,borderRadius:6,flexShrink:0,background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg></div>}
+          <div style={{flex:1,minWidth:0}}>
+            <p style={{fontFamily:"'Sora',sans-serif",fontSize:11,fontWeight:700,color:"#8aabb8",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.35}}>{t.headline||t.title}</p>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"#2a4a6a",fontWeight:700}}>{t.source}</span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:"#1a3a5a",fontWeight:700}}>{timeAgo(t.published_at)}</span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>);
+}
+
 export default function NewsTrackerPage(){
   const[articles,setArticles]=useState([]);
+  const[transferItems,setTransferItems]=useState([]);
   const[trending,setTrending]=useState([]);
   const[loading,setLoading]=useState(true);
   const[error,setError]=useState(null);
@@ -491,12 +562,14 @@ export default function NewsTrackerPage(){
 
   useEffect(()=>{
     async function load(){
-      try{ setLoading(true);setError(null);
+      try{
+        setLoading(true);setError(null);
         const res=await fetch(BACKEND+"/api/intelligence/feed?limit=60");
         if(!res.ok)throw new Error("HTTP "+res.status);
         const data=await res.json();
         setArticles((data.items||[]).map(normalise));
         setTrending(data.trending_clubs||[]);
+        setTransferItems(data.transfer_items||[]);
         setLastUpdated(new Date());
       }catch(e){setError(e.message);}
       finally{setLoading(false);}
@@ -539,7 +612,8 @@ export default function NewsTrackerPage(){
   const previews=sorted.filter(a=>a.type==="match_preview");
   const insights=sorted.filter(a=>["model_insight","title_race"].includes(a.type));
   const newsFeed=sorted.filter(a=>!["match_preview","model_insight","title_race"].includes(a.type));
-  const featured=insights[0]||previews[0]||sorted[0]||null;
+  const allFeed=sorted;
+  const featured=previews[0]||insights[0]||newsFeed[0]||null;
   const counts={all:articles.length,
     preview:articles.filter(a=>a.type==="match_preview").length,
     insight:articles.filter(a=>["model_insight","title_race"].includes(a.type)).length,
@@ -550,42 +624,44 @@ export default function NewsTrackerPage(){
   const SF=[{key:"matchday",label:"Matchday"},{key:"latest",label:"Latest"},{key:"trending",label:"Trending"}];
 
   return(<div style={{minHeight:"100vh",background:"#000810",fontFamily:"'Sora',sans-serif",position:"relative"}}>
-    {/* Pitch grid texture */}
     <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,opacity:0.016,
       backgroundImage:"linear-gradient(rgba(255,255,255,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.6) 1px,transparent 1px)",
       backgroundSize:"80px 80px"}}/>
-    {/* Ambient glow */}
     <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:800,height:300,background:"radial-gradient(ellipse at center top,rgba(56,189,248,0.04) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}}/>
 
-    <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}@keyframes apBack{from{opacity:0}to{opacity:1}}@keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}"}</style>
+    <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}@keyframes apBack{from{opacity:0}to{opacity:1}}@keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"}</style>
 
     <ArticlePage article={selectedArticle} allArticles={articles} onClose={closeArticle} onNavigate={navArticle}/>
 
-    <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 80px",position:"relative",zIndex:1}}>
+    <div style={{maxWidth:1320,margin:"0 auto",padding:"0 20px 80px",position:"relative",zIndex:1}}>
       {/* Header */}
-      <div style={{padding:"30px 0 22px",borderBottom:"1px solid rgba(255,255,255,0.045)",marginBottom:22}}>
+      <div style={{padding:"30px 0 18px",borderBottom:"1px solid rgba(255,255,255,0.045)",marginBottom:0}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <div style={{width:4,height:48,borderRadius:2,background:"linear-gradient(180deg,#38bdf8,#34d399)",flexShrink:0}}/>
             <div>
               <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:30,fontWeight:900,color:"#f0f6ff",margin:0,letterSpacing:"-0.03em",lineHeight:1.1}}>Football Intelligence</h1>
               <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#1a3a5a",margin:"4px 0 0",fontWeight:600}}>
-                Model previews · Tactical insights · Transfer & injury news
+                Model previews · Transfer hub · Tactical insights · Live signals
                 {lastUpdated&&<span style={{marginLeft:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#0f2a3a"}}>· Updated {timeAgo(lastUpdated)}</span>}
               </p>
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",borderRadius:999,background:"rgba(52,211,153,0.05)",border:"1px solid rgba(52,211,153,0.18)"}}>
-            <span style={{width:6,height:6,borderRadius:"50%",background:"#34d399",boxShadow:"0 0 9px rgba(52,211,153,0.8)",animation:"pulse 2.2s ease-in-out infinite",display:"inline-block"}}/>
-            <span style={{fontSize:9,fontWeight:900,color:"#34d399",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live feed</span>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",borderRadius:999,background:"rgba(52,211,153,0.05)",border:"1px solid rgba(52,211,153,0.18)"}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:"#34d399",boxShadow:"0 0 9px rgba(52,211,153,0.8)",animation:"pulse 2.2s ease-in-out infinite",display:"inline-block"}}/>
+              <span style={{fontSize:9,fontWeight:900,color:"#34d399",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live feed</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <TrendingBar clubs={trending} activeClub={activeClub} onSelect={setActiveClub}/>
+      {/* Intelligence Ticker */}
+      <IntelligenceTicker/>
 
-      {/* Filters */}
-      <div style={{marginBottom:28}}>
+      {/* Trending + Filters */}
+      <TrendingBar clubs={trending} activeClub={activeClub} onSelect={setActiveClub}/>
+      <div style={{marginBottom:24}}>
         <div style={{display:"flex",gap:6,flexWrap:"nowrap",overflowX:"auto",paddingBottom:8,scrollbarWidth:"none",alignItems:"center"}}>
           {TF.map(f=><Chip key={f.key} label={f.label} active={activeType===f.key} color={f.color} count={counts[f.key]} onClick={()=>setActiveType(f.key)}/>)}
           <div style={{width:1,height:22,background:"rgba(255,255,255,0.06)",flexShrink:0,margin:"0 4px"}}/>
@@ -598,46 +674,75 @@ export default function NewsTrackerPage(){
       {error&&<div style={{padding:"14px 18px",borderRadius:12,marginBottom:20,background:"rgba(248,113,113,0.05)",border:"1px solid rgba(248,113,113,0.18)",fontFamily:"'Inter',sans-serif",fontSize:13,color:"#f87171"}}>Failed to load: {error}</div>}
 
       {loading&&(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-        <Skeleton h={320}/><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}><Skeleton h={250}/><Skeleton h={250}/><Skeleton h={250}/></div>
-        {[1,2,3,4,5,6].map(i=><Skeleton key={i} h={90}/>)}
+        <Skeleton h={320}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24}}>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>{[1,2,3,4,5,6].map(i=><Skeleton key={i} h={90}/>)}</div>
+          <Skeleton h={480}/>
+        </div>
       </div>)}
 
-      {!loading&&!error&&(<div style={{display:"flex",flexDirection:"column",gap:48}}>
+      {!loading&&!error&&(<div style={{display:"flex",flexDirection:"column",gap:40}}>
+
+        {/* Featured */}
         {featured&&<FeaturedCard article={featured} onClick={openArticle}/>}
 
-        {/* Latest News — main section */}
-        {newsFeed.length>0&&(<section>
-          <SectionHead title="Latest News" sub="Breaking football news · Transfers · Injuries · Manager updates" accent="#f59e0b" count={newsFeed.length}/>
-          {newsFeed.length>=2&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-            {newsFeed.slice(0,2).map((a,i)=><EditorialNewsCard key={a.id||i} article={a} onClick={openArticle}/>)}
-          </div>}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-            {newsFeed.slice(2,24).map((a,i)=><EditorialNewsCard key={a.id||i} article={a} onClick={openArticle}/>)}
-          </div>
-        </section>)}
+        {/* Main two-column layout: feed left, Transfer Hub right */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:28,alignItems:"start"}}>
 
-        {/* Match Previews */}
-        {previews.length>0&&(<section>
-          <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="#38bdf8" count={previews.length}/>
-          <div style={{display:"grid",gridTemplateColumns:previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",gap:14}}>
-            {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
-          </div>
-        </section>)}
+          {/* LEFT — unified newsroom feed */}
+          <div style={{display:"flex",flexDirection:"column",gap:40}}>
 
-        {/* Model Insights */}
-        {insights.length>0&&(<section>
-          <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights · League breakdowns" accent="#34d399" count={insights.length}/>
-          <div style={{display:"grid",gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr",gap:14}}>
-            {insights.slice(0,6).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle}/>)}
-          </div>
-        </section>)}
+            {/* Unified Live Feed — all types interleaved */}
+            {allFeed.length>0&&(<section>
+              <SectionHead title="Latest News" sub="Breaking football news · Transfers · Injuries · Model insights" accent="#f59e0b" count={allFeed.length}/>
+              {/* Top two wide editorial cards */}
+              {newsFeed.length>=2&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                {newsFeed.slice(0,2).map((a,i)=><EditorialNewsCard key={a.id||i} article={a} onClick={openArticle}/>)}
+              </div>)}
+              {/* Remaining news in two-column grid */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:28}}>
+                {newsFeed.slice(2,20).map((a,i)=><EditorialNewsCard key={a.id||i} article={a} onClick={openArticle}/>)}
+              </div>
 
-        {sorted.length===0&&(<div style={{padding:"60px 20px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-          <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:4}}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a3a5a" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              {/* Match Previews inline */}
+              {previews.length>0&&(<>
+                <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="#38bdf8" count={previews.length}/>
+                <div style={{display:"grid",gridTemplateColumns:previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",gap:14,marginBottom:28}}>
+                  {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                </div>
+              </>)}
+
+              {/* Model Insights inline */}
+              {insights.length>0&&(<>
+                <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights" accent="#34d399" count={insights.length}/>
+                <div style={{display:"grid",gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr",gap:14}}>
+                  {insights.slice(0,4).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                </div>
+              </>)}
+            </section>)}
+
+            {sorted.length===0&&(<div style={{padding:"60px 20px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+              <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:4}}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a3a5a" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              </div>
+              <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"#1a3a5a",fontWeight:600,margin:0}}>No articles match the current filters</p>
+            </div>)}
           </div>
-          <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"#1a3a5a",fontWeight:600,margin:0}}>No articles match the current filters</p>
-        </div>)}
+
+          {/* RIGHT — sticky Transfer Hub */}
+          <div style={{position:"sticky",top:20,display:"flex",flexDirection:"column",gap:20}}>
+            <TransferHub items={transferItems}/>
+          </div>
+        </div>
+
+        {/* Footer attribution */}
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.045)",paddingTop:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+          <div>
+            <span style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:700,color:"#1a3a5a"}}>StatinSite Intelligence Engine</span>
+            <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"#0f2238",marginLeft:10}}>Built by Rutej Talati</span>
+          </div>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#0a1828",fontWeight:700}}>statinsite.com</span>
+        </div>
       </div>)}
     </div>
   </div>);

@@ -13,7 +13,7 @@ import os, time, asyncio, logging, requests
 from datetime import datetime, date, timezone, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
-
+from app.routes.intelligence import router as intelligence_router
 # ── 2. dotenv (walk up to find .env) ─────────────────────────────────────────
 try:
     from dotenv import load_dotenv
@@ -62,7 +62,7 @@ app.include_router(momentum_router)
 app.include_router(win_prob_router)
 app.include_router(shot_map_router)
 app.include_router(squad_builder_router)
-
+app.include_router(intelligence_router)
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════

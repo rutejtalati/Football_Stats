@@ -226,17 +226,28 @@ async def _predict_for_team(
     team_name: str, team_logo: str,
 ) -> dict:
     """
-    Predict XI using:
-    1. Formation: modal from last 5 official lineups
-    2. Player scoring: exponential-decay weighted recent fixture stats
-       (most recent match = weight 1.0, decays by e^-0.35 per match back)
-    3. Positional quota enforcement from formation slots
-    4. Injury/suspension exclusion
+    Predict XI using standard API-Football Pro endpoints:
+
+    Data pulled (3 parallel calls only — avoids rate limits):
+      1. /players/squads          → full squad roster + position + photo
+      2. /players                 → season stats (minutes, rating, goals, assists)
+      3. /fixtures (last 10 FT)   → formation detection, recent form, AND startXI data
+                                    (fixtures response includes lineups when available)
+      4. /injuries                → current unavailability
+      5. /coachs                  → active coach
+
+    Scoring formula per player:
+      base_score  = 0.4*(avg_mins_pct) + 0.3*(avg_rating/10) + 0.2*(goal_contrib/app) + 0.1*(appearances/30)
+      start_bonus = sum over last 10 matches of: 0.8^match_index if they started
+      final_score = base_score * 40 + start_bonus
+
+    This ensures: players who start regularly AND have good season stats rank highest.
+    New signings with few season stats but recent starts still rank via start_bonus.
     """
     from collections import Counter
-    print(f"[lineup_engine] Predicting for team {team_id}")
+    print(f"[lineup_engine] Predicting for {team_name} ({team_id})")
 
-    # ── Fetch squad ────────────────────────────────────────────────────
+    # ── 1. Squad roster ────────────────────────────────────────────────
     async def fetch_squad():
         try:
             d = await _call("/players/squads", {"team": team_id})
@@ -244,61 +255,93 @@ async def _predict_for_team(
         except Exception as e:
             print(f"[lineup_engine] squad failed: {e}"); return []
 
-    # ── Fetch last 8 completed fixtures WITH player stats embedded ─────
-    async def fetch_recent_fixtures():
+    # ── 2. Season player stats ─────────────────────────────────────────
+    async def fetch_season_stats():
+        try:
+            d = await _call("/players", {"team": team_id, "season": season, "page": 1})
+            stats = {}
+            for entry in d.get("response", []):
+                pid  = (entry.get("player") or {}).get("id")
+                stat = (entry.get("statistics") or [{}])[0]
+                if not pid: continue
+                g = stat.get("games") or {}
+                gl= stat.get("goals") or {}
+                stats[pid] = {
+                    "minutes":   int(g.get("minutes")     or 0),
+                    "appeared":  int(g.get("appearences") or 0),
+                    "rating":    float(g.get("rating")    or 0),
+                    "goals":     int(gl.get("total")      or 0),
+                    "assists":   int(gl.get("assists")     or 0),
+                }
+            return stats
+        except Exception as e:
+            print(f"[lineup_engine] season stats failed: {e}"); return {}
+
+    # ── 3. Recent fixtures: formation + form + who started ────────────
+    async def fetch_recent_data():
+        """
+        Single call to /fixtures gets last 10 FT results.
+        Then ONE call per fixture to /fixtures/lineups gets startXI.
+        We cap at 5 lineup fetches (most recent 5 games) to stay well within rate limits.
+        """
         try:
             d = await _call("/fixtures", {
                 "team": team_id, "season": season,
-                "last": 8, "status": "FT",
+                "last": 10, "status": "FT",
             })
             fixtures = d.get("response", [])
-            # Also fetch player stats for each fixture in parallel
-            async def enrich(fx):
-                fid = fx.get("fixture", {}).get("id")
-                if not fid:
-                    return fx
+
+            # Formation + form from fixture results
+            formations, form_list = [], []
+            fixture_ids = []
+            for fx in fixtures:
+                fix_info = fx.get("fixture", {})
+                fixture_ids.append(fix_info.get("id"))
+                t  = fx.get("teams",  {}); g = fx.get("goals", {})
+                is_home  = t.get("home",{}).get("id") == team_id
+                scored   = g.get("home",0) if is_home else g.get("away",0)
+                conceded = g.get("away",0) if is_home else g.get("home",0)
+                form_list.append("W" if scored > conceded else "D" if scored == conceded else "L")
+
+            # Fetch lineups for last 5 matches only (5 extra calls max)
+            starter_recency: dict = {}  # pid → recency_score (higher = started more recently)
+
+            async def get_lineup(fid, match_idx):
+                if not fid: return
                 try:
-                    pd = await _call("/fixtures/players", {"fixture": fid})
-                    fx["players"] = pd.get("response", [])
+                    ld = await _call("/fixtures/lineups", {"fixture": fid})
+                    weight = 0.8 ** match_idx   # most recent = 1.0, drops off fast
+                    for team_data in ld.get("response", []):
+                        if team_data.get("team", {}).get("id") != team_id:
+                            continue
+                        formation_str = team_data.get("formation", "")
+                        if formation_str:
+                            formations.append(_norm_formation(formation_str))
+                        for entry in team_data.get("startXI", []):
+                            pid = (entry.get("player") or {}).get("id")
+                            if pid:
+                                starter_recency[pid] = starter_recency.get(pid, 0) + weight
                 except Exception:
                     pass
-                return fx
-            return await asyncio.gather(*[enrich(fx) for fx in fixtures])
-        except Exception as e:
-            print(f"[lineup_engine] fixtures failed: {e}"); return []
 
-    # ── Detect formation from recent official lineups ──────────────────
-    async def fetch_formation_and_form():
-        try:
-            d = await _call("/fixtures", {
-                "team": team_id, "season": season,
-                "last": 5, "status": "FT",
-            })
-            formations, form = [], []
-            for fx in d.get("response", []):
-                # formation
-                for lu in fx.get("lineups", []):
-                    if lu.get("team", {}).get("id") == team_id:
-                        f = lu.get("formation", "")
-                        if f: formations.append(_norm_formation(f))
-                # recent form
-                t = fx.get("teams", {}); g = fx.get("goals", {})
-                is_home  = t.get("home", {}).get("id") == team_id
-                scored   = g.get("home", 0) if is_home else g.get("away", 0)
-                conceded = g.get("away", 0) if is_home else g.get("home", 0)
-                form.append("W" if scored > conceded else "D" if scored == conceded else "L")
+            # Fetch lineups for most recent 5 fixtures in parallel
+            await asyncio.gather(*[
+                get_lineup(fid, idx)
+                for idx, fid in enumerate(fixture_ids[:5])
+            ])
+
             formation = Counter(formations).most_common(1)[0][0] if formations else "4-3-3"
-            return formation, form[-5:]
-        except Exception as e:
-            print(f"[lineup_engine] formation/form failed: {e}")
-            return "4-3-3", []
+            return formation, form_list[-5:], starter_recency
 
-    # ── Fetch injuries (deduplicated, classified) ──────────────────────
+        except Exception as e:
+            print(f"[lineup_engine] recent data failed: {e}")
+            return "4-3-3", [], {}
+
+    # ── 4. Injuries ────────────────────────────────────────────────────
     async def fetch_injuries():
         try:
             d = await _call("/injuries", {"team": team_id, "season": season})
-            seen_inj: dict = {}
-            seen_dbt: dict = {}
+            seen_inj, seen_dbt = {}, {}
             for e in d.get("response", []):
                 p   = e.get("player", {})
                 pid = p.get("id")
@@ -312,78 +355,99 @@ async def _predict_for_team(
                     status = "doubtful"
                 else:
                     status = "injured"
-                entry = {"id": pid, "name": p.get("name",""), "photo": p.get("photo",""),
-                         "reason": reason, "type": inj_type, "status": status}
-                (seen_inj if status == "injured" else seen_dbt)[pid] = entry
+                rec = {"id": pid, "name": p.get("name",""), "photo": p.get("photo",""),
+                       "reason": reason, "type": inj_type, "status": status}
+                (seen_inj if status == "injured" else seen_dbt)[pid] = rec
             return list(seen_inj.values()), list(seen_dbt.values())
         except Exception as e:
             print(f"[lineup_engine] injuries failed: {e}"); return [], []
 
-    # ── Fetch active coach ─────────────────────────────────────────────
+    # ── 5. Active coach ────────────────────────────────────────────────
     async def fetch_coach():
         try:
             d = await _call("/coachs", {"team": team_id})
             for c in d.get("response", []):
                 for spell in c.get("career", []):
                     if spell.get("team", {}).get("id") == team_id and spell.get("end") is None:
-                        return c.get("name", ""), c.get("photo", "")
+                        return c.get("name",""), c.get("photo","")
             resp = d.get("response", [])
             if resp: return resp[0].get("name",""), resp[0].get("photo","")
         except Exception:
             pass
         return "", ""
 
-    # ── Run all fetches in parallel ────────────────────────────────────
-    squad, recent_fixtures, (formation, recent_form), (injured, doubtful), (coach, coach_photo) = (
-        await asyncio.gather(
-            fetch_squad(),
-            fetch_recent_fixtures(),
-            fetch_formation_and_form(),
-            fetch_injuries(),
-            fetch_coach(),
-        )
+    # ── Parallel fetch ────────────────────────────────────────────────
+    (squad, season_stats, (formation, recent_form, starter_recency),
+     (injured, doubtful), (coach, coach_photo)) = await asyncio.gather(
+        fetch_squad(),
+        fetch_season_stats(),
+        fetch_recent_data(),
+        fetch_injuries(),
+        fetch_coach(),
     )
 
     injured_ids = {p["id"] for p in injured + doubtful if p.get("id")}
 
-    # ── Score each squad player ────────────────────────────────────────
-    # API-Football /players/squads position field: "Goalkeeper", "Defender", "Midfielder", "Attacker"
+    # ── Score each player ─────────────────────────────────────────────
     _squad_pos_map = {
         "Goalkeeper": "GK", "Defender": "DEF",
         "Midfielder": "MID", "Attacker": "FWD",
     }
+
     players = []
     for sp in squad:
         pid = sp.get("id")
         if not pid: continue
-        raw_pos  = sp.get("position", "MID")
-        pos      = _squad_pos_map.get(raw_pos, _norm_pos(raw_pos))
-        # Primary score: recent fixture participation (exponential decay)
-        rec_score = _score_player_recent(pid, recent_fixtures)
+
+        raw_pos = sp.get("position", "Midfielder")
+        pos     = _squad_pos_map.get(raw_pos, _norm_pos(raw_pos))
+        s       = season_stats.get(pid, {})
+
+        appeared = max(s.get("appeared", 0), 1)
+        minutes  = s.get("minutes",  0)
+        rating   = s.get("rating",   0.0)
+        goals    = s.get("goals",    0)
+        assists  = s.get("assists",  0)
+
+        # Season aggregate score (0–1 range each component)
+        min_pct    = min(minutes / max(appeared * 90, 1), 1.0) if appeared > 1 else 0.0
+        rat_score  = min(rating / 10.0, 1.0)
+        gc_score   = min((goals + assists) / max(appeared, 1), 1.0)
+        app_score  = min(appeared / 30.0, 1.0)
+        base_score = (0.40 * min_pct + 0.30 * rat_score + 0.20 * gc_score + 0.10 * app_score) * 40.0
+
+        # Recency bonus: who actually started recently (0.8^i per start, up to ~5 matches)
+        recency = starter_recency.get(pid, 0.0) * 30.0
+
+        # Final score: recency-weighted starts dominate over pure season stats
+        final = round(base_score + recency, 3)
+
+        # Small baseline so players with zero stats aren't completely ignored
+        if final < 0.5 and appeared > 0:
+            final = 0.5
+
         players.append({
             "id":          pid,
             "name":        sp.get("name", ""),
             "number":      sp.get("number"),
             "photo":       sp.get("photo", ""),
             "pos":         pos,
-            "score":       rec_score,
-            "rating":      None,
+            "score":       final,
+            "rating":      rating or None,
             "nationality": sp.get("nationality", ""),
         })
 
-    # Players with zero recent score (new signings, youth): give small baseline
-    # so they can still be picked if no competition at their position
-    for p in players:
-        if p["score"] == 0.0:
-            p["score"] = 0.1
+    print(f"[lineup_engine] {team_name}: {len(players)} squad players, formation={formation}")
+    # Debug top 5 per group
+    for grp in ("GK","DEF","MID","FWD"):
+        top = sorted([p for p in players if _pos_group(p["pos"])==grp],
+                     key=lambda x:-x["score"])[:5]
+        print(f"  {grp}: {[(p['name'], round(p['score'],1)) for p in top]}")
 
     starting_xi, bench = _build_xi(players, formation, injured_ids)
 
-    # Warn if we couldn't fill 11
     if len(starting_xi) < 11:
         print(f"[lineup_engine] WARNING: only {len(starting_xi)} starters for {team_name}")
-
-    print(f"[lineup_engine] {team_name}: {formation}, {len(starting_xi)} starters, {len(bench)} bench")
 
     return {
         "team_name":   team_name,
@@ -397,7 +461,6 @@ async def _predict_for_team(
         "doubts":      doubtful,
         "recent_form": recent_form,
     }
-
 
 # ─────────────────────────────────────────────
 # Normalise official lineup from API-Football

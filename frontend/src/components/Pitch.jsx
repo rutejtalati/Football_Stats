@@ -1,328 +1,311 @@
 // ═════════════════════════════════════════════════════
 // Pitch.jsx  –  FotMob-style football pitch
-// Uses ResizeObserver to get real pixel dimensions,
-// then places players at exact px coords from grid field.
+// Guaranteed positioning via ResizeObserver + px math
+// grid field "row:col" → exact screen position
 // ═════════════════════════════════════════════════════
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 // ─────────────────────────────────────────────────────
-// grid = "row:col"  (1-indexed, from backend)
-//   row 1 = GK, row 2 = DEF, row 3 = MID, row 4 = FWD
-//   formation "4-3-3" → rows have [1, 4, 3, 3] players
+// Convert "row:col" grid string → {x%, y%} on pitch
 //
-// Returns { x, y } as percentage 0–100
+// formation "4-3-3" → row sizes [1, 4, 3, 3]
+// row 1 = GK, row 2 = DEF, etc.
+// Home: GK at bottom (high y). Away: GK at top (low y).
 // ─────────────────────────────────────────────────────
 function gridToPercent(gridStr, formation, isAway) {
-  if (!gridStr) return { x: 50, y: isAway ? 12 : 88 };
+  const fallback = { x: 50, y: isAway ? 15 : 85 };
+  if (!gridStr) return fallback;
 
-  const parts = (gridStr + "").split(":");
-  const row = parseInt(parts[0], 10) || 1;
-  const col = parseInt(parts[1], 10) || 1;
+  const [r, c] = (gridStr + "").split(":").map(Number);
+  if (!r || !c) return fallback;
 
-  // Parse formation into row sizes: "4-3-3" → [1, 4, 3, 3]
-  const rowSizes = [1, ...(formation || "4-3-3").split("-").map(Number)];
+  // Parse formation e.g. "4-3-3" → rowSizes [1, 4, 3, 3]
+  const rowSizes = [1, ...(formation || "4-3-3").split("-").map(n => parseInt(n, 10) || 1)];
   const totalRows = rowSizes.length;
-  const colsInRow = rowSizes[row - 1] ?? 1;
+  const colsInRow = rowSizes[r - 1] ?? 1;
 
-  // X: spread players evenly across 10%–90%
+  // X: spread players left-right within 8%–92%
   const x = colsInRow === 1
     ? 50
-    : 10 + ((col - 1) / (colsInRow - 1)) * 80;
+    : 8 + ((c - 1) / (colsInRow - 1)) * 84;
 
-  // Y: GK at bottom (home) or top (away), attackers at opposite end
-  // rows spread across 8%–92%
-  const frac = (row - 1) / Math.max(totalRows - 1, 1);
+  // Y: row 1 (GK) at 88% for home, 12% for away
+  //    last row (FWD) at 12% for home, 88% for away
+  const frac = (r - 1) / Math.max(totalRows - 1, 1); // 0 = GK row, 1 = FWD row
   const y = isAway
-    ? 8 + frac * 84          // away: row1 (GK) near top
-    : 92 - frac * 84;        // home: row1 (GK) near bottom
+    ? 12 + frac * 76   // away: GK near top, FWD near bottom
+    : 88 - frac * 76;  // home: GK near bottom, FWD near top
 
-  return {
-    x: Math.round(x * 10) / 10,
-    y: Math.round(y * 10) / 10,
-  };
+  return { x: +x.toFixed(1), y: +y.toFixed(1) };
 }
 
 // ─────────────────────────────────────────────
-// Player Token  — positioned by px derived from %
+// PlayerToken — positioned in px from %
 // ─────────────────────────────────────────────
-function PlayerToken({ player, color, pitchW, pitchH, onClick }) {
-  const [imgErr, setImgErr] = useState(false);
-  const shortName = player.name ? player.name.split(" ").pop() : "—";
-  const rating = player.rating;
+const TOKEN_DIAM = 36; // avatar diameter in px
+const HALF       = TOKEN_DIAM / 2;
 
-  const TOKEN_R = 18; // avatar radius px
-  const leftPx = (player._x / 100) * pitchW - TOKEN_R;
-  const topPx  = (player._y / 100) * pitchH - TOKEN_R;
+function PlayerToken({ player, color, W, H, onClick }) {
+  const [err, setErr] = useState(false);
+  const lastName = (player.name || "?").split(" ").pop();
+  const left = (player._x / 100) * W - HALF;
+  const top  = (player._y / 100) * H - HALF;
 
   return (
     <div
+      onClick={() => onClick?.(player)}
       style={{
         position: "absolute",
-        left: leftPx,
-        top:  topPx,
-        width: TOKEN_R * 2,
+        left, top,
+        width: TOKEN_DIAM,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         cursor: "pointer",
         zIndex: 10,
-        animation: "fadeInPlayer 0.35s ease both",
+        animation: "fpIn 0.3s ease both",
         animationDelay: `${player._delay || 0}ms`,
       }}
-      onClick={() => onClick?.(player)}
     >
-      {/* Rating badge */}
-      {rating && (
+      {/* Rating pill */}
+      {player.rating > 0 && (
         <div style={{
-          marginBottom: 1,
-          background: rating >= 7.5 ? "#34d399" : rating >= 6.5 ? "#f59e0b" : "#6b7fa3",
-          color: "#000", fontSize: 7, fontWeight: 900,
-          padding: "1px 3px", borderRadius: 3, whiteSpace: "nowrap",
+          fontSize: 7, fontWeight: 900, lineHeight: 1,
+          padding: "1px 3px", borderRadius: 3, marginBottom: 1,
+          background: player.rating >= 7.5 ? "#34d399" : player.rating >= 6.5 ? "#f59e0b" : "#64748b",
+          color: "#000", whiteSpace: "nowrap",
         }}>
-          {Number(rating).toFixed(1)}
+          {Number(player.rating).toFixed(1)}
         </div>
       )}
 
-      {/* Avatar */}
+      {/* Avatar circle */}
       <div style={{
-        width: TOKEN_R * 2, height: TOKEN_R * 2,
-        borderRadius: "50%",
-        border: `2px solid ${color}`,
-        background: "rgba(6,10,18,0.88)",
-        overflow: "hidden",
-        position: "relative",
-        boxShadow: `0 0 8px ${color}55`,
+        width: TOKEN_DIAM, height: TOKEN_DIAM, borderRadius: "50%",
+        border: `2.5px solid ${color}`,
+        background: "rgba(5,10,20,0.9)",
+        overflow: "hidden", position: "relative",
+        boxShadow: `0 0 10px ${color}66, 0 2px 6px rgba(0,0,0,0.8)`,
         flexShrink: 0,
       }}>
-        {player.photo && !imgErr ? (
+        {player.photo && !err ? (
           <img src={player.photo} alt={player.name}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            onError={() => setImgErr(true)} />
+            onError={() => setErr(true)} />
         ) : (
           <div style={{
             width: "100%", height: "100%",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, fontWeight: 900, color,
+            fontSize: 11, fontWeight: 900, color,
           }}>
-            {player.number || player.name?.[0] || "?"}
+            {player.number ?? player.name?.[0] ?? "?"}
           </div>
         )}
-        {player.number && (
+        {/* Jersey number badge */}
+        {player.number != null && (
           <div style={{
             position: "absolute", bottom: 0, right: 0,
+            width: 12, height: 12, borderRadius: "50%",
             background: color, color: "#000",
             fontSize: 6, fontWeight: 900,
-            width: 11, height: 11, borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {player.number}
-          </div>
+          }}>{player.number}</div>
         )}
       </div>
 
-      {/* Name */}
+      {/* Name label */}
       <div style={{
         marginTop: 2, fontSize: 8, fontWeight: 800,
-        color: "#e8f0ff", textAlign: "center",
-        width: 56, whiteSpace: "nowrap",
-        overflow: "hidden", textOverflow: "ellipsis",
-        textShadow: "0 1px 3px rgba(0,0,0,1)",
+        color: "#e8f2ff", textAlign: "center",
+        width: 58, overflow: "hidden", whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+        textShadow: "0 1px 4px #000, 0 1px 4px #000",
         letterSpacing: "0.01em",
       }}>
-        {shortName}
+        {lastName}
       </div>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────
-// Pitch markings SVG
+// Pitch SVG markings
 // ─────────────────────────────────────────────
-function PitchLines() {
+function PitchMarkings() {
   return (
     <svg viewBox="0 0 100 100" preserveAspectRatio="none"
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.2, pointerEvents: "none" }}>
-      <rect x="3" y="2" width="94" height="96" fill="none" stroke="white" strokeWidth="0.5"/>
-      <line x1="3" y1="50" x2="97" y2="50" stroke="white" strokeWidth="0.4"/>
-      <circle cx="50" cy="50" r="11" fill="none" stroke="white" strokeWidth="0.4"/>
-      <circle cx="50" cy="50" r="0.7" fill="white"/>
-      <rect x="22" y="2"  width="56" height="17" fill="none" stroke="white" strokeWidth="0.4"/>
-      <rect x="36" y="2"  width="28" height="7"  fill="none" stroke="white" strokeWidth="0.4"/>
-      <circle cx="50" cy="13" r="0.6" fill="white"/>
-      <rect x="22" y="81" width="56" height="17" fill="none" stroke="white" strokeWidth="0.4"/>
-      <rect x="36" y="91" width="28" height="7"  fill="none" stroke="white" strokeWidth="0.4"/>
-      <circle cx="50" cy="87" r="0.6" fill="white"/>
-      {/* Stripe pattern for grass feel */}
-      {[10,20,30,40,50,60,70,80,90].map(y => (
-        <rect key={y} x="3" y={y} width="94" height="5"
-          fill="rgba(255,255,255,0.015)" stroke="none"/>
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", opacity: 0.22 }}>
+      {/* Outer border */}
+      <rect x="2.5" y="2" width="95" height="96" fill="none" stroke="white" strokeWidth="0.5" rx="0.3"/>
+      {/* Halfway line */}
+      <line x1="2.5" y1="50" x2="97.5" y2="50" stroke="white" strokeWidth="0.4"/>
+      {/* Centre circle */}
+      <circle cx="50" cy="50" r="11.5" fill="none" stroke="white" strokeWidth="0.4"/>
+      <circle cx="50" cy="50" r="0.8" fill="white"/>
+      {/* Top penalty box */}
+      <rect x="21" y="2" width="58" height="16.5" fill="none" stroke="white" strokeWidth="0.4"/>
+      {/* Top 6-yard box */}
+      <rect x="36" y="2" width="28" height="6.5" fill="none" stroke="white" strokeWidth="0.4"/>
+      <circle cx="50" cy="12.5" r="0.6" fill="white"/>
+      {/* Bottom penalty box */}
+      <rect x="21" y="81.5" width="58" height="16.5" fill="none" stroke="white" strokeWidth="0.4"/>
+      {/* Bottom 6-yard box */}
+      <rect x="36" y="91.5" width="28" height="6.5" fill="none" stroke="white" strokeWidth="0.4"/>
+      <circle cx="50" cy="87.5" r="0.6" fill="white"/>
+      {/* Grass stripes */}
+      {[0,1,2,3,4,5,6,7,8,9].map(i => (
+        <rect key={i} x="2.5" y={2 + i * 9.6} width="95" height="4.8"
+          fill="rgba(255,255,255,0.018)" stroke="none"/>
       ))}
     </svg>
   );
 }
 
 // ─────────────────────────────────────────────
-// Main Pitch
+// Main Pitch component
 // ─────────────────────────────────────────────
 export default function Pitch({ home, away, mode }) {
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const pitchRef  = useRef(null);
-  const [pitchSize, setPitchSize] = useState({ w: 0, h: 0 });
+  const [selected, setSelected] = useState(null);
+  const containerRef = useRef(null);
+  const [size, setSize]         = useState({ w: 0, h: 0 });
 
-  // Observe real rendered size of the pitch div
+  // Measure real rendered px dimensions
   useEffect(() => {
-    if (!pitchRef.current) return;
-    const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setPitchSize({ w: width, h: height });
-        }
-      }
-    });
-    ro.observe(pitchRef.current);
+    if (!containerRef.current) return;
+    const measure = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      setSize({ w: el.offsetWidth, h: el.offsetHeight });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, []);
 
-  // Map grid → % coords
-  const homePlayers = (home?.starting_xi || []).map((p, i) => {
-    const { x, y } = gridToPercent(p.grid, home?.formation, false);
-    return { ...p, _x: x, _y: y, _delay: i * 35 };
-  });
+  const mapPlayers = useCallback((xi, formation, isAway, colorDelay) =>
+    (xi || []).map((p, i) => {
+      const { x, y } = gridToPercent(p.grid, formation, isAway);
+      return { ...p, _x: x, _y: y, _delay: colorDelay + i * 30 };
+    }), []);
 
-  const awayPlayers = (away?.starting_xi || []).map((p, i) => {
-    const { x, y } = gridToPercent(p.grid, away?.formation, true);
-    return { ...p, _x: x, _y: y, _delay: i * 35 + 180 };
-  });
-
-  const noLineups = homePlayers.length === 0 && awayPlayers.length === 0;
-  const canRender = pitchSize.w > 0 && pitchSize.h > 0;
+  const homePlayers = mapPlayers(home?.starting_xi, home?.formation, false, 0);
+  const awayPlayers = mapPlayers(away?.starting_xi, away?.formation, true,  200);
+  const noLineups   = homePlayers.length === 0 && awayPlayers.length === 0;
 
   return (
     <>
       <style>{`
-        @keyframes fadeInPlayer {
-          from { opacity: 0; transform: scale(0.6); }
-          to   { opacity: 1; transform: scale(1); }
+        @keyframes fpIn {
+          from { opacity:0; transform:scale(0.5); }
+          to   { opacity:1; transform:scale(1); }
         }
       `}</style>
 
-      {/* Header bar */}
+      {/* ── Header ── */}
       <div style={{
-        display: "flex", justifyContent: "space-between",
-        alignItems: "center", marginBottom: 8, padding: "0 4px",
+        display:"flex", justifyContent:"space-between", alignItems:"center",
+        marginBottom: 8, padding: "0 2px",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {home?.logo && (
-            <img src={home.logo} style={{ width: 18, height: 18, objectFit: "contain" }}
-              onError={e => e.currentTarget.style.display = "none"} />
-          )}
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#60a5fa" }}>{home?.team_name}</span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: "rgba(96,165,250,0.65)",
-            background: "rgba(96,165,250,0.08)", padding: "1px 7px", borderRadius: 999,
-          }}>{home?.formation || "—"}</span>
+        {/* Home */}
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          {home?.logo && <img src={home.logo} style={{ width:18, height:18, objectFit:"contain" }}
+            onError={e=>e.currentTarget.style.display="none"} />}
+          <span style={{ fontSize:11, fontWeight:800, color:"#60a5fa" }}>{home?.team_name}</span>
+          <span style={{ fontSize:10, fontWeight:700, color:"rgba(96,165,250,0.7)",
+            background:"rgba(96,165,250,0.1)", padding:"1px 7px", borderRadius:999 }}>
+            {home?.formation || "—"}
+          </span>
           {mode === "predicted" && (
-            <span style={{
-              fontSize: 7.5, fontWeight: 900, letterSpacing: "0.08em",
-              color: "#f59e0b", background: "rgba(245,158,11,0.12)",
-              padding: "1px 6px", borderRadius: 999,
-            }}>PREDICTED</span>
+            <span style={{ fontSize:7.5, fontWeight:900, letterSpacing:"0.08em",
+              color:"#f59e0b", background:"rgba(245,158,11,0.13)",
+              padding:"1px 6px", borderRadius:999 }}>PREDICTED</span>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {/* Away */}
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
           {mode === "predicted" && (
-            <span style={{
-              fontSize: 7.5, fontWeight: 900, letterSpacing: "0.08em",
-              color: "#f59e0b", background: "rgba(245,158,11,0.12)",
-              padding: "1px 6px", borderRadius: 999,
-            }}>PREDICTED</span>
+            <span style={{ fontSize:7.5, fontWeight:900, letterSpacing:"0.08em",
+              color:"#f59e0b", background:"rgba(245,158,11,0.13)",
+              padding:"1px 6px", borderRadius:999 }}>PREDICTED</span>
           )}
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: "rgba(249,115,22,0.65)",
-            background: "rgba(249,115,22,0.08)", padding: "1px 7px", borderRadius: 999,
-          }}>{away?.formation || "—"}</span>
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#f97316" }}>{away?.team_name}</span>
-          {away?.logo && (
-            <img src={away.logo} style={{ width: 18, height: 18, objectFit: "contain" }}
-              onError={e => e.currentTarget.style.display = "none"} />
+          <span style={{ fontSize:10, fontWeight:700, color:"rgba(249,115,22,0.7)",
+            background:"rgba(249,115,22,0.1)", padding:"1px 7px", borderRadius:999 }}>
+            {away?.formation || "—"}
+          </span>
+          <span style={{ fontSize:11, fontWeight:800, color:"#f97316" }}>{away?.team_name}</span>
+          {away?.logo && <img src={away.logo} style={{ width:18, height:18, objectFit:"contain" }}
+            onError={e=>e.currentTarget.style.display="none"} />}
+        </div>
+      </div>
+
+      {/* ── Pitch canvas ──
+          Use paddingBottom trick BUT with an explicit inner div at position:absolute,inset:0
+          AND we measure the inner div (not outer), so px coords are always correct.
+      ── */}
+      <div style={{ position:"relative", width:"100%", paddingBottom:"148%" }}>
+        <div
+          ref={containerRef}
+          style={{
+            position:"absolute", inset:0,
+            borderRadius:12, overflow:"hidden",
+            background:"linear-gradient(180deg,#082010 0%,#0f3a1a 18%,#0c3016 50%,#0f3a1a 82%,#082010 100%)",
+            border:"1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <PitchMarkings />
+
+          {noLineups && (
+            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <span style={{ fontSize:13, color:"rgba(255,255,255,0.25)", fontWeight:600 }}>
+                Lineups not yet announced.
+              </span>
+            </div>
+          )}
+
+          {size.w > 0 && !noLineups && (
+            <>
+              {homePlayers.map((p, i) => (
+                <PlayerToken key={`h${i}`} player={p} color="#60a5fa"
+                  W={size.w} H={size.h} onClick={setSelected} />
+              ))}
+              {awayPlayers.map((p, i) => (
+                <PlayerToken key={`a${i}`} player={p} color="#fb923c"
+                  W={size.w} H={size.h} onClick={setSelected} />
+              ))}
+            </>
           )}
         </div>
       </div>
 
-      {/* Pitch — aspect-ratio driven, ResizeObserver reads actual px */}
-      <div style={{
-        width: "100%",
-        aspectRatio: "7 / 10",   // portrait pitch ratio
-        position: "relative",
-        borderRadius: 12,
-        overflow: "hidden",
-        background: "linear-gradient(180deg,#082010 0%,#0e3318 15%,#0c2c14 50%,#0e3318 85%,#082010 100%)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        minHeight: 420,
-      }}
-        ref={pitchRef}
-      >
-        <PitchLines />
-
-        {noLineups && (
-          <div style={{
-            position: "absolute", inset: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 600 }}>
-              Lineups not yet announced.
-            </span>
-          </div>
-        )}
-
-        {canRender && !noLineups && (
-          <>
-            {homePlayers.map((p, i) => (
-              <PlayerToken key={`h-${i}`} player={p} color="#60a5fa"
-                pitchW={pitchSize.w} pitchH={pitchSize.h}
-                onClick={setSelectedPlayer} />
-            ))}
-            {awayPlayers.map((p, i) => (
-              <PlayerToken key={`a-${i}`} player={p} color="#f97316"
-                pitchW={pitchSize.w} pitchH={pitchSize.h}
-                onClick={setSelectedPlayer} />
-            ))}
-          </>
-        )}
-      </div>
-
-      {/* Click-to-inspect */}
-      {selectedPlayer && (
-        <div style={{
-          marginTop: 8,
-          background: "linear-gradient(135deg,#0d1525,#080e1a)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 10, padding: "10px 14px",
-          display: "flex", alignItems: "center", gap: 10,
-          cursor: "pointer",
-        }} onClick={() => setSelectedPlayer(null)}>
-          {selectedPlayer.photo && (
-            <img src={selectedPlayer.photo}
-              style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }}
-              onError={e => e.currentTarget.style.display = "none"} />
+      {/* ── Selected player card ── */}
+      {selected && (
+        <div onClick={() => setSelected(null)} style={{
+          marginTop:8, borderRadius:10, padding:"10px 14px",
+          background:"linear-gradient(135deg,#0d1525,#080e1a)",
+          border:"1px solid rgba(255,255,255,0.09)",
+          display:"flex", alignItems:"center", gap:10, cursor:"pointer",
+        }}>
+          {selected.photo && (
+            <img src={selected.photo}
+              style={{ width:34, height:34, borderRadius:"50%", objectFit:"cover" }}
+              onError={e=>e.currentTarget.style.display="none"} />
           )}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#f0f6ff" }}>{selectedPlayer.name}</div>
-            <div style={{ fontSize: 10, color: "#4a6080", marginTop: 2 }}>
-              {selectedPlayer.pos}
-              {selectedPlayer.number ? ` · #${selectedPlayer.number}` : ""}
-              {selectedPlayer.nationality ? ` · ${selectedPlayer.nationality}` : ""}
+            <div style={{ fontSize:13, fontWeight:800, color:"#f0f6ff" }}>{selected.name}</div>
+            <div style={{ fontSize:10, color:"#4a6080", marginTop:2 }}>
+              {selected.pos}
+              {selected.number != null ? ` · #${selected.number}` : ""}
+              {selected.nationality ? ` · ${selected.nationality}` : ""}
             </div>
           </div>
-          {selectedPlayer.rating && (
+          {selected.rating > 0 && (
             <div style={{
-              marginLeft: "auto", fontSize: 20, fontWeight: 900,
-              color: selectedPlayer.rating >= 7.5 ? "#34d399"
-                   : selectedPlayer.rating >= 6.5 ? "#f59e0b" : "#6b7fa3",
+              marginLeft:"auto", fontSize:20, fontWeight:900,
+              color: selected.rating >= 7.5 ? "#34d399" : selected.rating >= 6.5 ? "#f59e0b" : "#64748b",
             }}>
-              {Number(selectedPlayer.rating).toFixed(1)}
+              {Number(selected.rating).toFixed(1)}
             </div>
           )}
         </div>

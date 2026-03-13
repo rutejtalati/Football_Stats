@@ -51,7 +51,7 @@ function gt(a){ return TM[a.type]||TM.news; }
 function timeAgo(ts){ if(!ts)return""; const m=Math.floor((Date.now()-new Date(ts))/60000); if(m<1)return"just now"; if(m<60)return m+"m ago"; if(m<1440)return Math.floor(m/60)+"h ago"; return Math.floor(m/1440)+"d ago"; }
 function fmtKO(ts){ if(!ts)return null; const d=new Date(ts); return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); }
 
-const NOISE = "url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.026'/%3E%3C/svg%3E")";
+const NOISE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.026'/%3E%3C/svg%3E")`;
 
 // SVG fallback patterns — no emojis, CSS-drawn football visuals
 const FBP = {
@@ -64,7 +64,7 @@ const FBP = {
   news:     { bg:"#030608", accent:"#64748b" },
 };
 function getFB(t){ const k=t==="match_preview"?"preview":(t==="model_insight"||t==="title_race")?"insight":(TM[t]?.fb||"news"); return FBP[k]||FBP.news; }
-function fbSvg(fb,lines){ return "url("data:image/svg+xml,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>" +lines+ "</svg>")+"")"; }
+function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>"+lines+"</svg>")}")`; }
 function fbBg(fb){
   if(fb===FBP.transfer) return fbSvg(fb,"<line x1='200' y1='0' x2='0' y2='220' stroke='rgba(245,158,11,.07)'/><line x1='200' y1='0' x2='80' y2='220' stroke='rgba(245,158,11,.05)'/><line x1='200' y1='0' x2='320' y2='220' stroke='rgba(245,158,11,.05)'/><line x1='200' y1='0' x2='400' y2='220' stroke='rgba(245,158,11,.07)'/>");
   if(fb===FBP.injury)   return fbSvg(fb,"<circle cx='200' cy='110' r='55' fill='none' stroke='rgba(248,113,113,.08)'/><circle cx='200' cy='110' r='90' fill='none' stroke='rgba(248,113,113,.05)'/><circle cx='200' cy='110' r='130' fill='none' stroke='rgba(248,113,113,.03)'/>");

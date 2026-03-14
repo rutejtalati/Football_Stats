@@ -56,16 +56,31 @@ from app.routes.momentum      import router as momentum_router
 from app.routes.win_prob      import router as win_prob_router
 from app.routes.shot_map      import router as shot_map_router
 from app.routes.squad_builder import router as squad_builder_router
-from app.routes.fpl           import router as fpl_router
-from app.routes.players       import router as players_router
 
 app.include_router(lineups_router)
 app.include_router(momentum_router)
 app.include_router(win_prob_router)
 app.include_router(shot_map_router)
 app.include_router(squad_builder_router)
-app.include_router(fpl_router)
-app.include_router(players_router)
+
+# Optional routers — only registered when the route files exist in the repo
+try:
+    from app.routes.fpl import router as fpl_router
+    app.include_router(fpl_router)
+except ImportError:
+    pass
+
+try:
+    from app.routes.players import router as players_router
+    app.include_router(players_router)
+except ImportError:
+    pass
+
+try:
+    from app.routes.intelligence import router as intelligence_router
+    app.include_router(intelligence_router)
+except ImportError:
+    pass
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
@@ -430,7 +445,4 @@ def league_predictions(code: str):
     result={"league_code":code,"league_name":LEAGUE_NAMES[code],"generated_at":datetime.now(timezone.utc).isoformat(),"predictions":preds}
     _cache.set(key,result); return result
 
-@app.get("/api/intelligence/health")
-def intelligence_health():
-    return {"api_football_key":"set" if API_KEY else "MISSING","news_api_key":"set" if NEWS_API_KEY else "MISSING",
-        "openrouter_key":"set" if OPENROUTER_KEY else "not set","season":CURRENT_SEASON,"leagues":list(LEAGUE_IDS.keys())}
+# /api/intelligence/health is now served by app.routes.intelligence router

@@ -23,6 +23,7 @@ import GameweekInsightsPage from "./pages/GameweekInsightsPage";
 
 import PlayerBrowsePage from "./pages/PlayerBrowsePage";
 import PlayerInsightPage from "./pages/PlayerInsightPage";
+import PlayerProfilePage from "./pages/PlayerProfile";
 
 import TeamPage from "./pages/TeamPage";
 

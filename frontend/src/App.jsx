@@ -108,7 +108,7 @@ export default function App() {
             {/* ───── Player Pages ───── */}
             <Route path="/player" element={<PlayerBrowsePage />} />
             <Route path="/player/:id" element={<PlayerInsightPage />} />
-
+            <Route path="/players" element={<PlayerProfilePage />} />
             {/* ───── Team Pages ───── */}
             <Route path="/team/:teamId/:league" element={<TeamPage />} />
 

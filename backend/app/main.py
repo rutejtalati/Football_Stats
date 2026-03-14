@@ -63,7 +63,13 @@ app.include_router(win_prob_router)
 app.include_router(shot_map_router)
 app.include_router(squad_builder_router)
 
-# Optional routers — only registered when the route files exist in the repo
+# Optional routers — registered only when route files are present in the repo
+try:
+    from app.routes.intelligence import router as intelligence_router
+    app.include_router(intelligence_router)
+except ImportError:
+    pass
+
 try:
     from app.routes.fpl import router as fpl_router
     app.include_router(fpl_router)
@@ -73,12 +79,6 @@ except ImportError:
 try:
     from app.routes.players import router as players_router
     app.include_router(players_router)
-except ImportError:
-    pass
-
-try:
-    from app.routes.intelligence import router as intelligence_router
-    app.include_router(intelligence_router)
 except ImportError:
     pass
 
@@ -445,4 +445,4 @@ def league_predictions(code: str):
     result={"league_code":code,"league_name":LEAGUE_NAMES[code],"generated_at":datetime.now(timezone.utc).isoformat(),"predictions":preds}
     _cache.set(key,result); return result
 
-# /api/intelligence/health is now served by app.routes.intelligence router
+# /api/intelligence/health is served by app.routes.intelligence router

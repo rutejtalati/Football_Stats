@@ -13,7 +13,7 @@ import os, time, asyncio, logging, requests
 from datetime import datetime, date, timezone, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
-from app.routes.intelligence import router as intelligence_router
+
 # ── 2. dotenv (walk up to find .env) ─────────────────────────────────────────
 try:
     from dotenv import load_dotenv
@@ -56,13 +56,17 @@ from app.routes.momentum      import router as momentum_router
 from app.routes.win_prob      import router as win_prob_router
 from app.routes.shot_map      import router as shot_map_router
 from app.routes.squad_builder import router as squad_builder_router
+from app.routes.fpl           import router as fpl_router
+from app.routes.players       import router as players_router
 
 app.include_router(lineups_router)
 app.include_router(momentum_router)
 app.include_router(win_prob_router)
 app.include_router(shot_map_router)
 app.include_router(squad_builder_router)
-app.include_router(intelligence_router)
+app.include_router(fpl_router)
+app.include_router(players_router)
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════

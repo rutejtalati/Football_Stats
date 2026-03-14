@@ -1,12 +1,9 @@
 # backend/app/routes/players.py
-# Full player + team stats database across Europe's top 5 leagues.
-# Cached in-memory, refreshed every 24h on first request.
+# Uses API-Football's pre-ranked endpoints for instant responses.
+# No full league crawl — each endpoint is a targeted single API call.
 
-import asyncio
-import os
-import time
+import asyncio, os, time
 from typing import Any, Dict, List, Optional
-
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 
@@ -26,468 +23,381 @@ LEAGUE_SLUGS: Dict[int, str] = {
     39: "epl", 140: "laliga", 135: "seriea", 78: "bundesliga", 61: "ligue1",
 }
 
-# ── In-memory cache ───────────────────────────────────────────
-_players:     List[dict] = []
-_players_map: Dict[int, dict] = {}
-_teams:       List[dict] = []
-_teams_map:   Dict[int, dict] = {}
-_built_at:    float = 0.0
-TTL = 86400  # 24 hours
+# ── Cache ─────────────────────────────────────────────────────
+_cache: Dict[str, Any] = {}
+_ctimes: Dict[str, float] = {}
+TTL_SHORT = 1800   # 30 min for rankings
+TTL_LONG  = 3600   # 1 hr for player/team details
+TTL_SEARCH = 86400 # 24 hr for search index
 
+def _cget(k: str, ttl: float) -> Optional[Any]:
+    return _cache[k] if k in _cache and time.monotonic() - _ctimes.get(k,0) < ttl else None
+
+def _cset(k: str, v: Any) -> None:
+    _cache[k] = v; _ctimes[k] = time.monotonic()
 
 def _headers():
-    if not API_KEY:
-        raise HTTPException(500, "API_FOOTBALL_KEY not set")
+    if not API_KEY: raise HTTPException(500, "API_FOOTBALL_KEY not set")
     return {"x-apisports-key": API_KEY}
 
-
-async def _api(path: str, params: dict) -> Any:
+async def _get(path: str, params: dict) -> dict:
     try:
-        async with httpx.AsyncClient(timeout=25) as c:
-            r = await c.get(f"{API_BASE}/{path.lstrip('/')}",
-                            headers=_headers(), params=params)
+        async with httpx.AsyncClient(timeout=20) as c:
+            r = await c.get(f"{API_BASE}/{path.lstrip('/')}", headers=_headers(), params=params)
             r.raise_for_status()
             return r.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(e.response.status_code, str(e))
-    except Exception:
-        return {}
+        raise HTTPException(e.response.status_code, f"API error: {e}")
+    except Exception as e:
+        raise HTTPException(502, f"Upstream error: {e}")
 
+async def _get_list(path: str, params: dict) -> list:
+    d = await _get(path, params)
+    return d.get("response", []) if isinstance(d, dict) else []
 
-async def _api_list(path: str, params: dict) -> list:
-    data = await _api(path, params)
-    return data.get("response", []) if isinstance(data, dict) else []
-
-
-# ── Player parser — full stat set ─────────────────────────────
-def _parse_player(entry: dict) -> dict:
-    p   = entry.get("player", {}) or {}
-    sts = entry.get("statistics", [{}])
+# ── Parse helpers ─────────────────────────────────────────────
+def _parse_scorer(entry: dict, league_id: int) -> dict:
+    p = entry.get("player", {}) or {}
+    sts = (entry.get("statistics") or [{}])
     s   = sts[0] if sts else {}
-
-    g   = s.get("goals",       {}) or {}
-    ga  = s.get("games",       {}) or {}
-    sh  = s.get("shots",       {}) or {}
-    ps  = s.get("passes",      {}) or {}
-    df  = s.get("duels",       {}) or {}
-    dr  = s.get("dribbles",    {}) or {}
-    tk  = s.get("tackles",     {}) or {}
-    fo  = s.get("fouls",       {}) or {}
-    cd  = s.get("cards",       {}) or {}
-    pn  = s.get("penalty",     {}) or {}
-    sub = s.get("substitutes", {}) or {}
-    tm  = s.get("team",        {}) or {}
-    lg  = s.get("league",      {}) or {}
-
-    appearances = ga.get("appearences") or 0
-    minutes     = ga.get("minutes") or 0
-    goals       = g.get("total")    or 0
-    assists     = g.get("assists")  or 0
-
+    g   = s.get("goals",    {}) or {}
+    ga  = s.get("games",    {}) or {}
+    sh  = s.get("shots",    {}) or {}
+    ps  = s.get("passes",   {}) or {}
+    dr  = s.get("dribbles", {}) or {}
+    df  = s.get("duels",    {}) or {}
+    tk  = s.get("tackles",  {}) or {}
+    cd  = s.get("cards",    {}) or {}
+    tm  = s.get("team",     {}) or {}
+    lg  = s.get("league",   {}) or {}
+    apps = ga.get("appearences") or 0
+    mins = ga.get("minutes") or 1
+    goals   = g.get("total")   or 0
+    assists = g.get("assists")  or 0
     return {
-        # Identity
-        "id":           p.get("id"),
-        "name":         p.get("name", ""),
-        "firstname":    p.get("firstname", ""),
-        "lastname":     p.get("second_name") or p.get("lastname", ""),
-        "age":          p.get("age"),
-        "nationality":  p.get("nationality", ""),
-        "photo":        p.get("photo", ""),
-        "height":       p.get("height"),
-        "weight":       p.get("weight"),
-        # Team / league
-        "team_id":      tm.get("id"),
-        "team":         tm.get("name", ""),
-        "team_logo":    tm.get("logo", ""),
-        "league":       lg.get("name", "") or LEAGUE_NAMES.get(lg.get("id"), ""),
-        "league_id":    lg.get("id"),
-        "league_slug":  LEAGUE_SLUGS.get(lg.get("id"), ""),
-        # Playing time
-        "appearances":  appearances,
-        "minutes":      minutes,
-        "position":     ga.get("position", ""),
-        "rating":       _safe_float(ga.get("rating")),
-        "captain":      bool(ga.get("captain")),
-        # Goals & assists
-        "goals":        goals,
-        "assists":      assists,
-        "goals_conceded": g.get("conceded") or 0,
-        "saves":        g.get("saves") or 0,
-        # Shots
-        "shots_total":  sh.get("total") or 0,
-        "shots_on":     sh.get("on")    or 0,
-        # Passing
-        "passes_total": ps.get("total") or 0,
-        "passes_key":   ps.get("key")   or 0,
-        "pass_accuracy":_safe_float(ps.get("accuracy")),
-        # Dribbles
-        "dribbles_attempted": dr.get("attempts") or 0,
-        "dribbles_success":   dr.get("success")  or 0,
-        # Duels
-        "duels_total": df.get("total") or 0,
-        "duels_won":   df.get("won")   or 0,
-        # Tackles
-        "tackles_total":    tk.get("total")    or 0,
-        "tackles_blocks":   tk.get("blocks")   or 0,
+        "id":            p.get("id"),
+        "name":          p.get("name",""),
+        "age":           p.get("age"),
+        "nationality":   p.get("nationality",""),
+        "photo":         p.get("photo",""),
+        "height":        p.get("height",""),
+        "weight":        p.get("weight",""),
+        "team_id":       tm.get("id"),
+        "team":          tm.get("name",""),
+        "team_logo":     tm.get("logo",""),
+        "league_id":     league_id,
+        "league":        LEAGUE_NAMES.get(league_id,""),
+        "league_slug":   LEAGUE_SLUGS.get(league_id,""),
+        "position":      ga.get("position",""),
+        "appearances":   apps,
+        "minutes":       mins,
+        "rating":        _sf(ga.get("rating")),
+        "goals":         goals,
+        "assists":       assists,
+        "goal_contributions": goals + assists,
+        "shots_total":   sh.get("total") or 0,
+        "shots_on":      sh.get("on") or 0,
+        "passes_key":    ps.get("key") or 0,
+        "pass_accuracy": _sf(ps.get("accuracy")),
+        "dribbles_success": dr.get("success") or 0,
+        "duels_won":     df.get("won") or 0,
+        "tackles_total": tk.get("total") or 0,
         "tackles_interceptions": tk.get("interceptions") or 0,
-        # Fouls
-        "fouls_drawn":     fo.get("drawn")     or 0,
-        "fouls_committed": fo.get("committed") or 0,
-        # Cards
-        "yellow_cards": cd.get("yellow") or 0,
-        "yellow_red":   cd.get("yellowred") or 0,
-        "red_cards":    cd.get("red") or 0,
-        # Penalties
-        "penalties_scored": pn.get("scored") or 0,
-        "penalties_missed": pn.get("missed") or 0,
-        "penalties_saved":  pn.get("saved")  or 0,
-        # Substitutions
-        "subs_in":  sub.get("in")    or 0,
-        "subs_out": sub.get("out")   or 0,
-        "subs_bench": sub.get("bench") or 0,
-        # Computed
-        "goal_contributions": goals + (assists or 0),
-        "shots_ratio": round(sh.get("on", 0) / sh.get("total", 1) * 100, 1) if sh.get("total") else 0,
-        "dribble_success_rate": round(dr.get("success", 0) / max(dr.get("attempts", 1), 1) * 100, 1),
-        "duels_win_rate": round((df.get("won") or 0) / max((df.get("total") or 1), 1) * 100, 1),
-        "goals_per90": round(goals / max(minutes, 1) * 90, 2),
-        "assists_per90": round((assists or 0) / max(minutes, 1) * 90, 2),
-        "shots_per90": round((sh.get("total") or 0) / max(minutes, 1) * 90, 2),
+        "yellow_cards":  cd.get("yellow") or 0,
+        "red_cards":     cd.get("red") or 0,
+        "goals_per90":   round(goals / max(mins,1) * 90, 2),
+        "assists_per90": round(assists / max(mins,1) * 90, 2),
+        "shots_per90":   round((sh.get("total") or 0) / max(mins,1) * 90, 2),
+        "goals_conceded":g.get("conceded") or 0,
+        "saves":         g.get("saves") or 0,
     }
 
+def _sf(v) -> Optional[float]:
+    try: return float(v) if v not in (None,"") else None
+    except: return None
 
-def _safe_float(v) -> Optional[float]:
-    try:
-        return float(v) if v is not None and v != "" else None
-    except Exception:
-        return None
-
-
-# ── Team stats parser ─────────────────────────────────────────
-def _parse_team_stats(raw: dict, league_id: int, league_name: str) -> Optional[dict]:
-    if not raw:
-        return None
-    team   = raw.get("team",     {}) or {}
-    fix    = raw.get("fixtures", {}) or {}
-    gl     = raw.get("goals",    {}) or {}
-    cs     = raw.get("clean_sheet", {}) or {}
-    fail   = raw.get("failed_to_score", {}) or {}
-    fm     = raw.get("form", "") or ""
-    lg_raw = raw.get("league", {}) or {}
-
-    played  = (fix.get("played", {}) or {}).get("total", 0) or 0
-    wins    = (fix.get("wins",   {}) or {}).get("total", 0) or 0
-    draws   = (fix.get("draws", {}) or {}).get("total", 0) or 0
-    losses  = (fix.get("loses", {}) or {}).get("total", 0) or 0
-    gf      = (gl.get("for",     {}) or {}).get("total", {})
-    ga_tot  = (gl.get("against", {}) or {}).get("total", {})
-    goals_for     = gf.get("total", 0) or 0 if isinstance(gf, dict) else gf or 0
-    goals_against = ga_tot.get("total", 0) or 0 if isinstance(ga_tot, dict) else ga_tot or 0
-    clean_sheets  = cs.get("total", 0) or 0
-    failed_to_score = fail.get("total", 0) or 0
-
+def _parse_standing_row(row: dict, league_id: int) -> dict:
+    tm  = row.get("team", {}) or {}
+    all_ = row.get("all", {}) or {}
+    gl  = all_.get("goals", {}) or {}
+    cs  = row.get("clean_sheet") or {}
+    fm  = row.get("form","") or ""
     return {
-        "team_id":   team.get("id"),
-        "team":      team.get("name", ""),
-        "team_logo": team.get("logo", ""),
-        "league_id": league_id,
-        "league":    league_name,
-        "league_slug": LEAGUE_SLUGS.get(league_id, ""),
-        "played":    played,
-        "wins":      wins,
-        "draws":     draws,
-        "losses":    losses,
-        "points":    wins * 3 + draws,
-        "goals_for":     goals_for,
-        "goals_against": goals_against,
-        "goal_diff":     goals_for - goals_against,
-        "clean_sheets":  clean_sheets,
-        "failed_to_score": failed_to_score,
-        "form":      fm[-5:] if fm else "",
-        "win_rate":  round(wins / max(played, 1) * 100, 1),
-        "goals_per_game": round(goals_for / max(played, 1), 2),
-        "conceded_per_game": round(goals_against / max(played, 1), 2),
+        "team_id":    tm.get("id"),
+        "team":       tm.get("name",""),
+        "team_logo":  tm.get("logo",""),
+        "league_id":  league_id,
+        "league":     LEAGUE_NAMES.get(league_id,""),
+        "league_slug":LEAGUE_SLUGS.get(league_id,""),
+        "rank":       row.get("rank",0),
+        "points":     row.get("points",0),
+        "played":     all_.get("played",0),
+        "wins":       all_.get("win",0),
+        "draws":      all_.get("draw",0),
+        "losses":     all_.get("lose",0),
+        "goals_for":  gl.get("for",0) or 0,
+        "goals_against": gl.get("against",0) or 0,
+        "goal_diff":  row.get("goalsDiff",0),
+        "clean_sheets": cs.get("total",0) if isinstance(cs,dict) else 0,
+        "form":       fm[-5:],
+        "win_rate":   round((all_.get("win",0) / max(all_.get("played",1),1))*100,1),
+        "goals_per_game": round((gl.get("for",0) or 0) / max(all_.get("played",1),1),2),
+        "conceded_per_game": round((gl.get("against",0) or 0) / max(all_.get("played",1),1),2),
     }
 
+# ── Fetch all leagues concurrently ────────────────────────────
+async def _all_leagues_scorers() -> List[dict]:
+    key = f"allscorers:{SEASON}"
+    hit = _cget(key, TTL_SHORT); 
+    if hit is not None: return hit
+    tasks = [_get_list("/players/topscorers", {"league":lid,"season":SEASON}) for lid in LEAGUE_IDS.values()]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    out = []
+    for lid, r in zip(LEAGUE_IDS.values(), results):
+        if isinstance(r, list):
+            for entry in r[:20]: out.append(_parse_scorer(entry, lid))
+    _cset(key, out); return out
 
-# ── Data loaders ──────────────────────────────────────────────
-async def _load_league_players(slug: str, lid: int) -> List[dict]:
-    """Fetch first 3 pages of players for a league (≈60 players per league)."""
-    players = []
-    for page in range(1, 8):  # up to 7 pages = 140 players per league
-        raw = await _api_list("/players", {"league": lid, "season": SEASON, "page": page})
-        if not raw:
-            break
-        for entry in raw:
-            players.append(_parse_player(entry))
-        if len(raw) < 20:
-            break
-        await asyncio.sleep(0.12)
-    return players
+async def _all_leagues_assisters() -> List[dict]:
+    key = f"allassists:{SEASON}"
+    hit = _cget(key, TTL_SHORT)
+    if hit is not None: return hit
+    tasks = [_get_list("/players/topassists", {"league":lid,"season":SEASON}) for lid in LEAGUE_IDS.values()]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    out = []
+    for lid, r in zip(LEAGUE_IDS.values(), results):
+        if isinstance(r, list):
+            for entry in r[:20]: out.append(_parse_scorer(entry, lid))
+    _cset(key, out); return out
 
+async def _all_leagues_standings() -> List[dict]:
+    key = f"allstandings:{SEASON}"
+    hit = _cget(key, TTL_LONG)
+    if hit is not None: return hit
+    tasks = [_get_list("/standings", {"league":lid,"season":SEASON}) for lid in LEAGUE_IDS.values()]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    out = []
+    for lid, r in zip(LEAGUE_IDS.values(), results):
+        if not isinstance(r, list): continue
+        try:
+            rows = r[0]["league"]["standings"][0]
+            for row in rows: out.append(_parse_standing_row(row, lid))
+        except (IndexError,KeyError,TypeError): pass
+    _cset(key, out); return out
 
-async def _load_league_teams(slug: str, lid: int) -> List[dict]:
-    """Fetch standings and team stats for a league."""
-    teams = []
-    # Get standings for team list
-    standings_raw = await _api_list("/standings", {"league": lid, "season": SEASON})
-    if not standings_raw:
-        return teams
+async def _league_scorers(lid: int) -> List[dict]:
+    key = f"scorers:{lid}:{SEASON}"
+    hit = _cget(key, TTL_SHORT)
+    if hit is not None: return hit
+    r = await _get_list("/players/topscorers", {"league":lid,"season":SEASON})
+    out = [_parse_scorer(e, lid) for e in r[:20]]
+    _cset(key, out); return out
+
+async def _league_assisters(lid: int) -> List[dict]:
+    key = f"assists:{lid}:{SEASON}"
+    hit = _cget(key, TTL_SHORT)
+    if hit is not None: return hit
+    r = await _get_list("/players/topassists", {"league":lid,"season":SEASON})
+    out = [_parse_scorer(e, lid) for e in r[:20]]
+    _cset(key, out); return out
+
+async def _league_standings(lid: int) -> List[dict]:
+    key = f"standings:{lid}:{SEASON}"
+    hit = _cget(key, TTL_LONG)
+    if hit is not None: return hit
+    r = await _get_list("/standings", {"league":lid,"season":SEASON})
+    out = []
     try:
-        rows = standings_raw[0]["league"]["standings"][0]
-    except (IndexError, KeyError, TypeError):
-        return teams
+        rows = r[0]["league"]["standings"][0]
+        out = [_parse_standing_row(row, lid) for row in rows]
+    except: pass
+    _cset(key, out); return out
 
-    # For each team, fetch full stats
-    for row in rows:
-        team_id = (row.get("team") or {}).get("id")
-        if not team_id:
-            continue
-        stats_raw = await _api_list("/teams/statistics",
-                                    {"team": team_id, "league": lid, "season": SEASON})
-        if stats_raw:
-            parsed = _parse_team_stats(
-                stats_raw[0] if isinstance(stats_raw, list) else stats_raw,
-                lid, LEAGUE_NAMES.get(lid, "")
-            )
-            if parsed:
-                # Inject standings data
-                parsed["rank"]   = row.get("rank", 0)
-                parsed["points"] = row.get("points", parsed["points"])
-                teams.append(parsed)
-        await asyncio.sleep(0.1)
-    return teams
-
-
-async def _ensure_loaded(force: bool = False):
-    global _players, _players_map, _teams, _teams_map, _built_at
-    if not force and _players and (time.time() - _built_at) < TTL:
-        return
-
-    # Load players and teams concurrently per league
-    player_tasks = [_load_league_players(slug, lid) for slug, lid in LEAGUE_IDS.items()]
-    team_tasks   = [_load_league_teams(slug, lid)   for slug, lid in LEAGUE_IDS.items()]
-
-    player_results, team_results = await asyncio.gather(
-        asyncio.gather(*player_tasks, return_exceptions=True),
-        asyncio.gather(*team_tasks,   return_exceptions=True),
-    )
-
-    all_players: List[dict] = []
-    for r in player_results:
-        if isinstance(r, list):
-            all_players.extend(r)
-
-    all_teams: List[dict] = []
-    for r in team_results:
-        if isinstance(r, list):
-            all_teams.extend(r)
-
-    # Deduplicate players by id
-    seen: set = set()
-    deduped: List[dict] = []
-    for p in all_players:
-        if p.get("id") and p["id"] not in seen:
-            seen.add(p["id"])
-            deduped.append(p)
-
-    # Deduplicate teams by team_id + league_id
-    tseen: set = set()
-    tdeduped: List[dict] = []
-    for t in all_teams:
-        key = (t.get("team_id"), t.get("league_id"))
-        if key not in tseen:
-            tseen.add(key)
-            tdeduped.append(t)
-
-    _players     = deduped
-    _players_map = {p["id"]: p for p in deduped}
-    _teams       = tdeduped
-    _teams_map   = {t["team_id"]: t for t in tdeduped}
-    _built_at    = time.time()
-
-
-# ── Player endpoints ──────────────────────────────────────────
-
-@router.get("/")
-async def list_players(
-    search:   Optional[str] = Query(None),
-    team:     Optional[str] = Query(None),
-    league:   Optional[str] = Query(None),
-    position: Optional[str] = Query(None),
-    limit:    int            = Query(60, ge=1, le=500),
-    offset:   int            = Query(0,  ge=0),
-):
-    await _ensure_loaded()
-    results = _players
-
-    if search:
-        q = search.lower()
-        results = [p for p in results if q in p["name"].lower() or q in p["team"].lower()]
-    if team:
-        q = team.lower()
-        results = [p for p in results if q in p["team"].lower()]
-    if league:
-        lid = LEAGUE_IDS.get(league.lower())
-        if lid:
-            results = [p for p in results if p.get("league_id") == lid]
-    if position:
-        q = position.lower()
-        results = [p for p in results if q in (p.get("position") or "").lower()]
-
-    total = len(results)
-    return {"total": total, "offset": offset, "limit": limit,
-            "players": results[offset: offset + limit]}
-
-
-@router.get("/search")
-async def search_players(q: str = Query(..., min_length=2)):
-    await _ensure_loaded()
-    needle = q.lower()
-    return [p for p in _players if needle in p["name"].lower()][:25]
-
+# ── PLAYER ENDPOINTS ─────────────────────────────────────────
 
 @router.get("/top-scorers")
 async def top_scorers(league: Optional[str] = Query(None), limit: int = Query(20, le=50)):
-    await _ensure_loaded()
-    pool = _filter_by_league(_players, league)
-    return sorted(pool, key=lambda p: p["goals"], reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        if not lid: raise HTTPException(404, "Unknown league")
+        data = await _league_scorers(lid)
+    else:
+        data = await _all_leagues_scorers()
+    return sorted(data, key=lambda p: p["goals"], reverse=True)[:limit]
 
 @router.get("/top-assisters")
 async def top_assisters(league: Optional[str] = Query(None), limit: int = Query(20, le=50)):
-    await _ensure_loaded()
-    pool = _filter_by_league(_players, league)
-    return sorted(pool, key=lambda p: p["assists"], reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        if not lid: raise HTTPException(404, "Unknown league")
+        data = await _league_assisters(lid)
+    else:
+        data = await _all_leagues_assisters()
+    return sorted(data, key=lambda p: p["assists"], reverse=True)[:limit]
 
 @router.get("/top-rated")
 async def top_rated(league: Optional[str] = Query(None), limit: int = Query(20, le=50)):
-    await _ensure_loaded()
-    pool = _filter_by_league(_players, league)
-    rated = [p for p in pool if p.get("rating") and p["appearances"] >= 5]
+    # Use scorers as proxy for rated (API-Football doesn't have a top-rated endpoint on free tier)
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_scorers(lid) if lid else []
+    else:
+        data = await _all_leagues_scorers()
+    rated = [p for p in data if p.get("rating")]
     return sorted(rated, key=lambda p: p["rating"] or 0, reverse=True)[:limit]
-
 
 @router.get("/top-contributors")
 async def top_contributors(league: Optional[str] = Query(None), limit: int = Query(20, le=50)):
-    await _ensure_loaded()
-    pool = _filter_by_league(_players, league)
-    return sorted(pool, key=lambda p: p["goal_contributions"], reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        s = await _league_scorers(lid) if lid else []
+        a = await _league_assisters(lid) if lid else []
+    else:
+        s, a = await asyncio.gather(_all_leagues_scorers(), _all_leagues_assisters())
+    # Merge by player id, sum goal_contributions
+    merged: Dict[int, dict] = {}
+    for p in s + a:
+        pid = p.get("id")
+        if not pid: continue
+        if pid in merged:
+            merged[pid]["goal_contributions"] = p["goals"] + p["assists"]
+        else:
+            merged[pid] = {**p, "goal_contributions": p["goals"] + p["assists"]}
+    return sorted(merged.values(), key=lambda p: p["goal_contributions"], reverse=True)[:limit]
 
 @router.get("/most-shots")
 async def most_shots(league: Optional[str] = Query(None), limit: int = Query(20, le=50)):
-    await _ensure_loaded()
-    pool = _filter_by_league(_players, league)
-    return sorted(pool, key=lambda p: p["shots_total"], reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_scorers(lid) if lid else []
+    else:
+        data = await _all_leagues_scorers()
+    return sorted(data, key=lambda p: p["shots_total"], reverse=True)[:limit]
 
 @router.get("/top-tacklers")
 async def top_tacklers(league: Optional[str] = Query(None), limit: int = Query(20, le=50)):
-    await _ensure_loaded()
-    pool = _filter_by_league(_players, league)
-    return sorted(pool, key=lambda p: p["tackles_total"], reverse=True)[:limit]
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_scorers(lid) if lid else []
+    else:
+        data = await _all_leagues_scorers()
+    return sorted(data, key=lambda p: p["tackles_total"], reverse=True)[:limit]
 
+@router.get("/search")
+async def search_players(q: str = Query(..., min_length=2), limit: int = Query(20, le=50)):
+    # Search across scorers + assisters
+    s, a = await asyncio.gather(_all_leagues_scorers(), _all_leagues_assisters())
+    seen = set(); pool = []
+    for p in s + a:
+        pid = p.get("id")
+        if pid and pid not in seen:
+            seen.add(pid); pool.append(p)
+    needle = q.lower()
+    return [p for p in pool if needle in p["name"].lower() or needle in p["team"].lower()][:limit]
 
 @router.get("/compare")
 async def compare_players(a: int = Query(...), b: int = Query(...)):
-    await _ensure_loaded()
-    pa = _players_map.get(a)
-    pb = _players_map.get(b)
+    s, ast_ = await asyncio.gather(_all_leagues_scorers(), _all_leagues_assisters())
+    all_p = {p["id"]: p for p in s + ast_ if p.get("id")}
+    pa = all_p.get(a)
+    pb = all_p.get(b)
     if not pa: raise HTTPException(404, f"Player {a} not found")
     if not pb: raise HTTPException(404, f"Player {b} not found")
-
-    KEYS = ["goals", "assists", "appearances", "minutes", "shots_total",
-            "shots_on", "passes_key", "dribbles_success", "duels_won",
-            "tackles_total", "yellow_cards", "goals_per90", "assists_per90"]
-
+    KEYS = ["goals","assists","goal_contributions","shots_total","shots_on",
+            "passes_key","dribbles_success","tackles_total","yellow_cards","goals_per90","assists_per90"]
     return {
-        "player_a":   pa, "player_b": pb,
+        "player_a": pa, "player_b": pb,
         "comparison": {
-            k: {"a": pa.get(k, 0), "b": pb.get(k, 0),
+            k: {"a": pa.get(k,0), "b": pb.get(k,0),
                 "winner": "a" if (pa.get(k) or 0) >= (pb.get(k) or 0) else "b"}
             for k in KEYS
         }
     }
 
-
-@router.get("/refresh")
-async def refresh_players():
-    await _ensure_loaded(force=True)
-    return {"status": "ok", "players": len(_players), "teams": len(_teams)}
-
-
 @router.get("/{player_id}")
 async def get_player(player_id: int):
-    await _ensure_loaded()
-    p = _players_map.get(player_id)
-    if not p:
-        raise HTTPException(404, f"Player {player_id} not found")
-    return p
+    s, a = await asyncio.gather(_all_leagues_scorers(), _all_leagues_assisters())
+    for p in s + a:
+        if p.get("id") == player_id: return p
+    raise HTTPException(404, f"Player {player_id} not found in top scorers/assisters")
 
-
-# ── Team endpoints ────────────────────────────────────────────
+# ── TEAM ENDPOINTS ────────────────────────────────────────────
 
 @router.get("/teams/all")
-async def all_teams(league: Optional[str] = Query(None)):
-    await _ensure_loaded()
-    pool = _filter_teams_by_league(_teams, league)
-    return {"total": len(pool), "teams": pool}
-
+async def teams_all(league: Optional[str] = Query(None)):
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_standings(lid) if lid else []
+    else:
+        data = await _all_leagues_standings()
+    return {"total": len(data), "teams": sorted(data, key=lambda t: (-t["points"], -t["goal_diff"]))}
 
 @router.get("/teams/most-goals")
 async def teams_most_goals(league: Optional[str] = Query(None), limit: int = Query(20, le=30)):
-    await _ensure_loaded()
-    pool = _filter_teams_by_league(_teams, league)
-    return sorted(pool, key=lambda t: t["goals_for"], reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_standings(lid) if lid else []
+    else:
+        data = await _all_leagues_standings()
+    return sorted(data, key=lambda t: t["goals_for"], reverse=True)[:limit]
 
 @router.get("/teams/best-defence")
 async def teams_best_defence(league: Optional[str] = Query(None), limit: int = Query(20, le=30)):
-    await _ensure_loaded()
-    pool = _filter_teams_by_league(_teams, league)
-    return sorted(pool, key=lambda t: t["goals_against"])[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_standings(lid) if lid else []
+    else:
+        data = await _all_leagues_standings()
+    return sorted(data, key=lambda t: t["goals_against"])[:limit]
 
 @router.get("/teams/most-clean-sheets")
 async def teams_clean_sheets(league: Optional[str] = Query(None), limit: int = Query(20, le=30)):
-    await _ensure_loaded()
-    pool = _filter_teams_by_league(_teams, league)
-    return sorted(pool, key=lambda t: t["clean_sheets"], reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_standings(lid) if lid else []
+    else:
+        data = await _all_leagues_standings()
+    return sorted(data, key=lambda t: t["clean_sheets"], reverse=True)[:limit]
 
 @router.get("/teams/form")
 async def teams_form(league: Optional[str] = Query(None), limit: int = Query(20, le=30)):
-    await _ensure_loaded()
-    pool = _filter_teams_by_league(_teams, league)
-    def _form_pts(t):
-        return sum(3 if c == "W" else 1 if c == "D" else 0 for c in t.get("form", ""))
-    return sorted(pool, key=_form_pts, reverse=True)[:limit]
-
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_standings(lid) if lid else []
+    else:
+        data = await _all_leagues_standings()
+    def fp(t): return sum(3 if c=="W" else 1 if c=="D" else 0 for c in t.get("form",""))
+    return sorted(data, key=fp, reverse=True)[:limit]
 
 @router.get("/teams/{team_id}")
 async def get_team(team_id: int):
-    await _ensure_loaded()
-    t = _teams_map.get(team_id)
-    if not t:
-        raise HTTPException(404, f"Team {team_id} not found")
-    # Also return squad
-    squad = [p for p in _players if p.get("team_id") == team_id]
-    return {"team": t, "squad": sorted(squad, key=lambda p: p["goals"], reverse=True)}
+    data = await _all_leagues_standings()
+    for t in data:
+        if t.get("team_id") == team_id: return t
+    raise HTTPException(404, f"Team {team_id} not found")
 
+@router.get("/")
+async def list_players(
+    search:   Optional[str] = Query(None),
+    league:   Optional[str] = Query(None),
+    position: Optional[str] = Query(None),
+    limit:    int            = Query(40, le=100),
+    offset:   int            = Query(0),
+):
+    if search:
+        return await search_players(q=search, limit=limit)
+    if league and league != "all":
+        lid = LEAGUE_IDS.get(league)
+        data = await _league_scorers(lid) if lid else []
+    else:
+        data = await _all_leagues_scorers()
+    if position:
+        pos = position.lower()
+        data = [p for p in data if pos in (p.get("position") or "").lower()]
+    return {"total": len(data), "offset": offset, "limit": limit,
+            "players": data[offset:offset+limit]}
 
-# ── Helpers ───────────────────────────────────────────────────
-
-def _filter_by_league(pool: List[dict], league: Optional[str]) -> List[dict]:
-    if not league or league.lower() == "all":
-        return pool
-    lid = LEAGUE_IDS.get(league.lower())
-    return [p for p in pool if p.get("league_id") == lid] if lid else pool
-
-
-def _filter_teams_by_league(pool: List[dict], league: Optional[str]) -> List[dict]:
-    if not league or league.lower() == "all":
-        return pool
-    lid = LEAGUE_IDS.get(league.lower())
-    return [t for t in pool if t.get("league_id") == lid] if lid else pool
+@router.get("/refresh")
+async def refresh():
+    for k in list(_cache.keys()): del _cache[k]; _ctimes.pop(k, None)
+    return {"status": "cache cleared"}

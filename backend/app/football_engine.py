@@ -1,5 +1,5 @@
 """
-football_engine.py  —  StatinSite Prediction Engine v4
+football_engine.py  —  StatinSite Prediction Engine v5
 ═══════════════════════════════════════════════════════
 Architecture
 ────────────
@@ -8,15 +8,66 @@ Architecture
   Layer 3 · xG Model            — attack/defence strengths + shot proxy + Elo blend
   Layer 4 · Form Engine         — exponentially weighted recent results
   Layer 5 · Confidence Scorer   — multi-signal probabilistic rating
+  Layer 6 · H2H Signal          — historical head-to-head win rates (optional)
+  Layer 7 · ML Predictor        — XGBoost/HGB classifier signal (optional)
 
-All public exports are drop-in replacements for the v3 engine.
+Ensemble weight budget (all-signals-active state)
+──────────────────────────────────────────────────
+  Poisson family (analytic + Monte Carlo): 0.30  split in 10:9 ratio
+  Elo:                                     0.20  fixed
+  Form:                                    0.15  fixed
+  H2H:                               0.00–0.08  scales with meeting count
+  ML:                                      0.27  when model file present
+
+  When ML or H2H is absent its budget is redistributed to Poisson+Monte
+  in their natural 10:9 ratio so the remaining weights always sum to 1.0.
+
+All public exports are drop-in replacements for the v4 engine.
 main.py imports: EloRatings, TTLCache, predict_match, LEAGUE_AVG_GOALS, FALLBACK_AVG
 """
 
 import math
 import time
+import logging
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
+# ── Lazy ML model singleton ────────────────────────────────────────────────
+# Loaded once on first call to predict_match(); never reloaded unless the
+# process restarts.  Import is deferred so the server still starts cleanly
+# when xgboost / sklearn are not installed or the model file doesn't exist yet.
+_ML_CLF: Any = None
+_ML_LOAD_ATTEMPTED: bool = False   # prevents re-trying a missing model every call
+
+def _get_ml_clf() -> Any:
+    """
+    Return the fitted ML classifier, loading it on first call.
+    Returns None if the model file is absent or imports fail — callers
+    treat None as 'ML signal unavailable' and renormalise weights.
+    """
+    global _ML_CLF, _ML_LOAD_ATTEMPTED
+    if _ML_LOAD_ATTEMPTED:
+        return _ML_CLF
+    _ML_LOAD_ATTEMPTED = True
+    try:
+        from app.models.ml_predictor import load_model
+        _ML_CLF, meta = load_model()
+        logger.info(
+            "ML model loaded — backend=%s  accuracy=%.3f  trained=%s",
+            meta.get("backend", "unknown"),
+            meta.get("metrics", {}).get("accuracy", 0),
+            meta.get("trained_at", "unknown"),
+        )
+    except FileNotFoundError:
+        logger.info(
+            "ML model not found — ensemble will run without ML signal. "
+            "Train a model with app.models.ml_predictor.train_model() to activate it."
+        )
+    except Exception as exc:
+        logger.warning("ML model load failed (%s) — continuing without ML signal.", exc)
+    return _ML_CLF
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -504,12 +555,95 @@ def monte_carlo_simulation(
 # Weights are tunable — default reflects Poisson-heavy approach.
 # ═══════════════════════════════════════════════════════════════════════
 
+# ── Ensemble weight budget ────────────────────────────────────────────────
+# These are the TARGET weights when every signal is available and H2H is at
+# its maximum (0.08).  The _resolve_weights() helper below distributes any
+# missing-signal budget back to Poisson+Monte in their natural ratio.
+#
+# "Poisson family" = analytic Poisson layer + Monte Carlo layer combined.
+# Their internal split is always 10:9 (0.30 : 0.27 historically).
 ENSEMBLE_WEIGHTS = {
-    "poisson": 0.45,
-    "elo":     0.20,
-    "monte":   0.25,
-    "form":    0.10,
+    "poisson": 0.30,   # analytic Poisson / Dixon-Coles
+    "elo":     0.20,   # Elo Bradley-Terry
+    "monte":   0.27,   # Monte Carlo (same xG inputs as Poisson — complementary)
+    "form":    0.15,   # recent-results form signal
+    "h2h":     0.08,   # head-to-head (max; scales with meeting count)
+    "ml":      0.27,   # XGBoost / HGB classifier
 }
+
+# Fixed weights — never redistributed regardless of signal availability
+_W_ELO_FIXED  = 0.20
+_W_FORM_FIXED = 0.15
+
+# Natural split ratio between Poisson and Monte Carlo layers
+_POISSON_BASE = 0.30
+_MONTE_BASE   = 0.27
+_PM_RATIO_SUM = _POISSON_BASE + _MONTE_BASE  # 0.57
+
+# Maximum ML and H2H contributions
+_ML_WEIGHT_MAX  = 0.27
+_H2H_WEIGHT_MAX = 0.08
+
+
+def _resolve_weights(
+    ml_available: bool,
+    h2h_weight:   float,   # 0.0 – _H2H_WEIGHT_MAX
+) -> Dict[str, float]:
+    """
+    Compute the six ensemble weights for a given signal-availability state.
+
+    Rules
+    ─────
+    · elo and form are fixed at 0.20 and 0.15 regardless of other signals.
+    · h2h_weight is a scalar passed by the caller (0 → max 0.08).
+    · ml_weight is 0.27 when the model is available, 0 otherwise.
+    · The remaining budget after fixing elo + form + h2h + ml is split
+      between poisson and monte in their natural 10 : 9 ratio.
+    · The six weights always sum to exactly 1.0 (renormalised at the end
+      to absorb any floating-point rounding).
+
+    Example states
+    ──────────────
+    All active (ml=True, h2h=0.08):
+        remaining = 1 - 0.20 - 0.15 - 0.08 - 0.27 = 0.30
+        poisson = 0.30 × (0.30/0.57) ≈ 0.1579
+        monte   = 0.30 × (0.27/0.57) ≈ 0.1421
+
+    No ML (ml=False, h2h=0.08):
+        remaining = 1 - 0.20 - 0.15 - 0.08 - 0.00 = 0.57
+        poisson = 0.57 × (0.30/0.57) = 0.30   ← exactly the Poisson spec value
+        monte   = 0.57 × (0.27/0.57) = 0.27   ← exactly the Monte spec value
+
+    No signals at all (ml=False, h2h=0.0):
+        remaining = 1 - 0.20 - 0.15 = 0.65
+        poisson = 0.65 × (0.30/0.57) ≈ 0.3421
+        monte   = 0.65 × (0.27/0.57) ≈ 0.3079
+    """
+    w_ml  = _ML_WEIGHT_MAX if ml_available else 0.0
+    w_h2h = float(h2h_weight)
+
+    remaining = 1.0 - _W_ELO_FIXED - _W_FORM_FIXED - w_ml - w_h2h
+    remaining = max(remaining, 0.0)   # guard against rounding below zero
+
+    w_poisson = remaining * (_POISSON_BASE / _PM_RATIO_SUM)
+    w_monte   = remaining * (_MONTE_BASE   / _PM_RATIO_SUM)
+
+    weights = {
+        "poisson": w_poisson,
+        "elo":     _W_ELO_FIXED,
+        "monte":   w_monte,
+        "form":    _W_FORM_FIXED,
+        "h2h":     w_h2h,
+        "ml":      w_ml,
+    }
+
+    # Renormalise to absorb floating-point dust — guarantees exact sum=1
+    total = sum(weights.values())
+    if total > 0:
+        weights = {k: round(v / total, 6) for k, v in weights.items()}
+
+    return weights
+
 
 def ensemble_predict(
     p_poisson_home: float, p_poisson_draw: float, p_poisson_away: float,
@@ -518,25 +652,46 @@ def ensemble_predict(
     p_form_home:    float = 1/3, p_form_draw: float = 1/3, p_form_away: float = 1/3,
     # H2H layer (optional — weight is 0 when insufficient history)
     p_h2h_home: float = 1/3, p_h2h_draw: float = 1/3, p_h2h_away: float = 1/3,
-    # Per-call weight overrides (allow H2H to borrow from Poisson dynamically)
-    w_poisson: Optional[float] = None,
-    w_h2h:     float = 0.0,
+    # ML layer (optional — neutral prior 1/3 when model unavailable)
+    p_ml_home:  float = 1/3, p_ml_draw:  float = 1/3, p_ml_away:  float = 1/3,
+    # Resolved weights dict — produced by _resolve_weights(); caller passes it in
+    # so the same object can be included in the response without recomputing.
+    weights: Optional[Dict[str, float]] = None,
 ) -> Tuple[float, float, float]:
     """
-    Weighted blend of all prediction layers.
-    w_poisson defaults to ENSEMBLE_WEIGHTS["poisson"] but can be reduced
-    when h2h_weight is non-zero so the total stays at 1.0.
+    Weighted blend of all six prediction layers.
+
+    Parameters
+    ──────────
+    p_*_home/draw/away : probability triples for each layer (must sum to ~1)
+    weights            : resolved weight dict from _resolve_weights().
+                         If None, defaults to the no-ML, no-H2H state.
+
+    Returns
+    ───────
+    (p_home, p_draw, p_away) — renormalised to sum to 1.0
     """
-    wp = ENSEMBLE_WEIGHTS["poisson"] if w_poisson is None else w_poisson
-    we = ENSEMBLE_WEIGHTS["elo"]
-    wm = ENSEMBLE_WEIGHTS["monte"]
-    wf = ENSEMBLE_WEIGHTS["form"]
-    wh = w_h2h
-    h = wp*p_poisson_home + we*p_elo_home + wm*p_mc_home + wf*p_form_home + wh*p_h2h_home
-    d = wp*p_poisson_draw + we*p_elo_draw + wm*p_mc_draw + wf*p_form_draw + wh*p_h2h_draw
-    a = wp*p_poisson_away + we*p_elo_away + wm*p_mc_away + wf*p_form_away + wh*p_h2h_away
+    if weights is None:
+        weights = _resolve_weights(ml_available=False, h2h_weight=0.0)
+
+    wp = weights["poisson"]
+    we = weights["elo"]
+    wm = weights["monte"]
+    wf = weights["form"]
+    wh = weights["h2h"]
+    wl = weights["ml"]
+
+    h = (wp*p_poisson_home + we*p_elo_home + wm*p_mc_home
+         + wf*p_form_home + wh*p_h2h_home + wl*p_ml_home)
+    d = (wp*p_poisson_draw + we*p_elo_draw + wm*p_mc_draw
+         + wf*p_form_draw + wh*p_h2h_draw + wl*p_ml_draw)
+    a = (wp*p_poisson_away + we*p_elo_away + wm*p_mc_away
+         + wf*p_form_away + wh*p_h2h_away + wl*p_ml_away)
+
     total = h + d + a
-    if total > 0: h, d, a = h/total, d/total, a/total
+    if total > 0:
+        h, d, a = h / total, d / total, a / total
+
     return round(h, 4), round(d, 4), round(a, 4)
 
 
@@ -562,7 +717,7 @@ def predict_match(
     h2h_results:  Optional[List[Dict]] = None,
 ) -> Dict[str, Any]:
     """
-    Full match prediction. Drop-in replacement for v3.
+    Full match prediction. Drop-in replacement for v4.
 
     Pipeline:
       1. Build xG via multi-signal estimator (stats + shots + form + Elo)
@@ -572,7 +727,9 @@ def predict_match(
       5. Monte Carlo simulation
       6. Form signal (correctly normalised to a probability triple)
       7. H2H signal (optional — requires >= 5 meetings; zero-weight otherwise)
-      8. Ensemble combiner → final probabilities
+      8. ML signal  (optional — zero-weight when model file absent)
+      9. Resolve ensemble weights for current signal-availability state
+     10. Ensemble combiner → final probabilities
 
     h2h_results: list of fixture dicts as returned by /fixtures/headtohead,
                  where each dict has teams.home.id / teams.away.id and goals.
@@ -692,19 +849,62 @@ def predict_match(
             "home_wins": hw, "draws": dw, "away_wins": aw,
             "weight_applied": round(h2h_weight, 4),
         }
-    # ── Step 8: Ensemble (H2H-aware weights) ─────────────────────────
-    # When H2H has enough data its weight is carved from the Poisson layer.
-    effective_poisson_w = ENSEMBLE_WEIGHTS["poisson"] - h2h_weight
+    # ── Step 8: ML signal ─────────────────────────────────────────────
+    # Call the ML classifier using features derived from the same team
+    # stats that feed the Poisson model.  On any failure (model absent,
+    # import error, inference error) ml_result["model_available"] is False
+    # and ml_p_* fall back to a neutral uniform prior — zero net effect.
+    ml_p_home = ml_p_draw = ml_p_away = 1.0 / 3.0
+    ml_result: Dict[str, Any] = {"model_available": False}
+    ml_available = False
+
+    try:
+        clf = _get_ml_clf()
+        if clf is not None:
+            from app.models.feature_engineering import extract_match_features
+            from app.models.ml_predictor import predict_probabilities
+
+            features = extract_match_features(
+                home_stats   = home_stats,
+                away_stats   = away_stats,
+                league_avg   = league_avg,
+                elo          = elo,
+                home_team    = home_team,
+                away_team    = away_team,
+                home_team_id = home_team_id,
+                away_team_id = away_team_id,
+            )
+            ml_result = predict_probabilities(features, clf=clf)
+
+            if ml_result.get("model_available"):
+                ml_p_home = float(ml_result["home_win_probability"])
+                ml_p_draw = float(ml_result["draw_probability"])
+                ml_p_away = float(ml_result["away_win_probability"])
+                ml_available = True
+    except Exception as _ml_exc:
+        logger.debug("ML signal skipped: %s", _ml_exc)
+
+    # ── Step 9: Resolve ensemble weights for this signal state ────────
+    # _resolve_weights() reads the current availability of ML and H2H and
+    # returns a dict of six weights that sum to exactly 1.0.  The same
+    # dict is returned inside layers so the frontend can inspect it.
+    resolved_weights = _resolve_weights(
+        ml_available = ml_available,
+        h2h_weight   = h2h_weight,
+    )
+
+    # ── Step 10: Ensemble ─────────────────────────────────────────────
     e_home, e_draw, e_away = ensemble_predict(
         p_home, p_draw, p_away,
         elo_p_home, elo_p_draw, elo_p_away,
         mc["mc_home_win"], mc["mc_draw"], mc["mc_away_win"],
         form_p_home, form_p_draw, form_p_away,
         p_h2h_home=h2h_p_home, p_h2h_draw=h2h_p_draw, p_h2h_away=h2h_p_away,
-        w_poisson=effective_poisson_w, w_h2h=h2h_weight,
+        p_ml_home=ml_p_home,   p_ml_draw=ml_p_draw,   p_ml_away=ml_p_away,
+        weights=resolved_weights,
     )
 
-    # ── Step 8: Score summary ─────────────────────────────────────────
+    # ── Step 11: Score summary ────────────────────────────────────────
     top_scores         = score_matrix[:9]
     most_likely_score  = f"{top_scores[0][0][0]}-{top_scores[0][0][1]}"
 
@@ -760,10 +960,22 @@ def predict_match(
                 "away":   round(h2h_p_away, 4),
                 **h2h_stats,
             },
+            "ml": {
+                "home":            round(ml_p_home, 4),
+                "draw":            round(ml_p_draw, 4),
+                "away":            round(ml_p_away, 4),
+                "model_available": ml_available,
+                # Surface the classifier's own confidence and outcome call
+                # so the frontend can show "ML says: home (74%)" separately.
+                "ml_confidence":   ml_result.get("ml_confidence"),
+                "predicted_outcome": ml_result.get("predicted_outcome"),
+            },
+            # Resolved weights for this specific prediction call.
+            # These reflect actual signal availability — if the ML model
+            # was absent its 0.27 budget will have been redistributed to
+            # poisson and monte, and ml will show 0.0 here.
             "ensemble_weights": {
-                **ENSEMBLE_WEIGHTS,
-                "poisson": round(effective_poisson_w, 4),
-                "h2h":     round(h2h_weight, 4),
+                k: round(v, 4) for k, v in resolved_weights.items()
             },
         },
 

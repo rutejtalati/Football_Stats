@@ -106,9 +106,18 @@ let _dashCache = null;
 let _dashCacheAt = 0;
 const CACHE_MS = 60_000;
 
+const FALLBACK_ENDPOINTS = [
+  "top_predictions","model_edges","trending_players","form_table",
+  "featured_fixtures","model_confidence","title_race","transfer_brief",
+  "tactical_insight","model_metrics","power_rankings","xg_leaders",
+  "value_players","high_scoring_matches","defense_table",
+  "differential_captains","analytics_term","recent_results",
+];
+
 async function fetchDashboard() {
   const now = Date.now();
   if (_dashCache && now - _dashCacheAt < CACHE_MS) return _dashCache;
+  // Try single dashboard endpoint first
   try {
     const r = await fetch(`${API}/api/home/dashboard`);
     if (r.ok) {
@@ -116,6 +125,22 @@ async function fetchDashboard() {
       _dashCache = d; _dashCacheAt = now;
       return d;
     }
+  } catch {}
+  // Fallback: parallel individual fetches
+  try {
+    const results = await Promise.allSettled(
+      FALLBACK_ENDPOINTS.map(ep =>
+        fetch(`${API}/api/home/${ep}`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    );
+    const d = {};
+    FALLBACK_ENDPOINTS.forEach((ep, i) => {
+      d[ep] = results[i].status === "fulfilled" ? results[i].value : null;
+    });
+    _dashCache = d; _dashCacheAt = now;
+    return d;
   } catch {}
   return null;
 }
@@ -306,7 +331,7 @@ function LiveTicker({ d }) {
 
   return (
     <div style={{
-      position: "sticky", top: 48, zIndex: 100,
+      position: "fixed", top: 48, left: 0, right: 0, zIndex: 190,
       borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
       background: "rgba(5,8,15,0.92)", backdropFilter: "blur(20px)",
       overflow: "hidden", padding: "0",
@@ -1038,7 +1063,7 @@ export default function HomePage() {
   const accuracy = d?.model_metrics?.overall_accuracy ?? 64;
 
   return (
-    <div style={{ minHeight: "100vh", background: T.navy, color: T.text, position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: T.navy, color: T.text, position: "relative", paddingTop: 80 }}>
       <style>{CSS}</style>
       <Background />
 
@@ -1156,7 +1181,12 @@ export default function HomePage() {
               ? Array.from({ length: 4 }).map((_, i) => <Skel key={i} h={56} r={14} style={{ marginBottom: 6 }} />)
               : captains.slice(0, 4).map((p, i) => <div key={p.player_id} style={{ marginBottom: 6 }}><CaptainCard p={p} rank={i + 1} vis={true} /></div>)
             }
-            <Link to="/captaincy" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11, fontWeight: 700, color: T.gold, textDecoration: "none", fontFamily: T.body }}>Full captain tool →</Link>
+            <div style={{ display:"flex", gap:12, marginTop:6, flexWrap:"wrap" }}>
+              <Link to="/captaincy"    style={{ fontSize:11, fontWeight:700, color:T.gold,  textDecoration:"none", fontFamily:T.body }}>Captain tool →</Link>
+              <Link to="/best-xi"      style={{ fontSize:11, fontWeight:700, color:T.blue,  textDecoration:"none", fontFamily:T.body }}>Best XI →</Link>
+              <Link to="/differentials"style={{ fontSize:11, fontWeight:700, color:T.teal,  textDecoration:"none", fontFamily:T.body }}>Differentials →</Link>
+              <Link to="/transfer-planner" style={{ fontSize:11, fontWeight:700, color:T.green, textDecoration:"none", fontFamily:T.body }}>Transfers →</Link>
+            </div>
           </div>
           {/* Differentials + form */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1229,6 +1259,51 @@ export default function HomePage() {
           <Link to="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16, fontSize: 12, fontWeight: 700, color: T.pink, textDecoration: "none", fontFamily: T.body }}>
             Learn all the models in Ground Zero →
           </Link>
+        </div>
+      </Section>
+
+
+      {/* ── LATEST ARTICLES ── */}
+      <Section>
+        <SectionHeading title="Latest Articles" sub="Analysis, tactics, and model deep-dives" color={T.pink} cta="All articles" ctaTo="/news" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14 }}>
+          {[
+            { tag: "Analysis",    col: T.gold,   title: "Haaland's xG returns to elite levels after injury layoff",                to: "/news" },
+            { tag: "Tactics",     col: T.blue,   title: "Why Arsenal's PPDA is the best defensive pressing metric in Europe",       to: "/news" },
+            { tag: "Fantasy",     col: T.green,  title: "FPL Gameweek transfer guide: differentials worth the risk this week",      to: "/news" },
+            { tag: "Model",       col: T.purple, title: "Poisson vs Dixon-Coles: comparing prediction accuracy across 38 GWs",     to: "/news" },
+            { tag: "Predictions", col: T.teal,   title: "La Liga title race: Elo model says it's closer than the table shows",      to: "/news" },
+            { tag: "Learn",       col: T.pink,   title: "Ground Zero explainer: How to read a PSxG chart and what it means",        to: "/learn" },
+          ].map((a, i) => (
+            <Link key={i} to={a.to} style={{ textDecoration: "none" }}>
+              <div
+                className="hp3-card"
+                style={{
+                  background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16,
+                  padding: "18px 20px", height: "100%", display: "flex", flexDirection: "column",
+                  animation: `fadeUp 500ms ${i * 70}ms ease both`,
+                  position: "relative", overflow: "hidden",
+                }}
+              >
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${a.col}55,transparent)` }} />
+                <span style={{
+                  display: "inline-block", fontSize: 8, fontWeight: 800, letterSpacing: "0.1em",
+                  padding: "2px 8px", borderRadius: 4, marginBottom: 10,
+                  background: `${a.col}18`, border: `1px solid ${a.col}33`, color: a.col,
+                  fontFamily: T.body, textTransform: "uppercase",
+                }}>{a.tag}</span>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, lineHeight: 1.55, flex: 1, fontFamily: T.body }}>
+                  {a.title}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 12, fontSize: 11, fontWeight: 700, color: a.col, fontFamily: T.body }}>
+                  Read more
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </Section>
 

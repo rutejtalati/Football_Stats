@@ -1,4 +1,24 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+
+/* ── Animated count-up hook ── */
+function useCountUp(target, duration = 900, decimals = 1) {
+  const [val, setVal] = useState(0);
+  const rafRef = useRef(null);
+  useEffect(() => {
+    const start = performance.now();
+    const from  = 0;
+    const to    = Number(target) || 0;
+    const tick  = (now) => {
+      const p    = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setVal(parseFloat((from + (to - from) * ease).toFixed(decimals)));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration, decimals]);
+  return val;
+}
 import { useNavigate } from "react-router-dom";
 import { getFplBootstrap, getFplPredictorTable } from "../api/api";
 import PitchView from "../components/PitchView";
@@ -256,21 +276,70 @@ function BenchCard({ player, index, isCaptain, isVC, onPlayerClick }) {
   );
 }
 
-/* ── Stat card ── */
-function StatCard({ label, value, sub, accent, expandable, children }) {
+/* ── Stat card — with animated count-up for numeric values ── */
+const ACCENT_COLORS = {
+  default: "#4a6a8a",
+  blue:    "#4f9eff",
+  green:   "#00e09e",
+  gold:    "#f2c94c",
+  red:     "#ff4d6d",
+  purple:  "#b388ff",
+  teal:    "#2dd4bf",
+};
+
+function StatCard({ label, value, sub, accent, expandable, children, animate }) {
   const [open, setOpen]       = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Extract numeric part for animation if animate=true
+  const numericMatch = animate && String(value).match(/^([£]?)(\d+\.?\d*)(.*)$/);
+  const numericTarget = numericMatch ? parseFloat(numericMatch[2]) : null;
+  const decimals      = numericMatch ? (numericMatch[2].includes(".") ? 1 : 0) : 0;
+  const countedVal    = useCountUp(numericTarget ?? 0, 900, decimals);
+  const displayValue  = (animate && numericMatch)
+    ? `${numericMatch[1]}${countedVal}${numericMatch[3]}`
+    : value;
+
+  const color = ACCENT_COLORS[accent] || ACCENT_COLORS.default;
+
   return (
     <div
       className={`bt-stat-card bt-stat-card-${accent||"default"} ${expandable ? "bt-stat-card-expandable" : ""} ${open ? "bt-stat-card-open" : ""}`}
       onClick={expandable ? () => setOpen(o => !o) : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      style={{
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? "translateY(0)" : "translateY(8px)",
+        transition: "opacity 400ms ease, transform 400ms cubic-bezier(0.22,1,0.36,1), box-shadow 200ms ease",
+        boxShadow: hovered ? `0 0 0 1px ${color}33, 0 8px 24px rgba(0,0,0,0.35)` : "none",
+      }}
     >
-      <div className="bt-stat-card-fill-bar" style={{ width: hovered ? "100%" : "0%" }} />
-      <div className="bt-stat-label">{label}</div>
-      <div className="bt-stat-value">{value}</div>
-      {sub && <div className="bt-stat-sub">{sub}</div>}
+      <div className="bt-stat-card-fill-bar" style={{
+        width: hovered ? "100%" : "0%",
+        background: `linear-gradient(90deg, ${color}22, ${color}44)`,
+        transition: "width 350ms ease",
+      }} />
+      <div className="bt-stat-label" style={{ color: "#4a6a8a" }}>{label}</div>
+      <div className="bt-stat-value" style={{
+        color,
+        fontFamily: "DM Mono, monospace",
+        fontSize: 24,
+        fontWeight: 900,
+        lineHeight: 1.1,
+        letterSpacing: "-0.02em",
+        textShadow: hovered ? `0 0 20px ${color}55` : "none",
+        transition: "text-shadow 200ms ease",
+      }}>
+        {displayValue}
+      </div>
+      {sub && <div className="bt-stat-sub" style={{ color: "#3a5a7a", fontSize: 11 }}>{sub}</div>}
       {expandable && (
         <div className="bt-stat-chevron">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
@@ -563,8 +632,8 @@ export default function BestTeamPage() {
             <div className="bt-left-panel">
               <StatCard label="Gameweek"        value={`GW ${gw}`} accent="default" />
               <StatCard label="Formation"       value={best.formation.name} sub={selectedFormation ? "Custom" : "Auto-selected"} accent="blue" />
-              <StatCard label="Projected Pts"   value={best.total.toFixed(1)} sub="Starting XI total" accent="green" />
-              <StatCard label="Squad Cost"      value={`£${totalCost.toFixed(1)}m`} sub="Top 15 players" accent="gold" />
+              <StatCard label="Projected Pts"   value={best.total.toFixed(1)} sub="Starting XI total" accent="green" animate />
+              <StatCard label="Squad Cost"      value={`£${totalCost.toFixed(1)}m`} sub="Top 15 players" accent="gold" animate />
               {dl && <StatCard label="Deadline" value={dl.day} sub={dl.time} accent="red" />}
               {/* Algorithm-selected C/VC — read only, no user override */}
               <div className="bt-cvc-card">

@@ -1007,3 +1007,235 @@ async def fpl_gw_live(gw: int):
 async def fpl_team_fixtures(team_id: int):
     fixtures = await _fixtures_raw()
     return [f for f in fixtures if f.get("team_h") == team_id or f.get("team_a") == team_id]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ALIAS ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+# /captain-picks → alias for /captaincy
+@router.get("/captain-picks")
+async def captain_picks_alias(
+    position:  str   = Query("ALL"),
+    max_cost:  float = Query(15.5, ge=3.5, le=15.5),
+    min_prob:  float = Query(0.5,  ge=0.0, le=1.0),
+    top_n:     int   = Query(10,   ge=1,   le=30),
+):
+    from fastapi import Request
+    return await captaincy(position=position, max_cost=max_cost,
+                           min_prob=min_prob, top_n=top_n)
+
+
+# /transfer-trends → alias for /transfer-planner
+@router.get("/transfer-trends")
+async def transfer_trends_alias(
+    position:  str   = Query("ALL"),
+    max_cost:  float = Query(15.5, ge=3.5, le=15.5),
+    num_gws:   int   = Query(5,    ge=1,   le=10),
+    top_in:    int   = Query(10,   ge=1,   le=25),
+    top_out:   int   = Query(10,   ge=1,   le=25),
+):
+    return await transfer_planner(position=position, max_cost=max_cost,
+                                  num_gws=num_gws, top_in=top_in, top_out=top_out)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BEST TEAM  — GET /api/fpl/best-team
+#
+# Selects the top 15 players from the predictor table by projected_points,
+# enforcing FPL squad rules (max 3 per team, position counts).
+# Returns squad + suggested starting XI + bench + metadata.
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/best-team")
+async def best_team(
+    budget:    float = Query(100.0, ge=50.0, le=120.0),
+    formation: str   = Query("auto"),
+):
+    VALID_FORMATIONS = {
+        "433": {"DEF":4,"MID":3,"FWD":3},
+        "442": {"DEF":4,"MID":4,"FWD":2},
+        "451": {"DEF":4,"MID":5,"FWD":1},
+        "343": {"DEF":3,"MID":4,"FWD":3},
+        "352": {"DEF":3,"MID":5,"FWD":2},
+        "532": {"DEF":5,"MID":3,"FWD":2},
+        "541": {"DEF":5,"MID":4,"FWD":1},
+    }
+
+    cache_key = f"fpl:best_team:{budget}:{formation}"
+    hit = _fpl_cache.get(cache_key)
+    if hit:
+        return hit
+
+    # Pull full predictor table
+    bootstrap = await _fpl_bootstrap()
+    elements  = bootstrap.get("elements", [])
+    teams_raw = bootstrap.get("teams",    [])
+    events    = bootstrap.get("events",   [])
+
+    # Current gameweek
+    current_gw = next(
+        (e["id"] for e in events if e.get("is_next") or e.get("is_current")),
+        next((e["id"] for e in events if not e.get("finished")), 30)
+    )
+
+    # Build team map id→short_name
+    team_map = {t["id"]: t.get("short_name", t.get("name", "?")) for t in teams_raw}
+
+    POSITION_MAP = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
+    POS_LIMITS   = {"GK": 2, "DEF": 5, "MID": 5, "FWD": 3}
+
+    # Build player rows (same logic as predictor-table but simplified)
+    players = []
+    for el in elements:
+        if el.get("status") == "u":  # unavailable / retired
+            continue
+        pos  = POSITION_MAP.get(el.get("element_type"), "MID")
+        cost = round(el.get("now_cost", 0) / 10, 1)
+        if cost > budget:
+            continue
+
+        ep_raw   = float(el.get("ep_next") or el.get("ep_this") or 0)
+        form_raw = float(el.get("form") or 0)
+        pts_sf   = int(el.get("total_points") or 0)
+        played   = max(int(el.get("minutes") or 0) // 70, 1)
+        ppg      = pts_sf / played if played else 0
+
+        projected = ep_raw if ep_raw > 0 else max(form_raw, ppg)
+
+        players.append({
+            "player_id":        el.get("id"),
+            "name":             el.get("web_name", ""),
+            "team":             team_map.get(el.get("team"), "?"),
+            "team_id":          el.get("team"),
+            "position":         pos,
+            "cost":             cost,
+            "projected_points": round(projected, 2),
+            "form":             form_raw,
+            "points_so_far":    pts_sf,
+            "selected_by_pct":  float(el.get("selected_by_percent") or 0),
+            "photo":            f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{el.get('code','0')}.png",
+            "news":             el.get("news", ""),
+            "chance_of_playing_next_round": el.get("chance_of_playing_next_round"),
+        })
+
+    if not players:
+        raise HTTPException(503, "FPL bootstrap data unavailable")
+
+    # ── Squad selection: greedy, enforce FPL rules ────────────────────────────
+    players_sorted = sorted(players, key=lambda p: -p["projected_points"])
+
+    squad   = []
+    pos_counts  = {"GK": 0, "DEF": 0, "MID": 0, "FWD": 0}
+    team_counts: dict = {}
+    total_cost  = 0.0
+
+    for p in players_sorted:
+        if len(squad) >= 15:
+            break
+        pos = p["position"]
+        tid = p["team_id"]
+        cost = p["cost"]
+
+        if pos_counts[pos] >= POS_LIMITS[pos]:
+            continue
+        if team_counts.get(tid, 0) >= 3:
+            continue
+        if total_cost + cost > budget:
+            continue
+
+        squad.append(p)
+        pos_counts[pos]      += 1
+        team_counts[tid]      = team_counts.get(tid, 0) + 1
+        total_cost           += cost
+
+    # Pad with cheapest players if squad < 15
+    if len(squad) < 15:
+        used = {p["player_id"] for p in squad}
+        for p in reversed(players_sorted):
+            if len(squad) >= 15:
+                break
+            if p["player_id"] in used:
+                continue
+            pos = p["position"]
+            if pos_counts[pos] >= POS_LIMITS[pos]:
+                continue
+            if team_counts.get(p["team_id"], 0) >= 3:
+                continue
+            squad.append(p)
+            pos_counts[pos]     += 1
+            team_counts[p["team_id"]] = team_counts.get(p["team_id"], 0) + 1
+            total_cost          += p["cost"]
+            used.add(p["player_id"])
+
+    # ── Starting XI selection ─────────────────────────────────────────────────
+    by_pos = {"GK":[], "DEF":[], "MID":[], "FWD":[]}
+    for p in sorted(squad, key=lambda x: -x["projected_points"]):
+        by_pos[p["position"]].append(p)
+
+    # Auto formation or specified
+    AUTO_FORMATIONS = [
+        {"name":"4-3-3","DEF":4,"MID":3,"FWD":3},
+        {"name":"4-4-2","DEF":4,"MID":4,"FWD":2},
+        {"name":"4-5-1","DEF":4,"MID":5,"FWD":1},
+        {"name":"3-5-2","DEF":3,"MID":5,"FWD":2},
+        {"name":"5-3-2","DEF":5,"MID":3,"FWD":2},
+    ]
+
+    if formation in VALID_FORMATIONS:
+        fmt_cfg = VALID_FORMATIONS[formation]
+        chosen_name = f"{fmt_cfg['DEF']}-{fmt_cfg['MID']}-{fmt_cfg['FWD']}"
+        chosen_fmt  = fmt_cfg
+    else:
+        # Try each formation and pick the one with highest XI projected total
+        best_fmt   = AUTO_FORMATIONS[0]
+        best_total = -1
+        for f in AUTO_FORMATIONS:
+            if len(by_pos["DEF"]) < f["DEF"] or len(by_pos["MID"]) < f["MID"] or len(by_pos["FWD"]) < f["FWD"]:
+                continue
+            total = (
+                sum(p["projected_points"] for p in by_pos["GK"][:1])
+                + sum(p["projected_points"] for p in by_pos["DEF"][:f["DEF"]])
+                + sum(p["projected_points"] for p in by_pos["MID"][:f["MID"]])
+                + sum(p["projected_points"] for p in by_pos["FWD"][:f["FWD"]])
+            )
+            if total > best_total:
+                best_total = total
+                best_fmt   = f
+        chosen_name = best_fmt["name"]
+        chosen_fmt  = {"DEF": best_fmt["DEF"], "MID": best_fmt["MID"], "FWD": best_fmt["FWD"]}
+
+    xi_ids = set()
+    xi     = []
+    gk = by_pos["GK"][:1]
+    xi.extend(gk); [xi_ids.add(p["player_id"]) for p in gk]
+
+    for pos, count in [("DEF", chosen_fmt["DEF"]), ("MID", chosen_fmt["MID"]), ("FWD", chosen_fmt["FWD"])]:
+        chosen = by_pos[pos][:count]
+        xi.extend(chosen); [xi_ids.add(p["player_id"]) for p in chosen]
+
+    bench = [p for p in squad if p["player_id"] not in xi_ids]
+
+    # Captain = highest projected in XI
+    xi_sorted = sorted(xi, key=lambda p: -p["projected_points"])
+    captain    = xi_sorted[0]["player_id"] if xi_sorted else None
+    vice_cap   = xi_sorted[1]["player_id"] if len(xi_sorted) > 1 else None
+
+    total_xi_pts = round(sum(p["projected_points"] for p in xi), 1)
+
+    result = {
+        "squad":          squad,
+        "xi":             xi,
+        "bench":          bench,
+        "formation":      chosen_name,
+        "captain_id":     captain,
+        "vice_captain_id":vice_cap,
+        "total_cost":     round(total_cost, 1),
+        "budget_remaining": round(budget - total_cost, 1),
+        "xi_projected_points": total_xi_pts,
+        "current_gw":     current_gw,
+        "budget":         budget,
+        "players_count":  len(squad),
+    }
+    _fpl_cache.set(cache_key, result)
+    return result

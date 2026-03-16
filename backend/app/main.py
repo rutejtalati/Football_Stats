@@ -524,3 +524,261 @@ def league_predictions(code: str):
     _cache.set(key,result); return result
 
 # /api/intelligence/health — served by app.routes.intelligence router
+
+# ══════════════════════════════════════════════════════════════════════════════
+# INJURIES  — GET /api/injuries/{league}
+# Uses API-Football /injuries endpoint. Cached 1h.
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/injuries/{league}")
+def get_injuries(league: str):
+    league = league.lower().strip()
+    if league not in LEAGUE_IDS:
+        raise HTTPException(404, f"Unknown league: {league}")
+    lid = LEAGUE_IDS[league]
+    key = f"injuries_{league}_{CURRENT_SEASON}"
+    hit = _cache.get(key)
+    if hit:
+        return {"injuries": hit, "league": league}
+    try:
+        data = api_get("/injuries", {"league": lid, "season": CURRENT_SEASON})
+        out = []
+        for entry in (data.get("response") or [])[:30]:
+            pl = entry.get("player", {})
+            tm = entry.get("team",   {})
+            fx = entry.get("fixture", {})
+            out.append({
+                "player_id":   pl.get("id"),
+                "name":        pl.get("name", ""),
+                "photo":       pl.get("photo", ""),
+                "team_name":   tm.get("name", ""),
+                "team_logo":   tm.get("logo", ""),
+                "type":        pl.get("type", ""),
+                "reason":      pl.get("reason", ""),
+                "fixture_date": fx.get("date", "") if isinstance(fx, dict) else "",
+            })
+        _cache.set(key, out)
+        return {"injuries": out, "league": league}
+    except Exception as e:
+        raise HTTPException(502, f"Injury data unavailable: {e}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TOP ASSISTS  — GET /api/topassists/{league}
+# Uses API-Football /players/topassists. Cached 24h.
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/topassists/{league}")
+def get_top_assists(league: str):
+    league = league.lower().strip()
+    if league not in LEAGUE_IDS:
+        raise HTTPException(404, f"Unknown league: {league}")
+    lid = LEAGUE_IDS[league]
+    key = f"topassists_{league}_{CURRENT_SEASON}"
+    hit = _long_cache.get(key)
+    if hit:
+        return {"assists": hit, "league": league}
+    try:
+        data = api_get("/players/topassists", {"league": lid, "season": CURRENT_SEASON})
+        out = []
+        for entry in (data.get("response") or [])[:15]:
+            p = entry.get("player", {})
+            s = (entry.get("statistics") or [{}])[0]
+            g = s.get("goals", {})
+            t = s.get("team",  {})
+            ga = s.get("games", {})
+            out.append({
+                "player_id": p.get("id"),
+                "name":      p.get("name", ""),
+                "photo":     p.get("photo", ""),
+                "team_name": t.get("name",  ""),
+                "team_logo": t.get("logo",  ""),
+                "assists":   g.get("assists", 0) or 0,
+                "goals":     g.get("total",   0) or 0,
+                "played":    ga.get("appearences", 0),
+            })
+        _long_cache.set(key, out)
+        return {"assists": out, "league": league}
+    except Exception as e:
+        raise HTTPException(502, f"Top assists data unavailable: {e}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEAM PROFILE  — GET /api/team/{team_id}/profile?league=epl
+#
+# Aggregates in one call:
+#   standing  — from league standings
+#   stats     — from team statistics
+#   injuries  — from /injuries (current active injuries for this team)
+#   top_scorers / top_assists — filtered to this team from league leaders
+#   upcoming_fixtures — next 5 fixtures for the team
+#
+# TeamPage.jsx destructures:
+#   { standing, stats, injuries, top_scorers, top_assists,
+#     upcoming_fixtures, league_name }
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/team/{team_id}/profile")
+def get_team_profile(team_id: int, league: str = "epl"):
+    league = league.lower().strip()
+    if league not in LEAGUE_IDS:
+        raise HTTPException(404, f"Unknown league: {league}")
+    lid = LEAGUE_IDS[league]
+
+    cache_key = f"team_profile_{team_id}_{league}_{CURRENT_SEASON}"
+    hit = _cache.get(cache_key)
+    if hit:
+        return hit
+
+    # ── 1. Standings ──────────────────────────────────────────────────────────
+    standing = None
+    try:
+        raw = api_get("/standings", {"league": lid, "season": CURRENT_SEASON})
+        rows = parse_standings(raw)
+        for row in rows:
+            if row.get("team_id") == team_id:
+                standing = row
+                break
+    except Exception:
+        pass
+
+    # ── 2. Team stats ─────────────────────────────────────────────────────────
+    stats = fetch_team_stats_full(team_id, lid) or {}
+
+    # ── 3. Injuries (team-filtered) ───────────────────────────────────────────
+    injuries = []
+    try:
+        inj_key = f"inj_team_{team_id}_{CURRENT_SEASON}"
+        inj_hit = _cache.get(inj_key)
+        if inj_hit is not None:
+            injuries = inj_hit
+        else:
+            data = api_get("/injuries", {"league": lid, "season": CURRENT_SEASON,
+                                         "team": team_id})
+            for entry in (data.get("response") or [])[:20]:
+                pl = entry.get("player", {})
+                tm = entry.get("team",   {})
+                injuries.append({
+                    "player_id": pl.get("id"),
+                    "name":      pl.get("name", ""),
+                    "photo":     pl.get("photo", ""),
+                    "team_name": tm.get("name", ""),
+                    "type":      pl.get("type", ""),
+                    "reason":    pl.get("reason", ""),
+                })
+            _cache.set(inj_key, injuries)
+    except Exception:
+        pass
+
+    # ── 4. Top scorers (team-filtered from league leaders) ────────────────────
+    top_scorers = []
+    try:
+        sc_key = f"topscorers_{league}_{CURRENT_SEASON}"
+        cached_sc = _long_cache.get(sc_key)
+        if cached_sc is None:
+            sc_data = api_get("/players/topscorers",
+                              {"league": lid, "season": CURRENT_SEASON})
+            cached_sc = []
+            for entry in (sc_data.get("response") or [])[:20]:
+                p = entry.get("player", {})
+                s = (entry.get("statistics") or [{}])[0]
+                g = s.get("goals", {})
+                t = s.get("team",  {})
+                ga = s.get("games", {})
+                cached_sc.append({
+                    "player_id": p.get("id"),
+                    "name":      p.get("name", ""),
+                    "photo":     p.get("photo", ""),
+                    "team_id":   t.get("id"),
+                    "team_name": t.get("name", ""),
+                    "goals":     g.get("total",   0) or 0,
+                    "assists":   g.get("assists",  0) or 0,
+                    "played":    ga.get("appearences", 0),
+                })
+            _long_cache.set(sc_key, cached_sc)
+        top_scorers = [p for p in cached_sc if p.get("team_id") == team_id][:5]
+    except Exception:
+        pass
+
+    # ── 5. Top assists (team-filtered from league leaders) ────────────────────
+    top_assists = []
+    try:
+        ast_key = f"topassists_{league}_{CURRENT_SEASON}"
+        cached_ast = _long_cache.get(ast_key)
+        if cached_ast is None:
+            ast_data = api_get("/players/topassists",
+                               {"league": lid, "season": CURRENT_SEASON})
+            cached_ast = []
+            for entry in (ast_data.get("response") or [])[:20]:
+                p = entry.get("player", {})
+                s = (entry.get("statistics") or [{}])[0]
+                g = s.get("goals", {})
+                t = s.get("team",  {})
+                ga = s.get("games", {})
+                cached_ast.append({
+                    "player_id": p.get("id"),
+                    "name":      p.get("name", ""),
+                    "photo":     p.get("photo", ""),
+                    "team_id":   t.get("id"),
+                    "team_name": t.get("name", ""),
+                    "assists":   g.get("assists", 0) or 0,
+                    "goals":     g.get("total",   0) or 0,
+                    "played":    ga.get("appearences", 0),
+                })
+            _long_cache.set(ast_key, cached_ast)
+        top_assists = [p for p in cached_ast if p.get("team_id") == team_id][:5]
+    except Exception:
+        pass
+
+    # ── 6. Upcoming fixtures ──────────────────────────────────────────────────
+    upcoming_fixtures = []
+    try:
+        fx_key = f"team_fx_{team_id}_{league}_{CURRENT_SEASON}"
+        fx_hit = _cache.get(fx_key)
+        if fx_hit is not None:
+            upcoming_fixtures = fx_hit
+        else:
+            from datetime import datetime, timezone
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            data = api_get("/fixtures", {
+                "team": team_id, "league": lid,
+                "season": CURRENT_SEASON,
+                "from": today,
+                "to": f"{CURRENT_SEASON + 1}-07-31",
+                "status": "NS-TBD-PST",
+            })
+            for fx in (data.get("response") or [])[:5]:
+                try:
+                    f = fx["fixture"]
+                    h = fx["teams"]["home"]
+                    a = fx["teams"]["away"]
+                    upcoming_fixtures.append({
+                        "fixture_id": f.get("id"),
+                        "date":       f.get("date", "")[:10],
+                        "time":       f.get("date", "")[11:16] if len(f.get("date","")) > 10 else "",
+                        "home_team":  h.get("name", ""),
+                        "home_logo":  h.get("logo", ""),
+                        "away_team":  a.get("name", ""),
+                        "away_logo":  a.get("logo", ""),
+                        "venue":      (fx.get("fixture") or {}).get("venue", {}).get("name", "") if isinstance((fx.get("fixture") or {}).get("venue"), dict) else "",
+                        "is_home":    h.get("id") == team_id,
+                    })
+                except (KeyError, TypeError):
+                    continue
+            _cache.set(fx_key, upcoming_fixtures)
+    except Exception:
+        pass
+
+    result = {
+        "standing":          standing,
+        "stats":             stats,
+        "injuries":          injuries,
+        "top_scorers":       top_scorers,
+        "top_assists":       top_assists,
+        "upcoming_fixtures": upcoming_fixtures,
+        "league_name":       LEAGUE_NAMES.get(league, league),
+        "league":            league,
+        "team_id":           team_id,
+    }
+    _cache.set(cache_key, result)
+    return result

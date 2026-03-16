@@ -100,6 +100,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.routes.home import router as home_router
+    app.include_router(home_router)
+except ImportError:
+    pass
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════

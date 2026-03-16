@@ -102,13 +102,21 @@ const NAV_ITEMS = [
 ];
 
 const FPL_ITEMS = [
-  { to: "/best-team",         label: "Best XI",       desc: "Optimal FPL starting 11"  },
-  { to: "/squad-builder",     label: "Squad Builder", desc: "Build your 15-man squad"   },
-  { to: "/gameweek-insights", label: "GW Insights",   desc: "Gameweek stats & analysis" },
-  { to: "/fpl-table",         label: "FPL Table",     desc: "Live FPL leaderboard"      },
+  { to: "/best-team",          label: "Best XI",             desc: "Optimal FPL starting 11"          },
+  { to: "/squad-builder",      label: "Squad Builder",       desc: "Build your 15-man squad"           },
+  { to: "/gameweek-insights",  label: "GW Insights",         desc: "Gameweek stats & analysis"         },
+  { to: "/fpl-table",          label: "FPL Table",           desc: "Live FPL leaderboard"              },
+  { to: "/captaincy",          label: "Captain Picker",      desc: "EP-ranked captain suggestions"     },
+  { to: "/fixture-difficulty", label: "Fixture Heatmap",     desc: "FDR grid for all 20 teams"         },
+  { to: "/transfer-planner",   label: "Transfer Planner",    desc: "Best transfers in & out by EP"     },
+  { to: "/differentials",      label: "Differential Finder", desc: "High-EP, low-ownership picks"      },
+  { to: "/best-xi",            label: "Best XI Optimizer",   desc: "Budget-constrained optimal XI"     },
 ];
 
-const FPL_PATHS = ["/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table"];
+const FPL_PATHS = [
+  "/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table",
+  "/captaincy", "/fixture-difficulty", "/transfer-planner", "/differentials", "/best-xi",
+];
 
 const BOTTOM_TABS = [
   { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "#94a3b8", end: true },

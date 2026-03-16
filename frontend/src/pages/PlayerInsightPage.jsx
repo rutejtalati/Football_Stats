@@ -4,6 +4,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getFplBootstrap, getFplPredictorTable } from "../api/api";
+import { ExpectedPointsChart } from "../components/ExpectedPointsChart";
 
 /* ── Responsive hook ── */
 function useIsMobile(bp = 768) {
@@ -552,6 +553,17 @@ export default function PlayerInsightPage() {
                 );
               })}
             </div>
+          </>
+        )}
+
+        {/* ══ EXPECTED POINTS CHART ══ */}
+        {(player.player_id || player.id) && (
+          <>
+            <div className="pi-section-label">Expected Points Breakdown</div>
+            <ExpectedPointsChart
+              playerId={player.player_id || player.id}
+              color="#4f9eff"
+            />
           </>
         )}
 

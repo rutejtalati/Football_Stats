@@ -18,8 +18,9 @@ function MetricPill({ label, value, color }) {
   );
 }
 function FixRun({ score }) {
-  const color = score >= 65 ? "#1f7d3d" : score >= 40 ? "#c26519" : "#8f2424";
-  const label = score >= 65 ? "Easy" : score >= 40 ? "Med" : "Hard";
+  // fixture_run_score is 0-10 (10 = easiest)
+  const color = score >= 6.5 ? "#1f7d3d" : score >= 4.0 ? "#c26519" : "#8f2424";
+  const label = score >= 6.5 ? "Easy" : score >= 4.0 ? "Med" : "Hard";
   return <MetricPill label="Fix Run" value={label} color={color}/>;
 }
 function TrendArrow({ momentum }) {
@@ -93,7 +94,7 @@ function PlayerRow({ player, type }) {
           fontSize:14, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
           color: isIn ? "#00e09e" : "#ff8080",
         }}>
-          {player.expected_points?.toFixed(1)} EP
+          {player.ep_next?.toFixed(2)} EP
         </span>
         <div style={{
           fontSize:10, fontWeight:800, padding:"2px 8px", borderRadius:999,

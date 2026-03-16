@@ -37,6 +37,12 @@ import NewsTrackerPage from "./pages/NewsTrackerPage";
 
 import MatchIntelligencePage from "./pages/MatchIntelligencePage";
 
+import CaptaincyPage            from "./pages/CaptaincyPage";
+import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
+import TransferPlannerPage      from "./pages/TransferPlannerPage";
+import DifferentialFinderPage   from "./pages/DifferentialFinderPage";
+import BestXIPage               from "./pages/BestXIPage";
+
 
 /* ───────────────── League slug mapping ───────────────── */
 
@@ -101,10 +107,15 @@ export default function App() {
             <Route path="/simulation/:league" element={<SeasonSimulator />} />
 
             {/* ───── Fantasy / FPL Tools ───── */}
-            <Route path="/squad-builder" element={<SquadBuilderPage />} />
-            <Route path="/best-team" element={<BestTeamPage />} />
-            <Route path="/gameweek-insights" element={<GameweekInsightsPage />} />
-            <Route path="/fpl-table" element={<FplTablePage />} />
+            <Route path="/squad-builder"       element={<SquadBuilderPage />} />
+            <Route path="/best-team"           element={<BestTeamPage />} />
+            <Route path="/gameweek-insights"   element={<GameweekInsightsPage />} />
+            <Route path="/fpl-table"           element={<FplTablePage />} />
+            <Route path="/captaincy"           element={<CaptaincyPage />} />
+            <Route path="/fixture-difficulty"  element={<FixtureDifficultyHeatmap />} />
+            <Route path="/transfer-planner"    element={<TransferPlannerPage />} />
+            <Route path="/differentials"       element={<DifferentialFinderPage />} />
+            <Route path="/best-xi"             element={<BestXIPage />} />
 
             {/* ───── Player Pages ───── */}
             <Route path="/player" element={<PlayerBrowsePage />} />
@@ -114,7 +125,8 @@ export default function App() {
             <Route path="/team/:teamId/:league" element={<TeamPage />} />
 
             {/* ───── Match Intelligence ───── */}
-            <Route path="/match/:fixtureId" element={<MatchIntelligencePage />} />
+            <Route path="/match/:fixtureId"         element={<MatchIntelligencePage />} />
+            <Route path="/match-preview/:fixtureId" element={<MatchIntelligencePage />} />
 
             {/* ───── Extra Pages ───── */}
             <Route path="/games" element={<MiniGamesPage />} />

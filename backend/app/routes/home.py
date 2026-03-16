@@ -1259,3 +1259,73 @@ async def recent_results(n: int = Query(5)):
     }
     _cset(cache_key, result)
     return result
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DASHBOARD  — single endpoint that powers the entire redesigned homepage
+# GET /api/home/dashboard
+# Runs all section fetches in parallel, returns one JSON payload.
+# Frontend fetches this once; every section reads from the response.
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/dashboard")
+async def dashboard():
+    """
+    Single aggregated endpoint for the homepage dashboard.
+    Runs all data fetches concurrently and returns a single payload.
+    All section data is optional — failures return empty/fallback objects
+    so the page always renders.
+    """
+    cache_key = "home:dashboard"
+    hit = _cget(cache_key, TTL_SHORT)
+    if hit is not None:
+        return hit
+
+    # Fire all sub-fetches concurrently
+    results = await asyncio.gather(
+        top_predictions(league="epl"),
+        model_edges(),
+        model_confidence(),
+        power_rankings(league="epl", n=8),
+        title_race(league="epl"),
+        xg_leaders(league="epl", n=8),
+        value_players(n=6),
+        trending_players(),
+        differential_captains(n=6),
+        fixture_difficulty(num_gws=6),
+        transfer_brief_home(),
+        tactical_insight(league="epl"),
+        model_metrics(),
+        high_scoring_matches(n=5),
+        defense_table(league="epl", n=6),
+        recent_results(n=6),
+        analytics_term(rotate=True),
+        return_exceptions=True,
+    )
+
+    def _safe_result(r, fallback=None):
+        return r if not isinstance(r, Exception) else (fallback or {})
+
+    payload = {
+        "top_predictions":      _safe_result(results[0],  {"predictions": []}),
+        "model_edges":          _safe_result(results[1],  {"edges": []}),
+        "model_confidence":     _safe_result(results[2],  {}),
+        "power_rankings":       _safe_result(results[3],  {"rankings": []}),
+        "title_race":           _safe_result(results[4],  {"top4": []}),
+        "xg_leaders":           _safe_result(results[5],  {"leaders": []}),
+        "value_players":        _safe_result(results[6],  {"players": []}),
+        "trending_players":     _safe_result(results[7],  {"items": []}),
+        "differential_captains":_safe_result(results[8],  {"captains": []}),
+        "fixture_difficulty":   _safe_result(results[9],  {"teams": [], "gws": []}),
+        "transfer_brief":       _safe_result(results[10], {}),
+        "tactical_insight":     _safe_result(results[11], {"primary": None}),
+        "model_metrics":        _safe_result(results[12], {"trend": [], "by_market": []}),
+        "high_scoring_matches": _safe_result(results[13], {"matches": []}),
+        "defense_table":        _safe_result(results[14], {"table": []}),
+        "recent_results":       _safe_result(results[15], {"results": []}),
+        "analytics_term":       _safe_result(results[16], {}),
+        "generated_at":         datetime.now(timezone.utc).isoformat(),
+    }
+
+    _cset(cache_key, payload)
+    return payload

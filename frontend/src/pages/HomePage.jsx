@@ -1,268 +1,864 @@
-// HomePage.jsx — StatinSite v3 (data-driven)
+// HomePage.jsx — StatinSite v3 · Premium Analytics Dashboard
+// Single /api/home/dashboard fetch powers every section.
 import { Link } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
-/* ── API base (Vite env or relative) ─────────────────────── */
-const API = (import.meta?.env?.VITE_API_URL ?? "") + "";
+/* ─────────────────────────────────────────────────────────────
+   DESIGN SYSTEM
+   ───────────────────────────────────────────────────────────── */
+const T = {
+  // Colours
+  navy:    "#05080f",
+  panel:   "rgba(8,13,24,0.96)",
+  glass:   "rgba(255,255,255,0.028)",
+  border:  "rgba(255,255,255,0.072)",
+  borderHi:"rgba(255,255,255,0.14)",
+  blue:    "#4f9eff",
+  green:   "#00e09e",
+  red:     "#ff4d6d",
+  gold:    "#f2c94c",
+  purple:  "#b388ff",
+  orange:  "#ff8c42",
+  teal:    "#2dd4bf",
+  pink:    "#f472b6",
+  text:    "#ddeeff",
+  muted:   "#3d5a78",
+  dim:     "#1a2d42",
+  // Shadows / glows
+  gB:  (c,s=22) => `0 0 ${s}px ${c}44`,
+  // Typography
+  mono: "'JetBrains Mono',monospace",
+  head: "'Sora','DM Sans',sans-serif",
+  body: "'Outfit','DM Sans',sans-serif",
+};
 
-/* ── Responsive hook ─────────────────────────────────────── */
-function useIsMobile(bp = 640) {
+const FDR_COL = { 1:"#00e09e", 2:"#7cc97c", 3:"#f2c94c", 4:"#ff8c42", 5:"#ff4d6d" };
+
+/* ─────────────────────────────────────────────────────────────
+   CSS — all animations defined once
+   ───────────────────────────────────────────────────────────── */
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  @keyframes tickerRoll  { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  @keyframes fadeUp      { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn      { from{opacity:0} to{opacity:1} }
+  @keyframes scaleIn     { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+  @keyframes barFill     { from{width:0} to{width:var(--w)} }
+  @keyframes barFillH    { from{height:0} to{height:var(--h)} }
+  @keyframes shimmer     { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+  @keyframes pulseDot    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.6)} }
+  @keyframes chipZoom    { 0%{transform:scale(1)} 40%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  @keyframes orb1        { 0%{transform:translate(0,0)} 50%{transform:translate(30px,-18px)} 100%{transform:translate(0,0)} }
+  @keyframes orb2        { 0%{transform:translate(0,0)} 50%{transform:translate(-22px,24px)} 100%{transform:translate(0,0)} }
+  @keyframes pitchPulse  { 0%,100%{opacity:.032} 50%{opacity:.065} }
+  @keyframes countUp     { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes ringPulse   { 0%{box-shadow:0 0 0 0 rgba(79,158,255,.55)} 70%{box-shadow:0 0 0 10px transparent} 100%{box-shadow:0 0 0 0 transparent} }
+  @keyframes heatReveal  { from{opacity:0;transform:scale(0.97)} to{opacity:1;transform:scale(1)} }
+  @keyframes sectionSlide{ from{opacity:0;transform:translateY(32px)} to{opacity:1;transform:translateY(0)} }
+
+  .hp3-card {
+    transition: transform 220ms cubic-bezier(.22,1,.36,1),
+                box-shadow 220ms ease,
+                border-color 220ms ease;
+  }
+  .hp3-card:hover { transform: translateY(-4px); }
+
+  .hp3-prob-bar {
+    height: 100%;
+    border-radius: 3px;
+    width: var(--w, 0%);
+    animation: barFill 900ms cubic-bezier(.22,1,.36,1) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .hp3-section {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 600ms ease, transform 600ms cubic-bezier(.22,1,.36,1);
+  }
+  .hp3-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .hp3-skel {
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.09) 50%,
+      rgba(255,255,255,0.04) 100%);
+    background-size: 400px 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 8px;
+  }
+
+  .ticker-chip:hover { animation: chipZoom 300ms ease forwards; }
+  .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+`;
+
+/* ─────────────────────────────────────────────────────────────
+   API
+   ───────────────────────────────────────────────────────────── */
+const API = import.meta?.env?.VITE_API_URL ?? "";
+let _dashCache = null;
+let _dashCacheAt = 0;
+const CACHE_MS = 60_000;
+
+async function fetchDashboard() {
+  const now = Date.now();
+  if (_dashCache && now - _dashCacheAt < CACHE_MS) return _dashCache;
+  try {
+    const r = await fetch(`${API}/api/home/dashboard`);
+    if (r.ok) {
+      const d = await r.json();
+      _dashCache = d; _dashCacheAt = now;
+      return d;
+    }
+  } catch {}
+  return null;
+}
+
+function useDashboard() {
+  const [d, setD] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let live = true;
+    fetchDashboard().then(data => { if (live) { setD(data); setLoading(false); } });
+    return () => { live = false; };
+  }, []);
+  return { d, loading };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HOOKS
+   ───────────────────────────────────────────────────────────── */
+function useVisible(threshold = 0.15) {
+  const ref = useRef(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, vis];
+}
+
+function useCountUp(target, ms = 1200, delay = 0, active = true) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    let raf;
+    const start = performance.now() + delay;
+    const tick = (now) => {
+      const t = Math.min(Math.max(now - start, 0) / ms, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setV(Math.round(ease * target));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms, delay, active]);
+  return v;
+}
+
+function useIsMobile(bp = 768) {
   const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
   useEffect(() => {
     const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
+    window.addEventListener("resize", h, { passive: true });
     return () => window.removeEventListener("resize", h);
   }, [bp]);
   return m;
 }
 
-/* ── Design tokens ───────────────────────────────────────── */
-const C = {
-  blue:"#4f9eff",   blueGlow:"rgba(79,158,255,0.35)",
-  green:"#00e09e",  greenGlow:"rgba(0,224,158,0.28)",
-  red:"#ff4d6d",    redGlow:"rgba(255,77,109,0.28)",
-  gold:"#f2c94c",   goldGlow:"rgba(242,201,76,0.28)",
-  purple:"#b388ff", purpleGlow:"rgba(179,136,255,0.28)",
-  orange:"#ff8c42", teal:"#2dd4bf", pink:"#f472b6",
-  panel:"rgba(12,18,30,0.95)",
-  line:"rgba(255,255,255,0.07)",
-  text:"#e8f0ff", muted:"#4a6a8a", soft:"#2a3f58",
-};
+/* ─────────────────────────────────────────────────────────────
+   PRIMITIVES
+   ───────────────────────────────────────────────────────────── */
+function Skel({ w = "100%", h = 16, r = 6, style = {} }) {
+  return <div className="hp3-skel" style={{ width: w, height: h, borderRadius: r, ...style }} />;
+}
 
-/* ── Global styles ───────────────────────────────────────── */
-const HOME_CSS = `
-  @keyframes fadeDown  { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes fadeUp    { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes cardIn    { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes livePulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(79,158,255,0.5)} 50%{opacity:.7;box-shadow:0 0 0 6px transparent} }
-  @keyframes floatP    { 0%{transform:translateY(0)} 50%{transform:translateY(-20px)} 100%{transform:translateY(0)} }
-  @keyframes tickerMove{ 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-  @keyframes orbFloat  { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(24px,-16px) scale(1.06)} 66%{transform:translate(-12px,20px) scale(.95)} 100%{transform:translate(0,0) scale(1)} }
-  @keyframes pitchPulse{ 0%,100%{opacity:.04} 50%{opacity:.08} }
-  @keyframes barGrow   { from{height:0} to{height:var(--h)} }
-  @keyframes radarSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes countUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes shimmer   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  @keyframes glow      { 0%,100%{box-shadow:0 0 12px currentColor} 50%{box-shadow:0 0 28px currentColor} }
-  @keyframes ballMove  { 0%{cx:30} 50%{cx:90} 100%{cx:30} }
-  @keyframes dashDraw  { to{stroke-dashoffset:0} }
-  .hp-card { transition:all 220ms cubic-bezier(0.22,1,0.36,1); }
-  .hp-card:hover { transform:translateY(-5px) !important; }
-  .hp-btn  { transition:all 160ms ease; cursor:pointer; }
-  .hp-btn:hover  { filter:brightness(1.15); transform:translateY(-2px); }
-  .hp-tag:hover  { transform:translateY(-1px); }
-  .hp-skeleton {
-    background: linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.6s infinite;
-    border-radius: 8px;
-  }
-`;
-
-/* ── Skeleton loader ─────────────────────────────────────── */
-function Skeleton({ w = "100%", h = 18, radius = 8, style = {} }) {
+function SectionLabel({ children, color = T.blue, icon }) {
   return (
-    <div className="hp-skeleton" style={{ width: w, height: h, borderRadius: radius, ...style }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+      <div style={{ width: 3, height: 20, borderRadius: 2, background: color, boxShadow: T.gB(color, 12), flexShrink: 0 }} />
+      {icon && <span style={{ fontSize: 13 }}>{icon}</span>}
+      <span style={{ fontSize: 10, fontWeight: 800, color, letterSpacing: "0.14em", fontFamily: T.body, textTransform: "uppercase" }}>
+        {children}
+      </span>
+    </div>
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   DATA LAYER — single homeData state, parallel fetch, 60s cache
-   ════════════════════════════════════════════════════════════ */
+function SectionHeading({ title, sub, color = T.blue, cta, ctaTo }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
+      <div>
+        <div style={{ width: 32, height: 3, borderRadius: 2, background: color, marginBottom: 10, boxShadow: T.gB(color, 10) }} />
+        <h2 style={{ margin: 0, fontSize: "clamp(18px,2.2vw,24px)", fontWeight: 900, color: T.text, fontFamily: T.head, letterSpacing: "-0.02em" }}>{title}</h2>
+        {sub && <p style={{ margin: "4px 0 0", fontSize: 12, color: T.muted, fontFamily: T.body }}>{sub}</p>}
+      </div>
+      {cta && ctaTo && (
+        <Link to={ctaTo} style={{ fontSize: 11, fontWeight: 700, color, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, fontFamily: T.body, opacity: 0.85 }}>
+          {cta}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </Link>
+      )}
+    </div>
+  );
+}
 
-/* Static fallbacks — mirrors the original hardcoded data exactly */
-const FB = {
-  ticker: [
-    { label:"Salah xG/90", value:"0.74", col:C.gold },
-    { label:"Haaland form", value:"8.2", col:C.green },
-    { label:"Arsenal win prob", value:"68%", col:C.blue },
-    { label:"PPDA elite threshold", value:"≤7.0", col:C.teal },
-    { label:"PSxG top keeper", value:"+0.18", col:C.purple },
-    { label:"Over 2.5 avg", value:"54%", col:C.orange },
-    { label:"Model accuracy", value:"64%", col:C.green },
-    { label:"Palmer xA/90", value:"0.31", col:C.pink },
-    { label:"Mbeumo shots/90", value:"3.2", col:C.blue },
-    { label:"Liverpool xG diff", value:"+0.62", col:C.red },
-    { label:"Watkins ICT", value:"52.4", col:C.gold },
-    { label:"BTTS Premier League", value:"58%", col:C.teal },
-  ],
-  predictions: [
-    { home:"Arsenal",   away:"Chelsea",    homeProb:62, awayProb:18, draw:20, col:C.blue,   conf:"High",   score:"2-1" },
-    { home:"Man City",  away:"Liverpool",  homeProb:55, awayProb:26, draw:19, col:C.green,  conf:"Medium", score:"2-0" },
-    { home:"Barcelona", away:"Real Madrid",homeProb:44, awayProb:35, draw:21, col:C.gold,   conf:"Low",    score:"1-1" },
-    { home:"PSG",       away:"Monaco",     homeProb:58, awayProb:22, draw:20, col:C.purple, conf:"High",   score:"2-0" },
-  ],
-  perf: [
-    {gw:"GW28",acc:71},{gw:"GW29",acc:64},{gw:"GW30",acc:78},{gw:"GW31",acc:60},
-    {gw:"GW32",acc:82},{gw:"GW33",acc:68},{gw:"GW34",acc:74},{gw:"GW35",acc:70},
-  ],
-  statMoments: [
-    { stat:"0.82", label:"xG per 90",   player:"Erling Haaland", context:"Highest in Europe this season. Scores 1 in every 1.5 shots on target.", col:C.blue,   icon:"⚽" },
-    { stat:"+0.21",label:"PSxG-GA /game",player:"David Raya",    context:"Elite shot-stopping. Saving shots he statistically shouldn't.",          col:C.green,  icon:"🧤" },
-    { stat:"5.8",  label:"PPDA",        player:"Man City",       context:"Elite pressing intensity. Allows fewer than 6 passes per defensive action.", col:C.gold, icon:"⚡" },
-    { stat:"0.31", label:"xA per 90",   player:"Cole Palmer",    context:"Highest creative output in the Premier League this month.",               col:C.purple, icon:"🎯" },
-  ],
-  recentResults: [
-    { home:"Arsenal",   away:"Man City",  pred:"Arsenal",  actual:"Arsenal",  score:"2-1", conf:"High",   correct:true  },
-    { home:"Liverpool", away:"Chelsea",   pred:"Draw",     actual:"Liverpool",score:"1-0", conf:"Medium", correct:false },
-    { home:"Barcelona", away:"Atletico",  pred:"Barcelona",actual:"Barcelona",score:"3-1", conf:"High",   correct:true  },
-    { home:"PSG",       away:"Marseille", pred:"PSG",      actual:"PSG",      score:"2-0", conf:"High",   correct:true  },
-    { home:"Juventus",  away:"Inter",     pred:"Draw",     actual:"Draw",     score:"1-1", conf:"Medium", correct:true  },
-  ],
-};
+function Section({ children, style = {} }) {
+  const [ref, vis] = useVisible();
+  return (
+    <section
+      ref={ref}
+      className={`hp3-section${vis ? " visible" : ""}`}
+      style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px 64px", ...style }}
+    >
+      {children}
+    </section>
+  );
+}
 
-const ENDPOINTS = [
-  "top_predictions", "model_edges", "trending_players", "form_table",
-  "featured_fixtures", "model_confidence", "title_race", "transfer_brief",
-  "tactical_insight", "model_metrics", "power_rankings", "xg_leaders",
-  "value_players", "high_scoring_matches", "defense_table",
-  "differential_captains", "analytics_term", "recent_results",
+/* ─────────────────────────────────────────────────────────────
+   BACKGROUND — animated pitch grid + floating orbs
+   ───────────────────────────────────────────────────────────── */
+function Background() {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+      {/* Deep gradient */}
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,158,255,0.09) 0%, transparent 70%)" }} />
+      {/* Floating orbs */}
+      {[
+        [T.blue,   0.05, "-8%",  "5%",   "68s"],
+        [T.green,  0.04, "72%",  "52%",  "82s"],
+        [T.purple, 0.04, "40%",  "-8%",  "74s"],
+        [T.gold,   0.03, "18%",  "68%",  "90s"],
+      ].map(([c, op, l, t, dur], i) => (
+        <div key={i} style={{
+          position: "absolute", width: 600, height: 600, borderRadius: "50%",
+          left: l, top: t, background: c, opacity: op, filter: "blur(130px)",
+          animation: `orb${(i % 2) + 1} ${dur} ease-in-out infinite`,
+          animationDelay: `${i * 10}s`,
+        }} />
+      ))}
+      {/* Pitch SVG */}
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", animation: "pitchPulse 8s ease-in-out infinite" }}
+        viewBox="0 0 1400 700" preserveAspectRatio="xMidYMid slice">
+        <rect x="30" y="20" width="1340" height="660" rx="8" fill="none" stroke="white" strokeWidth="1.2" opacity=".5" />
+        <line x1="700" y1="20" x2="700" y2="680" stroke="white" strokeWidth=".8" opacity=".5" />
+        <circle cx="700" cy="350" r="90" fill="none" stroke="white" strokeWidth=".8" opacity=".5" />
+        <circle cx="700" cy="350" r="4" fill="white" opacity=".4" />
+        <rect x="30" y="210" width="120" height="280" fill="none" stroke="white" strokeWidth=".8" opacity=".5" />
+        <rect x="1250" y="210" width="120" height="280" fill="none" stroke="white" strokeWidth=".8" opacity=".5" />
+        <rect x="30" y="262" width="54" height="176" fill="none" stroke="white" strokeWidth=".8" opacity=".4" />
+        <rect x="1316" y="262" width="54" height="176" fill="none" stroke="white" strokeWidth=".8" opacity=".4" />
+        <circle cx="270" cy="350" r="3" fill="white" opacity=".4" />
+        <circle cx="1130" cy="350" r="3" fill="white" opacity=".4" />
+      </svg>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LIVE TICKER
+   ───────────────────────────────────────────────────────────── */
+const TICKER_FB = [
+  { label: "Model accuracy", value: "64%",  col: T.green  },
+  { label: "Haaland xG/90", value: "0.82",  col: T.gold   },
+  { label: "Arsenal win prob",value:"68%",  col: T.blue   },
+  { label: "PPDA elite",     value: "≤7.0", col: T.teal   },
+  { label: "PSxG top GK",    value: "+0.21",col: T.purple },
+  { label: "Over 2.5 avg",   value: "54%",  col: T.orange },
+  { label: "Palmer xA/90",   value: "0.31", col: T.pink   },
+  { label: "Salah xG/90",    value: "0.74", col: T.gold   },
+  { label: "BTTS rate",       value: "58%",  col: T.teal   },
+  { label: "Liverpool xG+",  value: "+0.62",col: T.red    },
 ];
 
-let _homeCache = null;
-let _homeCacheAt = 0;
-const CACHE_TTL_MS = 60_000;
-
-async function fetchHomeData() {
-  const now = Date.now();
-  if (_homeCache && now - _homeCacheAt < CACHE_TTL_MS) return _homeCache;
-
-  const results = await Promise.allSettled(
-    ENDPOINTS.map(ep =>
-      fetch(`${API}/api/home/${ep}`)
-        .then(r => r.ok ? r.json() : null)
-        .catch(() => null)
-    )
-  );
-
-  const data = {};
-  ENDPOINTS.forEach((ep, i) => {
-    data[ep] = results[i].status === "fulfilled" ? results[i].value : null;
-  });
-
-  _homeCache = data;
-  _homeCacheAt = now;
-  return data;
-}
-
-function useHomeData() {
-  const [homeData, setHomeData] = useState(null);
-  const [loading,  setLoading]  = useState(true);
+function LiveTicker({ d }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
+  const [minute, setMinute] = useState(new Date().getMinutes());
 
   useEffect(() => {
-    let cancelled = false;
-    fetchHomeData().then(d => {
-      if (!cancelled) { setHomeData(d); setLoading(false); }
-    }).catch(() => {
-      if (!cancelled) setLoading(false);
-    });
-    return () => { cancelled = true; };
+    const t = setInterval(() => setMinute(new Date().getMinutes()), 15000);
+    return () => clearInterval(t);
   }, []);
 
-  return { homeData, loading };
-}
+  const rawItems = useMemo(() => {
+    if (d?.trending_players?.items?.length) {
+      return d.trending_players.items.map(p => ({ label: p.label, value: p.value, col: p.col }));
+    }
+    const mc = d?.model_confidence;
+    const extras = mc ? [{ label: "Confidence avg", value: `${mc.avg_confidence}%`, col: T.green }] : [];
+    return [...extras, ...TICKER_FB];
+  }, [d]);
 
-/* ── Animated count-up ───────────────────────────────────── */
-function useCountUp(target, duration=1800, delay=0) {
-  const [val, setVal] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current; if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return; obs.disconnect();
-      const start = performance.now() + delay;
-      const tick = now => {
-        const elapsed = Math.max(0, now - start);
-        const pct = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - pct, 3);
-        setVal(Math.round(ease * target));
-        if (pct < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }, { threshold: 0.3 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [target, duration, delay]);
-  return [val, ref];
-}
+  const items = [...rawItems, ...rawItems]; // doubled for seamless loop
 
-/* ── StatTile ────────────────────────────────────────────── */
-function StatTile({ value, suffix="", label, color, delay=0, icon, trend }) {
-  const [v, ref] = useCountUp(value, 1600, delay);
-  const [hov, setHov] = useState(false);
   return (
-    <div ref={ref}
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+    <div style={{
+      position: "sticky", top: 48, zIndex: 100,
+      borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
+      background: "rgba(5,8,15,0.92)", backdropFilter: "blur(20px)",
+      overflow: "hidden", padding: "0",
+    }} className="ticker-wrap">
+      {/* Fade edges */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(to right,rgba(5,8,15,.98),transparent)", zIndex: 2, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(to left,rgba(5,8,15,.98),transparent)", zIndex: 2, pointerEvents: "none" }} />
+
+      {/* Live indicator */}
+      <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3, display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.green, animation: "pulseDot 1.8s ease infinite", boxShadow: `0 0 8px ${T.green}` }} />
+        <span style={{ fontSize: 8, fontWeight: 900, color: T.green, letterSpacing: "0.12em", fontFamily: T.body }}>LIVE</span>
+        <span style={{ fontSize: 8, color: T.muted, fontFamily: T.mono }}>{minute}'</span>
+      </div>
+
+      <div className="ticker-track" style={{ display: "flex", width: "max-content", animation: "tickerRoll 48s linear infinite", paddingLeft: 80 }}>
+        {items.map((item, i) => (
+          <div
+            key={i}
+            className="ticker-chip"
+            onMouseEnter={(e) => {
+              setHoveredIdx(i % rawItems.length);
+              const r = e.currentTarget.getBoundingClientRect();
+              setPreviewPos({ x: r.left + r.width / 2, y: r.bottom + 6 });
+            }}
+            onMouseLeave={() => setHoveredIdx(null)}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "8px 22px", borderRight: `1px solid ${T.border}`,
+              flexShrink: 0, cursor: "default",
+            }}
+          >
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: item.col, boxShadow: `0 0 7px ${item.col}`, flexShrink: 0 }} />
+            <span style={{ fontSize: 10, color: T.muted, fontFamily: T.body, fontWeight: 600, whiteSpace: "nowrap" }}>{item.label}</span>
+            <span style={{ fontSize: 11, fontWeight: 900, color: item.col, fontFamily: T.mono, whiteSpace: "nowrap" }}>{item.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Hover preview card */}
+      {hoveredIdx !== null && rawItems[hoveredIdx] && (
+        <div style={{
+          position: "fixed", left: previewPos.x, top: previewPos.y,
+          transform: "translateX(-50%)", zIndex: 999,
+          background: T.panel, border: `1px solid ${rawItems[hoveredIdx].col}44`,
+          borderRadius: 10, padding: "10px 14px", minWidth: 140,
+          boxShadow: `0 16px 40px rgba(0,0,0,.7), 0 0 0 1px ${rawItems[hoveredIdx].col}22`,
+          animation: "scaleIn 180ms ease both", pointerEvents: "none",
+        }}>
+          <div style={{ fontSize: 9, color: T.muted, fontFamily: T.body, marginBottom: 4 }}>{rawItems[hoveredIdx].label}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: rawItems[hoveredIdx].col, fontFamily: T.mono, lineHeight: 1 }}>{rawItems[hoveredIdx].value}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HERO — large prediction card with heatmap on hover
+   ───────────────────────────────────────────────────────────── */
+function HeroMatchCard({ d, loading }) {
+  const [hov, setHov] = useState(false);
+  const [ref, vis] = useVisible(0.1);
+  const pred = d?.top_predictions?.predictions?.[0];
+
+  const homeProb = pred?.homeProb ?? 62;
+  const drawProb = pred?.draw    ?? 20;
+  const awayProb = pred?.awayProb ?? 18;
+  const xgh      = pred?.xg_home ?? 1.72;
+  const xga      = pred?.xg_away ?? 0.88;
+  const confPct  = pred?.conf_pct ?? 71;
+
+  const homeV = useCountUp(homeProb, 1000, 300, vis);
+  const drawV = useCountUp(drawProb, 1000, 400, vis);
+  const awayV = useCountUp(awayProb, 1000, 500, vis);
+  const xghV  = useCountUp(Math.round(xgh * 100), 900, 200, vis);
+  const xgaV  = useCountUp(Math.round(xga * 100), 900, 250, vis);
+  const confV = useCountUp(confPct, 800, 600, vis);
+
+  const confCol = confPct >= 70 ? T.green : confPct >= 55 ? T.gold : T.orange;
+
+  if (loading && !pred) {
+    return (
+      <div ref={ref} style={{ borderRadius: 24, border: `1px solid ${T.border}`, padding: 32, background: T.glass }}>
+        <Skel h={200} r={12} />
+      </div>
+    );
+  }
+
+  const home = pred?.home ?? "Arsenal";
+  const away = pred?.away ?? "Man City";
+
+  return (
+    <div
+      ref={ref}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      className="hp3-card"
       style={{
-        display:"flex",flexDirection:"column",gap:8,padding:"20px 22px",borderRadius:16,
-        background:hov?`linear-gradient(135deg,rgba(12,18,30,0.98),${color}12)`:"rgba(255,255,255,0.025)",
-        border:`1px solid ${hov?color+"55":"rgba(255,255,255,0.07)"}`,
-        flex:1,minWidth:0,position:"relative",overflow:"hidden",
-        transition:"all 220ms cubic-bezier(0.22,1,0.36,1)",
-        transform:hov?"translateY(-3px)":"translateY(0)",
-        boxShadow:hov?`0 12px 32px ${color}22`:"none",cursor:"default",
-      }}>
-      <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",
-        background:color,opacity:hov?.12:.04,filter:"blur(24px)",transition:"opacity 220ms",pointerEvents:"none"}}/>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:18,lineHeight:1}}>{icon}</span>
-        {trend&&(<span style={{fontSize:9,fontWeight:800,color:C.green,background:`${C.green}14`,
-          border:`1px solid ${C.green}30`,padding:"2px 7px",borderRadius:999,letterSpacing:"0.06em"}}>{trend}</span>)}
-      </div>
-      <div style={{display:"flex",alignItems:"baseline",gap:2}}>
-        <span style={{fontSize:36,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-          color,lineHeight:1,letterSpacing:"-0.03em",
-          textShadow:hov?`0 0 28px ${color}88`:`0 0 14px ${color}44`,
-          transition:"text-shadow 220ms"}}>{v.toLocaleString()}</span>
-        <span style={{fontSize:16,fontWeight:700,color,opacity:.8}}>{suffix}</span>
-      </div>
-      <span style={{fontSize:9,fontWeight:800,color:C.muted,letterSpacing:"0.12em",
-        textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-      <div style={{height:2,borderRadius:1,background:"rgba(255,255,255,0.05)"}}>
-        <div style={{height:"100%",width:hov?"100%":"40%",background:color,borderRadius:1,
-          transition:"width 600ms cubic-bezier(0.22,1,0.36,1)",opacity:.7}}/>
+        position: "relative", borderRadius: 24, overflow: "hidden",
+        border: `1px solid ${hov ? T.blue + "55" : T.border}`,
+        background: hov
+          ? "linear-gradient(135deg,rgba(8,13,24,0.99),rgba(79,158,255,0.06))"
+          : T.panel,
+        boxShadow: hov ? `0 32px 80px rgba(0,0,0,.7), 0 0 0 1px ${T.blue}22` : "0 8px 32px rgba(0,0,0,.4)",
+        transition: "all 300ms cubic-bezier(.22,1,.36,1)",
+        cursor: "pointer",
+        animation: vis ? "scaleIn 500ms ease both" : "none",
+      }}
+    >
+      {/* Accent line */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${T.blue},${T.green},${T.purple})` }} />
+
+      {/* Pitch heatmap overlay on hover */}
+      <div style={{
+        position: "absolute", inset: 0, opacity: hov ? 1 : 0,
+        transition: "opacity 400ms ease",
+        background: "radial-gradient(ellipse 70% 50% at 38% 50%, rgba(79,158,255,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 68% 50%, rgba(0,224,158,0.09) 0%, transparent 60%)",
+        animation: hov ? "heatReveal 400ms ease both" : "none",
+        pointerEvents: "none",
+      }} />
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: hov ? 0.07 : 0.025, transition: "opacity 400ms", pointerEvents: "none" }}
+        viewBox="0 0 800 360" preserveAspectRatio="xMidYMid slice">
+        <rect x="8" y="8" width="784" height="344" rx="4" fill="none" stroke="white" strokeWidth="1.2" />
+        <line x1="400" y1="8" x2="400" y2="352" stroke="white" strokeWidth=".8" />
+        <circle cx="400" cy="180" r="52" fill="none" stroke="white" strokeWidth=".8" />
+        <rect x="8" y="110" width="72" height="140" fill="none" stroke="white" strokeWidth=".8" />
+        <rect x="720" y="110" width="72" height="140" fill="none" stroke="white" strokeWidth=".8" />
+      </svg>
+
+      <div style={{ position: "relative", zIndex: 1, padding: "28px 32px 24px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, animation: "pulseDot 2s ease infinite", boxShadow: `0 0 10px ${T.green}` }} />
+            <span style={{ fontSize: 9, fontWeight: 900, color: T.green, letterSpacing: "0.16em", fontFamily: T.body }}>TOP PREDICTION</span>
+          </div>
+          {pred?.league && <span style={{ fontSize: 10, color: T.muted, fontFamily: T.body }}>{pred.league}</span>}
+          {pred?.kickoff && <span style={{ fontSize: 10, color: T.muted, fontFamily: T.mono }}>{pred.kickoff}</span>}
+        </div>
+
+        {/* Teams */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: "clamp(20px,3.5vw,36px)", fontWeight: 900, color: T.text, fontFamily: T.head, letterSpacing: "-0.02em", lineHeight: 1.1 }}>{home}</div>
+            <div style={{ fontSize: 10, color: T.muted, fontFamily: T.body, marginTop: 4 }}>Home</div>
+          </div>
+          <div style={{ textAlign: "center", flex: 1, padding: "0 20px" }}>
+            <div style={{
+              fontSize: "clamp(16px,2.5vw,28px)", fontWeight: 900, fontFamily: T.mono,
+              color: T.text, letterSpacing: "0.1em",
+              textShadow: hov ? `0 0 24px ${T.blue}88` : "none", transition: "text-shadow 300ms",
+            }}>{pred?.score ?? "2-1"}</div>
+            <div style={{ fontSize: 9, color: T.muted, fontFamily: T.body, letterSpacing: "0.08em", marginTop: 4 }}>PREDICTED</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "clamp(20px,3.5vw,36px)", fontWeight: 900, color: T.text, fontFamily: T.head, letterSpacing: "-0.02em", lineHeight: 1.1 }}>{away}</div>
+            <div style={{ fontSize: 10, color: T.muted, fontFamily: T.body, marginTop: 4 }}>Away</div>
+          </div>
+        </div>
+
+        {/* Probability bars */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 2, height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 10 }}>
+            {vis && [
+              { prob: homeProb, col: T.blue,  d: "0ms"   },
+              { prob: drawProb, col: T.gold,  d: "80ms"  },
+              { prob: awayProb, col: T.purple, d: "160ms" },
+            ].map((b, i) => (
+              <div key={i} className="hp3-prob-bar" style={{
+                "--w": `${b.prob}%`, "--d": b.d,
+                background: b.col, opacity: 0.85,
+              }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {[
+              [homeV + "%", T.blue,   "Home Win"],
+              [drawV + "%", T.gold,   "Draw"],
+              [awayV + "%", T.purple, "Away Win"],
+            ].map(([v, c, l]) => (
+              <div key={l} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: c, fontFamily: T.mono, lineHeight: 1, textShadow: T.gB(c) }}>{v}</div>
+                <div style={{ fontSize: 8, color: T.muted, fontFamily: T.body, letterSpacing: "0.06em", marginTop: 3 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Metrics row */}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {[
+            { label: "xG Home",    val: (xghV / 100).toFixed(2), col: T.blue   },
+            { label: "xG Away",    val: (xgaV / 100).toFixed(2), col: T.purple },
+            { label: "Confidence", val: confV + "%",              col: confCol  },
+          ].map(({ label, val, col }) => (
+            <div key={label} style={{
+              flex: 1, minWidth: 90, padding: "10px 14px", borderRadius: 12,
+              background: `${col}0e`, border: `1px solid ${col}28`, textAlign: "center",
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: col, fontFamily: T.mono, lineHeight: 1 }}>{val}</div>
+              <div style={{ fontSize: 8, color: T.muted, fontFamily: T.body, letterSpacing: "0.08em", marginTop: 3 }}>{label}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-/* ── LiveTicker ──────────────────────────────────────────── */
-function LiveTicker({ homeData }) {
-  const tickerItems = (() => {
-    if (homeData?.trending_players?.items?.length) {
-      return homeData.trending_players.items.map(p => ({
-        label: p.label, value: p.value, col: p.col,
-      }));
-    }
-    return FB.ticker;
-  })();
+/* ─────────────────────────────────────────────────────────────
+   PREDICTION CARDS (smaller grid)
+   ───────────────────────────────────────────────────────────── */
+function PredCard({ p, i }) {
+  const [ref, vis] = useVisible(0.1);
+  const [hov, setHov] = useState(false);
+  const hw = useCountUp(p.homeProb, 800, i * 80, vis);
+  const dw = useCountUp(p.draw, 800, i * 80 + 60, vis);
+  const aw = useCountUp(p.awayProb, 800, i * 80 + 120, vis);
+  const confCol = p.conf === "High" || p.conf === "high" ? T.green : p.conf === "Medium" || p.conf === "medium" ? T.gold : T.orange;
+  const col = p.col || T.blue;
 
-  // Also inject model confidence as a live stat
-  const mc = homeData?.model_confidence;
-  const allItems = mc
-    ? [{ label:"Model confidence avg", value: `${mc.avg_confidence}%`, col: C.green }, ...tickerItems]
-    : tickerItems;
-
-  const items = [...allItems, ...allItems];
   return (
-    <div style={{
-      borderTop:`1px solid ${C.line}`,borderBottom:`1px solid ${C.line}`,
-      background:"rgba(255,255,255,0.015)",overflow:"hidden",padding:"10px 0",position:"relative",
-    }}>
-      <div style={{position:"absolute",left:0,top:0,bottom:0,width:80,
-        background:"linear-gradient(to right,#060a14,transparent)",zIndex:2,pointerEvents:"none"}}/>
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:80,
-        background:"linear-gradient(to left,#060a14,transparent)",zIndex:2,pointerEvents:"none"}}/>
-      <div style={{display:"flex",gap:0,animation:"tickerMove 40s linear infinite",width:"max-content"}}>
-        {items.map((item, i) => (
-          <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"0 28px",
-            borderRight:`1px solid ${C.line}`,flexShrink:0}}>
-            <div style={{width:5,height:5,borderRadius:"50%",background:item.col,
-              boxShadow:`0 0 6px ${item.col}`,flexShrink:0}}/>
-            <span style={{fontSize:10,color:C.muted,fontFamily:"'Inter',sans-serif",
-              fontWeight:600,whiteSpace:"nowrap"}}>{item.label}</span>
-            <span style={{fontSize:12,fontWeight:900,color:item.col,
-              fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap"}}>{item.value}</span>
+    <Link ref={ref} to={p.fixture_id ? `/match-preview/${p.fixture_id}` : "/predictions/premier-league"} style={{ textDecoration: "none" }}>
+      <div
+        className="hp3-card"
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{
+          background: hov ? `linear-gradient(135deg,rgba(8,13,24,0.99),${col}0c)` : T.glass,
+          border: `1px solid ${hov ? col + "44" : T.border}`,
+          borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden",
+          boxShadow: hov ? `0 16px 40px rgba(0,0,0,.5), ${T.gB(col)}` : "none",
+          animation: vis ? `fadeUp 400ms ${i * 60}ms ease both` : "none",
+          opacity: vis ? 1 : 0,
+        }}
+      >
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${col}66,transparent)` }} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: T.head }}>{p.home}</span>
+          <span style={{ fontSize: 9, color: T.muted, background: T.glass, padding: "2px 7px", borderRadius: 999, border: `1px solid ${T.border}`, fontFamily: T.body }}>vs</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: T.head }}>{p.away}</span>
+        </div>
+        <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", gap: 1, marginBottom: 10 }}>
+          {vis && [
+            { flex: p.homeProb, c: T.blue },
+            { flex: p.draw, c: T.gold },
+            { flex: p.awayProb, c: T.purple },
+          ].map((b, j) => (
+            <div key={j} className="hp3-prob-bar" style={{ "--w": `${b.flex}%`, "--d": `${j * 60}ms`, flex: b.flex, height: "100%", background: b.c, opacity: 0.85, width: "unset" }} />
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10 }}>
+            {[[hw + "%", T.blue, "H"], [dw + "%", T.gold, "D"], [aw + "%", T.purple, "A"]].map(([v, c, l]) => (
+              <div key={l} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: c, fontFamily: T.mono }}>{v}</div>
+                <div style={{ fontSize: 8, color: T.muted }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: col, fontFamily: T.mono }}>{p.score}</div>
+            <div style={{ fontSize: 8, fontWeight: 800, color: confCol, background: `${confCol}14`, border: `1px solid ${confCol}30`, padding: "1px 6px", borderRadius: 999, marginTop: 2, display: "inline-block" }}>
+              {typeof p.conf === "string" ? p.conf.charAt(0).toUpperCase() + p.conf.slice(1).toLowerCase() : p.conf} conf.
+            </div>
+          </div>
+        </div>
+        {p.kickoff && (
+          <div style={{ marginTop: 8, fontSize: 9, color: T.muted, fontFamily: T.mono }}>{p.kickoff} {p.time}</div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   POWER RANKINGS
+   ───────────────────────────────────────────────────────────── */
+function PowerRankingCard({ team, rank, vis }) {
+  const col = rank === 1 ? T.gold : rank <= 3 ? T.blue : T.muted;
+  const barW = team.power_pct ?? 0;
+  return (
+    <Link to={`/team/${team.team_id}`} style={{ textDecoration: "none" }}>
+      <div className="hp3-card" style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "10px 14px", borderRadius: 12,
+        background: T.glass, border: `1px solid ${T.border}`,
+        animation: vis ? `fadeUp 350ms ${rank * 50}ms ease both` : "none",
+        opacity: vis ? 1 : 0,
+      }}>
+        <span style={{ width: 24, textAlign: "center", fontSize: 13, fontWeight: 900, color: col, fontFamily: T.mono }}>{rank}</span>
+        {team.logo && <img src={team.logo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />}
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: T.text, fontFamily: T.body }}>{team.team_name}</span>
+        <div style={{ display: "flex", gap: 3, marginRight: 8 }}>
+          {(team.form_letters || []).slice(-5).map((c, j) => (
+            <div key={j} style={{
+              width: 14, height: 14, borderRadius: 3, fontSize: 7, fontWeight: 900,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: c === "W" ? `${T.green}22` : c === "D" ? `${T.gold}22` : `${T.red}22`,
+              color: c === "W" ? T.green : c === "D" ? T.gold : T.red,
+              border: `1px solid ${c === "W" ? T.green : c === "D" ? T.gold : T.red}33`,
+            }}>{c}</div>
+          ))}
+        </div>
+        <div style={{ textAlign: "right", minWidth: 70 }}>
+          <div style={{ height: 4, borderRadius: 2, background: T.dim, overflow: "hidden", marginBottom: 3 }}>
+            <div className="hp3-prob-bar" style={{ "--w": `${barW}%`, background: col, height: "100%", borderRadius: 2 }} />
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 800, color: col, fontFamily: T.mono }}>{barW}%</span>
+        </div>
+        {team.rank_delta !== 0 && (
+          <span style={{ fontSize: 9, fontWeight: 800, color: team.rank_delta > 0 ? T.green : T.red, minWidth: 20, textAlign: "center" }}>
+            {team.rank_delta > 0 ? `↑${team.rank_delta}` : `↓${Math.abs(team.rank_delta)}`}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TITLE RACE
+   ───────────────────────────────────────────────────────────── */
+function TitleRaceCard({ d, vis }) {
+  const top4 = d?.top4 ?? [];
+  return (
+    <div style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 20, padding: "20px 22px" }}>
+      <SectionLabel color={T.gold} icon="🏆">Title Race</SectionLabel>
+      {top4.map((t, i) => {
+        const pts = t.points;
+        const gap = t.gap_to_leader;
+        const col = i === 0 ? T.gold : i === 1 ? "#c0c0c0" : T.blue;
+        return (
+          <div key={t.team_id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, animation: vis ? `fadeUp 350ms ${i * 70}ms ease both` : "none", opacity: vis ? 1 : 0 }}>
+            <span style={{ width: 18, fontSize: 12, fontWeight: 900, color: col, fontFamily: T.mono }}>{i + 1}</span>
+            {t.logo && <img src={t.logo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+            <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: T.text, fontFamily: T.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.team_name}</span>
+            <div style={{ height: 5, width: 80, borderRadius: 3, background: T.dim, overflow: "hidden" }}>
+              <div className="hp3-prob-bar" style={{ "--w": `${100 - gap * 8}%`, background: col, height: "100%", borderRadius: 3 }} />
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 900, color: col, fontFamily: T.mono, minWidth: 28, textAlign: "right" }}>{pts}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   xG LEADERS
+   ───────────────────────────────────────────────────────────── */
+function XGLeaderRow({ p, rank, vis }) {
+  const col = rank === 1 ? T.gold : rank <= 3 ? T.green : T.blue;
+  return (
+    <Link to={`/player/${p.player_id}`} style={{ textDecoration: "none" }}>
+      <div className="hp3-card" style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+        borderRadius: 10, background: T.glass, border: `1px solid ${T.border}`,
+        animation: vis ? `fadeUp 300ms ${rank * 50}ms ease both` : "none",
+        opacity: vis ? 1 : 0,
+      }}>
+        <span style={{ width: 20, fontSize: 11, fontWeight: 900, color: col, fontFamily: T.mono, textAlign: "center" }}>{rank}</span>
+        {p.photo && <img src={p.photo} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: `1px solid ${col}44` }} onError={e => e.target.style.display = "none"} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: T.text, fontFamily: T.head, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+          <div style={{ fontSize: 9, color: T.muted }}>{p.team}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: col, fontFamily: T.mono, lineHeight: 1 }}>{p.g_plus_a}</div>
+          <div style={{ fontSize: 8, color: T.muted }}>G+A</div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   VALUE PLAYERS
+   ───────────────────────────────────────────────────────────── */
+const POS_COL = { GK: T.gold, DEF: T.blue, MID: T.green, FWD: T.red };
+function ValuePlayerCard({ p, i, vis }) {
+  const [hov, setHov] = useState(false);
+  const col = POS_COL[p.position] || T.blue;
+  return (
+    <Link to={`/player/${p.player_id}`} style={{ textDecoration: "none" }}>
+      <div
+        className="hp3-card"
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{
+          padding: "14px 16px", borderRadius: 14,
+          background: hov ? `linear-gradient(135deg,rgba(8,13,24,.99),${col}0c)` : T.glass,
+          border: `1px solid ${hov ? col + "44" : T.border}`,
+          animation: vis ? `fadeUp 350ms ${i * 60}ms ease both` : "none",
+          opacity: vis ? 1 : 0,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <span style={{ fontSize: 9, fontWeight: 800, color: col, background: `${col}18`, border: `1px solid ${col}33`, padding: "2px 6px", borderRadius: 999 }}>{p.position}</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: T.text, fontFamily: T.mono }}>£{p.cost}m</span>
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 2, fontFamily: T.head, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+        <div style={{ fontSize: 9, color: T.muted, marginBottom: 10 }}>{p.team_short}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
+          <span style={{ fontSize: 22, fontWeight: 900, color: col, fontFamily: T.mono, lineHeight: 1 }}>{p.value_score}</span>
+          <span style={{ fontSize: 9, color: T.muted }}>pts/£m</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: T.muted }}>
+          <span>{p.total_points} pts</span>
+          <span>{p.ownership}% owned</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CAPTAIN PICKS
+   ───────────────────────────────────────────────────────────── */
+function CaptainCard({ p, rank, vis }) {
+  const [hov, setHov] = useState(false);
+  const rankColors = [T.gold, "#c0c0c0", "#cd7f32"];
+  const rc = rank <= 3 ? rankColors[rank - 1] : T.muted;
+  return (
+    <Link to={`/player/${p.player_id}`} style={{ textDecoration: "none" }}>
+      <div
+        className="hp3-card"
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "12px 16px", borderRadius: 14,
+          background: hov ? `linear-gradient(135deg,rgba(8,13,24,.99),${T.gold}08)` : T.glass,
+          border: `1px solid ${hov ? T.gold + "33" : T.border}`,
+          animation: vis ? `fadeUp 350ms ${rank * 50}ms ease both` : "none",
+          opacity: vis ? 1 : 0,
+        }}
+      >
+        <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${rc}18`, border: `2px solid ${rc}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: rc, fontFamily: T.mono, flexShrink: 0 }}>{rank}</div>
+        {p.photo
+          ? <img src={p.photo} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: `2px solid ${T.gold}33`, flexShrink: 0 }} onError={e => e.target.style.display = "none"} />
+          : <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${T.gold}18`, border: `2px solid ${T.gold}22`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👤</div>
+        }
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: T.head, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+          <div style={{ fontSize: 9, color: T.muted }}>{p.team} · £{p.cost}m · {p.ownership}% owned</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: T.gold, fontFamily: T.mono, lineHeight: 1 }}>{p.captain_score?.toFixed(1)}</div>
+          <div style={{ fontSize: 8, color: T.muted }}>CAP SCORE</div>
+          <div style={{ fontSize: 9, color: T.dim, marginTop: 2 }}>EP {p.ep_next?.toFixed(2)}</div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FIXTURE DIFFICULTY MINI-HEATMAP
+   ───────────────────────────────────────────────────────────── */
+function MiniHeatmap({ d, vis }) {
+  const teams = (d?.fixture_difficulty?.teams || []).slice(0, 8);
+  const gws   = d?.fixture_difficulty?.gws   || [];
+  if (!teams.length) return null;
+
+  return (
+    <div style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 20, padding: "20px 22px", overflow: "hidden" }}>
+      <SectionLabel color={T.teal} icon="🗓">Fixture Runs</SectionLabel>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 300 }}>
+          <thead>
+            <tr>
+              <th style={{ fontSize: 8, color: T.muted, fontWeight: 700, padding: "4px 10px 4px 0", textAlign: "left", fontFamily: T.body, whiteSpace: "nowrap" }}>Team</th>
+              {gws.slice(0, 5).map(gw => (
+                <th key={gw} style={{ fontSize: 8, color: T.muted, fontWeight: 700, padding: "4px 5px", textAlign: "center", fontFamily: T.mono }}>GW{gw}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((team, i) => (
+              <tr key={team.team_id} style={{ animation: vis ? `fadeUp 300ms ${i * 40}ms ease both` : "none", opacity: vis ? 1 : 0 }}>
+                <td style={{ fontSize: 11, fontWeight: 700, color: T.text, padding: "3px 10px 3px 0", whiteSpace: "nowrap", fontFamily: T.body }}>{team.short || team.short_name}</td>
+                {gws.slice(0, 5).map(gw => {
+                  const cell = team.fixtures?.[gw];
+                  const col  = cell ? FDR_COL[cell.difficulty] || T.muted : T.dim;
+                  return (
+                    <td key={gw} title={cell ? `${cell.opp} ${cell.home ? "(H)" : "(A)"} FDR${cell.difficulty}` : "BGW"} style={{ padding: "3px 5px", textAlign: "center" }}>
+                      <div style={{ width: 36, height: 22, borderRadius: 5, background: `${col}22`, border: `1px solid ${col}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 800, color: col, fontFamily: T.body, margin: "0 auto", cursor: "default" }}>
+                        {cell ? `${cell.opp.slice(0, 3)}${cell.home ? "H" : "A"}` : "—"}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Link to="/fixture-difficulty" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, fontSize: 11, fontWeight: 700, color: T.teal, textDecoration: "none", fontFamily: T.body }}>
+        Full heatmap →
+      </Link>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MODEL PERFORMANCE CHART
+   ───────────────────────────────────────────────────────────── */
+function ModelPerfChart({ d, vis }) {
+  const mm    = d?.model_metrics ?? {};
+  const trend = mm.trend ?? [];
+  const mkts  = mm.by_market ?? [
+    { l: "Match Result", v: 64, col: T.green },
+    { l: "BTTS",         v: 71, col: T.blue  },
+    { l: "Over 2.5",     v: 68, col: T.gold  },
+    { l: "Correct Score",v: 38, col: T.purple},
+  ];
+  const avg   = mm.overall_accuracy ?? 64;
+  const maxAcc = Math.max(...trend.map(t => t.acc ?? t.accuracy ?? 0), 1);
+
+  return (
+    <div style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 20, padding: "20px 22px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <SectionLabel color={T.green} icon="📊">Model Accuracy</SectionLabel>
+        <Link to="/model-performance" style={{ fontSize: 10, color: T.green, textDecoration: "none", fontFamily: T.body }}>Details →</Link>
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80, marginBottom: 16 }}>
+        {trend.map((t, i) => {
+          const acc = t.acc ?? t.accuracy ?? 0;
+          const col = acc >= 70 ? T.green : acc >= 60 ? T.gold : T.orange;
+          return (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 8, fontWeight: 800, color: col, fontFamily: T.mono }}>{acc}%</span>
+              <div style={{
+                width: "100%", borderRadius: "3px 3px 0 0",
+                background: col, opacity: 0.8,
+                height: vis ? `${(acc / maxAcc) * 85}%` : "0%",
+                transition: `height 700ms ${i * 80}ms cubic-bezier(.22,1,.36,1)`,
+              }} />
+              <span style={{ fontSize: 7, color: T.muted, fontFamily: T.mono }}>{t.gw}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {mkts.map((m, i) => (
+          <div key={m.l}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: T.text, fontFamily: T.body }}>{m.l}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: m.col, fontFamily: T.mono }}>{m.v}%</span>
+            </div>
+            <div style={{ height: 3, borderRadius: 2, background: T.dim }}>
+              <div style={{ height: "100%", borderRadius: 2, background: m.col, width: vis ? `${m.v}%` : "0%", transition: `width 800ms ${200 + i * 100}ms cubic-bezier(.22,1,.36,1)`, boxShadow: T.gB(m.col, 8) }} />
+            </div>
           </div>
         ))}
       </div>
@@ -270,1124 +866,399 @@ function LiveTicker({ homeData }) {
   );
 }
 
-/* ── PitchGridBg ─────────────────────────────────────────── */
-function PitchGridBg() {
+/* ─────────────────────────────────────────────────────────────
+   RECENT RESULTS / ACCOUNTABILITY
+   ───────────────────────────────────────────────────────────── */
+function RecentResults({ d, vis }) {
+  const rows = d?.recent_results?.results ?? [];
+  const correct = d?.recent_results?.correct ?? rows.filter(r => r.correct === true).length;
+  const total   = d?.recent_results?.total   ?? rows.filter(r => r.correct != null).length;
+
   return (
-    <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none",zIndex:0}}>
-      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",
-        width:800,height:500,background:"radial-gradient(ellipse,rgba(79,158,255,0.07) 0%,rgba(0,224,158,0.03) 45%,transparent 70%)"}}/>
-      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:.045,animation:"pitchPulse 6s ease-in-out infinite"}}
-        viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
-        <rect x="40" y="20" width="1120" height="560" rx="8" fill="none" stroke="white" strokeWidth="1.5"/>
-        <line x1="600" y1="20" x2="600" y2="580" stroke="white" strokeWidth="1"/>
-        <circle cx="600" cy="300" r="80" fill="none" stroke="white" strokeWidth="1"/>
-        <circle cx="600" cy="300" r="4" fill="white"/>
-        <rect x="40" y="180" width="110" height="240" fill="none" stroke="white" strokeWidth="1"/>
-        <rect x="1050" y="180" width="110" height="240" fill="none" stroke="white" strokeWidth="1"/>
-        <rect x="40" y="230" width="50" height="140" fill="none" stroke="white" strokeWidth="1"/>
-        <rect x="1110" y="230" width="50" height="140" fill="none" stroke="white" strokeWidth="1"/>
-        <circle cx="240" cy="300" r="2" fill="white"/><circle cx="960" cy="300" r="2" fill="white"/>
-      </svg>
-      {[[C.blue,.06,"-5%","10%","55s"],[C.green,.05,"78%","55%","68s"],[C.purple,.04,"42%","-6%","62s"],[C.gold,.04,"20%","70%","72s"]].map(([col,op,l,t,dur],i)=>(
-        <div key={i} style={{position:"absolute",width:500,height:500,borderRadius:"50%",left:l,top:t,
-          background:col,opacity:op,filter:"blur(110px)",animation:`orbFloat ${dur} ease-in-out infinite`,animationDelay:`${i*9}s`}}/>
-      ))}
-      {Array.from({length:18},(_,i)=>({x:Math.random()*100,y:Math.random()*100,s:Math.random()*1.4+.4,op:Math.random()*.18+.04,sp:Math.random()*28+18,dl:Math.random()*-28})).map((p,i)=>(
-        <div key={i} style={{position:"absolute",left:p.x+"%",top:p.y+"%",width:p.s,height:p.s,
-          borderRadius:"50%",background:"white",opacity:p.op,animation:`floatP ${p.sp}s ${p.dl}s linear infinite`}}/>
-      ))}
+    <div style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 20, padding: "20px 22px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <SectionLabel color={T.blue} icon="✓">Recent Predictions</SectionLabel>
+        {total > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 800, color: T.green, background: `${T.green}14`, border: `1px solid ${T.green}30`, padding: "3px 10px", borderRadius: 999, fontFamily: T.mono }}>
+            {correct}/{total} correct
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        {rows.slice(0, 5).map((r, i) => {
+          const isPending = r.correct == null;
+          const bc = isPending ? T.muted : r.correct ? T.green : T.red;
+          return (
+            <Link key={i} to={r.fixture_id ? `/match-preview/${r.fixture_id}` : "/model-performance"} style={{ textDecoration: "none" }}>
+              <div className="hp3-card" style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 12px", borderRadius: 10,
+                background: `${bc}06`, border: `1px solid ${bc}18`,
+                animation: vis ? `fadeUp 300ms ${i * 50}ms ease both` : "none",
+                opacity: vis ? 1 : 0,
+              }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: `${bc}20`, border: `1px solid ${bc}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0 }}>
+                  {isPending ? "⏳" : r.correct ? "✓" : "✗"}
+                </div>
+                <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: T.text, fontFamily: T.body }}>{r.home} vs {r.away}</span>
+                <span style={{ fontSize: 9, color: T.muted }}>{r.pred}</span>
+                <span style={{ fontSize: 12, fontWeight: 900, color: bc, fontFamily: T.mono }}>{r.score}</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-/* ── Graphics (unchanged) ────────────────────────────────── */
-function PitchGraphic({ color, hov }) {
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    <rect x="2" y="2" width="176" height="96" rx="7" stroke={color} strokeWidth="1.5" strokeOpacity={hov?.5:.25}/>
-    <line x1="90" y1="2" x2="90" y2="98" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.15}/>
-    <circle cx="90" cy="50" r="20" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.15}/>
-    <rect x="2" y="32" width="24" height="36" rx="2" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.2}/>
-    <rect x="154" y="32" width="24" height="36" rx="2" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.2}/>
-    <path d="M 40 62 C 65 28 120 25 148 50" stroke={color} strokeWidth="2" strokeOpacity={hov?.9:.55}
-      strokeDasharray="5 3" strokeLinecap="round" style={{strokeDashoffset:hov?0:100,transition:"stroke-dashoffset 600ms ease"}}/>
-    <circle cx={hov?148:40} cy={hov?50:62} r="6" fill={color} opacity={hov?.95:.7} style={{transition:"cx 600ms ease,cy 600ms ease"}}/>
-    <circle cx={hov?148:40} cy={hov?50:62} r="11" fill={color} opacity={hov?.2:.08} style={{transition:"cx 600ms ease,cy 600ms ease"}}/>
-    {[[40,62],[62,36],[62,72],[108,38],[108,68]].map(([x,y],i)=>(<circle key={i} cx={x} cy={y} r={i===0?5:4} fill={color} opacity={i===0?0:hov?.55:.3} style={{transition:"opacity 220ms"}}/>))}
-  </svg>);
-}
-function BarGraphic({ color, hov }) {
-  const bars=[0.42,0.68,0.52,0.88,0.61,0.78,0.95];
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    <line x1="14" y1="90" x2="170" y2="90" stroke={color} strokeOpacity="0.15" strokeWidth="0.8"/>
-    {bars.map((h,i)=>(<rect key={i} x={16+i*22} y={90-h*72} width="15" height={h*72} rx="3" fill={color} opacity={hov?0.25+h*.6:0.12+h*.3} style={{transition:`opacity 220ms,height 500ms ${i*50}ms`}}/>))}
-    <polyline points={bars.map((h,i)=>`${23.5+i*22},${90-h*72}`).join(" ")} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={hov?.95:.65} style={{transition:"opacity 220ms"}}/>
-    {bars.filter((_,i)=>i%2===0).map((h,i)=>(<circle key={i} cx={23.5+(i*2)*22} cy={90-h*72} r="3.5" fill={color} opacity={hov?.95:.7} style={{transition:"opacity 220ms"}}/>))}
-  </svg>);
-}
-function FormationGraphic({ color, hov }) {
-  const pos=[[90,88],[38,68],[63,68],[117,68],[142,68],[50,46],[90,40],[130,46],[60,18],[90,12],[120,18]];
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    <rect x="2" y="2" width="176" height="96" rx="7" stroke={color} strokeWidth="1" strokeOpacity={hov?.25:.12}/>
-    <line x1="2" y1="50" x2="178" y2="50" stroke={color} strokeWidth="0.5" strokeOpacity={hov?.15:.07}/>
-    <circle cx="90" cy="50" r="16" stroke={color} strokeWidth="0.5" strokeOpacity={hov?.15:.07}/>
-    {pos.map(([x,y],i)=>(<g key={i}><circle cx={x} cy={y} r={6} fill={color} opacity={i===0?hov?.5:.3:hov?.9:.6} style={{transition:`opacity 220ms ${i*18}ms`}}/><circle cx={x} cy={y} r={11} fill={color} opacity={hov?.12:.05} style={{transition:`opacity 220ms ${i*18}ms`}}/></g>))}
-    <text x="90" y="15" fontSize="6" fill="white" textAnchor="middle" dominantBaseline="middle" fontWeight="900" opacity={hov?.8:.4}>10</text>
-  </svg>);
-}
-function RadarGraphic({ color, hov }) {
-  const pts=6,vals=[0.88,0.72,0.94,0.67,0.81,0.90],cx=90,cy=50,r=36;
-  const poly=vals.map((v,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return[cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v];}).map(([x,y])=>`${x},${y}`).join(" ");
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    {[.33,.66,1].map(g=><polygon key={g} points={vals.map((_,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return`${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;}).join(" ")} fill="none" stroke={color} strokeWidth=".7" strokeOpacity={hov?.25:.12}/>)}
-    {Array.from({length:pts}).map((_,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return<line key={i} x1={cx} y1={cy} x2={cx+Math.cos(a)*r} y2={cy+Math.sin(a)*r} stroke={color} strokeWidth=".5" strokeOpacity={hov?.2:.08}/>;} )}
-    <polygon points={poly} fill={color} fillOpacity={hov?.28:.13} stroke={color} strokeWidth="1.8" strokeOpacity={hov?.9:.6} style={{transition:"all 300ms"}}/>
-    {vals.map((v,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return<circle key={i} cx={cx+Math.cos(a)*r*v} cy={cy+Math.sin(a)*r*v} r="3.5" fill={color} opacity={hov?.95:.65} style={{transition:`opacity 220ms ${i*30}ms`}}/>;} )}
-  </svg>);
-}
-function TrendGraphic({ color, hov }) {
-  const pts=[[10,76],[24,63],[38,68],[52,50],[66,42],[80,54],[94,36],[108,30],[122,20],[136,14],[150,8]];
-  const poly=pts.map(([x,y])=>`${x},${y}`).join(" ");
-  const area=`${pts[0][0]},90 ${poly} ${pts[pts.length-1][0]},90`;
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    {[25,50,75].map(y=><line key={y} x1="8" y1={y} x2="158" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth=".8"/>)}
-    <polygon points={area} fill={color} fillOpacity={hov?.12:.05} style={{transition:"fill-opacity 220ms"}}/>
-    <polyline points={poly} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity={hov?.95:.65} style={{transition:"opacity 220ms"}}/>
-    {pts.filter((_,i)=>i%3===0).map(([x,y],i)=>(<circle key={i} cx={x} cy={y} r="3.5" fill={color} opacity={hov?.9:.6} style={{transition:"opacity 220ms"}}/>))}
-    <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="6" fill={color} opacity={hov?.95:.8}>
-      {hov&&<animate attributeName="r" values="5;8;5" dur="1.2s" repeatCount="indefinite"/>}
-    </circle>
-  </svg>);
-}
-function HeatmapGraphic({ color, hov }) {
-  const cells=Array.from({length:35},(_,i)=>.15+Math.sin(i*.7)*.35+Math.cos(i*.4)*.25);
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    <rect x="12" y="8" width="156" height="84" rx="4" fill="none" stroke={color} strokeWidth=".8" strokeOpacity={hov?.35:.18}/>
-    {Array.from({length:7}).map((_,row)=>Array.from({length:5}).map((_,col)=>{const v=cells[row*5+col];return<rect key={row*5+col} x={12+col*31.2} y={8+row*12} width="31.2" height="12" fill={color} opacity={hov?v*.75:v*.4} rx="1" style={{transition:`opacity 250ms ${(row*5+col)*8}ms`}}/>;}))}
-    <line x1="90" y1="8" x2="90" y2="92" stroke={color} strokeWidth=".6" strokeOpacity={hov?.3:.15}/>
-  </svg>);
-}
-function GameGraphic({ color, hov }) {
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    <rect x="20" y="20" width="140" height="60" rx="12" fill={color} fillOpacity={hov?.1:.05} stroke={color} strokeWidth="1.5" strokeOpacity={hov?.5:.25}/>
-    <circle cx="90" cy="50" r="18" fill={color} fillOpacity={hov?.15:.07} stroke={color} strokeWidth="1.2" strokeOpacity={hov?.5:.25}/>
-    <path d="M84 50l-6-4v8l6-4z" fill={color} opacity={hov?.9:.6}/>
-    <path d="M96 50l6-4v8l-6-4z" fill={color} opacity={hov?.9:.6}/>
-    <rect x="86" y="44" width="8" height="12" rx="1" fill={color} opacity={hov?.3:.15}/>
-    {[[32,50],[148,50]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r={8} fill={color} fillOpacity={hov?.2:.08} stroke={color} strokeOpacity={hov?.5:.25} strokeWidth="1"/>)}
-    {[[32,44],[32,56],[148,44],[148,56]].map(([x,y],i)=><rect key={i} x={x-4} y={y-2} width="8" height="4" rx="1" fill={color} opacity={hov?.7:.4}/>)}
-  </svg>);
-}
-function LearnGraphic({ color, hov }) {
-  const nodes=[[90,20],[50,50],[90,50],[130,50],[70,80],[110,80]];
-  return (<svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-    {[[0,1],[0,2],[0,3],[1,4],[2,4],[2,5],[3,5]].map(([a,b],i)=>(<line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} stroke={color} strokeWidth="1.2" strokeOpacity={hov?.5:.22} style={{transition:`stroke-opacity 220ms ${i*40}ms`}}/>))}
-    {nodes.map(([x,y],i)=>(<g key={i}><circle cx={x} cy={y} r="8" fill={color} opacity={hov?.3:.12} style={{transition:`opacity 220ms ${i*40}ms`}}/><circle cx={x} cy={y} r="4.5" fill={color} opacity={hov?.9:.55} style={{transition:`opacity 220ms ${i*40}ms`}}/></g>))}
-    <text x="90" y="24" fontSize="5.5" fill="white" textAnchor="middle" dominantBaseline="middle" fontWeight="900" opacity={hov?.8:.4}>xG</text>
-  </svg>);
+/* ─────────────────────────────────────────────────────────────
+   FOOTBALL INTEL (transfer brief, tactical insight, term)
+   ───────────────────────────────────────────────────────────── */
+function IntelCard({ title, col, icon, children, to }) {
+  const [hov, setHov] = useState(false);
+  const inner = (
+    <div
+      className="hp3-card"
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        padding: "18px 20px", borderRadius: 16, height: "100%",
+        background: hov ? `linear-gradient(135deg,rgba(8,13,24,.99),${col}0c)` : T.glass,
+        border: `1px solid ${hov ? col + "44" : T.border}`,
+        boxShadow: hov ? `0 12px 36px rgba(0,0,0,.5), ${T.gB(col)}` : "none",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 16 }}>{icon}</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: col, letterSpacing: "0.1em", fontFamily: T.body, textTransform: "uppercase" }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+  return to ? <Link to={to} style={{ textDecoration: "none", display: "block" }}>{inner}</Link> : inner;
 }
 
-/* ── FeatureCard ─────────────────────────────────────────── */
-function FeatureCard({ to, color, title, subtitle, description, graphic:GraphicComp, badge, delay=0 }) {
+function AnalyticsTermCard({ d }) {
+  const term = d?.analytics_term;
+  if (!term) return null;
+  const col = term.col || T.teal;
+  return (
+    <IntelCard title="Analytics Term" col={col} icon={term.icon || "📐"} to="/learn">
+      <div style={{ fontSize: 20, fontWeight: 900, color: T.text, fontFamily: T.head, marginBottom: 6 }}>{term.short}</div>
+      <p style={{ fontSize: 11, color: T.muted, lineHeight: 1.65, margin: "0 0 12px", fontFamily: T.body }}>{(term.definition || "").slice(0, 120)}…</p>
+      <div style={{ fontSize: 22, fontWeight: 900, color: col, fontFamily: T.mono, lineHeight: 1 }}>{term.example_value}</div>
+      <div style={{ fontSize: 9, color: T.muted, fontFamily: T.body, marginTop: 2 }}>{term.example_unit}</div>
+    </IntelCard>
+  );
+}
+
+function TransferCard({ d }) {
+  const tb = d?.transfer_brief ?? {};
+  const col = T.orange;
+  return (
+    <IntelCard title="Transfer Brief" col={col} icon="📰" to="/news">
+      {tb.summary
+        ? <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.7, margin: 0, fontFamily: T.body }}>{tb.summary}</p>
+        : <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.7, margin: 0, fontFamily: T.body }}>Loading transfer intelligence…</p>
+      }
+    </IntelCard>
+  );
+}
+
+function TacticalCard({ d }) {
+  const ti = d?.tactical_insight?.primary;
+  const col = T.purple;
+  return (
+    <IntelCard title="Tactical Insight" col={col} icon="⚡">
+      {ti
+        ? (
+          <>
+            <div style={{ fontSize: 24, fontWeight: 900, color: col, fontFamily: T.mono, lineHeight: 1, marginBottom: 6 }}>{ti.stat}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: T.head }}>{ti.label} — {ti.player}</div>
+            <p style={{ fontSize: 11, color: T.muted, lineHeight: 1.65, margin: 0, fontFamily: T.body }}>{(ti.context || "").slice(0, 140)}…</p>
+          </>
+        )
+        : <p style={{ fontSize: 12, color: T.muted, fontFamily: T.body }}>Loading tactical data…</p>
+      }
+    </IntelCard>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STAT TILES  (hero row)
+   ───────────────────────────────────────────────────────────── */
+function StatTile({ value, suffix = "", label, color, delay = 0, icon, trend, vis }) {
+  const v = useCountUp(value, 1400, delay, vis);
   const [hov, setHov] = useState(false);
   return (
-    <Link to={to} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} className="hp-card"
-      style={{display:"flex",flexDirection:"column",background:hov?`linear-gradient(135deg,rgba(12,18,30,0.98) 0%,${color}0d 100%)`:C.panel,
-        border:`1px solid ${hov?color+"50":C.line}`,borderRadius:20,overflow:"hidden",textDecoration:"none",
-        boxShadow:hov?`0 20px 52px rgba(0,0,0,0.55), 0 0 0 1px ${color}22`:"none",
-        animationDelay:delay+"ms",animation:"cardIn 500ms ease both",position:"relative"}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:1,
-        background:`linear-gradient(90deg,transparent,${color}${hov?"88":"33"},transparent)`,transition:"opacity 220ms"}}/>
-      <div style={{height:130,display:"flex",alignItems:"center",justifyContent:"center",
-        background:`linear-gradient(135deg,${color}0d 0%,rgba(0,0,0,0) 60%)`,
-        borderBottom:`1px solid ${hov?color+"30":C.line}`,transition:"border-color 220ms",position:"relative"}}>
-        <div style={{position:"absolute",top:0,right:0,width:100,height:100,
-          background:`radial-gradient(circle at 100% 0%,${color}1a 0%,transparent 65%)`,pointerEvents:"none"}}/>
-        <div style={{position:"relative",zIndex:1,transition:"transform 300ms",transform:hov?"scale(1.04)":"scale(1)"}}>
-          <GraphicComp color={color} hov={hov}/>
-        </div>
-        {badge&&(<div style={{position:"absolute",top:10,right:10,padding:"3px 9px",borderRadius:999,
-          background:color+"22",border:`1px solid ${color}44`,fontSize:9,fontWeight:800,color,
-          fontFamily:"'Inter',sans-serif",letterSpacing:"0.07em"}}>{badge}</div>)}
+    <div
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        flex: 1, minWidth: 0, padding: "18px 20px", borderRadius: 16,
+        background: hov ? `linear-gradient(135deg,rgba(8,13,24,.98),${color}12)` : T.glass,
+        border: `1px solid ${hov ? color + "55" : T.border}`,
+        position: "relative", overflow: "hidden",
+        transition: "all 220ms cubic-bezier(.22,1,.36,1)",
+        transform: hov ? "translateY(-3px)" : "translateY(0)",
+        boxShadow: hov ? `0 12px 32px ${color}22` : "none",
+        animation: vis ? `fadeUp 500ms ${delay}ms ease both` : "none",
+        opacity: vis ? 1 : 0,
+      }}
+    >
+      <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: color, opacity: hov ? 0.12 : 0.04, filter: "blur(24px)", transition: "opacity 220ms", pointerEvents: "none" }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: 16 }}>{icon}</span>
+        {trend && <span style={{ fontSize: 8, fontWeight: 800, color: T.green, background: `${T.green}14`, border: `1px solid ${T.green}30`, padding: "2px 7px", borderRadius: 999 }}>{trend}</span>}
       </div>
-      <div style={{padding:"18px 20px 20px",flex:1,display:"flex",flexDirection:"column",gap:6}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:3,height:18,borderRadius:2,background:color,
-            boxShadow:hov?`0 0 12px ${color}88`:`0 0 6px ${color}44`,transition:"box-shadow 220ms",flexShrink:0}}/>
-          <span style={{fontSize:16,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif",letterSpacing:"-0.01em"}}>{title}</span>
-        </div>
-        <p style={{fontSize:12,color:C.muted,margin:0,lineHeight:1.65,fontFamily:"'Inter',sans-serif"}}>{description}</p>
-        <div style={{marginTop:"auto",paddingTop:12,display:"flex",alignItems:"center",gap:6}}>
-          <span style={{fontSize:11,fontWeight:700,color,fontFamily:"'Inter',sans-serif"}}>{subtitle}</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{transform:hov?"translateX(4px)":"translateX(0)",transition:"transform 180ms"}}>
-            <path d="M2 6h8M7 3l3 3-3 3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 2, marginBottom: 4 }}>
+        <span style={{ fontSize: 32, fontWeight: 900, fontFamily: T.mono, color, lineHeight: 1, textShadow: hov ? `0 0 24px ${color}88` : `0 0 12px ${color}44`, transition: "text-shadow 220ms" }}>{v.toLocaleString()}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color, opacity: 0.8 }}>{suffix}</span>
       </div>
-    </Link>
+      <div style={{ fontSize: 9, fontWeight: 800, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: T.body }}>{label}</div>
+    </div>
   );
 }
 
-/* ════════════════════════════════════════════════════════════
-   PREDICTION STRIP
-   ════════════════════════════════════════════════════════════ */
-function PredictionStrip({ homeData, loading }) {
-  const rawPreds = homeData?.top_predictions?.predictions;
-  const preds = rawPreds?.length ? rawPreds : FB.predictions;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:7,height:7,borderRadius:"50%",background:C.green,
-            boxShadow:`0 0 8px ${C.green}`,animation:"livePulse 2s ease infinite"}}/>
-          <span style={{fontSize:12,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif",
-            letterSpacing:"0.06em"}}>TODAY'S TOP PREDICTIONS</span>
-        </div>
-        <Link to="/predictions/premier-league" style={{fontSize:11,fontWeight:700,color:C.blue,
-          textDecoration:"none",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-          All fixtures
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke={C.blue} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </Link>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
-        {loading && !rawPreds
-          ? Array.from({length:4}).map((_,i)=>(
-              <div key={i} style={{borderRadius:14,border:`1px solid ${C.line}`,padding:"14px 16px",background:"rgba(255,255,255,0.025)"}}>
-                <Skeleton h={14} w="60%" style={{marginBottom:10}}/>
-                <Skeleton h={6} style={{marginBottom:8}}/>
-                <Skeleton h={12} w="80%"/>
-              </div>
-            ))
-          : preds.map((p, i) => {
-              const confCol = p.conf==="High"||p.conf==="high"?C.green:p.conf==="Medium"||p.conf==="medium"?C.gold:C.orange;
-              const confLabel = typeof p.conf==="string" ? p.conf.charAt(0).toUpperCase()+p.conf.slice(1) : p.conf;
-              const col = p.col || C.blue;
-              const fixtureId = p.fixture_id;
-              return (
-                <Link key={i}
-                  to={fixtureId ? `/match-preview/${fixtureId}` : "/predictions/premier-league"}
-                  style={{textDecoration:"none",display:"block"}} className="hp-card">
-                  <div style={{background:"rgba(255,255,255,0.025)",border:`1px solid ${C.line}`,borderRadius:14,
-                    padding:"14px 16px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:2,
-                      background:`linear-gradient(90deg,transparent,${col}66,transparent)`}}/>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                      <span style={{fontSize:13,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>{p.home}</span>
-                      <span style={{fontSize:10,fontWeight:700,color:C.muted,background:"rgba(255,255,255,0.05)",
-                        padding:"2px 7px",borderRadius:999,border:`1px solid ${C.line}`}}>vs</span>
-                      <span style={{fontSize:13,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>{p.away}</span>
-                    </div>
-                    <div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",marginBottom:8,gap:1}}>
-                      <div style={{flex:p.homeProb,background:C.blue,opacity:.8}}/>
-                      <div style={{flex:p.draw,background:C.gold,opacity:.7}}/>
-                      <div style={{flex:p.awayProb,background:C.red,opacity:.8}}/>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div style={{display:"flex",gap:10}}>
-                        {[[p.homeProb+"%",C.blue,"H"],[p.draw+"%",C.gold,"D"],[p.awayProb+"%",C.red,"A"]].map(([v,c,l])=>(
-                          <div key={l} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                            <span style={{fontSize:12,fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
-                            <span style={{fontSize:8,color:C.muted}}>{l}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-                        <span style={{fontSize:14,fontWeight:900,color:col,fontFamily:"'JetBrains Mono',monospace"}}>{p.score}</span>
-                        <span style={{fontSize:8,fontWeight:800,color:confCol,background:`${confCol}14`,
-                          border:`1px solid ${confCol}30`,padding:"1px 6px",borderRadius:999}}>{confLabel} conf.</span>
-                      </div>
-                    </div>
-                    {p.kickoff && (
-                      <div style={{marginTop:8,fontSize:9,color:C.muted,display:"flex",gap:6}}>
-                        <span>{p.kickoff}</span>{p.time&&<span>{p.time}</span>}
-                        {p.league && <span style={{color:C.soft}}>{p.league}</span>}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              );
-            })
-        }
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   MODEL PERFORMANCE
-   ════════════════════════════════════════════════════════════ */
-function ModelPerformance({ homeData, loading }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const mm = homeData?.model_metrics;
-  const perfData = mm?.trend?.length ? mm.trend : FB.perf;
-  const metrics  = mm?.by_market?.length ? mm.by_market : [
-    { l:"Match Result", v:64, col:C.green },
-    { l:"BTTS",         v:71, col:C.blue  },
-    { l:"Over 2.5",     v:68, col:C.gold  },
-    { l:"Correct Score",v:38, col:C.purple},
-  ];
-  const seasonAvg = mm?.overall_accuracy || 64;
-  const maxAcc    = Math.max(...perfData.map(d => d.acc || d.accuracy || 0));
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}} ref={ref}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:16,alignItems:"stretch"}}>
-        <Link to="/model-performance" style={{textDecoration:"none",display:"block",
-          background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div>
-              <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>MODEL ACCURACY</div>
-              <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>
-                {loading && !mm ? "Loading…" : `Last ${perfData.length} Results`}
-              </div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              {loading && !mm
-                ? <Skeleton w={80} h={32}/>
-                : <>
-                    <div style={{fontSize:32,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-                      color:C.green,lineHeight:1,textShadow:`0 0 18px ${C.green}55`}}>{seasonAvg}%</div>
-                    <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>SEASON AVG</div>
-                  </>
-              }
-            </div>
-          </div>
-          <div style={{display:"flex",alignItems:"flex-end",gap:8,height:120}}>
-            {perfData.map((d,i) => {
-              const acc = d.acc ?? d.accuracy ?? 0;
-              return (
-                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:6,height:"100%",justifyContent:"flex-end"}}>
-                  <span style={{fontSize:9,fontWeight:800,color:acc>=70?C.green:acc>=60?C.gold:C.orange,
-                    fontFamily:"'JetBrains Mono',monospace"}}>{acc}%</span>
-                  <div style={{width:"100%",borderRadius:"4px 4px 0 0",
-                    background:acc>=70?C.green:acc>=60?C.gold:C.orange,
-                    height:visible?`${(acc/maxAcc)*90}%`:"0%",opacity:acc>=70?.85:.6,
-                    transition:`height 700ms ${i*80}ms cubic-bezier(0.22,1,0.36,1)`}}/>
-                  <span style={{fontSize:8,color:C.muted}}>{d.gw}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{fontSize:10,color:C.soft,marginTop:12,lineHeight:1.6}}>
-            Based on <b style={{color:C.muted}}>{mm?.fixtures_count||"15,000+"}</b> fixtures across {mm?.leagues_note||"EPL, La Liga, Serie A, Ligue 1"}.
-          </div>
-        </Link>
-        <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,
-          borderRadius:20,padding:"24px 24px",display:"flex",flexDirection:"column",gap:14,justifyContent:"center"}}>
-          <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:2}}>BY MARKET</div>
-          {metrics.map((m,i)=>(
-            <div key={m.l}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <span style={{fontSize:12,fontWeight:700,color:C.text}}>{m.l}</span>
-                <span style={{fontSize:16,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:m.col,
-                  textShadow:`0 0 10px ${m.col}44`}}>{m.v}%</span>
-              </div>
-              <div style={{height:4,borderRadius:2,background:"rgba(255,255,255,0.06)"}}>
-                <div style={{height:"100%",borderRadius:2,background:m.col,
-                  width:visible?`${m.v}%`:"0%",boxShadow:`0 0 8px ${m.col}66`,
-                  transition:`width 800ms ${200+i*120}ms cubic-bezier(0.22,1,0.36,1)`}}/>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   STAT OF THE MOMENT
-   ════════════════════════════════════════════════════════════ */
-function StatOfMoment({ homeData, loading }) {
-  const ti     = homeData?.tactical_insight?.primary;
-  const term   = homeData?.analytics_term;
-
-  // Build a stat moment from live data or fall back
-  const s = (() => {
-    if (ti) {
-      return { stat: ti.stat, label: ti.label, player: ti.player, context: ti.context, col: ti.col, icon: ti.icon };
-    }
-    const idx = Math.floor(Date.now() / 86400000) % FB.statMoments.length;
-    return FB.statMoments[idx];
-  })();
-
-  const teamId = ti?.team_id;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{
-        background:`linear-gradient(135deg,rgba(12,18,30,0.98),${s.col}0d)`,
-        border:`1px solid ${s.col}30`,borderRadius:20,padding:"24px 32px",
-        display:"flex",gap:28,alignItems:"center",flexWrap:"wrap",position:"relative",overflow:"hidden",
-      }}>
-        <div style={{position:"absolute",top:0,right:0,width:300,height:200,
-          background:`radial-gradient(circle at 100% 0%,${s.col}14,transparent 70%)`,pointerEvents:"none"}}/>
-        <div style={{display:"flex",flexDirection:"column",gap:2}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:s.col,boxShadow:`0 0 8px ${s.col}`,
-              animation:"livePulse 2.5s ease infinite"}}/>
-            <span style={{fontSize:9,fontWeight:900,color:s.col,letterSpacing:"0.15em"}}>STAT OF THE DAY</span>
-          </div>
-          {loading && !ti
-            ? <Skeleton w={120} h={52}/>
-            : <div style={{display:"flex",alignItems:"baseline",gap:10}}>
-                <span style={{fontSize:56,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-                  color:s.col,lineHeight:1,textShadow:`0 0 28px ${s.col}66`}}>{s.stat}</span>
-                <div>
-                  <div style={{fontSize:16,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>{s.label}</div>
-                  <div style={{fontSize:11,color:s.col,fontWeight:700}}>{s.icon} {s.player}</div>
-                </div>
-              </div>
-          }
-        </div>
-        <div style={{flex:1,minWidth:200}}>
-          <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:0,fontFamily:"'Inter',sans-serif"}}>{s.context}</p>
-          {teamId && (
-            <Link to={`/team/${teamId}`} style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:10,
-              fontSize:11,fontWeight:700,color:s.col,textDecoration:"none"}}>
-              View team stats →
-            </Link>
-          )}
-          {term && !ti && (
-            <Link to={term.learn_path || "/learn"} style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:10,
-              fontSize:11,fontWeight:700,color:s.col,textDecoration:"none"}}>
-              Learn about {term.short} →
-            </Link>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   RECENT RESULTS
-   ════════════════════════════════════════════════════════════ */
-function RecentResults({ homeData, loading }) {
-  const rawResults = homeData?.recent_results?.results;
-  const results    = rawResults?.length ? rawResults : FB.recentResults;
-  const correct    = homeData?.recent_results?.correct ?? results.filter(r=>r.correct===true).length;
-  const total      = homeData?.recent_results?.total   ?? results.filter(r=>r.correct!==null).length;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>ACCOUNTABILITY</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Recent Predictions</div>
-          </div>
-          <Link to="/model-performance" style={{textDecoration:"none"}}>
-            <div style={{padding:"6px 14px",borderRadius:999,background:`${C.green}12`,
-              border:`1px solid ${C.green}30`,fontSize:12,fontWeight:800,color:C.green,
-              fontFamily:"'JetBrains Mono',monospace"}}>
-              {total > 0 ? `${correct}/${total} correct` : "Loading…"}
-            </div>
-          </Link>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {loading && !rawResults
-            ? Array.from({length:5}).map((_,i)=>(
-                <div key={i} style={{padding:"10px 14px",borderRadius:10,background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`}}>
-                  <Skeleton h={14} w="70%"/>
-                </div>
-              ))
-            : results.map((r,i)=>{
-                const isCorrect   = r.correct === true;
-                const isPending   = r.correct === null || r.correct === undefined;
-                const borderColor = isPending ? C.muted : isCorrect ? C.green : C.red;
-                return (
-                  <Link key={i}
-                    to={r.fixture_id ? `/match-preview/${r.fixture_id}` : "/model-performance"}
-                    style={{textDecoration:"none"}}
-                    className="hp-card">
-                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",
-                      borderRadius:10,background:`${borderColor}08`,border:`1px solid ${borderColor}18`,transition:"all 180ms"}}>
-                      <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                        background:`${borderColor}20`,display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:12,border:`1px solid ${borderColor}40`}}>
-                        {isPending ? "⏳" : isCorrect ? "✓" : "✗"}
-                      </div>
-                      <div style={{flex:1,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                        <span style={{fontSize:12,fontWeight:700,color:C.text,minWidth:120}}>{r.home} vs {r.away}</span>
-                        <span style={{fontSize:10,color:C.muted}}>Predicted: <b style={{color:C.text}}>{r.pred}</b></span>
-                        <span style={{fontSize:10,color:C.muted}}>Result: <b style={{color:C.text}}>{r.actual}</b></span>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-                        <span style={{fontSize:13,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-                          color:isPending?C.muted:isCorrect?C.green:C.red}}>{r.score}</span>
-                        <span style={{fontSize:8,fontWeight:800,color:C.muted,background:"rgba(255,255,255,0.05)",
-                          padding:"2px 7px",borderRadius:999,border:`1px solid ${C.line}`}}>{r.conf}</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: Power Rankings
-   ════════════════════════════════════════════════════════════ */
-function PowerRankings({ homeData, loading }) {
-  const rankings = homeData?.power_rankings?.rankings;
-  if (!loading && !rankings?.length) return null;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>COMPOSITE MODEL</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Power Rankings</div>
-          </div>
-          <span style={{fontSize:10,fontWeight:700,color:C.muted,fontFamily:"'Inter',sans-serif"}}>
-            {homeData?.power_rankings?.league || "Premier League"}
-          </span>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {loading && !rankings
-            ? Array.from({length:6}).map((_,i)=>(
-                <div key={i} style={{padding:"10px 14px",borderRadius:10,background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`}}>
-                  <Skeleton h={14} w="80%"/>
-                </div>
-              ))
-            : rankings.map((t,i) => {
-                const col = i===0?C.gold:i===1?C.blue:i===2?C.green:C.muted;
-                const delta = t.rank_delta;
-                return (
-                  <Link key={t.team_id} to={`/team/${t.team_id}`} style={{textDecoration:"none"}} className="hp-card">
-                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,
-                      background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`}}>
-                      <span style={{width:24,textAlign:"center",fontSize:13,fontWeight:900,
-                        fontFamily:"'JetBrains Mono',monospace",color:col}}>{i+1}</span>
-                      {t.logo && <img src={t.logo} alt="" style={{width:20,height:20,objectFit:"contain"}}/>}
-                      <span style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{t.team_name}</span>
-                      <div style={{display:"flex",gap:4}}>
-                        {(t.form_letters||[]).map((c,j)=>(
-                          <div key={j} style={{width:16,height:16,borderRadius:4,fontSize:8,fontWeight:900,
-                            display:"flex",alignItems:"center",justifyContent:"center",
-                            background:c==="W"?`${C.green}22`:c==="D"?`${C.gold}22`:`${C.red}22`,
-                            color:c==="W"?C.green:c==="D"?C.gold:C.red,border:`1px solid ${c==="W"?C.green:c==="D"?C.gold:C.red}33`}}>
-                            {c}
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
-                        <div style={{width:80,height:5,borderRadius:3,background:"rgba(255,255,255,0.06)"}}>
-                          <div style={{height:"100%",borderRadius:3,background:col,width:`${t.power_pct}%`,opacity:.8}}/>
-                        </div>
-                        <span style={{fontSize:9,fontWeight:800,color:col,fontFamily:"'JetBrains Mono',monospace"}}>
-                          {t.power_pct}%
-                        </span>
-                      </div>
-                      {delta !== 0 && (
-                        <span style={{fontSize:9,fontWeight:800,color:delta>0?C.green:C.red,width:24,textAlign:"right"}}>
-                          {delta>0?`↑${delta}`:`↓${Math.abs(delta)}`}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: xG Leaders
-   ════════════════════════════════════════════════════════════ */
-function XGLeaders({ homeData, loading }) {
-  const leaders = homeData?.xg_leaders?.leaders;
-  if (!loading && !leaders?.length) return null;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>ATTACKING OUTPUT</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>xG Leaders</div>
-          </div>
-          <Link to="/player" style={{fontSize:11,fontWeight:700,color:C.blue,textDecoration:"none",
-            display:"flex",alignItems:"center",gap:5}}>
-            Full table
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke={C.blue} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </Link>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-          {loading && !leaders
-            ? Array.from({length:6}).map((_,i)=>(<div key={i} style={{padding:14,borderRadius:12,border:`1px solid ${C.line}`}}><Skeleton h={12} w="70%" style={{marginBottom:6}}/><Skeleton h={24} w="40%"/></div>))
-            : leaders?.slice(0,8).map((p,i) => {
-                const col = i===0?C.gold:i<3?C.green:C.blue;
-                return (
-                  <Link key={p.player_id} to={`/player/${p.player_id}`} style={{textDecoration:"none"}} className="hp-card">
-                    <div style={{padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,
-                      position:"relative",overflow:"hidden"}}>
-                      <div style={{position:"absolute",top:0,left:0,right:0,height:2,
-                        background:`linear-gradient(90deg,transparent,${col}55,transparent)`}}/>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                        {p.photo&&<img src={p.photo} alt="" style={{width:28,height:28,borderRadius:"50%",objectFit:"cover",
-                          border:`1px solid ${col}44`}} onError={e=>e.target.style.display="none"}/>}
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif",
-                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                          <div style={{fontSize:9,color:C.muted}}>{p.team}</div>
-                        </div>
-                        <span style={{fontSize:9,fontWeight:900,color:col,background:`${col}14`,
-                          border:`1px solid ${col}33`,padding:"2px 6px",borderRadius:999,flexShrink:0}}>#{i+1}</span>
-                      </div>
-                      <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                        <span style={{fontSize:24,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:col,lineHeight:1}}>
-                          {p.g_plus_a}
-                        </span>
-                        <span style={{fontSize:10,color:C.muted}}>G+A</span>
-                        <span style={{fontSize:10,color:C.soft,marginLeft:4}}>{p.per90}/90</span>
-                      </div>
-                      <div style={{display:"flex",gap:8,marginTop:4}}>
-                        <span style={{fontSize:9,color:C.muted}}>⚽ {p.goals}</span>
-                        <span style={{fontSize:9,color:C.muted}}>🎯 {p.assists}</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: Value Players
-   ════════════════════════════════════════════════════════════ */
-function ValuePlayers({ homeData, loading }) {
-  const players = homeData?.value_players?.players;
-  if (!loading && !players?.length) return null;
-
-  const POS_COLORS = { GK:C.gold, DEF:C.blue, MID:C.green, FWD:C.red };
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>FPL EDGE</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Value Players</div>
-          </div>
-          <Link to="/squad-builder" style={{fontSize:11,fontWeight:700,color:C.teal,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}>
-            Build squad →
-          </Link>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8}}>
-          {loading && !players
-            ? Array.from({length:6}).map((_,i)=>(<div key={i} style={{padding:14,borderRadius:12,border:`1px solid ${C.line}`}}><Skeleton h={12} w="60%" style={{marginBottom:6}}/><Skeleton h={20} w="50%"/></div>))
-            : players?.map((p,i) => {
-                const col = POS_COLORS[p.position] || C.blue;
-                return (
-                  <Link key={p.player_id} to={`/player/${p.player_id}`} style={{textDecoration:"none"}} className="hp-card">
-                    <div style={{padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                        <span style={{fontSize:9,fontWeight:800,color:col,background:`${col}14`,
-                          border:`1px solid ${col}33`,padding:"2px 6px",borderRadius:999}}>{p.position}</span>
-                        <span style={{fontSize:10,fontWeight:800,color:C.text,fontFamily:"'JetBrains Mono',monospace"}}>
-                          £{p.cost}m
-                        </span>
-                      </div>
-                      <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:2,fontFamily:"'Sora',sans-serif",
-                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                      <div style={{fontSize:9,color:C.muted,marginBottom:8}}>{p.team_short}</div>
-                      <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                        <span style={{fontSize:20,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:col,lineHeight:1}}>
-                          {p.value_score}
-                        </span>
-                        <span style={{fontSize:9,color:C.muted}}>pts/£m</span>
-                      </div>
-                      <div style={{display:"flex",gap:8,marginTop:4}}>
-                        <span style={{fontSize:9,color:C.muted}}>{p.total_points} pts</span>
-                        <span style={{fontSize:9,color:C.soft}}>owned {p.ownership}%</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: High Scoring Matches
-   ════════════════════════════════════════════════════════════ */
-function HighScoringMatches({ homeData, loading }) {
-  const matches = homeData?.high_scoring_matches?.matches;
-  if (!loading && !matches?.length) return null;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{marginBottom:18}}>
-          <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>THIS WEEK</div>
-          <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>High-Scoring Fixtures</div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {loading && !matches
-            ? Array.from({length:4}).map((_,i)=>(<div key={i} style={{padding:"10px 14px",borderRadius:10,border:`1px solid ${C.line}`}}><Skeleton h={14} w="75%"/></div>))
-            : matches?.map((m,i) => {
-                const col = i===0?C.red:i===1?C.orange:C.gold;
-                return (
-                  <Link key={m.fixture_id||i} to={m.fixture_id?`/match-preview/${m.fixture_id}`:"/predictions/premier-league"}
-                    style={{textDecoration:"none"}} className="hp-card">
-                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:10,
-                      background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`}}>
-                      <span style={{fontSize:12,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:col,width:30}}>
-                        {i+1}.
-                      </span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.text}}>
-                          {m.home} <span style={{color:C.muted}}>vs</span> {m.away}
-                        </div>
-                        <div style={{fontSize:9,color:C.muted,marginTop:2}}>
-                          {m.league} {m.kickoff && `• ${m.kickoff}`}
-                        </div>
-                      </div>
-                      <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                        <div style={{textAlign:"center"}}>
-                          <span style={{fontSize:18,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:col}}>
-                            {m.total_xg}
-                          </span>
-                          <div style={{fontSize:8,color:C.muted}}>total xG</div>
-                        </div>
-                        <div style={{textAlign:"center"}}>
-                          <span style={{fontSize:11,fontWeight:800,color:C.text,fontFamily:"'JetBrains Mono',monospace"}}>
-                            {m.score}
-                          </span>
-                          <div style={{fontSize:8,color:C.muted}}>projected</div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: Defensive Table
-   ════════════════════════════════════════════════════════════ */
-function DefensiveTable({ homeData, loading }) {
-  const table = homeData?.defense_table?.table;
-  if (!loading && !table?.length) return null;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>DEFENSIVE RECORDS</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Best Defences</div>
-          </div>
-          <span style={{fontSize:10,color:C.muted}}>{homeData?.defense_table?.league||"Premier League"}</span>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8}}>
-          {loading && !table
-            ? Array.from({length:6}).map((_,i)=>(<div key={i} style={{padding:14,borderRadius:12,border:`1px solid ${C.line}`}}><Skeleton h={12} w="60%" style={{marginBottom:6}}/><Skeleton h={22} w="40%"/></div>))
-            : table?.map((t,i) => {
-                const col = i===0?C.teal:i<3?C.blue:C.muted;
-                return (
-                  <Link key={t.team_id} to={`/team/${t.team_id}`} style={{textDecoration:"none"}} className="hp-card">
-                    <div style={{padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,0.02)",
-                      border:`1px solid ${C.line}`,position:"relative",overflow:"hidden"}}>
-                      <div style={{position:"absolute",top:0,left:0,right:0,height:2,
-                        background:`linear-gradient(90deg,transparent,${col}55,transparent)`}}/>
-                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                        {t.logo&&<img src={t.logo} alt="" style={{width:18,height:18,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>}
-                        <span style={{fontSize:11,fontWeight:800,color:C.text,overflow:"hidden",textOverflow:"ellipsis",
-                          whiteSpace:"nowrap",flex:1}}>{t.team_name}</span>
-                        <span style={{fontSize:9,fontWeight:900,color:col}}>#{i+1}</span>
-                      </div>
-                      <div style={{display:"flex",alignItems:"baseline",gap:3}}>
-                        <span style={{fontSize:22,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:col,lineHeight:1}}>
-                          {t.ga_pg}
-                        </span>
-                        <span style={{fontSize:9,color:C.muted}}>GA/game</span>
-                      </div>
-                      <div style={{fontSize:9,color:C.soft,marginTop:3}}>{t.goals_against} total · {t.played}P</div>
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: Differential Captains
-   ════════════════════════════════════════════════════════════ */
-function DifferentialCaptains({ homeData, loading }) {
-  const captains = homeData?.differential_captains?.captains;
-  if (!loading && !captains?.length) return null;
-
-  const POS_COLORS = { GK:C.gold, DEF:C.blue, MID:C.green, FWD:C.red };
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>FPL CAPTAINS</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Differential Picks</div>
-          </div>
-          <Link to="/gameweek-insights" style={{fontSize:11,fontWeight:700,color:C.orange,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}>
-            GW insights →
-          </Link>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:8}}>
-          {loading && !captains
-            ? Array.from({length:5}).map((_,i)=>(<div key={i} style={{padding:14,borderRadius:12,border:`1px solid ${C.line}`}}><Skeleton h={12} w="55%" style={{marginBottom:6}}/><Skeleton h={18} w="70%"/></div>))
-            : captains?.map((p,i) => {
-                const col = POS_COLORS[p.position] || C.green;
-                return (
-                  <Link key={p.player_id} to={`/player/${p.player_id}`} style={{textDecoration:"none"}} className="hp-card">
-                    <div style={{padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                        <span style={{fontSize:9,fontWeight:800,color:col,background:`${col}14`,
-                          border:`1px solid ${col}33`,padding:"2px 6px",borderRadius:999}}>{p.position}</span>
-                        <span style={{fontSize:9,color:C.muted}}>{p.ownership}% owned</span>
-                      </div>
-                      <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:2,fontFamily:"'Sora',sans-serif",
-                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                      <div style={{fontSize:9,color:C.muted,marginBottom:8}}>{p.team_short} · £{p.cost}m</div>
-                      <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                        <span style={{fontSize:18,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:col,lineHeight:1}}>
-                          {p.form}
-                        </span>
-                        <span style={{fontSize:9,color:C.muted}}>form</span>
-                      </div>
-                      <div style={{marginTop:4,fontSize:9,color:C.soft}}>
-                        {p.total_points} season pts
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   NEW SECTION: Analytics Glossary Highlight
-   ════════════════════════════════════════════════════════════ */
-function AnalyticsGlossary({ homeData, loading }) {
-  const term = homeData?.analytics_term;
-  const col  = term?.col || C.teal;
-
-  return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <Link to={term?.learn_path || "/learn"} style={{textDecoration:"none",display:"block"}} className="hp-card">
-        <div style={{
-          background:`linear-gradient(135deg,rgba(12,18,30,0.98),${col}0d)`,
-          border:`1px solid ${col}30`,borderRadius:20,padding:"24px 32px",
-          display:"flex",gap:32,alignItems:"center",flexWrap:"wrap",position:"relative",overflow:"hidden",
-        }}>
-          <div style={{position:"absolute",top:0,right:0,width:250,height:200,
-            background:`radial-gradient(circle at 100% 0%,${col}10,transparent 70%)`,pointerEvents:"none"}}/>
-          {/* Badge */}
-          <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-            <div style={{width:56,height:56,borderRadius:16,background:`${col}15`,border:`1px solid ${col}30`,
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>
-              {loading&&!term ? "📐" : term?.icon || "📐"}
-            </div>
-            <div>
-              <div style={{fontSize:9,fontWeight:900,color:col,letterSpacing:"0.15em",marginBottom:2}}>ANALYTICS TERM</div>
-              {loading&&!term
-                ? <Skeleton w={120} h={22}/>
-                : <div style={{fontSize:22,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>
-                    {term?.short||"xG"}
-                  </div>
-              }
-            </div>
-          </div>
-          {/* Definition */}
-          <div style={{flex:1,minWidth:200}}>
-            {loading&&!term
-              ? <><Skeleton h={14} style={{marginBottom:6}}/><Skeleton h={14} w="80%"/></>
-              : <>
-                  <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6,fontFamily:"'Sora',sans-serif"}}>
-                    {term?.term}
-                  </div>
-                  <p style={{fontSize:12,color:C.muted,margin:0,lineHeight:1.7,fontFamily:"'Inter',sans-serif"}}>
-                    {term?.definition}
-                  </p>
-                </>
-            }
-          </div>
-          {/* Example stat */}
-          <div style={{textAlign:"right",flexShrink:0}}>
-            {term?.example_value && (
-              <>
-                <div style={{fontSize:32,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-                  color:col,lineHeight:1,textShadow:`0 0 18px ${col}55`}}>{term.example_value}</div>
-                <div style={{fontSize:9,color:C.muted,letterSpacing:"0.08em"}}>{term.example_unit}</div>
-                <div style={{fontSize:10,color:C.soft,marginTop:3}}>{term.example?.split(":")[0]}</div>
-              </>
-            )}
-            <div style={{display:"flex",alignItems:"center",gap:4,marginTop:8,justifyContent:"flex-end"}}>
-              <span style={{fontSize:11,fontWeight:700,color:col}}>Learn more</span>
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
-          </div>
-        </div>
-      </Link>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   FEATURE CARDS data (unchanged)
-   ════════════════════════════════════════════════════════════ */
-const FEATURES = [
-  { to:"/predictions/premier-league", color:C.blue,   title:"Match Predictions",    subtitle:"This week's fixtures →",  description:"Dixon-Coles Poisson + Elo models. Win probabilities, expected scorelines and betting edge analysis.", graphic:PitchGraphic,    badge:"LIVE" },
-  { to:"/best-team",                  color:C.green,  title:"Best XI Builder",       subtitle:"Build your squad →",      description:"Optimal fantasy XI using composite scoring: fixtures, form, ICT index and season PPG.", graphic:FormationGraphic, badge:"FPL"  },
-  { to:"/squad-builder",              color:C.gold,   title:"Squad Builder",         subtitle:"Plan transfers →",         description:"Full FPL squads with budget constraints. Best value picks, differentials and captain options.", graphic:BarGraphic,       badge:"FPL"  },
-  { to:"/player",                     color:C.purple, title:"Player Insight",        subtitle:"Analyse any player →",     description:"Deep statistical profiles — xG, xA, form trends and fixture difficulty across the season.", graphic:RadarGraphic,     badge:"STATS"},
-  { to:"/gameweek-insights",          color:C.orange, title:"GW Insights",           subtitle:"This gameweek →",          description:"FDR, captain picks, differential watchlist and injury news all in one place.", graphic:TrendGraphic,     badge:"FPL"  },
-  { to:"/fpl-table",                  color:C.red,    title:"Player Stats Table",    subtitle:"Full stats table →",       description:"Sortable stats for all players — filter by position, team, price. Find hidden gems.", graphic:HeatmapGraphic,  badge:"STATS"},
-  { to:"/games",                      color:C.teal,   title:"Sports Arcade",         subtitle:"Play 12 games →",          description:"Penalty shootouts, tennis, analytics quizzes, 2048 and more. Learn stats through play.", graphic:GameGraphic,      badge:"NEW"  },
-  { to:"/learn",                      color:C.pink,   title:"Ground Zero",           subtitle:"Learn the models →",       description:"Interactive explainers for every algorithm: xG, Poisson, Elo, Dixon-Coles and more.", graphic:LearnGraphic,    badge:"EDU"  },
-];
-
-/* ════════════════════════════════════════════════════════════
-   MAIN PAGE
-   ════════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────
+   MAIN HOMEPAGE
+   ───────────────────────────────────────────────────────────── */
 export default function HomePage() {
+  const { d, loading } = useDashboard();
   const isMobile = useIsMobile();
-  const { homeData, loading } = useHomeData();
+  const [statRef, statVis] = useVisible(0.1);
+
+  const preds   = d?.top_predictions?.predictions ?? [];
+  const heroP   = preds[0] ?? null;
+  const gridP   = preds.slice(1, 4);
+  const rankings= d?.power_rankings?.rankings ?? [];
+  const xgList  = d?.xg_leaders?.leaders      ?? [];
+  const valuePs = d?.value_players?.players   ?? [];
+  const captains= d?.differential_captains?.captains ?? [];
+
+  const accuracy = d?.model_metrics?.overall_accuracy ?? 64;
 
   return (
-    <div style={{minHeight:"100vh",background:"transparent",overflow:"hidden"}}>
-      <style>{HOME_CSS}</style>
-
-      {/* ── HERO ── */}
-      <section style={{position:"relative",padding:"80px 20px 60px",maxWidth:1200,margin:"0 auto",textAlign:"center",overflow:"hidden"}}>
-        <PitchGridBg/>
-        <div style={{position:"relative",zIndex:1}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"5px 14px",borderRadius:999,
-            background:"rgba(79,158,255,0.1)",border:"1px solid rgba(79,158,255,0.25)",marginBottom:24,
-            animation:"fadeDown 600ms ease both"}}>
-            <span style={{width:6,height:6,borderRadius:"50%",background:C.blue,animation:"livePulse 2s ease infinite"}}/>
-            <span style={{fontSize:11,fontWeight:700,color:C.blue,letterSpacing:"0.1em",fontFamily:"'Inter',sans-serif"}}>FOOTBALL ANALYTICS PLATFORM</span>
-          </div>
-          <h1 style={{fontSize:"clamp(38px,6vw,74px)",fontWeight:900,color:"#f4f8ff",margin:"0 0 6px",
-            fontFamily:"'Sora',sans-serif",letterSpacing:"-0.03em",lineHeight:1.06,animation:"fadeDown 600ms 100ms ease both"}}>
-            Where Football Meets<br/>
-            <span style={{background:"linear-gradient(135deg,#4f9eff 0%,#00e09e 55%,#f2c94c 100%)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Data Science</span>
-          </h1>
-          <p style={{fontSize:"clamp(14px,2vw,18px)",color:C.muted,maxWidth:640,margin:"18px auto 0",
-            lineHeight:1.7,fontFamily:"'Inter',sans-serif",animation:"fadeDown 600ms 200ms ease both"}}>
-            Whether you want to know <strong style={{color:"#7ab8ff"}}>who will win on Saturday</strong>,
-            build the <strong style={{color:C.green}}>best FPL squad</strong>,
-            or understand the <strong style={{color:C.gold}}>stats behind the game</strong> — you're in the right place.
-          </p>
-          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",
-            marginTop:36,animation:"fadeDown 600ms 300ms ease both"}}>
-            {[
-              {to:"/predictions/premier-league",label:"This Week's Predictions",col:"#3b7fd4",bg:"linear-gradient(135deg,#3b7fd4,#1a5fad)",shadow:`rgba(79,158,255,0.3)`,icon:"📈"},
-              {to:"/best-team",label:"Build My FPL Team",col:C.green,bg:`${C.green}18`,border:`${C.green}40`,icon:"⭐"},
-              {to:"/learn",label:"Ground Zero",col:C.pink,bg:`${C.pink}14`,border:`${C.pink}38`,icon:"🔬"},
-            ].map(({to,label,col,bg,border,shadow,icon},i)=>(
-              <Link key={i} to={to} className="hp-btn" style={{
-                display:"inline-flex",alignItems:"center",gap:8,padding:"13px 26px",borderRadius:12,
-                background:bg,border:`1px solid ${border||"transparent"}`,color:i===0?"#fff":col,
-                fontSize:14,fontWeight:700,textDecoration:"none",fontFamily:"'Inter',sans-serif",
-                boxShadow:shadow?`0 4px 24px ${shadow}`:"none",
-              }}><span>{icon}</span>{label}</Link>
-            ))}
-          </div>
-        </div>
-      </section>
+    <div style={{ minHeight: "100vh", background: T.navy, color: T.text, position: "relative" }}>
+      <style>{CSS}</style>
+      <Background />
 
       {/* ── LIVE TICKER ── */}
-      <LiveTicker homeData={homeData}/>
+      <LiveTicker d={d} />
 
-      {/* ── STAT TILES ── */}
-      <section style={{maxWidth:1100,margin:"0 auto",padding:"40px 20px 48px"}}>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",animation:"fadeUp 600ms 400ms ease both"}}>
-          <StatTile value={4}    suffix=" leagues"  label="Leagues Covered"    color={C.blue}   delay={0}   icon="🌍" trend="↑ 2025"/>
-          <StatTile value={380}  suffix="+"          label="Fixtures Predicted"  color={C.green}  delay={100} icon="📊" trend="This season"/>
-          <StatTile value={5000} suffix="+"          label="Players Tracked"     color={C.gold}   delay={200} icon="👤"/>
-          <StatTile value={3}    suffix=" models"   label="Prediction Models"   color={C.purple} delay={300} icon="🧠" trend="Active"/>
-          <StatTile value={homeData?.model_metrics?.overall_accuracy||64} suffix="%" label="Match Accuracy" color={C.teal} delay={400} icon="🎯" trend="Season avg"/>
+      {/* ── HERO SECTION ── */}
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", padding: "48px 20px 0" }}>
+        {/* Hero headline */}
+        <div style={{ marginBottom: 32, animation: "fadeUp 600ms ease both" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, background: "rgba(79,158,255,0.1)", border: `1px solid rgba(79,158,255,0.22)`, marginBottom: 16 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.blue, animation: "ringPulse 2s ease infinite" }} />
+            <span style={{ fontSize: 10, fontWeight: 800, color: T.blue, letterSpacing: "0.12em", fontFamily: T.body }}>FOOTBALL ANALYTICS PLATFORM</span>
+          </div>
+          <h1 style={{ fontSize: "clamp(32px,5vw,64px)", fontWeight: 900, margin: "0 0 8px", fontFamily: T.head, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+            Where Football Meets<br />
+            <span style={{ background: "linear-gradient(135deg,#4f9eff 0%,#00e09e 55%,#f2c94c 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Data Science</span>
+          </h1>
+          <p style={{ fontSize: "clamp(13px,1.8vw,17px)", color: T.muted, maxWidth: 580, margin: 0, lineHeight: 1.7, fontFamily: T.body }}>
+            Predictions powered by Dixon-Coles, Elo, and xG models across 4 major leagues.
+          </p>
         </div>
-      </section>
 
-      {/* ── PREDICTIONS STRIP ── */}
-      <PredictionStrip homeData={homeData} loading={loading}/>
-
-      {/* ── STAT OF THE DAY ── */}
-      <StatOfMoment homeData={homeData} loading={loading}/>
-
-      {/* ── DIVIDER ── */}
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 48px"}}>
-        <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(79,158,255,0.3),rgba(0,224,158,0.3),transparent)"}}/>
+        {/* Hero grid: big card left, predictions right */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 360px", gap: 16, marginBottom: 16 }}>
+          <HeroMatchCard d={d} loading={loading} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {loading && !preds.length
+              ? Array.from({ length: 3 }).map((_, i) => <Skel key={i} h={110} r={16} />)
+              : gridP.map((p, i) => <PredCard key={i} p={p} i={i} />)
+            }
+            <Link to="/predictions/premier-league" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              padding: "12px", borderRadius: 14, background: T.glass, border: `1px solid ${T.border}`,
+              fontSize: 12, fontWeight: 700, color: T.blue, textDecoration: "none", fontFamily: T.body,
+            }}>
+              All predictions →
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* ── WHAT IS THIS ── */}
-      <section style={{maxWidth:900,margin:"0 auto",padding:"0 20px 64px"}}>
-        <div style={{padding:"32px 36px",borderRadius:24,background:"rgba(255,255,255,0.02)",
-          border:`1px solid ${C.line}`,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,right:0,width:300,height:200,
-            background:"radial-gradient(circle at 100% 0%,rgba(79,158,255,0.07),transparent 70%)",pointerEvents:"none"}}/>
-          <h2 style={{fontSize:22,fontWeight:900,color:"#f4f8ff",margin:"0 0 16px",
-            fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>Built for football fans who love numbers</h2>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:20,fontFamily:"'Inter',sans-serif"}}>
+      {/* ── STAT TILES ── */}
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", padding: "24px 20px 56px" }}>
+        <div ref={statRef} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <StatTile value={4}        suffix=" leagues"  label="Leagues Covered"   color={T.blue}   delay={0}   icon="🌍" trend="↑ 2025" vis={statVis} />
+          <StatTile value={380}      suffix="+"          label="Fixtures Predicted" color={T.green}  delay={100} icon="📊" trend="Season" vis={statVis} />
+          <StatTile value={5000}     suffix="+"          label="Players Tracked"    color={T.gold}   delay={200} icon="👤" vis={statVis} />
+          <StatTile value={3}        suffix=" models"   label="Prediction Models"  color={T.purple} delay={300} icon="🧠" trend="Active" vis={statVis} />
+          <StatTile value={accuracy} suffix="%"          label="Match Accuracy"     color={T.teal}   delay={400} icon="🎯" trend="Avg"    vis={statVis} />
+        </div>
+      </div>
+
+      {/* ── MODEL INSIGHTS ── */}
+      <Section>
+        <SectionHeading title="Model Insights" sub="Prediction engine performance and market edges" color={T.green} cta="Full report" ctaTo="/model-performance" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+          <ModelPerfChart d={d} vis={true} />
+          <RecentResults d={d} vis={true} />
+        </div>
+      </Section>
+
+      {/* ── TEAM ANALYTICS ── */}
+      <Section>
+        <SectionHeading title="Team Analytics" sub="Power rankings, defensive records, title race" color={T.blue} cta="All teams" ctaTo="/leagues" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+          {/* Power Rankings */}
+          <div>
+            <div style={{ marginBottom: 12 }}><SectionLabel color={T.blue} icon="⚡">Power Rankings</SectionLabel></div>
+            {loading && !rankings.length
+              ? Array.from({ length: 6 }).map((_, i) => <Skel key={i} h={40} r={12} style={{ marginBottom: 6 }} />)
+              : rankings.slice(0, 6).map((t, i) => <div key={t.team_id} style={{ marginBottom: 6 }}><PowerRankingCard team={t} rank={i + 1} vis={true} /></div>)
+            }
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <TitleRaceCard d={d} vis={true} />
+            <MiniHeatmap d={d} vis={true} />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── PLAYER ANALYTICS ── */}
+      <Section>
+        <SectionHeading title="Player Analytics" sub="xG leaders, value picks, trending performers" color={T.purple} cta="All players" ctaTo="/player" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+          {/* xG Leaders */}
+          <div>
+            <div style={{ marginBottom: 12 }}><SectionLabel color={T.gold} icon="⚽">xG Leaders</SectionLabel></div>
+            {loading && !xgList.length
+              ? Array.from({ length: 6 }).map((_, i) => <Skel key={i} h={44} r={10} style={{ marginBottom: 5 }} />)
+              : xgList.slice(0, 6).map((p, i) => <div key={p.player_id} style={{ marginBottom: 5 }}><XGLeaderRow p={p} rank={i + 1} vis={true} /></div>)
+            }
+          </div>
+          {/* Value Players */}
+          <div>
+            <div style={{ marginBottom: 12 }}><SectionLabel color={T.teal} icon="💎">Value Players</SectionLabel></div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {loading && !valuePs.length
+                ? Array.from({ length: 4 }).map((_, i) => <Skel key={i} h={120} r={14} />)
+                : valuePs.slice(0, 4).map((p, i) => <ValuePlayerCard key={p.player_id} p={p} i={i} vis={true} />)
+              }
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── FANTASY INTELLIGENCE ── */}
+      <Section>
+        <SectionHeading title="Fantasy Intelligence" sub="Captain picks, differentials, fixture runs" color={T.gold} cta="FPL tools" ctaTo="/best-team" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+          {/* Captain Picks */}
+          <div>
+            <div style={{ marginBottom: 12 }}><SectionLabel color={T.gold} icon="©">Captain Picks</SectionLabel></div>
+            {loading && !captains.length
+              ? Array.from({ length: 4 }).map((_, i) => <Skel key={i} h={56} r={14} style={{ marginBottom: 6 }} />)
+              : captains.slice(0, 4).map((p, i) => <div key={p.player_id} style={{ marginBottom: 6 }}><CaptainCard p={p} rank={i + 1} vis={true} /></div>)
+            }
+            <Link to="/captaincy" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11, fontWeight: 700, color: T.gold, textDecoration: "none", fontFamily: T.body }}>Full captain tool →</Link>
+          </div>
+          {/* Differentials + form */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 20, padding: "20px 22px" }}>
+              <SectionLabel color={T.green} icon="🎯">Differentials</SectionLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {(d?.differential_captains?.captains ?? []).slice(0, 3).map((p, i) => (
+                  <Link key={p.player_id} to={`/player/${p.player_id}`} style={{ textDecoration: "none" }}>
+                    <div className="hp3-card" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: T.glass, border: `1px solid ${T.border}` }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: POS_COL[p.position] || T.blue, background: `${POS_COL[p.position] || T.blue}18`, border: `1px solid ${POS_COL[p.position] || T.blue}33`, padding: "2px 6px", borderRadius: 999 }}>{p.position}</span>
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: T.text, fontFamily: T.body }}>{p.name}</span>
+                      <span style={{ fontSize: 9, color: T.muted }}>{p.ownership}% owned</span>
+                      <span style={{ fontSize: 11, fontWeight: 900, color: T.green, fontFamily: T.mono }}>{p.form}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link to="/differentials" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 12, fontSize: 11, fontWeight: 700, color: T.green, textDecoration: "none", fontFamily: T.body }}>Find differentials →</Link>
+            </div>
+            {/* Transfer planner CTA */}
+            <Link to="/transfer-planner" style={{ textDecoration: "none" }}>
+              <div className="hp3-card" style={{ background: `linear-gradient(135deg,rgba(8,13,24,.98),${T.blue}10)`, border: `1px solid ${T.blue}33`, borderRadius: 20, padding: "20px 22px" }}>
+                <SectionLabel color={T.blue} icon="↔">Transfer Planner</SectionLabel>
+                <p style={{ fontSize: 12, color: T.muted, margin: "0 0 12px", lineHeight: 1.65, fontFamily: T.body }}>EP-ranked transfer targets in and out based on upcoming fixtures, form, and value.</p>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: T.blue, fontFamily: T.body }}>
+                  Open Transfer Planner →
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── FOOTBALL INTEL ── */}
+      <Section>
+        <SectionHeading title="Football Intel" sub="Transfers, tactics, and model reports" color={T.orange} />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14 }}>
+          <TransferCard  d={d} />
+          <TacticalCard  d={d} />
+          <AnalyticsTermCard d={d} />
+        </div>
+      </Section>
+
+      {/* ── LATEST / HOW IT WORKS ── */}
+      <Section>
+        <div style={{ padding: "28px 32px", borderRadius: 20, background: T.glass, border: `1px solid ${T.border}`, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: 0, right: 0, width: 260, height: 180, background: "radial-gradient(circle at 100% 0%,rgba(79,158,255,0.07),transparent 70%)", pointerEvents: "none" }} />
+          <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 900, color: T.text, fontFamily: T.head, letterSpacing: "-0.02em" }}>How the models work</h2>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 18, fontFamily: T.body }}>
             {[
-              ["Planning FPL transfers?",C.blue,"Get data-driven squad recommendations with FDR, form ratings and projected points for the next 6 gameweeks."],
-              ["Want to bet smarter?",C.gold,"Our Poisson + Elo model identifies where bookmakers are mispriced. See model vs implied odds edge for every fixture."],
-              ["Is Saturday worth watching?",C.green,"Predicted scorelines, expected goal totals and match style indicators tell you whether it'll be a banger or bore draw."],
-              ["Just love football stats?",C.purple,"Deep player profiles, scoring patterns, passing accuracy, shot maps and head-to-head records across 4 top leagues."],
-            ].map(([title,col,body],i)=>(
-              <div key={i} style={{display:"flex",flexDirection:"column",gap:5}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.text,display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0,boxShadow:`0 0 6px ${col}`}}/>
+              ["Dixon-Coles Poisson", T.blue,   "Corrects for low-score bias in standard Poisson. Recalibrated every 48h from xG-adjusted team stats across all 5 leagues."],
+              ["Elo Rating System",   T.gold,   "Rebuilt from scratch each season using actual results. Home advantage is treated as a contextual multiplier, not a constant."],
+              ["xG Integration",     T.green,  "Goals scored are noisy. We weight team attack/defence using xG rates alongside actual goals to reduce luck amplification."],
+              ["Monte Carlo Season", T.purple, "50,000 simulated seasons from current standings. Title, top-4, and relegation probabilities updated after every matchday."],
+            ].map(([title, col, body]) => (
+              <div key={title} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.text, display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: col, flexShrink: 0, boxShadow: T.gB(col) }} />
                   {title}
                 </div>
-                <p style={{margin:0,fontSize:12,color:C.muted,lineHeight:1.65}}>{body}</p>
+                <p style={{ margin: 0, fontSize: 11, color: T.muted, lineHeight: 1.7 }}>{body}</p>
               </div>
             ))}
           </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
+            {["xG Model", "Poisson Distribution", "Dixon-Coles", "Elo Ratings", "Form Weighting", "Monte Carlo"].map(t => (
+              <span key={t} style={{ fontSize: 9, fontWeight: 800, color: T.muted, background: T.glass, border: `1px solid ${T.border}`, padding: "3px 9px", borderRadius: 999, letterSpacing: "0.06em", fontFamily: T.body }}>{t}</span>
+            ))}
+          </div>
+          <Link to="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16, fontSize: 12, fontWeight: 700, color: T.pink, textDecoration: "none", fontFamily: T.body }}>
+            Learn all the models in Ground Zero →
+          </Link>
         </div>
-      </section>
-
-      {/* ── FEATURE CARDS ── */}
-      <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}}>
-        <div style={{marginBottom:28,textAlign:"center"}}>
-          <h2 style={{fontSize:24,fontWeight:900,color:"#f4f8ff",margin:"0 0 8px",
-            fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>Everything you need, in one place</h2>
-          <p style={{fontSize:13,color:C.muted,margin:0,fontFamily:"'Inter',sans-serif"}}>8 tools. One platform. Pick where to start.</p>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:14}}>
-          {FEATURES.map((f,i) => <FeatureCard key={f.to} {...f} delay={i*55}/>)}
-        </div>
-      </section>
-
-      {/* ── MODEL PERFORMANCE ── */}
-      <ModelPerformance homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: POWER RANKINGS ── */}
-      <PowerRankings homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: XG LEADERS ── */}
-      <XGLeaders homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: HIGH SCORING MATCHES ── */}
-      <HighScoringMatches homeData={homeData} loading={loading}/>
-
-      {/* ── RECENT RESULTS ── */}
-      <RecentResults homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: DEFENSIVE TABLE ── */}
-      <DefensiveTable homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: VALUE PLAYERS ── */}
-      <ValuePlayers homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: DIFFERENTIAL CAPTAINS ── */}
-      <DifferentialCaptains homeData={homeData} loading={loading}/>
-
-      {/* ── NEW: ANALYTICS GLOSSARY ── */}
-      <AnalyticsGlossary homeData={homeData} loading={loading}/>
+      </Section>
 
       {/* ── LEAGUES STRIP ── */}
-      <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 80px"}}>
-        <div style={{padding:"26px 32px",borderRadius:20,background:"rgba(255,255,255,0.02)",
-          border:`1px solid ${C.line}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:20}}>
+      <Section>
+        <div style={{ padding: "24px 28px", borderRadius: 20, background: T.glass, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <p style={{margin:"0 0 4px",fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",letterSpacing:"0.1em",textTransform:"uppercase"}}>Covering 4 top leagues</p>
-            <h3 style={{margin:0,fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Pick your league</h3>
+            <p style={{ margin: "0 0 4px", fontSize: 10, color: T.muted, fontFamily: T.body, letterSpacing: "0.1em", textTransform: "uppercase" }}>Covering 4 top leagues</p>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: T.text, fontFamily: T.head }}>Pick your league</h3>
           </div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {[
-              {to:"/predictions/premier-league",name:"Premier League",col:"#4f9eff",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#012169"/><path d="M0 0l18 13M18 0L0 13" stroke="white" strokeWidth="3"/><path d="M0 0l18 13M18 0L0 13" stroke="#C8102E" strokeWidth="1.8"/><path d="M9 0v13M0 6.5h18" stroke="white" strokeWidth="4"/><path d="M9 0v13M0 6.5h18" stroke="#C8102E" strokeWidth="2.4"/></svg>},
-              {to:"/predictions/la-liga",name:"La Liga",col:"#ff6b35",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#AA151B"/><rect y="2.8" width="18" height="7.4" fill="#F1BF00"/></svg>},
-              {to:"/predictions/serie-a",name:"Serie A",col:"#00e09e",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#009246"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#CE2B37"/></svg>},
-              {to:"/predictions/ligue-1",name:"Ligue 1",col:"#b388ff",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#002395"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>},
-            ].map(({to,name,col,flag})=>(
-              <Link key={to} to={to} className="hp-btn" style={{display:"flex",alignItems:"center",gap:8,
-                padding:"10px 18px",borderRadius:12,background:col+"12",border:`1.5px solid ${col}35`,
-                color:col,fontSize:13,fontWeight:700,textDecoration:"none",fontFamily:"'Inter',sans-serif"}}>
-                <span style={{display:"flex",alignItems:"center",borderRadius:2,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.4)"}}>{flag}</span>
+              { to: "/predictions/premier-league", name: "Premier League", col: "#4f9eff", flag: <svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#012169" /><path d="M0 0l18 13M18 0L0 13" stroke="white" strokeWidth="3" /><path d="M0 0l18 13M18 0L0 13" stroke="#C8102E" strokeWidth="1.8" /><path d="M9 0v13M0 6.5h18" stroke="white" strokeWidth="4" /><path d="M9 0v13M0 6.5h18" stroke="#C8102E" strokeWidth="2.4" /></svg> },
+              { to: "/predictions/la-liga", name: "La Liga", col: "#ff6b35", flag: <svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#AA151B" /><rect y="2.8" width="18" height="7.4" fill="#F1BF00" /></svg> },
+              { to: "/predictions/serie-a", name: "Serie A", col: "#00e09e", flag: <svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#009246" /><rect x="6" width="6" height="13" fill="white" /><rect x="12" width="6" height="13" fill="#CE2B37" /></svg> },
+              { to: "/predictions/ligue-1", name: "Ligue 1", col: "#b388ff", flag: <svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#002395" /><rect x="6" width="6" height="13" fill="white" /><rect x="12" width="6" height="13" fill="#ED2939" /></svg> },
+            ].map(({ to, name, col, flag }) => (
+              <Link key={to} to={to} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 12,
+                background: col + "12", border: `1.5px solid ${col}35`, color: col,
+                fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: T.body,
+                transition: "all 150ms ease",
+              }}>
+                <span style={{ display: "flex", alignItems: "center", borderRadius: 2, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.4)" }}>{flag}</span>
                 {name}
               </Link>
             ))}
           </div>
         </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section style={{maxWidth:900,margin:"0 auto",padding:"0 20px 80px"}}>
-        <div style={{padding:"28px 36px",borderRadius:20,background:"rgba(255,255,255,0.02)",
-          border:`1px solid ${C.line}`,display:"flex",gap:24,alignItems:"flex-start",flexWrap:"wrap"}}>
-          <div style={{flex:"0 0 auto"}}>
-            <svg width="120" height="68" viewBox="0 0 120 68" fill="none" style={{display:"block"}}>
-              <rect x="1" y="1" width="118" height="66" rx="5" fill="#0a2a10" stroke="rgba(255,255,255,0.1)" strokeWidth=".8"/>
-              <line x1="60" y1="1" x2="60" y2="67" stroke="rgba(255,255,255,0.1)" strokeWidth=".6"/>
-              <circle cx="60" cy="34" r="12" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth=".6"/>
-              <rect x="1" y="22" width="16" height="24" rx="1" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth=".6"/>
-              <rect x="103" y="22" width="16" height="24" rx="1" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth=".6"/>
-              <path d="M30 34 C48 20 74 20 95 34" stroke="#4f9eff" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" opacity=".7"/>
-              <circle cx="95" cy="34" r="4" fill="#4f9eff" opacity=".9">
-                <animate attributeName="r" values="4;6;4" dur="1.2s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values=".9;.4;.9" dur="1.2s" repeatCount="indefinite"/>
-              </circle>
-            </svg>
-          </div>
-          <div>
-            <h3 style={{margin:"0 0 8px",fontSize:15,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>How do our predictions work?</h3>
-            <p style={{margin:"0 0 10px",fontSize:12,color:C.muted,lineHeight:1.65,fontFamily:"'Inter',sans-serif",maxWidth:520}}>
-              Each prediction combines: a <span style={{color:C.green,fontWeight:700}}>Dixon-Coles Poisson model</span> calibrated on real xG data, an <span style={{color:C.blue,fontWeight:700}}>Elo rating system</span> updated after every result, and a <span style={{color:C.gold,fontWeight:700}}>form-weighted scoring model</span>. Confidence scores reflect agreement between all three.
-            </p>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {["xG Model","Poisson Distribution","Dixon-Coles","Elo Ratings","Form Weighting"].map(t=>(
-                <span key={t} style={{fontSize:9,fontWeight:800,color:C.muted,background:"rgba(255,255,255,0.05)",
-                  border:`1px solid ${C.line}`,padding:"3px 9px",borderRadius:999,letterSpacing:"0.06em"}}>{t}</span>
-              ))}
-            </div>
-            <Link to="/learn" style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:12,
-              fontSize:12,fontWeight:700,color:C.pink,textDecoration:"none",fontFamily:"'Inter',sans-serif"}}>
-              Learn how it all works in Ground Zero →
-            </Link>
-          </div>
-        </div>
-      </section>
+      </Section>
     </div>
   );
 }

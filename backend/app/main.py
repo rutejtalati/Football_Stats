@@ -94,6 +94,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.routes.model_diagnostics import router as diagnostics_router
+    app.include_router(diagnostics_router)
+except ImportError:
+    pass
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════

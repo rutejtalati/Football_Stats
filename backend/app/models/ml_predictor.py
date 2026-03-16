@@ -294,8 +294,16 @@ def _compute_metrics(
     X_val: np.ndarray,
     y_val: np.ndarray,
 ) -> Dict[str, float]:
-    """Compute log-loss, accuracy, and per-class accuracy on a held-out split."""
-    from sklearn.metrics import log_loss, accuracy_score
+    """
+    Compute log-loss, accuracy, per-class accuracy, and confusion matrix
+    on a held-out validation split.
+
+    The confusion matrix is stored in meta.json at training time so the
+    diagnostics endpoint can retrieve it without reloading the dataset.
+    Rows = actual outcome, columns = predicted outcome.
+    Labels: 0 = away_win, 1 = draw, 2 = home_win.
+    """
+    from sklearn.metrics import log_loss, accuracy_score, confusion_matrix
 
     proba = clf_calibrated.predict_proba(X_val)
     preds = np.argmax(proba, axis=1)
@@ -308,11 +316,30 @@ def _compute_metrics(
         if mask.sum() > 0:
             per_class[label] = round(float(accuracy_score(y_val[mask], preds[mask])), 4)
 
+    # ── Confusion matrix ──────────────────────────────────────────────
+    # Raw counts and row-normalised version (recall per class on the diagonal)
+    cm_raw = confusion_matrix(y_val, preds, labels=[0, 1, 2])
+
+    row_sums = cm_raw.sum(axis=1, keepdims=True).astype(float)
+    row_sums[row_sums == 0] = 1.0           # avoid div-by-zero for unseen classes
+    cm_norm  = np.round(cm_raw.astype(float) / row_sums, 4)
+
+    confusion = {
+        "labels":              CLASS_LABELS,   # ["away_win", "draw", "home_win"]
+        "matrix":              cm_raw.tolist(),
+        "matrix_normalised":   cm_norm.tolist(),
+        "description":         (
+            "Rows = actual outcome, columns = predicted outcome. "
+            "Normalised matrix shows recall per class (row sums to 1)."
+        ),
+    }
+
     return {
-        "log_loss":    round(float(ll),  4),
-        "accuracy":    round(float(acc), 4),
-        "per_class":   per_class,
-        "n_val":       int(len(y_val)),
+        "log_loss":       round(float(ll),  4),
+        "accuracy":       round(float(acc), 4),
+        "per_class":      per_class,
+        "n_val":          int(len(y_val)),
+        "confusion_matrix": confusion,
     }
 
 
@@ -339,6 +366,151 @@ def _compute_feature_importances(
         col: round(float(imp), 5)
         for col, imp in zip(FEATURE_COLUMNS, r.importances_mean)
     }
+
+
+def _unwrap_base_estimator(clf_outer: Any) -> Any:
+    """
+    Navigate the CalibratedClassifierCV → _CalibratedClassifier →
+    FrozenEstimator wrapper chain to reach the actual fitted estimator
+    (XGBClassifier or HistGradientBoostingClassifier).
+    """
+    inner = clf_outer
+    # CalibratedClassifierCV.calibrated_classifiers_[0]
+    if hasattr(inner, "calibrated_classifiers_") and inner.calibrated_classifiers_:
+        inner = inner.calibrated_classifiers_[0]
+    # _CalibratedClassifier.estimator
+    if hasattr(inner, "estimator"):
+        inner = inner.estimator
+    # FrozenEstimator.estimator  (sklearn >= 1.2)
+    if hasattr(inner, "estimator") and type(inner).__name__ == "FrozenEstimator":
+        inner = inner.estimator
+    return inner
+
+
+def get_native_feature_importances(clf: Any) -> Dict[str, Any]:
+    """
+    Extract native feature importances directly from the fitted estimator.
+
+    Returns a dict with:
+      "method"       — how the importances were obtained
+      "ranked"       — features sorted by importance descending, each with
+                       {"feature", "importance", "rank", "pct_of_total"}
+      "by_type"      — for XGBoost: {"weight", "gain", "cover", "total_gain"}
+                       each normalised to sum=1 across features
+      "raw"          — un-normalised values keyed by feature name
+      "backend"      — "xgboost" | "sklearn_histgbt" | "unknown"
+      "notes"        — human-readable explanation of the importance type
+
+    For XGBoost the primary ranking uses *gain* (average information gain
+    per split), which is the most discriminative metric for tree ensembles.
+    Weight (split frequency) and cover (average sample coverage) are also
+    returned for completeness.
+
+    For HistGradientBoostingClassifier, sklearn does not expose a native
+    feature_importances_ attribute, so this function returns an empty dict
+    for by_type and directs the caller to use permutation importances
+    (stored in meta.json) instead.
+    """
+    base = _unwrap_base_estimator(clf)
+    backend = type(base).__name__
+
+    # ── XGBoost path ─────────────────────────────────────────────────
+    if hasattr(base, "get_booster"):
+        booster    = base.get_booster()
+        # XGBoost names features f0..fN when trained on a numpy array
+        feat_map   = {f"f{i}": col for i, col in enumerate(FEATURE_COLUMNS)}
+
+        by_type: Dict[str, Dict[str, float]] = {}
+        raw_gain: Dict[str, float]           = {}
+
+        for imp_type in ("weight", "gain", "cover", "total_gain"):
+            try:
+                raw = booster.get_score(importance_type=imp_type)
+            except Exception:
+                raw = {}
+            # Remap f0..fN → column names; fill 0.0 for features never split on
+            mapped: Dict[str, float] = {}
+            for col in FEATURE_COLUMNS:
+                fi  = f"f{FEATURE_COLUMNS.index(col)}"
+                mapped[col] = float(raw.get(fi, 0.0))
+
+            # Normalise so values sum to 1 (makes cross-type comparison valid)
+            total = sum(mapped.values()) or 1.0
+            by_type[imp_type] = {
+                col: round(v / total, 6) for col, v in mapped.items()
+            }
+
+            if imp_type == "gain":
+                raw_gain = {col: round(v, 4) for col, v in mapped.items()}
+
+        # Primary ranking by gain (normalised)
+        primary = by_type.get("gain", {})
+        ranked  = _rank_importances(primary)
+
+        return {
+            "method":  "xgboost_native_gain",
+            "backend": "xgboost",
+            "ranked":  ranked,
+            "by_type": by_type,
+            "raw":     raw_gain,
+            "notes": (
+                "XGBoost native importances. "
+                "'gain' = average information gain per split (primary ranking). "
+                "'weight' = number of times a feature is used to split. "
+                "'cover' = average number of samples affected per split. "
+                "All values normalised to sum=1 within each type."
+            ),
+        }
+
+    # ── sklearn feature_importances_ path (e.g. RandomForest, GBT) ──
+    if hasattr(base, "feature_importances_") and base.feature_importances_ is not None:
+        raw = {
+            col: round(float(v), 6)
+            for col, v in zip(FEATURE_COLUMNS, base.feature_importances_)
+        }
+        ranked = _rank_importances(raw)
+        return {
+            "method":  "sklearn_native_impurity",
+            "backend": backend,
+            "ranked":  ranked,
+            "by_type": {"impurity_decrease": raw},
+            "raw":     raw,
+            "notes": (
+                "sklearn native mean decrease in impurity. "
+                "Values are already normalised to sum=1."
+            ),
+        }
+
+    # ── Fallback: no native importances available ─────────────────────
+    return {
+        "method":  "none",
+        "backend": backend,
+        "ranked":  [],
+        "by_type": {},
+        "raw":     {},
+        "notes": (
+            f"{backend} does not expose native feature importances. "
+            "Use the permutation_importances field (from training metadata) instead."
+        ),
+    }
+
+
+def _rank_importances(imp_dict: Dict[str, float]) -> List[Dict[str, Any]]:
+    """
+    Sort a {feature: importance} dict into a ranked list with metadata.
+    Each entry: {feature, importance, rank, pct_of_total}.
+    """
+    total = sum(imp_dict.values()) or 1.0
+    ranked = sorted(imp_dict.items(), key=lambda kv: -kv[1])
+    return [
+        {
+            "feature":     col,
+            "importance":  round(val, 6),
+            "rank":        i + 1,
+            "pct_of_total": round(val / total * 100, 2),
+        }
+        for i, (col, val) in enumerate(ranked)
+    ]
 
 
 # ══════════════════════════════════════════════════════════════════════════════

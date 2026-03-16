@@ -11,7 +11,6 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
-API_KEY  = os.getenv("API_FOOTBALL_KEY", "")
 API_BASE = "https://v3.football.api-sports.io"
 
 _cache: Dict[str, Any]   = {}
@@ -23,10 +22,19 @@ def _get(k): return _cache[k] if k in _cache and time.time()-_times[k]<_TTL else
 def _set(k, v): _cache[k]=v; _times[k]=time.time()
 
 
+def _api_key() -> str:
+    """Lazy read so the key is always fetched from the environment at call time,
+    not at module import — important when env vars are injected after startup."""
+    return os.getenv("API_FOOTBALL_KEY", "")
+
+
 async def _api(ep: str, params: dict) -> list:
+    key = _api_key()
+    if not key:
+        return []
     try:
         async with httpx.AsyncClient(timeout=14) as c:
-            r = await c.get(f"{API_BASE}/{ep}", headers={"x-apisports-key": API_KEY}, params=params)
+            r = await c.get(f"{API_BASE}/{ep}", headers={"x-apisports-key": key}, params=params)
             if r.status_code == 200:
                 return r.json().get("response", [])
     except Exception:
@@ -146,7 +154,7 @@ def _build_momentum(events: list, stats: list, home_id: int, away_id: int) -> di
 
 @router.get("/api/match-momentum/{fixture_id}")
 async def match_momentum(fixture_id: int):
-    if not API_KEY:
+    if not _api_key():
         raise HTTPException(500, "API_FOOTBALL_KEY not configured")
 
     cache_key = f"momentum:{fixture_id}"

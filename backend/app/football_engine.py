@@ -516,11 +516,25 @@ def ensemble_predict(
     p_elo_home:     float, p_elo_draw:     float, p_elo_away:     float,
     p_mc_home:      float, p_mc_draw:      float, p_mc_away:      float,
     p_form_home:    float = 1/3, p_form_draw: float = 1/3, p_form_away: float = 1/3,
+    # H2H layer (optional — weight is 0 when insufficient history)
+    p_h2h_home: float = 1/3, p_h2h_draw: float = 1/3, p_h2h_away: float = 1/3,
+    # Per-call weight overrides (allow H2H to borrow from Poisson dynamically)
+    w_poisson: Optional[float] = None,
+    w_h2h:     float = 0.0,
 ) -> Tuple[float, float, float]:
-    w = ENSEMBLE_WEIGHTS
-    h = w["poisson"]*p_poisson_home + w["elo"]*p_elo_home + w["monte"]*p_mc_home + w["form"]*p_form_home
-    d = w["poisson"]*p_poisson_draw + w["elo"]*p_elo_draw + w["monte"]*p_mc_draw + w["form"]*p_form_draw
-    a = w["poisson"]*p_poisson_away + w["elo"]*p_elo_away + w["monte"]*p_mc_away + w["form"]*p_form_away
+    """
+    Weighted blend of all prediction layers.
+    w_poisson defaults to ENSEMBLE_WEIGHTS["poisson"] but can be reduced
+    when h2h_weight is non-zero so the total stays at 1.0.
+    """
+    wp = ENSEMBLE_WEIGHTS["poisson"] if w_poisson is None else w_poisson
+    we = ENSEMBLE_WEIGHTS["elo"]
+    wm = ENSEMBLE_WEIGHTS["monte"]
+    wf = ENSEMBLE_WEIGHTS["form"]
+    wh = w_h2h
+    h = wp*p_poisson_home + we*p_elo_home + wm*p_mc_home + wf*p_form_home + wh*p_h2h_home
+    d = wp*p_poisson_draw + we*p_elo_draw + wm*p_mc_draw + wf*p_form_draw + wh*p_h2h_draw
+    a = wp*p_poisson_away + we*p_elo_away + wm*p_mc_away + wf*p_form_away + wh*p_h2h_away
     total = h + d + a
     if total > 0: h, d, a = h/total, d/total, a/total
     return round(h, 4), round(d, 4), round(a, 4)
@@ -545,6 +559,7 @@ def predict_match(
     away_logo:    str = "",
     home_form:    str = "",
     away_form:    str = "",
+    h2h_results:  Optional[List[Dict]] = None,
 ) -> Dict[str, Any]:
     """
     Full match prediction. Drop-in replacement for v3.
@@ -554,7 +569,14 @@ def predict_match(
       2. Generate Dixon-Coles score matrix
       3. Extract outcome probabilities + market props
       4. Score confidence with multi-signal scorer
-      5. Return full dict with canonical + alias keys
+      5. Monte Carlo simulation
+      6. Form signal (correctly normalised to a probability triple)
+      7. H2H signal (optional — requires >= 5 meetings; zero-weight otherwise)
+      8. Ensemble combiner → final probabilities
+
+    h2h_results: list of fixture dicts as returned by /fixtures/headtohead,
+                 where each dict has teams.home.id / teams.away.id and goals.
+                 Caller must pass home_team_id / away_team_id for orientation.
     """
 
     # ── Step 1: xG ───────────────────────────────────────────────────
@@ -594,17 +616,92 @@ def predict_match(
     mc = monte_carlo_simulation(xg_home, xg_away, n=10_000)
 
     # ── Step 6: Form-based signal ─────────────────────────────────────
-    hf = _form_factor(home_form); af = _form_factor(away_form)
-    _form_total = hf + af + 0.6
-    form_p_home  = hf / _form_total; form_p_away = af / _form_total
-    form_p_draw  = 0.6 / _form_total
+    # _form_factor() returns a multiplier in [0.85, 1.15] centred at 1.0.
+    # Map it to a win-probability estimate: 1.0 (neutral form) → 0.40,
+    # 1.15 (peak form) → 0.55, 0.85 (cold streak) → 0.25.
+    # Draw share is fixed at the empirical league average (26.5 %).
+    # The three values are then renormalised to sum to exactly 1.0.
+    hf = _form_factor(home_form)
+    af = _form_factor(away_form)
+    _FORM_NEUTRAL  = 0.40   # P(win) at form_factor == 1.0
+    _FORM_SCALE    = 0.50   # (0.55 - 0.25) / (1.15 - 0.85) = 1.0 → full range
+    _DRAW_SHARE    = 0.265  # empirical top-5-league draw rate
+    form_p_home_raw = _FORM_NEUTRAL + (hf - 1.0) * _FORM_SCALE
+    form_p_away_raw = _FORM_NEUTRAL + (af - 1.0) * _FORM_SCALE
+    form_p_home_raw = max(0.05, min(form_p_home_raw, 0.90))
+    form_p_away_raw = max(0.05, min(form_p_away_raw, 0.90))
+    _form_raw_total = form_p_home_raw + _DRAW_SHARE + form_p_away_raw
+    form_p_home = round(form_p_home_raw / _form_raw_total, 4)
+    form_p_draw = round(_DRAW_SHARE    / _form_raw_total, 4)
+    form_p_away = round(form_p_away_raw / _form_raw_total, 4)
 
-    # ── Step 7: Ensemble ──────────────────────────────────────────────
+    # ── Step 7: H2H signal ────────────────────────────────────────────
+    # Derive win-rate probabilities from historical meetings.
+    # Requires >= H2H_MIN_MATCHES to get meaningful signal weight.
+    # Results are oriented so "home" always refers to the current home team.
+    H2H_MIN_MATCHES   = 5     # below this the weight is zero
+    H2H_FULL_MATCHES  = 10    # above this, full weight applies
+    H2H_DRAW_FLOOR    = 0.15  # prevent degenerate draw estimates
+    H2H_WEIGHT_MAX    = 0.08  # max contribution to ensemble
+
+    h2h_p_home = h2h_p_draw = h2h_p_away = 1.0 / 3.0  # neutral prior
+    h2h_weight = 0.0
+    # Default stats dict — always present in the response even when no H2H data supplied
+    h2h_stats: Dict[str, Any] = {
+        "meetings": 0,
+        "home_wins": 0,
+        "draws": 0,
+        "away_wins": 0,
+        "weight_applied": 0.0,
+    }
+
+    if h2h_results and home_team_id and away_team_id:
+        hw = dw = aw = 0
+        for fx in h2h_results:
+            teams_fx = (fx.get("teams") or {})
+            goals_fx = (fx.get("goals") or {})
+            fx_home_id = (teams_fx.get("home") or {}).get("id")
+            hg = int(goals_fx.get("home") or 0)
+            ag = int(goals_fx.get("away") or 0)
+            # Orient result relative to the *current* home side
+            if fx_home_id == home_team_id:
+                if hg > ag:   hw += 1
+                elif ag > hg: aw += 1
+                else:         dw += 1
+            else:
+                if ag > hg:   hw += 1   # current home won as away in this game
+                elif hg > ag: aw += 1
+                else:         dw += 1
+
+        total_h2h = hw + dw + aw
+        if total_h2h >= H2H_MIN_MATCHES:
+            raw_h = hw / total_h2h
+            raw_d = max(H2H_DRAW_FLOOR, dw / total_h2h)
+            raw_a = aw / total_h2h
+            _h2h_sum = raw_h + raw_d + raw_a
+            h2h_p_home = round(raw_h / _h2h_sum, 4)
+            h2h_p_draw = round(raw_d / _h2h_sum, 4)
+            h2h_p_away = round(raw_a / _h2h_sum, 4)
+            # Scale weight linearly from min to full-match threshold
+            h2h_weight = H2H_WEIGHT_MAX * min(
+                1.0,
+                (total_h2h - H2H_MIN_MATCHES) / (H2H_FULL_MATCHES - H2H_MIN_MATCHES + 1e-9)
+            )
+        h2h_stats = {
+            "meetings": total_h2h if total_h2h > 0 else 0,
+            "home_wins": hw, "draws": dw, "away_wins": aw,
+            "weight_applied": round(h2h_weight, 4),
+        }
+    # ── Step 8: Ensemble (H2H-aware weights) ─────────────────────────
+    # When H2H has enough data its weight is carved from the Poisson layer.
+    effective_poisson_w = ENSEMBLE_WEIGHTS["poisson"] - h2h_weight
     e_home, e_draw, e_away = ensemble_predict(
         p_home, p_draw, p_away,
         elo_p_home, elo_p_draw, elo_p_away,
         mc["mc_home_win"], mc["mc_draw"], mc["mc_away_win"],
         form_p_home, form_p_draw, form_p_away,
+        p_h2h_home=h2h_p_home, p_h2h_draw=h2h_p_draw, p_h2h_away=h2h_p_away,
+        w_poisson=effective_poisson_w, w_h2h=h2h_weight,
     )
 
     # ── Step 8: Score summary ─────────────────────────────────────────
@@ -636,12 +733,38 @@ def predict_match(
         "draw_prob":          e_draw,
         "away_win_prob":      e_away,
 
-        # ── Layer breakdown (new — frontend can display per-model) ────
+        # ── Layer breakdown (frontend can display per-model breakdown) ─
         "layers": {
-            "poisson": {"home": round(p_home,4), "draw": round(p_draw,4), "away": round(p_away,4)},
-            "elo":     {"home": round(elo_p_home,4), "draw": round(elo_p_draw,4), "away": round(elo_p_away,4)},
-            "monte_carlo": {k: mc[k] for k in ("mc_home_win","mc_draw","mc_away_win","mc_top_scores","mc_n")},
-            "ensemble_weights": ENSEMBLE_WEIGHTS,
+            "poisson": {
+                "home": round(p_home, 4),
+                "draw": round(p_draw, 4),
+                "away": round(p_away, 4),
+            },
+            "elo": {
+                "home": round(elo_p_home, 4),
+                "draw": round(elo_p_draw, 4),
+                "away": round(elo_p_away, 4),
+            },
+            "monte_carlo": {
+                k: mc[k]
+                for k in ("mc_home_win", "mc_draw", "mc_away_win", "mc_top_scores", "mc_n")
+            },
+            "form": {
+                "home": form_p_home,
+                "draw": form_p_draw,
+                "away": form_p_away,
+            },
+            "h2h": {
+                "home":   round(h2h_p_home, 4),
+                "draw":   round(h2h_p_draw, 4),
+                "away":   round(h2h_p_away, 4),
+                **h2h_stats,
+            },
+            "ensemble_weights": {
+                **ENSEMBLE_WEIGHTS,
+                "poisson": round(effective_poisson_w, 4),
+                "h2h":     round(h2h_weight, 4),
+            },
         },
 
         # ── xG (canonical) ────────────────────────────────────────────

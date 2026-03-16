@@ -88,6 +88,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.routes.simulation import router as simulation_router
+    app.include_router(simulation_router)
+except ImportError:
+    pass
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════
@@ -391,9 +397,26 @@ async def match_intelligence_endpoint(fixture_id: int):
         else: dw+=1
         h2h_matches.append({"date":mfix.get("date"),"home_team":mt.get("home",{}).get("name"),"away_team":mt.get("away",{}).get("name"),"home_score":gh,"away_score":ga,"league":ml.get("name")})
 
+    # ── Use the full prediction engine (replaces _compute_prediction_from_stats)
+    _elo = get_or_build_elo(league_slug(league_id)) if league_id else None
+    _lavg = LEAGUE_AVG_GOALS.get(league_id, FALLBACK_AVG)
+    prediction = predict_match(
+        home_team=home_name, away_team=away_name,
+        home_stats=home_stats, away_stats=away_stats,
+        league_avg=_lavg, elo=_elo,
+        home_team_id=home_id or 0, away_team_id=away_id or 0,
+        fixture_date=(fix.get("date","") or "")[:10],
+        fixture_time=(fix.get("date","") or "")[11:16],
+        home_logo=teams.get("home",{}).get("logo",""),
+        away_logo=teams.get("away",{}).get("logo",""),
+        home_form=home_stats.get("form",""),
+        away_form=away_stats.get("form",""),
+        h2h_results=h2h_raw or [],
+    )
+
     return {"header":header,"events":events,"lineups":lineups,"statistics":statistics,
         "h2h":{"matches":h2h_matches,"summary":{"home_wins":hw,"draws":dw,"away_wins":aw_wins}},
-        "prediction":_compute_prediction_from_stats(home_stats,away_stats),"venue":{"name":venue.get("name"),"city":venue.get("city")},
+        "prediction":prediction,"venue":{"name":venue.get("name"),"city":venue.get("city")},
         "insights":[],"home_recent_form":extract_form(home_stats.get("form","")),"away_recent_form":extract_form(away_stats.get("form",""))}
 
 @app.get("/api/standings/{league}")
@@ -434,15 +457,33 @@ def league_predictions(code: str):
     key=f"predictions_{code}_{CURRENT_SEASON}_v4"; hit=_cache.get(key)
     if hit: return hit
     lid=LEAGUE_IDS[code]; elo=get_or_build_elo(code); upcoming=fetch_upcoming_fixtures(code,limit=10)
+
+    def _fetch_h2h(hid, aid):
+        """Fetch last 10 H2H results; returns [] on any error."""
+        if not (hid and aid): return []
+        k = f"h2h_{hid}_{aid}"
+        hit = _long_cache.get(k)
+        if hit is not None: return hit
+        try:
+            data = api_get("/fixtures/headtohead", {"h2h": f"{hid}-{aid}", "last": 10}, timeout=15)
+            result = data.get("response", [])
+            _long_cache.set(k, result)
+            return result
+        except Exception:
+            return []
+
     preds=[]
     for fx in upcoming:
         hid=fx.get("home_id"); aid=fx.get("away_id")
         hs=fetch_team_stats_full(hid,lid) if hid else None
         as_=fetch_team_stats_full(aid,lid) if aid else None
+        h2h_raw=_fetch_h2h(hid, aid)
         pred=predict_match(home_team=fx.get("home_team",""),away_team=fx.get("away_team",""),
             home_stats=hs,away_stats=as_,league_avg=LEAGUE_AVG_GOALS.get(lid,FALLBACK_AVG),elo=elo,
             home_team_id=hid or 0,away_team_id=aid or 0,fixture_date=fx.get("date","TBD"),
-            fixture_time=fx.get("time",""),home_logo=fx.get("home_logo",""),away_logo=fx.get("away_logo",""))
+            fixture_time=fx.get("time",""),home_logo=fx.get("home_logo",""),away_logo=fx.get("away_logo",""),
+            home_form=(hs or {}).get("form",""),away_form=(as_ or {}).get("form",""),
+            h2h_results=h2h_raw)
         pred["fixture_id"]=fx.get("fixture_id"); pred["venue"]=fx.get("venue","")
         if hs: pred["home_stats"]=hs
         if as_: pred["away_stats"]=as_

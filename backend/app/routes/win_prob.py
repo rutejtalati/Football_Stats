@@ -7,6 +7,7 @@ import asyncio, os, time, math
 from typing import Dict, Any
 import httpx
 from fastapi import APIRouter, HTTPException
+from app.football_engine import build_xg_from_team_stats, LEAGUE_AVG_GOALS, FALLBACK_AVG
 
 router = APIRouter()
 
@@ -86,32 +87,27 @@ def _dixon_coles_tau(home_goals: int, away_goals: int, mu: float, lam: float, rh
     return 1.0
 
 
-def _xg_from_season_stats(home_stats: dict, away_stats: dict) -> tuple:
-    """Derive expected goals from season statistics."""
-    ph = (home_stats.get("played_home") or 0) + (home_stats.get("played_away") or 0)
-    pa = (away_stats.get("played_home") or 0) + (away_stats.get("played_away") or 0)
-
-    h_scored   = (home_stats.get("scored_home") or 0) + (home_stats.get("scored_away") or 0)
-    h_conceded = (home_stats.get("conceded_home") or 0) + (home_stats.get("conceded_away") or 0)
-    a_scored   = (away_stats.get("scored_home") or 0) + (away_stats.get("scored_away") or 0)
-    a_conceded = (away_stats.get("conceded_home") or 0) + (away_stats.get("conceded_away") or 0)
-
-    h_att = h_scored   / max(ph, 1)
-    h_def = h_conceded / max(ph, 1)
-    a_att = a_scored   / max(pa, 1)
-    a_def = a_conceded / max(pa, 1)
-
-    # League average (fallback 1.35)
-    league_avg = 1.35
-
-    # Home advantage multiplier
-    xg_home = (h_att / league_avg) * (a_def / league_avg) * league_avg * 1.1
-    xg_away = (a_att / league_avg) * (h_def / league_avg) * league_avg
-
-    xg_home = max(0.3, min(xg_home, 4.5))
-    xg_away = max(0.2, min(xg_away, 4.0))
-
-    return round(xg_home, 2), round(xg_away, 2)
+def _xg_from_season_stats(
+    home_stats: dict,
+    away_stats: dict,
+    league_id: int = 0,
+    home_form: str = "",
+    away_form: str = "",
+) -> tuple:
+    """
+    Delegates to the canonical football_engine xG estimator so that
+    win_prob and league_predictions always produce consistent xG values.
+    league_id is used to look up the correct per-league average goals.
+    """
+    league_avg = LEAGUE_AVG_GOALS.get(league_id, FALLBACK_AVG)
+    return build_xg_from_team_stats(
+        home_team_id=0, away_team_id=0,
+        home_stats=home_stats, away_stats=away_stats,
+        league_avg=league_avg,
+        elo=None,
+        home_team_name="", away_team_name="",
+        home_form=home_form, away_form=away_form,
+    )
 
 
 def _live_adjusted_xg(xg_home: float, xg_away: float,
@@ -192,7 +188,12 @@ async def win_probability(fixture_id: int):
     home_stats = _normalise_season(home_s_raw)
     away_stats = _normalise_season(away_s_raw)
 
-    xg_home, xg_away = _xg_from_season_stats(home_stats, away_stats)
+    xg_home, xg_away = _xg_from_season_stats(
+        home_stats, away_stats,
+        league_id=league_id,
+        home_form=home_stats.get("form", ""),
+        away_form=away_stats.get("form", ""),
+    )
 
     # For live matches: adjust xG for remaining time + current score pressure
     remaining_xg_home = xg_home

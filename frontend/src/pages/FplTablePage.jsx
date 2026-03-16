@@ -257,6 +257,7 @@ export default function FplTablePage() {
   );
 
   return(
+    <>
     <div className="page-shell" style={{paddingBottom: isMobile ? 80 : 40}}>
       <style>{`
         .fpl-tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
@@ -653,5 +654,6 @@ export default function FplTablePage() {
         </div>
       </div>
     )}
+    </>
   );
 }

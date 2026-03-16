@@ -63,7 +63,7 @@ app.include_router(win_prob_router)
 app.include_router(shot_map_router)
 app.include_router(squad_builder_router)
 
-# Optional routers — registered only when route files are present in the repo
+# Optional routers — registered only when the files exist in the repo
 try:
     from app.routes.intelligence import router as intelligence_router
     app.include_router(intelligence_router)
@@ -79,6 +79,12 @@ except ImportError:
 try:
     from app.routes.players import router as players_router
     app.include_router(players_router)
+except ImportError:
+    pass
+
+try:
+    from app.routes.predictions import router as predictions_router
+    app.include_router(predictions_router)
 except ImportError:
     pass
 
@@ -441,8 +447,27 @@ def league_predictions(code: str):
         if hs: pred["home_stats"]=hs
         if as_: pred["away_stats"]=as_
         preds.append(pred)
+        # Record for accountability tracking
+        try:
+            from app.routes.predictions import record_prediction as _rp
+            _rp(
+                fixture_id=fx.get("fixture_id") or 0,
+                home_team=fx.get("home_team",""),
+                away_team=fx.get("away_team",""),
+                league=LEAGUE_NAMES.get(code, code),
+                predicted_outcome=pred.get("predicted_outcome","home"),
+                confidence=pred.get("confidence",50),
+                xg_home=pred.get("xg_home",0),
+                xg_away=pred.get("xg_away",0),
+                p_home=pred.get("p_home_win",0),
+                p_draw=pred.get("p_draw",0),
+                p_away=pred.get("p_away_win",0),
+                fixture_date=fx.get("date",""),
+            )
+        except Exception:
+            pass
     preds.sort(key=lambda x:x["confidence"],reverse=True)
     result={"league_code":code,"league_name":LEAGUE_NAMES[code],"generated_at":datetime.now(timezone.utc).isoformat(),"predictions":preds}
     _cache.set(key,result); return result
 
-# /api/intelligence/health is served by app.routes.intelligence router
+# /api/intelligence/health — served by app.routes.intelligence router

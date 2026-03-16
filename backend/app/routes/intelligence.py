@@ -939,26 +939,39 @@ async def intelligence_feed(limit: int = Query(60, ge=1, le=100)):
     trending=_trending(rss_items)
     transfer_items=[a for a in rss_items if a.get("type")=="transfer"]
 
-    # Sort
-    TYPE_ORDER={"match_preview":0,"title_race":1,"model_insight":2}
-    internal.sort(key=lambda x:(TYPE_ORDER.get(x.get("type"),9),-_dt(x.get("published_at","")).timestamp()))
-    rss_items.sort(key=lambda x:-_dt(x.get("published_at","")).timestamp())
+    # ── StatinSite-first editorial ordering ───────────────────────────
+    # Priority: match_preview → title_race → model_insight → external news
+    # Rule: every run of 3 items starts with a StatinSite item where available.
+    TYPE_ORDER = {"match_preview":0, "title_race":1, "model_insight":2, "transfer":3,
+                  "injury":3, "analysis":4, "news":5, "headline":6}
+    internal.sort(key=lambda x: (
+        TYPE_ORDER.get(x.get("type"), 9),
+        -_dt(x.get("published_at","")).timestamp()
+    ))
+    rss_items.sort(key=lambda x: -_dt(x.get("published_at","")).timestamp())
 
-    # League cap on internal items
-    lc:Counter=Counter(); capped=[]; overflow=[]
+    # League cap on internal items (first 15 slots)
+    lc: Counter = Counter()
+    capped: List[dict] = []
+    overflow: List[dict] = []
     for item in internal:
-        lg=item.get("league","")
-        if len(capped)<15 and lc[lg]<MAX_PER_LEAGUE: capped.append(item); lc[lg]+=1
-        else: overflow.append(item)
-    internal=capped+overflow
+        lg = item.get("league","")
+        if len(capped) < 15 and lc[lg] < MAX_PER_LEAGUE:
+            capped.append(item); lc[lg] += 1
+        else:
+            overflow.append(item)
+    internal = capped + overflow
 
-    # Interleave all types into one unified feed: 1 internal → 2 RSS
-    out:List[dict]=[]; ri=0
+    # Interleave — StatinSite item always leads each group of 3:
+    # [StatinSite] [RSS] [RSS] [StatinSite] [RSS] [RSS] ...
+    out: List[dict] = []
+    ri = 0
     for item in internal:
-        out.append(item)
-        for _ in range(2):
-            if ri<len(rss_items): out.append(rss_items[ri]); ri+=1
-    out.extend(rss_items[ri:])
+        out.append(item)             # StatinSite item first
+        for _ in range(2):           # then 2 external
+            if ri < len(rss_items):
+                out.append(rss_items[ri]); ri += 1
+    out.extend(rss_items[ri:])       # any remaining RSS at the end
 
     # League coverage guarantee — ensure ≥ MIN_PER_LEAGUE per league in final slice
     league_counts:Counter=Counter()
@@ -989,28 +1002,208 @@ async def intelligence_feed(limit: int = Query(60, ge=1, le=100)):
 
 @router.get("/transfer-summary")
 async def transfer_summary():
-    """Daily transfer briefing — aggregates transfer RSS into a short editorial."""
-    key="gen:transfer:summary"
-    hit=_cget(key,TTL_GEN)
+    """Daily transfer briefing — aggregates transfer RSS into structured editorial."""
+    key = "gen:transfer:summary:v2"
+    hit = _cget(key, TTL_GEN)
     if hit is not None: return hit
 
-    rss=await _all_rss()
-    transfers=[a for a in rss if a.get("type")=="transfer"][:8]
-    if not transfers:
-        return {"items":[],"generated_at":datetime.now(timezone.utc).isoformat()}
+    rss = await _all_rss()
+    transfers = [a for a in rss if a.get("type") == "transfer"][:12]
 
-    briefing=[]
-    for t in transfers:
-        briefing.append({
-            "headline": t["title"],
-            "excerpt":  t["standfirst"],
-            "source":   t["source"],
-            "url":      t.get("url"),
-            "image":    t.get("image"),
+    if not transfers:
+        return {"items": [], "generated_at": datetime.now(timezone.utc).isoformat()}
+
+    # Group by rough category using title keywords
+    buys     = [t for t in transfers if any(w in t["title"].lower() for w in ["sign","complet","agree","deal","join","arriv","confirm"])]
+    interest = [t for t in transfers if any(w in t["title"].lower() for w in ["interest","target","monitor","eye","want","consider","bid","offer","approach"])]
+    other    = [t for t in transfers if t not in buys and t not in interest]
+
+    def _fmt(t: dict) -> dict:
+        return {
+            "headline":     t["title"],
+            "excerpt":      t.get("standfirst",""),
+            "source":       t["source"],
+            "url":          t.get("url"),
+            "image":        t.get("image"),
             "published_at": t["published_at"],
+            "body":         t.get("body",[]),
+        }
+
+    # Aggregate into narrative
+    today = datetime.now(timezone.utc).strftime("%B %d")
+    headline = f"StatinSite Transfer Brief — {today}"
+
+    sections = []
+    if buys:
+        sections.append({
+            "title": "Completed & Close",
+            "items": [_fmt(t) for t in buys[:4]],
         })
-    result={"items":briefing,"generated_at":datetime.now(timezone.utc).isoformat()}
-    _cset(key,result); return result
+    if interest:
+        sections.append({
+            "title": "Clubs in the Market",
+            "items": [_fmt(t) for t in interest[:4]],
+        })
+    if other:
+        sections.append({
+            "title": "Latest Transfer News",
+            "items": [_fmt(t) for t in other[:4]],
+        })
+
+    # Build key bullet points for the summary paragraph
+    bullets = []
+    for t in (buys + interest)[:6]:
+        title = t["title"]
+        # Extract first ~60 chars as a clean bullet
+        clean = title.split("–")[0].split("-")[0].strip()
+        if len(clean) > 10:
+            bullets.append(f"• {clean}")
+
+    summary_para = (
+        f"Today's transfer window sees movement across European football. "
+        + (" ".join(bullets[:3]) + "." if bullets else "")
+    )
+
+    result = {
+        "headline":     headline,
+        "summary":      summary_para,
+        "sections":     sections,
+        "total_items":  len(transfers),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        # Keep old flat `items` key for backward compat
+        "items": [_fmt(t) for t in transfers[:8]],
+    }
+    _cset(key, result)
+    return result
+
+
+@router.get("/daily-brief")
+async def daily_brief():
+    """
+    StatinSite Daily Brief — one aggregated editorial per day combining
+    match previews, transfer news, and model insights into a single article.
+    """
+    key = "gen:daily:brief:v1"
+    hit = _cget(key, TTL_GEN * 2)  # cache 2× longer — changes daily
+    if hit is not None: return hit
+
+    # Fetch all data concurrently
+    preview_tasks  = [_previews_for(s, LEAGUE_IDS[s]) for s in ["epl","laliga","seriea","bundesliga"]]
+    standing_tasks = [_standings_for(s, LEAGUE_IDS[s]) for s in ["epl","laliga","seriea","bundesliga"]]
+    rss_task       = _all_rss()
+
+    previews_list, standings_list, rss = await asyncio.gather(
+        asyncio.gather(*preview_tasks, return_exceptions=True),
+        asyncio.gather(*standing_tasks, return_exceptions=True),
+        rss_task,
+    )
+
+    previews  = [p for r in previews_list  if isinstance(r, list) for p in r]
+    standings = [s for r in standings_list if isinstance(r, list) for s in r]
+    transfers = [a for a in rss if a.get("type") == "transfer"][:6]
+    injuries  = [a for a in rss if a.get("type") == "injury"][:4]
+    top_news  = [a for a in rss if a.get("type") == "news"][:6]
+
+    today     = datetime.now(timezone.utc)
+    date_str  = today.strftime("%A, %B %d %Y")
+    today_str = today.strftime("%B %d")
+
+    # Build sections
+    sections = []
+
+    # 1. Today's Key Fixtures
+    if previews:
+        fixture_bullets = []
+        for p in previews[:4]:
+            meta  = p.get("meta") or {}
+            ht    = meta.get("home_team", p.get("title",""))
+            at    = meta.get("away_team","")
+            conf  = meta.get("confidence", meta.get("match_stats",{}).get("confidence",""))
+            score = meta.get("most_likely_score","")
+            line  = f"{ht} vs {at}"
+            if score: line += f" — Model projects {score}"
+            if conf:  line += f" (confidence: {conf})"
+            fixture_bullets.append(line)
+        sections.append({
+            "type":  "fixtures",
+            "title": "Today's Key Fixtures",
+            "items": fixture_bullets,
+            "previews": previews[:4],
+        })
+
+    # 2. Transfer Market Update
+    if transfers:
+        transfer_bullets = []
+        for t in transfers[:5]:
+            clean = t["title"].split("–")[0].split("-")[0].strip()
+            transfer_bullets.append(f"• {clean}")
+        sections.append({
+            "type":   "transfers",
+            "title":  "Transfer Market",
+            "items":  transfer_bullets,
+            "raw":    [{"headline": t["title"], "source": t["source"],
+                        "url": t.get("url"), "published_at": t["published_at"]}
+                       for t in transfers],
+        })
+
+    # 3. Title Races
+    title_race_items = [s for s in standings if s.get("type") == "title_race"]
+    if title_race_items:
+        race_bullets = []
+        for tr in title_race_items[:3]:
+            meta   = tr.get("meta") or {}
+            leader = meta.get("leader","")
+            second = meta.get("second","")
+            gap    = meta.get("gap","")
+            lg     = LEAGUE_NAMES.get(tr.get("league",""),"")
+            if leader:
+                race_bullets.append(f"{lg}: {leader} lead{' by ' + str(gap) + ' pts' if gap else ''}" +
+                                     (f" from {second}" if second else ""))
+        sections.append({
+            "type":  "title_races",
+            "title": "Title Race Watch",
+            "items": race_bullets,
+        })
+
+    # 4. Injury News
+    if injuries:
+        sections.append({
+            "type":  "injuries",
+            "title": "Injury Updates",
+            "items": [{"headline": a["title"], "source": a["source"],
+                       "url": a.get("url"), "published_at": a["published_at"]}
+                      for a in injuries],
+        })
+
+    # 5. Latest News
+    if top_news:
+        sections.append({
+            "type":  "news",
+            "title": "Latest News",
+            "items": [{"headline": a["title"], "source": a["source"],
+                       "url": a.get("url"), "published_at": a["published_at"]}
+                      for a in top_news],
+        })
+
+    result = {
+        "id":           f"daily:{today.strftime('%Y-%m-%d')}",
+        "type":         "daily_brief",
+        "date":         date_str,
+        "date_short":   today_str,
+        "headline":     f"StatinSite Daily Brief — {today_str}",
+        "standfirst":   (
+            f"Your complete football briefing for {today_str}: "
+            f"{len(previews)} match previews, "
+            f"{len(transfers)} transfer stories, "
+            f"title race updates and injury news."
+        ),
+        "sections":     sections,
+        "source":       "StatinSite Intelligence Engine",
+        "author":       "Rutej Talati",
+        "generated_at": today.isoformat(),
+    }
+    _cset(key, result)
+    return result
 
 
 @router.get("/ticker")

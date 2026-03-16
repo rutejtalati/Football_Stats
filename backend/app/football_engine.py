@@ -429,6 +429,104 @@ def confidence_score(
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# LAYER 5 · MONTE CARLO SIMULATION
+# Simulates N matches using Poisson-distributed goals.
+# Returns (p_home, p_draw, p_away, avg_home_goals, avg_away_goals).
+# Falls back to Poisson model if numpy is unavailable.
+# ═══════════════════════════════════════════════════════════════════════
+
+def monte_carlo_simulation(
+    xg_home: float,
+    xg_away: float,
+    n: int = 10_000,
+) -> Dict[str, Any]:
+    """
+    Simulate n matches using independent Poisson draws.
+    Returns outcome probabilities and goal distribution stats.
+    """
+    try:
+        import numpy as np
+        rng = np.random.default_rng(seed=42)
+        home_goals = rng.poisson(xg_home, n)
+        away_goals = rng.poisson(xg_away, n)
+        home_wins  = int(np.sum(home_goals > away_goals))
+        draws      = int(np.sum(home_goals == away_goals))
+        away_wins  = int(np.sum(home_goals < away_goals))
+        # Most common score
+        scores = {}
+        for hg, ag in zip(home_goals.tolist(), away_goals.tolist()):
+            k = f"{hg}-{ag}"
+            scores[k] = scores.get(k, 0) + 1
+        top_mc = sorted(scores.items(), key=lambda x: -x[1])[:5]
+        return {
+            "mc_home_win":   round(home_wins / n, 4),
+            "mc_draw":       round(draws / n, 4),
+            "mc_away_win":   round(away_wins / n, 4),
+            "mc_n":          n,
+            "mc_avg_home":   round(float(np.mean(home_goals)), 3),
+            "mc_avg_away":   round(float(np.mean(away_goals)), 3),
+            "mc_top_scores": [{"score": s, "freq": round(c / n, 4)} for s, c in top_mc],
+        }
+    except ImportError:
+        # numpy not available — use pure-Python Poisson
+        import random, math as _math
+        random.seed(42)
+        def _poisson_sample(lam: float) -> int:
+            L = _math.exp(-lam); k = 0; p = 1.0
+            while p > L: k += 1; p *= random.random()
+            return k - 1
+        hw = dw = aw = 0
+        hg_sum = ag_sum = 0.0
+        scores: Dict[str, int] = {}
+        for _ in range(n):
+            hg = _poisson_sample(xg_home)
+            ag = _poisson_sample(xg_away)
+            hg_sum += hg; ag_sum += ag
+            if hg > ag: hw += 1
+            elif hg == ag: dw += 1
+            else: aw += 1
+            k = f"{hg}-{ag}"; scores[k] = scores.get(k, 0) + 1
+        top_mc = sorted(scores.items(), key=lambda x: -x[1])[:5]
+        return {
+            "mc_home_win":   round(hw / n, 4),
+            "mc_draw":       round(dw / n, 4),
+            "mc_away_win":   round(aw / n, 4),
+            "mc_n":          n,
+            "mc_avg_home":   round(hg_sum / n, 3),
+            "mc_avg_away":   round(ag_sum / n, 3),
+            "mc_top_scores": [{"score": s, "freq": round(c / n, 4)} for s, c in top_mc],
+        }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# LAYER 6 · ENSEMBLE COMBINER
+# Blends Poisson model + Elo + Monte Carlo into final probabilities.
+# Weights are tunable — default reflects Poisson-heavy approach.
+# ═══════════════════════════════════════════════════════════════════════
+
+ENSEMBLE_WEIGHTS = {
+    "poisson": 0.45,
+    "elo":     0.20,
+    "monte":   0.25,
+    "form":    0.10,
+}
+
+def ensemble_predict(
+    p_poisson_home: float, p_poisson_draw: float, p_poisson_away: float,
+    p_elo_home:     float, p_elo_draw:     float, p_elo_away:     float,
+    p_mc_home:      float, p_mc_draw:      float, p_mc_away:      float,
+    p_form_home:    float = 1/3, p_form_draw: float = 1/3, p_form_away: float = 1/3,
+) -> Tuple[float, float, float]:
+    w = ENSEMBLE_WEIGHTS
+    h = w["poisson"]*p_poisson_home + w["elo"]*p_elo_home + w["monte"]*p_mc_home + w["form"]*p_form_home
+    d = w["poisson"]*p_poisson_draw + w["elo"]*p_elo_draw + w["monte"]*p_mc_draw + w["form"]*p_form_draw
+    a = w["poisson"]*p_poisson_away + w["elo"]*p_elo_away + w["monte"]*p_mc_away + w["form"]*p_form_away
+    total = h + d + a
+    if total > 0: h, d, a = h/total, d/total, a/total
+    return round(h, 4), round(d, 4), round(a, 4)
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN PREDICTION FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -474,20 +572,47 @@ def predict_match(
     p_home, p_draw, p_away = outcome_probs(score_matrix)
     markets                = market_probs(score_matrix)
 
-    # ── Step 3: Elo diff ──────────────────────────────────────────────
+    # ── Step 3: Elo diff + Elo probabilities ─────────────────────────
     elo_diff = elo.diff(home_team, away_team) if elo else 0.0
+    # Elo-only win probability (Bradley-Terry style)
+    if elo:
+        elo_p_home = elo.expected(home_team, away_team)
+        elo_p_away = 1.0 - elo_p_home
+        elo_p_draw = 0.265  # empirical average draw rate
+        # renormalize
+        _s = elo_p_home + elo_p_draw + elo_p_away
+        elo_p_home /= _s; elo_p_draw /= _s; elo_p_away /= _s
+    else:
+        elo_p_home = p_home; elo_p_draw = p_draw; elo_p_away = p_away
 
     # ── Step 4: Confidence ────────────────────────────────────────────
     n_home = (home_stats or {}).get("played_home", 0)
     n_away = (away_stats or {}).get("played_away", 0)
     conf   = confidence_score(p_home, p_draw, p_away, elo_diff, n_home, n_away)
 
-    # ── Step 5: Score summary ─────────────────────────────────────────
+    # ── Step 5: Monte Carlo simulation ───────────────────────────────
+    mc = monte_carlo_simulation(xg_home, xg_away, n=10_000)
+
+    # ── Step 6: Form-based signal ─────────────────────────────────────
+    hf = _form_factor(home_form); af = _form_factor(away_form)
+    _form_total = hf + af + 0.6
+    form_p_home  = hf / _form_total; form_p_away = af / _form_total
+    form_p_draw  = 0.6 / _form_total
+
+    # ── Step 7: Ensemble ──────────────────────────────────────────────
+    e_home, e_draw, e_away = ensemble_predict(
+        p_home, p_draw, p_away,
+        elo_p_home, elo_p_draw, elo_p_away,
+        mc["mc_home_win"], mc["mc_draw"], mc["mc_away_win"],
+        form_p_home, form_p_draw, form_p_away,
+    )
+
+    # ── Step 8: Score summary ─────────────────────────────────────────
     top_scores         = score_matrix[:9]
     most_likely_score  = f"{top_scores[0][0][0]}-{top_scores[0][0][1]}"
 
-    if   p_home > p_away and p_home > p_draw: outcome = "home"
-    elif p_away > p_home and p_away > p_draw: outcome = "away"
+    if   e_home > e_away and e_home > e_draw: outcome = "home"
+    elif e_away > e_home and e_away > e_draw: outcome = "away"
     else:                                     outcome = "draw"
 
     return {
@@ -500,22 +625,28 @@ def predict_match(
         "away_logo":          away_logo,
         "fixture_date":       fixture_date,
 
-        # ── Core probabilities (canonical) ────────────────────────────
-        "p_home_win":         round(p_home, 4),
-        "p_draw":             round(p_draw, 4),
-        "p_away_win":         round(p_away, 4),
+        # ── Core probabilities (ensemble — canonical) ─────────────────
+        "p_home_win":         e_home,
+        "p_draw":             e_draw,
+        "p_away_win":         e_away,
         "predicted_outcome":  outcome,
 
-        # ── Aliases (main.py article builders + PredictionsPage) ──────
-        "home_win_prob":      round(p_home, 4),
-        "draw_prob":          round(p_draw, 4),
-        "away_win_prob":      round(p_away, 4),
+        # ── Aliases (frontend + main.py article builders) ─────────────
+        "home_win_prob":      e_home,
+        "draw_prob":          e_draw,
+        "away_win_prob":      e_away,
+
+        # ── Layer breakdown (new — frontend can display per-model) ────
+        "layers": {
+            "poisson": {"home": round(p_home,4), "draw": round(p_draw,4), "away": round(p_away,4)},
+            "elo":     {"home": round(elo_p_home,4), "draw": round(elo_p_draw,4), "away": round(elo_p_away,4)},
+            "monte_carlo": {k: mc[k] for k in ("mc_home_win","mc_draw","mc_away_win","mc_top_scores","mc_n")},
+            "ensemble_weights": ENSEMBLE_WEIGHTS,
+        },
 
         # ── xG (canonical) ────────────────────────────────────────────
         "xg_home":            xg_home,
         "xg_away":            xg_away,
-
-        # ── xG aliases ────────────────────────────────────────────────
         "expected_home_goals": xg_home,
         "expected_away_goals": xg_away,
 

@@ -1,841 +1,700 @@
-// ═══════════════════════════════════════════════════════════════
-// StatinSite — HomePage  v3  "The War Room"
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// StatinSite — HomePage v4 "INTELLIGENCE ENGINE"
+// Premium SaaS × Sports Analytics × F1 Telemetry aesthetic
 //
-// Concept: You've just walked into a football intelligence bunker.
-// Everything is data. Everything moves. Nothing is decorative.
-//
-// Sections:
-//   1. CinematicHero        — full-viewport, diagonal type, live counter
-//   2. LivePulse            — scrolling live scores strip
-//   3. ToolGrid             — 8 asymmetric bento-style portal cards
-//   4. TodaySlate           — horizontal fixture scroll with prob arcs
-//   5. CompetitionRail      — UCL / UEL / UECL / FA Cup / Big 5 tiles
-//   6. FPLCommand           — FPL tools as terminal-style list
-// ═══════════════════════════════════════════════════════════════
+// Design DNA:
+//   - Centered cinematic hero with telemetry grid + particle field
+//   - Glassmorphic bento cards with 3D tilt on mouse move
+//   - Gradient sweep button animations + click ripple
+//   - Scroll-driven stagger reveals throughout
+//   - Continuous idle animations (shimmer, glow pulse, orbit)
+//   - Custom cursor with magnetic hover
+//   - FPL tool rows that expand on hover
+//   - Horizontal competition scroller with live glow states
+// ═══════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const API = "https://football-stats-lw4b.onrender.com";
 
-// ─── Tokens ─────────────────────────────────────────────────
-const T = {
-  bg:     "#000810",
-  card:   "rgba(6,11,22,0.98)",
-  border: "rgba(255,255,255,0.06)",
-  text:   "#e8f0ff",
-  muted:  "#3d5a78",
-  dim:    "#1a3050",
-  blue:   "#38bdf8",
-  green:  "#34d399",
-  amber:  "#f59e0b",
-  red:    "#f87171",
-  live:   "#ff3333",
-  purple: "#a78bfa",
-  cyan:   "#67e8f9",
-  orange: "#fb923c",
-};
-
 // ─── Status helpers ──────────────────────────────────────────
-const LIVE = new Set(["1H","2H","HT","ET","BT","P"]);
-const FT   = new Set(["FT","AET","PEN"]);
-const isToday = d => d && new Date(d).toDateString() === new Date().toDateString();
+const LIVE_SET = new Set(["1H","2H","HT","ET","BT","P"]);
+const FT_SET   = new Set(["FT","AET","PEN"]);
+const isToday  = d => d && new Date(d).toDateString() === new Date().toDateString();
 
-// ─── Intersection reveal ─────────────────────────────────────
-function useReveal(threshold = 0.1) {
+// ─── useReveal — IntersectionObserver ────────────────────────
+function useReveal(threshold = 0.08, once = true) {
   const ref = useRef(null);
   const [vis, setVis] = useState(false);
   useEffect(() => {
     const el = ref.current; if (!el) return;
-    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVis(true); }, { threshold });
-    o.observe(el);
-    return () => o.disconnect();
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVis(true); if (once) io.disconnect(); } },
+      { threshold }
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
   return [ref, vis];
 }
 
-// ─── CountUp ─────────────────────────────────────────────────
-function Num({ n, suffix = "" }) {
-  const [v, setV] = useState(0);
-  const [ref, vis] = useReveal(0.2);
-  const ran = useRef(false);
-  useEffect(() => {
-    if (!vis || ran.current || !n) return;
-    ran.current = true;
-    const start = Date.now(), dur = 800;
-    const tick = () => {
-      const p = Math.min((Date.now() - start) / dur, 1);
-      setV(Math.round((1 - Math.pow(1 - p, 3)) * n));
-      if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [vis, n]);
-  return <span ref={ref} style={{ fontFamily: "'JetBrains Mono',monospace" }}>{v}{suffix}</span>;
-}
-
-// ─── Diagonal grid texture ────────────────────────────────────
-const GRID_BG = `
-  repeating-linear-gradient(
-    -45deg,
-    rgba(255,255,255,0.012) 0px,
-    rgba(255,255,255,0.012) 1px,
-    transparent 1px,
-    transparent 32px
-  )
-`;
-
-// ══════════════════════════════════════════════════════════════
-// 1. CINEMATIC HERO
-// ══════════════════════════════════════════════════════════════
-function CinematicHero({ fixtures, loading }) {
-  const nav = useNavigate();
-  const containerRef = useRef(null);
-  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
-  const [tick, setTick] = useState(0);
-
-  // Slow tick for animated numbers
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 2000);
-    return () => clearInterval(id);
-  }, []);
+// ─── useTilt — 3D card tilt on mousemove ─────────────────────
+function useTilt(strength = 8) {
+  const ref   = useRef(null);
+  const [transform, setTransform] = useState("perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)");
+  const [glow,      setGlow]      = useState({ x: 50, y: 50 });
 
   const onMove = useCallback(e => {
-    const r = containerRef.current?.getBoundingClientRect();
-    if (!r) return;
-    setMouse({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
+    const el = ref.current; if (!el) return;
+    const r  = el.getBoundingClientRect();
+    const x  = (e.clientX - r.left) / r.width;
+    const y  = (e.clientY - r.top)  / r.height;
+    const rx =  (y - 0.5) * -strength;
+    const ry =  (x - 0.5) *  strength;
+    setTransform(`perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02,1.02,1.02)`);
+    setGlow({ x: Math.round(x * 100), y: Math.round(y * 100) });
+  }, [strength]);
+
+  const onLeave = useCallback(() => {
+    setTransform("perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)");
+    setGlow({ x: 50, y: 50 });
   }, []);
 
-  const liveCount  = fixtures.filter(f => LIVE.has(f.status)).length;
+  return { ref, transform, glow, onMove, onLeave };
+}
+
+// ─── CountUp ─────────────────────────────────────────────────
+function CountUp({ to, suffix = "", duration = 1000 }) {
+  const [val, setVal] = useState(0);
+  const [ref, vis]    = useReveal(0.1);
+  const started       = useRef(false);
+  useEffect(() => {
+    if (!vis || started.current || !to) return;
+    started.current = true;
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min((now - t0) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 4);
+      setVal(Math.round(ease * to));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [vis, to, duration]);
+  return <span ref={ref} className="hp4-mono">{val}{suffix}</span>;
+}
+
+// ─── Ripple button ────────────────────────────────────────────
+function RippleBtn({ children, onClick, className = "", style = {} }) {
+  const [ripples, setRipples] = useState([]);
+  const handleClick = (e) => {
+    const r   = e.currentTarget.getBoundingClientRect();
+    const x   = e.clientX - r.left;
+    const y   = e.clientY - r.top;
+    const id  = Date.now();
+    setRipples(prev => [...prev, { id, x, y }]);
+    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 700);
+    onClick?.(e);
+  };
+  return (
+    <button className={`hp4-btn ${className}`} style={style} onClick={handleClick}>
+      {children}
+      {ripples.map(r => (
+        <span key={r.id} className="hp4-ripple" style={{ left: r.x, top: r.y }} />
+      ))}
+    </button>
+  );
+}
+
+// ─── Telemetry grid canvas ────────────────────────────────────
+function TelemetryGrid() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf;
+    let t = 0;
+
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      const { width: W, height: H } = canvas;
+      ctx.clearRect(0, 0, W, H);
+
+      const CELL = 64;
+      const cols = Math.ceil(W / CELL) + 2;
+      const rows = Math.ceil(H / CELL) + 2;
+      const offsetX = (t * 0.3) % CELL;
+      const offsetY = (t * 0.15) % CELL;
+
+      // Vertical lines
+      for (let c = -1; c < cols; c++) {
+        const x = c * CELL - offsetX;
+        const alpha = 0.025 + 0.012 * Math.sin(c * 0.4 + t * 0.008);
+        ctx.strokeStyle = `rgba(56,189,248,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      // Horizontal lines
+      for (let r = -1; r < rows; r++) {
+        const y = r * CELL - offsetY;
+        const alpha = 0.025 + 0.012 * Math.sin(r * 0.5 + t * 0.006);
+        ctx.strokeStyle = `rgba(56,189,248,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // Telemetry "pulse" dots at grid intersections
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          const x = c * CELL - offsetX;
+          const y = r * CELL - offsetY;
+          const pulse = Math.sin(c * 0.8 + r * 0.6 + t * 0.04);
+          if (pulse > 0.7) {
+            const alpha = (pulse - 0.7) * 0.5;
+            ctx.fillStyle = `rgba(52,211,153,${alpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      t++;
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, []);
+
+  return (
+    <canvas
+      ref={ref}
+      style={{
+        position: "absolute", inset: 0, width: "100%", height: "100%",
+        pointerEvents: "none", zIndex: 0,
+      }}
+    />
+  );
+}
+
+// ─── Floating particles ───────────────────────────────────────
+function Particles({ count = 28 }) {
+  const particles = useMemo(() => Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x:    Math.random() * 100,
+    y:    Math.random() * 100,
+    size: 1 + Math.random() * 2.5,
+    dur:  8 + Math.random() * 16,
+    del:  -Math.random() * 20,
+    col:  i % 4 === 0 ? "56,189,248" : i % 4 === 1 ? "52,211,153" : i % 4 === 2 ? "167,139,250" : "245,158,11",
+  })), [count]);
+
+  return (
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+      {particles.map(p => (
+        <div
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: `${p.x}%`,
+            top:  `${p.y}%`,
+            width:  p.size,
+            height: p.size,
+            borderRadius: "50%",
+            background: `rgba(${p.col},0.6)`,
+            boxShadow: `0 0 ${p.size * 3}px rgba(${p.col},0.4)`,
+            animation: `hp4-float ${p.dur}s ${p.del}s linear infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// HERO SECTION
+// ══════════════════════════════════════════════════════════════
+function HeroSection({ fixtures, loading }) {
+  const nav    = useNavigate();
+  const heroRef = useRef(null);
+  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
+
+  const liveCount  = fixtures.filter(f => LIVE_SET.has(f.status)).length;
   const todayCount = fixtures.filter(f => isToday(f.kickoff)).length;
   const avgConf    = useMemo(() => {
     const w = fixtures.filter(f => f.confidence);
     return w.length ? Math.round(w.reduce((s, f) => s + f.confidence, 0) / w.length) : null;
   }, [fixtures]);
 
-  const gx = (mouse.x - 0.5) * 40;
-  const gy = (mouse.y - 0.5) * 28;
+  const onMove = useCallback(e => {
+    const r = heroRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setMouse({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      onMouseMove={onMove}
-      style={{
-        position: "relative",
-        minHeight: "100vh",
-        background: T.bg,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: "0 0 80px",
-      }}
-    >
-      {/* Diagonal grid */}
-      <div style={{ position: "absolute", inset: 0, backgroundImage: GRID_BG, pointerEvents: "none" }} />
+    <section className="hp4-hero" ref={heroRef} onMouseMove={onMove}>
+      {/* Animated telemetry canvas */}
+      <TelemetryGrid />
+      {/* Floating particles */}
+      <Particles count={24} />
 
-      {/* Parallax orbs */}
-      {[
-        { x: 18, y: 22, w: 800, c: "rgba(56,189,248,0.055)", dx: 0.5, dy: 0.4 },
-        { x: 75, y: 65, w: 600, c: "rgba(52,211,153,0.045)", dx: -0.3, dy: -0.3 },
-        { x: 88, y: 15, w: 400, c: "rgba(167,139,250,0.04)", dx: 0.6, dy: 0.5 },
-      ].map((o, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          top: `calc(${o.y}% + ${gy * o.dy}px)`,
-          left: `calc(${o.x}% + ${gx * o.dx}px)`,
-          width: o.w, height: o.w,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${o.c} 0%, transparent 65%)`,
-          transform: "translate(-50%,-50%)",
-          transition: "top 0.18s ease, left 0.18s ease",
-          pointerEvents: "none",
-        }} />
-      ))}
+      {/* Parallax mesh blobs */}
+      <div className="hp4-hero-blob hp4-hero-blob--a" style={{
+        transform: `translate(${(mouse.x - 0.5) * -35}px, ${(mouse.y - 0.5) * -28}px)`,
+      }} />
+      <div className="hp4-hero-blob hp4-hero-blob--b" style={{
+        transform: `translate(${(mouse.x - 0.5) * 28}px, ${(mouse.y - 0.5) * 22}px)`,
+      }} />
+      <div className="hp4-hero-blob hp4-hero-blob--c" style={{
+        transform: `translate(${(mouse.x - 0.5) * -18}px, ${(mouse.y - 0.5) * 15}px)`,
+      }} />
 
-      {/* Vertical label — left edge */}
-      <div style={{
-        position: "absolute",
-        left: 28,
-        top: "50%",
-        transform: "translateY(-50%) rotate(-90deg)",
-        fontSize: 8,
-        fontWeight: 900,
-        letterSpacing: "0.22em",
-        color: T.muted,
-        textTransform: "uppercase",
-        fontFamily: "'Inter',sans-serif",
-        whiteSpace: "nowrap",
-        opacity: 0.6,
-      }}>
-        Football Intelligence Platform
-      </div>
+      {/* Scan line */}
+      <div className="hp4-scanline" />
 
-      {/* Main content */}
-      <div style={{
-        position: "relative", zIndex: 1,
-        maxWidth: 1200,
-        margin: "0 auto",
-        padding: "0 60px",
-        width: "100%",
-      }}>
+      {/* Content */}
+      <div className="hp4-hero-inner">
 
-        {/* Eyebrow */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 28,
-          animation: "hp3-up 0.5s ease 0.1s both",
-        }}>
+        {/* Live badge */}
+        <div className="hp4-hero-badge" style={{ animationDelay: "0.05s" }}>
           {liveCount > 0 ? (
             <>
-              <div style={{
-                width: 7, height: 7, borderRadius: "50%",
-                background: T.live,
-                boxShadow: `0 0 12px ${T.live}`,
-                animation: "hp3-pulse 1.6s ease-in-out infinite",
-              }} />
-              <span style={{
-                fontSize: 10, fontWeight: 900, letterSpacing: "0.18em",
-                color: T.live, textTransform: "uppercase",
-              }}>
-                {liveCount} Match{liveCount > 1 ? "es" : ""} Live
+              <span className="hp4-live-dot" />
+              <span className="hp4-mono hp4-hero-badge-text hp4-hero-badge-text--live">
+                {liveCount} LIVE NOW
               </span>
             </>
           ) : (
-            <span style={{
-              fontSize: 10, fontWeight: 900, letterSpacing: "0.18em",
-              color: T.muted, textTransform: "uppercase",
-            }}>
-              ELO · Dixon-Coles · Poisson · xG
+            <span className="hp4-hero-badge-text">
+              ELO · DIXON-COLES · REAL xG · POISSON
             </span>
           )}
-          <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${T.muted}40, transparent)` }} />
         </div>
 
-        {/* Headline — oversized, diagonal feel via word wrap */}
-        <h1 style={{
-          fontSize: "clamp(44px, 7.5vw, 88px)",
-          fontWeight: 900,
-          fontFamily: "'Sora',sans-serif",
-          letterSpacing: "-0.04em",
-          lineHeight: 0.95,
-          color: T.text,
-          margin: "0 0 20px",
-          animation: "hp3-up 0.6s ease 0.15s both",
-        }}>
+        {/* Headline */}
+        <h1 className="hp4-hero-title" style={{ animationDelay: "0.12s" }}>
           Read The
           <br />
-          <span style={{
-            background: `linear-gradient(135deg, ${T.blue} 0%, ${T.cyan} 45%, ${T.green} 100%)`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>
-            Game.
-          </span>
+          <span className="hp4-gradient-text hp4-glow-pulse">Game.</span>
         </h1>
 
         {/* Sub */}
-        <p style={{
-          fontSize: "clamp(13px,1.5vw,16px)",
-          color: T.muted,
-          maxWidth: 440,
-          lineHeight: 1.7,
-          margin: "0 0 48px",
-          animation: "hp3-up 0.6s ease 0.22s both",
-        }}>
-          Poisson models, ELO ratings, live xG tracking and FPL intelligence —
-          every data point you need, before and during the match.
+        <p className="hp4-hero-sub" style={{ animationDelay: "0.22s" }}>
+          Football intelligence rebuilt from the ground up.
+          Poisson models, ELO ratings, live xG tracking,
+          and the deepest FPL suite on the web.
         </p>
 
-        {/* CTA pair */}
-        <div style={{
-          display: "flex",
-          gap: 10,
-          flexWrap: "wrap",
-          marginBottom: 72,
-          animation: "hp3-up 0.6s ease 0.3s both",
-        }}>
-          <button
+        {/* CTA row */}
+        <div className="hp4-hero-ctas" style={{ animationDelay: "0.32s" }}>
+          <RippleBtn
+            className={liveCount > 0 ? "hp4-btn--live" : "hp4-btn--primary"}
             onClick={() => nav("/live")}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "12px 28px", borderRadius: 999,
-              background: liveCount > 0
-                ? `linear-gradient(135deg, ${T.live}, rgba(255,60,60,0.7))`
-                : `linear-gradient(135deg, ${T.blue}, rgba(56,189,248,0.65))`,
-              color: "#000",
-              fontSize: 13, fontWeight: 900,
-              border: "none", cursor: "pointer",
-              boxShadow: liveCount > 0
-                ? `0 0 36px rgba(255,44,44,0.35), 0 6px 20px rgba(0,0,0,0.4)`
-                : `0 0 36px rgba(56,189,248,0.3), 0 6px 20px rgba(0,0,0,0.4)`,
-              transition: "transform 0.15s, box-shadow 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
           >
-            {liveCount > 0 && (
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#000", opacity: 0.6, animation: "hp3-pulse 1.6s ease-in-out infinite" }} />
-            )}
+            {liveCount > 0 && <span className="hp4-live-dot hp4-live-dot--sm" />}
             {liveCount > 0 ? "Watch Live" : "Live Centre"}
-          </button>
-          <button
-            onClick={() => nav("/predictions/premier-league")}
-            style={{
-              padding: "12px 28px", borderRadius: 999,
-              background: "rgba(255,255,255,0.04)",
-              border: `1px solid rgba(255,255,255,0.1)`,
-              color: "rgba(255,255,255,0.7)",
-              fontSize: 13, fontWeight: 800,
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-          >
+            <span className="hp4-btn-sweep" />
+          </RippleBtn>
+          <RippleBtn className="hp4-btn--ghost" onClick={() => nav("/predictions/premier-league")}>
             Predictions
-          </button>
-          <button
-            onClick={() => nav("/best-team")}
-            style={{
-              padding: "12px 28px", borderRadius: 999,
-              background: "rgba(40,217,122,0.06)",
-              border: "1px solid rgba(40,217,122,0.18)",
-              color: T.green,
-              fontSize: 13, fontWeight: 800,
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(40,217,122,0.12)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(40,217,122,0.06)"; }}
-          >
+            <span className="hp4-btn-sweep" />
+          </RippleBtn>
+          <RippleBtn className="hp4-btn--fpl" onClick={() => nav("/best-team")}>
             FPL Tools
-          </button>
+            <span className="hp4-btn-sweep" />
+          </RippleBtn>
         </div>
 
-        {/* Live stat row */}
-        <div style={{
-          display: "flex",
-          gap: 0,
-          background: T.card,
-          border: `1px solid ${T.border}`,
-          borderRadius: 16,
-          overflow: "hidden",
-          maxWidth: 520,
-          animation: "hp3-up 0.6s ease 0.38s both",
-        }}>
+        {/* Live stats strip */}
+        <div className="hp4-stats-strip" style={{ animationDelay: "0.42s" }}>
           {[
-            { label: "Live Now",      val: liveCount,     color: T.live,  live: true },
-            { label: "Today",         val: todayCount,    color: T.blue              },
-            { label: "Model Conf.",   val: avgConf,       color: T.green, suffix: "%" },
-          ].map(({ label, val, color, live, suffix = "" }, i) => (
-            <div key={label} style={{
-              flex: 1,
-              padding: "16px 14px",
-              borderRight: i < 2 ? `1px solid ${T.border}` : "none",
-              display: "flex", flexDirection: "column", gap: 5,
-              alignItems: "center",
-            }}>
-              <div style={{
-                fontSize: 26, fontWeight: 900, color: loading || val == null ? T.dim : color,
-                fontFamily: "'JetBrains Mono',monospace",
-                display: "flex", alignItems: "center", gap: 7, lineHeight: 1,
-              }}>
-                {live && val > 0 && !loading && (
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.live, animation: "hp3-pulse 1.6s ease-in-out infinite" }} />
-                )}
-                {loading || val == null
-                  ? <div style={{ width: 32, height: 26, borderRadius: 4, background: "rgba(255,255,255,0.05)", animation: "hp3-shimmer 1.4s ease infinite" }} />
-                  : <Num n={val} suffix={suffix} />
-                }
+            { label: "Live Now",    val: liveCount,  suffix: "",  color: "#ff4444", live: true  },
+            { label: "Today",       val: todayCount, suffix: "",  color: "#38bdf8"              },
+            { label: "Avg Conf",    val: avgConf,    suffix: "%", color: "#34d399"              },
+          ].map(({ label, val, suffix, color, live }, i) => (
+            <div key={label} className="hp4-stat-cell" style={{ "--cell-color": color }}>
+              {i > 0 && <div className="hp4-stat-div" />}
+              <div className="hp4-stat-inner">
+                <div className="hp4-stat-val">
+                  {live && val > 0 && !loading && <span className="hp4-live-dot hp4-live-dot--sm" style={{ "--dot-color": "#ff4444" }} />}
+                  {loading || val == null
+                    ? <span className="hp4-skel hp4-skel--num" />
+                    : <CountUp to={val} suffix={suffix} duration={900} />
+                  }
+                </div>
+                <div className="hp4-stat-label">{label}</div>
               </div>
-              <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.12em", color: T.dim, textTransform: "uppercase" }}>{label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Scroll hint */}
-      <div style={{
-        position: "absolute",
-        bottom: 24,
-        left: "50%",
-        transform: "translateX(-50%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 5,
-        animation: "hp3-fadeinhalf 1s ease 1.4s both",
-      }}>
-        <div style={{ width: 1, height: 32, background: `linear-gradient(180deg, transparent, ${T.muted}60)` }} />
-        <div style={{ width: 4, height: 4, borderRadius: "50%", background: T.muted, animation: "hp3-bounce 2s ease-in-out infinite" }} />
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// 2. LIVE PULSE STRIP
-// ══════════════════════════════════════════════════════════════
-function LivePulse({ fixtures }) {
-  const nav = useNavigate();
-  const live = fixtures.filter(f => LIVE.has(f.status));
-  if (!live.length) return null;
-  const chips = [...live, ...live, ...live];
-  return (
-    <div style={{
-      background: "rgba(255,30,30,0.04)",
-      borderTop: "1px solid rgba(255,30,30,0.1)",
-      borderBottom: "1px solid rgba(255,30,30,0.1)",
-      overflow: "hidden",
-      height: 40,
-      position: "relative",
-    }}>
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 48, background: `linear-gradient(to right, ${T.bg}, transparent)`, zIndex: 2, pointerEvents: "none" }} />
-      <div style={{
-        display: "flex",
-        height: "100%",
-        animation: `hp3-ticker ${live.length * 6}s linear infinite`,
-        width: "max-content",
-      }}>
-        {chips.map((f, i) => (
-          <div
-            key={i}
-            onClick={() => nav(`/match/${f.fixture_id}`)}
-            style={{
-              display: "flex", alignItems: "center", gap: 9,
-              padding: "0 20px", height: "100%",
-              borderRight: "1px solid rgba(255,30,30,0.07)",
-              cursor: "pointer", flexShrink: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,30,30,0.05)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-          >
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: T.live, animation: "hp3-pulse 1.6s ease-in-out infinite" }} />
-            {f.home_logo && <img src={f.home_logo} width={13} height={13} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />}
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap" }}>
-              {f.home_team?.split(" ").slice(-1)[0]}
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 900, color: T.text, fontFamily: "'JetBrains Mono',monospace" }}>
-              {f.home_score ?? 0}–{f.away_score ?? 0}
-            </span>
-            {f.away_logo && <img src={f.away_logo} width={13} height={13} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />}
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap" }}>
-              {f.away_team?.split(" ").slice(-1)[0]}
-            </span>
-            {f.minute && (
-              <span style={{ fontSize: 8, fontWeight: 900, color: T.live, background: "rgba(255,30,30,0.1)", padding: "1px 5px", borderRadius: 3, fontFamily: "'JetBrains Mono',monospace" }}>
-                {f.minute}'
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 48, background: `linear-gradient(to left, ${T.bg}, transparent)`, zIndex: 2, pointerEvents: "none" }} />
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// 3. TOOL GRID — asymmetric bento layout
-// ══════════════════════════════════════════════════════════════
-const TOOLS = [
-  {
-    to: "/live",
-    label: "Live Centre",
-    sub: "Real-time scores, minute-by-minute",
-    color: T.live,
-    span: 2,   // wide
-    tall: true,
-    graphic: "radar",
-  },
-  {
-    to: "/predictions/premier-league",
-    label: "Predictions",
-    sub: "Dixon-Coles · ELO · xG",
-    color: T.blue,
-    span: 1,
-    tall: false,
-    graphic: "bar",
-  },
-  {
-    to: "/match/0",
-    label: "Match Hub",
-    sub: "Lineups · H2H · xG · Injuries",
-    color: T.purple,
-    span: 1,
-    tall: false,
-    graphic: "pitch",
-  },
-  {
-    to: "/best-team",
-    label: "FPL Best XI",
-    sub: "Optimal starting lineup",
-    color: T.green,
-    span: 1,
-    tall: true,
-    graphic: "star",
-  },
-  {
-    to: "/squad-builder",
-    label: "Squad Builder",
-    sub: "Build your 15-man squad",
-    color: T.green,
-    span: 1,
-    tall: false,
-    graphic: "grid",
-  },
-  {
-    to: "/player",
-    label: "Players",
-    sub: "500+ profiles · xG · FPL stats",
-    color: T.amber,
-    span: 1,
-    tall: false,
-    graphic: "person",
-  },
-  {
-    to: "/news",
-    label: "News",
-    sub: "Transfers · Injuries · Updates",
-    color: "#f472b6",
-    span: 1,
-    tall: false,
-    graphic: "news",
-  },
-  {
-    to: "/games",
-    label: "Mini Games",
-    sub: "Score predictor · Quizzes",
-    color: T.orange,
-    span: 1,
-    tall: false,
-    graphic: "game",
-  },
-];
-
-// SVG graphics for each card
-function CardGraphic({ type, color }) {
-  if (type === "radar") return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.3">
-      {[0.25,0.5,0.75,1].map((r,i) => (
-        <polygon key={i} points={Array.from({length:6}).map((_,j)=>{
-          const a=(j/6)*Math.PI*2-Math.PI/2;
-          return `${40+Math.cos(a)*r*34},${40+Math.sin(a)*r*34}`;
-        }).join(" ")} fill="none" stroke={color} strokeWidth="0.8"/>
-      ))}
-      {Array.from({length:6}).map((_,j)=>{
-        const a=(j/6)*Math.PI*2-Math.PI/2;
-        return <line key={j} x1="40" y1="40" x2={40+Math.cos(a)*34} y2={40+Math.sin(a)*34} stroke={color} strokeWidth="0.6"/>;
-      })}
-      <polygon points={[0.9,0.7,0.85,0.75,0.8,0.65].map((r,j)=>{
-        const a=(j/6)*Math.PI*2-Math.PI/2;
-        return `${40+Math.cos(a)*r*34},${40+Math.sin(a)*r*34}`;
-      }).join(" ")} fill={color} fillOpacity="0.15" stroke={color} strokeWidth="1.2"/>
-    </svg>
-  );
-  if (type === "bar") return (
-    <svg width="70" height="48" viewBox="0 0 70 48" fill="none" opacity="0.35">
-      {[
-        {x:3, h:28}, {x:14,h:38}, {x:25,h:22}, {x:36,h:44}, {x:47,h:32}, {x:58,h:36},
-      ].map(({x,h},i) => (
-        <rect key={i} x={x} y={48-h} width={8} height={h} rx="2" fill={color} opacity={i===3?0.9:0.4+(i*0.08)}/>
-      ))}
-    </svg>
-  );
-  if (type === "pitch") return (
-    <svg width="72" height="52" viewBox="0 0 72 52" fill="none" opacity="0.25">
-      <rect x="1" y="1" width="70" height="50" rx="3" stroke={color} strokeWidth="1.2"/>
-      <line x1="36" y1="1" x2="36" y2="51" stroke={color} strokeWidth="0.8"/>
-      <circle cx="36" cy="26" r="9" stroke={color} strokeWidth="0.8"/>
-      <rect x="1" y="16" width="14" height="20" stroke={color} strokeWidth="0.8"/>
-      <rect x="57" y="16" width="14" height="20" stroke={color} strokeWidth="0.8"/>
-    </svg>
-  );
-  if (type === "star") return (
-    <svg width="56" height="56" viewBox="0 0 56 56" fill="none" opacity="0.3">
-      <path d="M28 4l5.5 11 12 1.7L36 25.5l2.1 12L28 32l-10.1 5.5 2.1-12L10.5 16.7l12-1.7L28 4z"
-        stroke={color} strokeWidth="1.4" fill={color} fillOpacity="0.15" strokeLinejoin="round"/>
-    </svg>
-  );
-  if (type === "grid") return (
-    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" opacity="0.3">
-      {[0,1,2,3].map(r => [0,1,2,3].map(c => (
-        <rect key={`${r}${c}`} x={c*13+1} y={r*13+1} width="11" height="11" rx="2"
-          fill={color} fillOpacity={0.1+(r+c)*0.05} stroke={color} strokeWidth="0.6" strokeOpacity="0.4"/>
-      )))}
-    </svg>
-  );
-  if (type === "person") return (
-    <svg width="48" height="56" viewBox="0 0 48 56" fill="none" opacity="0.3">
-      <circle cx="24" cy="14" r="10" stroke={color} strokeWidth="1.4"/>
-      <path d="M4 54c0-11 9-20 20-20s20 9 20 20" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>
-  );
-  if (type === "news") return (
-    <svg width="60" height="52" viewBox="0 0 60 52" fill="none" opacity="0.3">
-      <rect x="1" y="1" width="58" height="50" rx="4" stroke={color} strokeWidth="1.2"/>
-      <rect x="8" y="10" width="44" height="6" rx="2" fill={color} fillOpacity="0.5"/>
-      <rect x="8" y="22" width="32" height="3" rx="1.5" fill={color} fillOpacity="0.3"/>
-      <rect x="8" y="29" width="38" height="3" rx="1.5" fill={color} fillOpacity="0.25"/>
-      <rect x="8" y="36" width="26" height="3" rx="1.5" fill={color} fillOpacity="0.2"/>
-    </svg>
-  );
-  if (type === "game") return (
-    <svg width="62" height="48" viewBox="0 0 62 48" fill="none" opacity="0.3">
-      <rect x="1" y="8" width="60" height="32" rx="8" stroke={color} strokeWidth="1.4"/>
-      <circle cx="18" cy="24" r="7" stroke={color} strokeWidth="1"/>
-      <line x1="15" y1="24" x2="21" y2="24" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <line x1="18" y1="21" x2="18" y2="27" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <circle cx="44" cy="21" r="2" fill={color} opacity="0.6"/>
-      <circle cx="50" cy="26" r="2" fill={color} opacity="0.4"/>
-    </svg>
-  );
-  return null;
-}
-
-function ToolCard({ tool, index }) {
-  const [hov, setHov] = useState(false);
-  const [ref, vis] = useReveal(0.05);
-  return (
-    <div
-      ref={ref}
-      style={{
-        gridColumn: `span ${tool.span}`,
-        gridRow: tool.tall ? "span 2" : "span 1",
-        opacity: vis ? 1 : 0,
-        transform: vis ? "translateY(0)" : "translateY(18px)",
-        transition: `opacity 0.5s ease ${index * 55}ms, transform 0.5s ease ${index * 55}ms`,
-      }}
-    >
-      <Link to={tool.to} style={{ textDecoration: "none", display: "block", height: "100%" }}>
-        <div
-          onMouseEnter={() => setHov(true)}
-          onMouseLeave={() => setHov(false)}
-          style={{
-            height: "100%",
-            minHeight: tool.tall ? 220 : 100,
-            borderRadius: 18,
-            background: hov ? `linear-gradient(145deg, ${tool.color}12, ${T.card})` : T.card,
-            border: `1px solid ${hov ? tool.color + "40" : T.border}`,
-            padding: "20px 22px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            position: "relative",
-            overflow: "hidden",
-            boxShadow: hov
-              ? `0 0 40px ${tool.color}18, 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`
-              : `0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.025)`,
-            transform: hov ? "translateY(-3px)" : "translateY(0)",
-            transition: "all 0.2s cubic-bezier(0.22,1,0.36,1)",
-            cursor: "pointer",
-          }}
-        >
-          {/* Top accent line */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 2,
-            background: hov ? `linear-gradient(90deg, ${tool.color}80, ${tool.color}20)` : "transparent",
-            transition: "background 0.2s",
-          }} />
-
-          {/* Background graphic */}
-          <div style={{
-            position: "absolute",
-            bottom: 12, right: 16,
-            opacity: hov ? 0.6 : 0.3,
-            transition: "opacity 0.2s, transform 0.2s",
-            transform: hov ? "scale(1.08) translateY(-3px)" : "scale(1)",
-          }}>
-            <CardGraphic type={tool.graphic} color={tool.color} />
-          </div>
-
-          {/* Content */}
-          <div>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: `${tool.color}18`,
-              border: `1px solid ${tool.color}28`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              marginBottom: 12,
-              boxShadow: hov ? `0 0 16px ${tool.color}25` : "none",
-              transition: "box-shadow 0.2s",
-            }}>
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: tool.color }} />
-            </div>
-            <div style={{
-              fontSize: 15, fontWeight: 900, color: T.text,
-              letterSpacing: "-0.02em", marginBottom: 5,
-              fontFamily: "'Sora',sans-serif",
-            }}>
-              {tool.label}
-            </div>
-            <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.5 }}>
-              {tool.sub}
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 4,
-            fontSize: 10, fontWeight: 700,
-            color: hov ? tool.color : T.dim,
-            transition: "color 0.18s, transform 0.18s",
-            transform: hov ? "translateX(4px)" : "translateX(0)",
-            marginTop: 8,
-          }}>
-            Open
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2 5h6M5 2l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-        </div>
-      </Link>
-    </div>
-  );
-}
-
-function ToolGrid() {
-  const [ref, vis] = useReveal(0.05);
-  return (
-    <section style={{ padding: "80px 40px", background: T.bg, maxWidth: 1200, margin: "0 auto" }}>
-      <div ref={ref} style={{
-        opacity: vis ? 1 : 0,
-        transform: vis ? "translateY(0)" : "translateY(16px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-        marginBottom: 32,
-        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-      }}>
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.18em", color: T.muted, textTransform: "uppercase", marginBottom: 6 }}>
-            — Platform
-          </div>
-          <h2 style={{ fontSize: "clamp(22px,3vw,32px)", fontWeight: 900, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.025em", color: T.text, margin: 0 }}>
-            Every tool, one platform.
-          </h2>
-        </div>
-        <div style={{ fontSize: 10, fontWeight: 700, color: T.muted }}>
-          8 tools
-        </div>
-      </div>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gridAutoRows: "110px",
-        gap: 10,
-      }}>
-        {TOOLS.map((t, i) => <ToolCard key={t.to} tool={t} index={i} />)}
+      {/* Bottom scroll cue */}
+      <div className="hp4-scroll-cue">
+        <div className="hp4-scroll-line" />
+        <div className="hp4-scroll-dot" />
       </div>
     </section>
   );
 }
 
 // ══════════════════════════════════════════════════════════════
-// 4. TODAY'S SLATE — horizontal scroll fixtures
+// LIVE PULSE STRIP
 // ══════════════════════════════════════════════════════════════
-function ProbArc({ home, draw, away, color }) {
-  const r = 28, circ = Math.PI * r;
-  const hd = (home / 100) * circ, dd = (draw / 100) * circ, ad = (away / 100) * circ;
+function LivePulseStrip({ fixtures }) {
+  const nav  = useNavigate();
+  const live = fixtures.filter(f => LIVE_SET.has(f.status));
+  if (!live.length) return null;
+  const chips = [...live, ...live, ...live];
+
   return (
-    <svg width="64" height="36" viewBox="-2 -2 68 38">
-      <path d="M2 34 A30 30 0 0 1 62 34" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5"/>
-      <path d={`M2 34 A30 30 0 0 1 62 34`} fill="none"
+    <div className="hp4-live-strip">
+      <div className="hp4-strip-fade hp4-strip-fade--l" />
+      <div
+        className="hp4-strip-track"
+        style={{ animationDuration: `${Math.max(live.length * 6, 18)}s` }}
+      >
+        {chips.map((f, i) => (
+          <div
+            key={i}
+            className="hp4-strip-chip"
+            onClick={() => nav(`/match/${f.fixture_id}`)}
+          >
+            <span className="hp4-live-dot hp4-live-dot--xs" />
+            {f.home_logo && <img src={f.home_logo} className="hp4-chip-logo" onError={e => e.currentTarget.style.display="none"} />}
+            <span className="hp4-chip-team">{f.home_team?.split(" ").slice(-1)[0]}</span>
+            <span className="hp4-chip-score hp4-mono">{f.home_score ?? 0}–{f.away_score ?? 0}</span>
+            {f.away_logo && <img src={f.away_logo} className="hp4-chip-logo" onError={e => e.currentTarget.style.display="none"} />}
+            <span className="hp4-chip-team">{f.away_team?.split(" ").slice(-1)[0]}</span>
+            {f.minute && <span className="hp4-chip-min hp4-mono">{f.minute}'</span>}
+          </div>
+        ))}
+      </div>
+      <div className="hp4-strip-fade hp4-strip-fade--r" />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// ANIMATED CARD — glassmorphic 3D tilt
+// ══════════════════════════════════════════════════════════════
+function AnimatedCard({ children, color = "#38bdf8", className = "", style = {}, delay = 0, span = 1, tall = false }) {
+  const { ref, transform, glow, onMove, onLeave } = useTilt(7);
+  const [hov, setHov] = useState(false);
+  const [reveal, vis] = useReveal(0.05);
+
+  return (
+    <div
+      ref={reveal}
+      className={`hp4-card-wrap ${className}`}
+      style={{
+        gridColumn: `span ${span}`,
+        gridRow: tall ? "span 2" : "span 1",
+        opacity:   vis ? 1 : 0,
+        transform: vis ? "translateY(0)" : "translateY(22px)",
+        transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+      }}
+    >
+      <div
+        ref={ref}
+        className={`hp4-card ${hov ? "hp4-card--hov" : ""}`}
+        style={{
+          "--card-color": color,
+          transform,
+          transition: "transform 0.18s ease, box-shadow 0.22s ease, border-color 0.22s ease",
+          ...style,
+        }}
+        onMouseMove={onMove}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => { onLeave(); setHov(false); }}
+      >
+        {/* Inner glow that tracks mouse */}
+        <div
+          className="hp4-card-glow"
+          style={{
+            background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, ${color}22 0%, transparent 65%)`,
+          }}
+        />
+        {/* Shimmer sweep */}
+        <div className={`hp4-card-shimmer ${hov ? "hp4-card-shimmer--active" : ""}`} />
+        {/* Top accent */}
+        <div className="hp4-card-topbar" />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tool card graphic SVGs ───────────────────────────────────
+const GRAPHICS = {
+  radar: ({ color }) => (
+    <svg width="84" height="84" viewBox="0 0 84 84" fill="none">
+      {[0.25,0.5,0.75,1].map((r,i) => (
+        <polygon key={i} points={Array.from({length:6}).map((_,j) => {
+          const a = (j/6)*Math.PI*2-Math.PI/2;
+          return `${42+Math.cos(a)*r*38},${42+Math.sin(a)*r*38}`;
+        }).join(" ")} fill="none" stroke={color} strokeWidth={i===3?1.2:0.6} opacity={0.15+i*0.08}/>
+      ))}
+      {Array.from({length:6}).map((_,j) => {
+        const a=(j/6)*Math.PI*2-Math.PI/2;
+        return <line key={j} x1="42" y1="42" x2={42+Math.cos(a)*38} y2={42+Math.sin(a)*38} stroke={color} strokeWidth="0.5" opacity="0.2"/>;
+      })}
+      <polygon
+        points={[0.82,0.68,0.76,0.9,0.72,0.6].map((r,j) => {
+          const a=(j/6)*Math.PI*2-Math.PI/2;
+          return `${42+Math.cos(a)*r*38},${42+Math.sin(a)*r*38}`;
+        }).join(" ")}
+        fill={color} fillOpacity="0.12" stroke={color} strokeWidth="1.5" opacity="0.8"/>
+      <circle cx="42" cy="42" r="3" fill={color} opacity="0.6"/>
+    </svg>
+  ),
+  bars: ({ color }) => (
+    <svg width="76" height="56" viewBox="0 0 76 56" fill="none">
+      {[{x:3,h:22},{x:14,h:38},{x:25,h:18},{x:36,h:48},{x:47,h:30},{x:58,h:42},{x:69,h:34}].map(({x,h},i) => (
+        <rect key={i} x={x} y={56-h} width="8" height={h} rx="3"
+          fill={color} opacity={i===3?0.85:0.3+i*0.07}
+          style={{ filter: i===3?`drop-shadow(0 0 6px ${color})`:undefined }}/>
+      ))}
+      <path d="M3 44 L11 28 L22 36 L36 8 L47 22 L58 14 L73 20"
+        stroke={color} strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5"/>
+    </svg>
+  ),
+  pitch: ({ color }) => (
+    <svg width="80" height="58" viewBox="0 0 80 58" fill="none">
+      <rect x="1" y="1" width="78" height="56" rx="4" stroke={color} strokeWidth="1.2" opacity="0.5"/>
+      <line x1="40" y1="1" x2="40" y2="57" stroke={color} strokeWidth="0.8" opacity="0.4"/>
+      <circle cx="40" cy="29" r="10" stroke={color} strokeWidth="0.8" opacity="0.4"/>
+      <rect x="1" y="17" width="16" height="24" stroke={color} strokeWidth="0.8" opacity="0.4"/>
+      <rect x="63" y="17" width="16" height="24" stroke={color} strokeWidth="0.8" opacity="0.4"/>
+      <rect x="1" y="22" width="7" height="14" stroke={color} strokeWidth="0.8" opacity="0.3"/>
+      <rect x="72" y="22" width="7" height="14" stroke={color} strokeWidth="0.8" opacity="0.3"/>
+      {/* xG dots */}
+      {[{x:18,y:22},{x:24,y:34},{x:56,y:18},{x:62,y:32}].map((p,i)=>(
+        <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} opacity="0.5"
+          style={{filter:`drop-shadow(0 0 4px ${color})`}}/>
+      ))}
+    </svg>
+  ),
+  star: ({ color }) => (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      {/* Outer ring */}
+      <circle cx="32" cy="32" r="29" stroke={color} strokeWidth="0.6" opacity="0.12" strokeDasharray="4 3"/>
+      <circle cx="32" cy="32" r="22" stroke={color} strokeWidth="0.5" opacity="0.1"/>
+      <path d="M32 6l4.9 10.2 11.2 1.6L39.9 26 42 37.3 32 31.8l-10 5.5 2.1-11.3L16 17.8l11.2-1.6L32 6z"
+        stroke={color} strokeWidth="1.6" strokeLinejoin="round"
+        fill={color} fillOpacity="0.15"
+        style={{filter:`drop-shadow(0 0 8px ${color}50)`}}/>
+      {/* Small stars */}
+      {[{x:12,y:48,s:0.5},{x:52,y:50,s:0.4},{x:8,y:20,s:0.35}].map((p,i)=>(
+        <circle key={i} cx={p.x} cy={p.y} r={3*p.s} fill={color} opacity="0.3"/>
+      ))}
+    </svg>
+  ),
+  grid: ({ color }) => (
+    <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+      {[0,1,2,3].flatMap(r=>[0,1,2,3].map(c=>(
+        <rect key={`${r}${c}`} x={c*15+1} y={r*15+1} width="12" height="12" rx="3"
+          fill={color}
+          fillOpacity={0.06 + (r+c)*0.04}
+          stroke={color} strokeWidth="0.6" strokeOpacity="0.3"/>
+      )))}
+      <rect x="16" y="16" width="12" height="12" rx="3" fill={color} fillOpacity="0.25" stroke={color} strokeWidth="1"
+        style={{filter:`drop-shadow(0 0 5px ${color}50)`}}/>
+    </svg>
+  ),
+  person: ({ color }) => (
+    <svg width="56" height="66" viewBox="0 0 56 66" fill="none">
+      <circle cx="28" cy="16" r="12" stroke={color} strokeWidth="1.5" opacity="0.7"
+        fill={color} fillOpacity="0.08"/>
+      <path d="M4 64c0-13.3 10.7-24 24-24s24 10.7 24 24" stroke={color} strokeWidth="1.5" strokeLinecap="round"
+        opacity="0.7"/>
+      {/* Data aura */}
+      <circle cx="28" cy="16" r="18" stroke={color} strokeWidth="0.5" strokeDasharray="3 4" opacity="0.2"/>
+      {/* Stats bars */}
+      {[{x:8,y:50,h:8},{x:14,y:46,h:12},{x:20,y:44,h:14}].map((b,i)=>(
+        <rect key={i} x={b.x} y={b.y} width="4" height={b.h} rx="2" fill={color} opacity="0.3"/>
+      ))}
+    </svg>
+  ),
+  news: ({ color }) => (
+    <svg width="68" height="58" viewBox="0 0 68 58" fill="none">
+      <rect x="1" y="1" width="66" height="56" rx="5" stroke={color} strokeWidth="1.2" opacity="0.4"/>
+      <rect x="8" y="9" width="52" height="8" rx="3" fill={color} fillOpacity="0.4"
+        style={{filter:`drop-shadow(0 0 4px ${color}50)`}}/>
+      <rect x="8" y="24" width="36" height="3" rx="1.5" fill={color} fillOpacity="0.25"/>
+      <rect x="8" y="31" width="44" height="3" rx="1.5" fill={color} fillOpacity="0.2"/>
+      <rect x="8" y="38" width="28" height="3" rx="1.5" fill={color} fillOpacity="0.15"/>
+      <rect x="8" y="45" width="38" height="3" rx="1.5" fill={color} fillOpacity="0.12"/>
+    </svg>
+  ),
+  game: ({ color }) => (
+    <svg width="70" height="54" viewBox="0 0 70 54" fill="none">
+      <rect x="1" y="7" width="68" height="40" rx="10" stroke={color} strokeWidth="1.4" opacity="0.6"/>
+      <circle cx="20" cy="27" r="9" stroke={color} strokeWidth="1" opacity="0.5"/>
+      <line x1="16" y1="27" x2="24" y2="27" stroke={color} strokeWidth="1.6" strokeLinecap="round" opacity="0.7"/>
+      <line x1="20" y1="23" x2="20" y2="31" stroke={color} strokeWidth="1.6" strokeLinecap="round" opacity="0.7"/>
+      <circle cx="50" cy="22" r="3.5" fill={color} opacity="0.6" style={{filter:`drop-shadow(0 0 4px ${color})`}}/>
+      <circle cx="59" cy="30" r="3.5" fill={color} opacity="0.4"/>
+      <circle cx="41" cy="30" r="3.5" fill={color} opacity="0.3"/>
+      <circle cx="50" cy="38" r="3.5" fill={color} opacity="0.25"/>
+    </svg>
+  ),
+};
+
+// ─── Tool config ─────────────────────────────────────────────
+const TOOLS = [
+  { to:"/live",                      label:"Live Centre",  sub:"Real-time scores · Minute tracking",   color:"#ff4444", span:2, tall:true,  gfx:"radar"  },
+  { to:"/predictions/premier-league",label:"Predictions",  sub:"Dixon-Coles · ELO · xG models",       color:"#38bdf8", span:1, tall:false, gfx:"bars"   },
+  { to:"/match/0",                   label:"Match Hub",    sub:"Lineups · H2H · Injuries · xG",        color:"#a78bfa", span:1, tall:false, gfx:"pitch"  },
+  { to:"/best-team",                 label:"FPL Best XI",  sub:"Optimal starting lineup",              color:"#34d399", span:1, tall:true,  gfx:"star"   },
+  { to:"/squad-builder",             label:"Squad Builder",sub:"Build your 15-man squad",              color:"#34d399", span:1, tall:false, gfx:"grid"   },
+  { to:"/player",                    label:"Players",      sub:"500+ profiles · xG · FPL stats",       color:"#f59e0b", span:1, tall:false, gfx:"person" },
+  { to:"/news",                      label:"News",         sub:"Transfers · Injuries · Updates",       color:"#f472b6", span:1, tall:false, gfx:"news"   },
+  { to:"/games",                     label:"Mini Games",   sub:"Score predictor · Quizzes",            color:"#fb923c", span:1, tall:false, gfx:"game"   },
+];
+
+// ══════════════════════════════════════════════════════════════
+// TOOL GRID — bento layout
+// ══════════════════════════════════════════════════════════════
+function ToolGrid() {
+  const [ref, vis] = useReveal(0.04);
+  return (
+    <section className="hp4-section">
+      <div className="hp4-container">
+        <div ref={ref} className="hp4-section-head" style={{ opacity: vis?1:0, transform: vis?"translateY(0)":"translateY(14px)", transition:"all 0.5s ease" }}>
+          <div className="hp4-eyebrow">— Platform</div>
+          <h2 className="hp4-section-title">Every tool, one platform.</h2>
+          <span className="hp4-section-count">8 tools</span>
+        </div>
+        <div className="hp4-bento">
+          {TOOLS.map((t, i) => {
+            const Gfx = GRAPHICS[t.gfx];
+            return (
+              <AnimatedCard key={t.to} color={t.color} span={t.span} tall={t.tall} delay={i * 55}>
+                <Link to={t.to} className="hp4-card-link">
+                  <div className="hp4-card-icon-wrap" style={{ "--icon-color": t.color }}>
+                    <div className="hp4-card-icon-dot" />
+                  </div>
+                  <div className="hp4-card-body">
+                    <div className="hp4-card-title">{t.label}</div>
+                    <div className="hp4-card-sub">{t.sub}</div>
+                  </div>
+                  <div className="hp4-card-cta">
+                    Open
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="hp4-card-arrow">
+                      <path d="M2 5h6M5 2l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  {/* Background graphic */}
+                  <div className="hp4-card-gfx">
+                    {Gfx && <Gfx color={t.color} />}
+                  </div>
+                </Link>
+              </AnimatedCard>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// TODAY'S SLATE — horizontal scroll fixtures
+// ══════════════════════════════════════════════════════════════
+function ProbSemiCircle({ home, color }) {
+  const r = 26, len = Math.PI * r;
+  const dash = (home / 100) * len;
+  return (
+    <svg width="60" height="36" viewBox="-2 -2 64 34" style={{ overflow:"visible" }}>
+      <path d={`M2 32 A28 28 0 0 1 58 32`} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5"/>
+      <path d={`M2 32 A28 28 0 0 1 58 32`} fill="none"
         stroke={color} strokeWidth="5"
-        strokeDasharray={`${hd} ${circ - hd}`}
-        strokeLinecap="round" opacity="0.9"
-        style={{ filter: `drop-shadow(0 0 4px ${color}70)` }}/>
-      <text x="32" y="30" textAnchor="middle" fontSize="9" fontWeight="800" fill={color} fontFamily="'JetBrains Mono',monospace">
-        {home}%
-      </text>
+        strokeDasharray={`${dash} ${len - dash}`}
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 5px ${color}70)`, transition: "stroke-dasharray 0.8s ease" }}/>
+      <text x="30" y="27" textAnchor="middle" fontSize="9" fontWeight="900" fill={color}
+        fontFamily="'JetBrains Mono',monospace">{home}%</text>
     </svg>
   );
 }
 
-function FixtureChip({ f }) {
+function FixtureCard({ f, index }) {
   const nav = useNavigate();
   const [hov, setHov] = useState(false);
-  const isLive = LIVE.has(f.status);
+  const [ref, vis] = useReveal(0.05);
+  const isLive  = LIVE_SET.has(f.status);
   const hp = Math.round((f.p_home_win || 0) * 100);
-  const dp = Math.round((f.p_draw || 0) * 100);
+  const dp = Math.round((f.p_draw    || 0) * 100);
   const ap = Math.round((f.p_away_win || 0) * 100);
   const fav = hp > ap + 8 ? "home" : ap > hp + 8 ? "away" : null;
-  const color = isLive ? T.live : T.blue;
+  const col = isLive ? "#ff4444" : "#38bdf8";
 
   return (
     <div
+      ref={ref}
+      className={`hp4-fixture-card ${hov ? "hp4-fixture-card--hov" : ""}`}
+      style={{
+        "--fix-color": col,
+        opacity:   vis ? 1 : 0,
+        transform: vis ? "translateY(0)" : "translateY(14px)",
+        transition: `opacity 0.45s ease ${index * 60}ms, transform 0.45s ease ${index * 60}ms, box-shadow 0.2s, border-color 0.2s, background 0.2s`,
+      }}
       onClick={() => nav(`/match/${f.fixture_id}`)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      style={{
-        flexShrink: 0,
-        width: 200,
-        borderRadius: 16,
-        background: hov ? `linear-gradient(145deg, ${color}10, ${T.card})` : T.card,
-        border: `1px solid ${hov ? color + "40" : isLive ? "rgba(255,44,44,0.18)" : T.border}`,
-        padding: "14px 16px",
-        cursor: "pointer",
-        transform: hov ? "translateY(-3px)" : "translateY(0)",
-        boxShadow: hov ? `0 12px 36px rgba(0,0,0,0.45)` : "0 2px 10px rgba(0,0,0,0.3)",
-        transition: "all 0.18s ease",
-        position: "relative",
-        overflow: "hidden",
-      }}
     >
       {/* Left accent */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: color, borderRadius: "3px 0 0 3px", opacity: 0.7 }} />
+      <div className="hp4-fix-accent" />
 
-      <div style={{ paddingLeft: 8 }}>
+      <div className="hp4-fix-inner">
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <span style={{ fontSize: 8, fontWeight: 900, color: color, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            {f.league_name || "Match"}
-          </span>
+        <div className="hp4-fix-head">
+          <span className="hp4-fix-league">{f.league_name || "Match"}</span>
           {isLive ? (
-            <span style={{ fontSize: 8, fontWeight: 900, color: T.live, display: "flex", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 5, height: 5, borderRadius: "50%", background: T.live, animation: "hp3-pulse 1.6s ease-in-out infinite" }} />
-              {f.minute ? `${f.minute}'` : "LIVE"}
-            </span>
+            <span className="hp4-fix-live"><span className="hp4-live-dot hp4-live-dot--xs" />{f.minute ? `${f.minute}'` : "LIVE"}</span>
           ) : f.kickoff ? (
-            <span style={{ fontSize: 9, fontWeight: 700, color: T.muted, fontFamily: "'JetBrains Mono',monospace" }}>
-              {new Date(f.kickoff).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <span className="hp4-fix-time hp4-mono">
+              {new Date(f.kickoff).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}
             </span>
           ) : null}
         </div>
 
         {/* Teams */}
         {[
-          { logo: f.home_logo, name: f.home_team, score: f.home_score, bold: f.home_score > f.away_score },
-          { logo: f.away_logo, name: f.away_team, score: f.away_score, bold: f.away_score > f.home_score },
-        ].map(({ logo, name, score, bold }) => (
-          <div key={name} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-            {logo
-              ? <img src={logo} width={16} height={16} style={{ objectFit: "contain", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />
-              : <div style={{ width: 16, height: 16, flexShrink: 0 }} />
-            }
-            <span style={{
-              fontSize: 11, fontWeight: bold ? 800 : 600, flex: 1,
-              color: bold ? T.text : "rgba(255,255,255,0.55)",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>{name}</span>
-            {score != null && (
-              <span style={{ fontSize: 14, fontWeight: 900, color: bold ? T.text : "rgba(255,255,255,0.28)", fontFamily: "'JetBrains Mono',monospace" }}>
-                {score}
-              </span>
-            )}
+          { logo: f.home_logo, name: f.home_team, score: f.home_score, win: f.home_score > f.away_score },
+          { logo: f.away_logo, name: f.away_team, score: f.away_score, win: f.away_score > f.home_score },
+        ].map(({ logo, name, score, win }) => (
+          <div key={name} className="hp4-fix-team">
+            <div className="hp4-fix-team-logo">
+              {logo && <img src={logo} width={16} height={16} style={{ objectFit:"contain" }} onError={e => e.currentTarget.style.display="none"} />}
+            </div>
+            <span className={`hp4-fix-team-name ${win?"hp4-fix-team-name--win":""}`} title={name}>{name}</span>
+            {score != null && <span className={`hp4-fix-score hp4-mono ${win?"hp4-fix-score--win":""}`}>{score}</span>}
           </div>
         ))}
 
         {/* Prob arc */}
         {hp > 0 && (
-          <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <ProbArc home={hp} draw={dp} away={ap} color={fav === "home" ? T.blue : fav === "away" ? T.green : "rgba(255,255,255,0.3)"} />
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: T.green, fontFamily: "'JetBrains Mono',monospace" }}>{ap}%</div>
-              <div style={{ fontSize: 7, color: T.muted }}>Away</div>
+          <div className="hp4-fix-prob">
+            <ProbSemiCircle home={hp} color={fav==="home"?"#38bdf8":fav==="away"?"#34d399":"rgba(255,255,255,0.35)"} />
+            <div className="hp4-fix-prob-away">
+              <span className="hp4-mono" style={{ color:"#34d399", fontSize:11, fontWeight:900 }}>{ap}%</span>
+              <span style={{ fontSize:7, color:"var(--text-muted)" }}>Away</span>
             </div>
           </div>
         )}
@@ -845,45 +704,34 @@ function FixtureChip({ f }) {
 }
 
 function TodaySlate({ fixtures }) {
-  const [ref, vis] = useReveal(0.05);
+  const [ref, vis] = useReveal(0.04);
   const pool = useMemo(() => {
-    const live = fixtures.filter(f => LIVE.has(f.status));
-    const today = fixtures.filter(f => isToday(f.kickoff) && !LIVE.has(f.status) && !FT.has(f.status));
-    const seen = new Set();
-    return [...live, ...today].filter(f => { if (seen.has(f.fixture_id)) return false; seen.add(f.fixture_id); return true; }).slice(0, 10);
+    const live  = fixtures.filter(f => LIVE_SET.has(f.status));
+    const today = fixtures.filter(f => isToday(f.kickoff) && !LIVE_SET.has(f.status) && !FT_SET.has(f.status));
+    const seen  = new Set();
+    return [...live, ...today].filter(f => {
+      if (seen.has(f.fixture_id)) return false;
+      seen.add(f.fixture_id); return true;
+    }).slice(0, 10);
   }, [fixtures]);
 
   if (!pool.length) return null;
 
   return (
-    <section style={{ padding: "0 0 80px", background: T.bg }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 40px" }}>
-        <div ref={ref} style={{
-          opacity: vis ? 1 : 0,
-          transform: vis ? "translateY(0)" : "translateY(14px)",
-          transition: "opacity 0.5s ease, transform 0.5s ease",
-          display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20,
-        }}>
+    <section className="hp4-section">
+      <div className="hp4-container">
+        <div ref={ref} className="hp4-section-head" style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(14px)", transition:"all 0.5s ease" }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.18em", color: T.muted, textTransform: "uppercase", marginBottom: 5 }}>— Today</div>
-            <h2 style={{ fontSize: "clamp(18px,2.5vw,26px)", fontWeight: 900, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", color: T.text, margin: 0 }}>
-              Today's Slate
-            </h2>
+            <div className="hp4-eyebrow">— Today</div>
+            <h2 className="hp4-section-title">Today's Slate</h2>
           </div>
-          <Link to="/live" style={{ textDecoration: "none", fontSize: 11, fontWeight: 700, color: T.blue, display: "flex", alignItems: "center", gap: 4 }}>
+          <Link to="/live" className="hp4-see-all">
             All fixtures
             <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 4.5h5M4.5 2l2.5 2.5L4.5 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
           </Link>
         </div>
-        <div style={{
-          display: "flex",
-          gap: 10,
-          overflowX: "auto",
-          paddingBottom: 8,
-          scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
-        }}>
-          {pool.map(f => <FixtureChip key={f.fixture_id} f={f} />)}
+        <div className="hp4-h-scroll">
+          {pool.map((f, i) => <FixtureCard key={f.fixture_id} f={f} index={i} />)}
         </div>
       </div>
     </section>
@@ -891,40 +739,56 @@ function TodaySlate({ fixtures }) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 5. COMPETITION RAIL
+// COMPETITION RAIL — animated hover + glow
 // ══════════════════════════════════════════════════════════════
 const COMPS = [
-  { label: "Premier League", slug: "premier-league",   color: "#60a5fa", logo: "https://media.api-sports.io/football/leagues/39.png",  flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-  { label: "La Liga",        slug: "la-liga",          color: "#fb923c", logo: "https://media.api-sports.io/football/leagues/140.png", flag: "🇪🇸" },
-  { label: "Bundesliga",     slug: "bundesliga",       color: "#f59e0b", logo: "https://media.api-sports.io/football/leagues/78.png",  flag: "🇩🇪" },
-  { label: "Serie A",        slug: "serie-a",          color: "#34d399", logo: "https://media.api-sports.io/football/leagues/135.png", flag: "🇮🇹" },
-  { label: "Ligue 1",        slug: "ligue-1",          color: "#a78bfa", logo: "https://media.api-sports.io/football/leagues/61.png",  flag: "🇫🇷" },
-  { label: "UCL",            slug: "champions-league", color: "#3b82f6", logo: "https://media.api-sports.io/football/leagues/2.png",   flag: "⭐" },
-  { label: "UEL",            slug: "europa-league",    color: "#f97316", logo: "https://media.api-sports.io/football/leagues/3.png",   flag: "🟠" },
-  { label: "UECL",           slug: "conference-league",color: "#22c55e", logo: "https://media.api-sports.io/football/leagues/848.png", flag: "🟢" },
-  { label: "FA Cup",         slug: "fa-cup",           color: "#ef4444", logo: "https://media.api-sports.io/football/leagues/45.png",  flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { label:"Premier League", slug:"premier-league",   color:"#60a5fa", logo:"https://media.api-sports.io/football/leagues/39.png"  },
+  { label:"La Liga",        slug:"la-liga",          color:"#fb923c", logo:"https://media.api-sports.io/football/leagues/140.png" },
+  { label:"Bundesliga",     slug:"bundesliga",       color:"#f59e0b", logo:"https://media.api-sports.io/football/leagues/78.png"  },
+  { label:"Serie A",        slug:"serie-a",          color:"#34d399", logo:"https://media.api-sports.io/football/leagues/135.png" },
+  { label:"Ligue 1",        slug:"ligue-1",          color:"#a78bfa", logo:"https://media.api-sports.io/football/leagues/61.png"  },
+  { label:"UCL",            slug:"champions-league", color:"#3b82f6", logo:"https://media.api-sports.io/football/leagues/2.png"   },
+  { label:"UEL",            slug:"europa-league",    color:"#f97316", logo:"https://media.api-sports.io/football/leagues/3.png"   },
+  { label:"UECL",           slug:"conference-league",color:"#22c55e", logo:"https://media.api-sports.io/football/leagues/848.png" },
+  { label:"FA Cup",         slug:"fa-cup",           color:"#ef4444", logo:"https://media.api-sports.io/football/leagues/45.png"  },
 ];
 
-function CompRail() {
+function CompTile({ comp, index }) {
+  const [hov, setHov] = useState(false);
   const [ref, vis] = useReveal(0.05);
   return (
-    <section style={{ padding: "0 0 80px", background: T.bg }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 40px" }}>
-        <div ref={ref} style={{
-          opacity: vis ? 1 : 0,
-          transform: vis ? "translateY(0)" : "translateY(14px)",
-          transition: "opacity 0.5s ease, transform 0.5s ease",
-          marginBottom: 20,
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-        }}>
+    <div ref={ref} style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(10px)", transition:`all 0.4s ease ${index*35}ms` }}>
+      <Link to={`/predictions/${comp.slug}`} style={{ textDecoration:"none" }}>
+        <div
+          className={`hp4-comp-tile ${hov?"hp4-comp-tile--hov":""}`}
+          style={{ "--comp-color": comp.color }}
+          onMouseEnter={() => setHov(true)}
+          onMouseLeave={() => setHov(false)}
+        >
+          <div className="hp4-comp-logo-wrap">
+            <img src={comp.logo} width={22} height={22} style={{ objectFit:"contain" }}
+              onError={e => e.currentTarget.style.display="none"} />
+          </div>
+          <span className="hp4-comp-label">{comp.label}</span>
+          <div className="hp4-comp-arrow">→</div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function CompRail() {
+  const [ref, vis] = useReveal(0.04);
+  return (
+    <section className="hp4-section">
+      <div className="hp4-container">
+        <div ref={ref} className="hp4-section-head" style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(14px)", transition:"all 0.5s ease" }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.18em", color: T.muted, textTransform: "uppercase", marginBottom: 5 }}>— Competitions</div>
-            <h2 style={{ fontSize: "clamp(18px,2.5vw,26px)", fontWeight: 900, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", color: T.text, margin: 0 }}>
-              9 competitions covered
-            </h2>
+            <div className="hp4-eyebrow">— Competitions</div>
+            <h2 className="hp4-section-title">9 competitions covered</h2>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="hp4-comp-grid">
           {COMPS.map((c, i) => <CompTile key={c.slug} comp={c} index={i} />)}
         </div>
       </div>
@@ -932,186 +796,85 @@ function CompRail() {
   );
 }
 
-function CompTile({ comp, index }) {
+// ══════════════════════════════════════════════════════════════
+// FPL COMMAND — expandable rows
+// ══════════════════════════════════════════════════════════════
+const FPL_TOOLS = [
+  { to:"/best-team",          label:"Best XI",            stat:"Optimal 11",      detail:"Model-driven optimal starting 11 for your FPL squad",      color:"#34d399" },
+  { to:"/squad-builder",      label:"Squad Builder",      stat:"15-man squad",    detail:"Build your complete squad within the £100m budget",         color:"#38bdf8" },
+  { to:"/gameweek-insights",  label:"GW Insights",        stat:"This gameweek",   detail:"Fixture analysis, form ratings, and GW recommendations",    color:"#f59e0b" },
+  { to:"/fpl-table",          label:"FPL Table",          stat:"Live standings",  detail:"Live leaderboard with points tracking and rank changes",     color:"#a78bfa" },
+  { to:"/captaincy",          label:"Captaincy",          stat:"Captain picks",   detail:"Expected points analysis and captain ownership data",        color:"#fb923c" },
+  { to:"/fixture-difficulty", label:"Fixture Difficulty", stat:"FDR heatmap",     detail:"Multi-gameweek fixture difficulty ratings as a heatmap",     color:"#67e8f9" },
+  { to:"/transfer-planner",   label:"Transfer Planner",   stat:"Plan your moves", detail:"Model-backed transfer recommendations for upcoming GWs",     color:"#f87171" },
+  { to:"/differentials",      label:"Differentials",      stat:"Low-owned picks", detail:"High-ceiling, low-ownership picks to beat your mini-league", color:"#f472b6" },
+];
+
+function FPLRow({ tool, index }) {
   const [hov, setHov] = useState(false);
-  const [ref, vis] = useReveal(0.05);
+  const [ref, vis] = useReveal(0.04);
   return (
-    <div ref={ref} style={{
-      opacity: vis ? 1 : 0,
-      transform: vis ? "translateY(0)" : "translateY(10px)",
-      transition: `opacity 0.4s ease ${index * 35}ms, transform 0.4s ease ${index * 35}ms`,
-    }}>
-      <Link to={`/predictions/${comp.slug}`} style={{ textDecoration: "none" }}>
+    <div ref={ref} style={{ opacity:vis?1:0, transform:vis?"translateX(0)":"translateX(16px)", transition:`all 0.45s ease ${index*45}ms` }}>
+      <Link to={tool.to} style={{ textDecoration:"none" }}>
         <div
+          className={`hp4-fpl-row ${hov?"hp4-fpl-row--hov":""}`}
+          style={{ "--fpl-color": tool.color }}
           onMouseEnter={() => setHov(true)}
           onMouseLeave={() => setHov(false)}
-          style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 16px",
-            borderRadius: 12,
-            background: hov ? `${comp.color}10` : T.card,
-            border: `1px solid ${hov ? comp.color + "38" : T.border}`,
-            cursor: "pointer",
-            transform: hov ? "translateY(-2px)" : "translateY(0)",
-            boxShadow: hov ? `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${comp.color}14` : "none",
-            transition: "all 0.16s ease",
-          }}
         >
-          <div style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: `${comp.color}14`,
-            border: `1px solid ${comp.color}22`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <img src={comp.logo} width={20} height={20} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />
+          {/* Sliding left indicator */}
+          <div className="hp4-fpl-indicator" />
+          <div className="hp4-fpl-idx hp4-mono">{String(index+1).padStart(2,"0")}</div>
+          <div className="hp4-fpl-dot" />
+          <div className="hp4-fpl-content">
+            <span className="hp4-fpl-label">{tool.label}</span>
+            {/* Expand on hover */}
+            <span className={`hp4-fpl-detail ${hov?"hp4-fpl-detail--vis":""}`}>{tool.detail}</span>
           </div>
-          <span style={{ fontSize: 11, fontWeight: 800, color: hov ? T.text : "rgba(255,255,255,0.6)", whiteSpace: "nowrap", transition: "color 0.15s" }}>
-            {comp.label}
-          </span>
+          <span className="hp4-fpl-stat">{tool.stat}</span>
+          <div className={`hp4-fpl-arrow ${hov?"hp4-fpl-arrow--vis":""}`}>→</div>
         </div>
       </Link>
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════
-// 6. FPL COMMAND — terminal-style list
-// ══════════════════════════════════════════════════════════════
-const FPL_TOOLS = [
-  { to: "/best-team",          label: "Best XI",            stat: "Optimal 11",          color: T.green  },
-  { to: "/squad-builder",      label: "Squad Builder",      stat: "15-man squad",        color: T.blue   },
-  { to: "/gameweek-insights",  label: "GW Insights",        stat: "This gameweek",       color: T.amber  },
-  { to: "/fpl-table",          label: "FPL Table",          stat: "Live standings",      color: T.purple },
-  { to: "/captaincy",          label: "Captaincy",          stat: "Captain picks",       color: T.orange },
-  { to: "/fixture-difficulty", label: "Fixture Difficulty", stat: "FDR heatmap",         color: T.cyan   },
-  { to: "/transfer-planner",   label: "Transfer Planner",   stat: "Plan your moves",     color: T.red    },
-  { to: "/differentials",      label: "Differentials",      stat: "Low-owned picks",     color: "#f472b6" },
-];
-
 function FPLCommand() {
-  const [ref, vis] = useReveal(0.05);
+  const [ref, vis] = useReveal(0.04);
   return (
-    <section style={{ padding: "0 0 100px", background: T.bg }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 40px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
-
-          {/* Left: header */}
-          <div ref={ref} style={{
-            opacity: vis ? 1 : 0,
-            transform: vis ? "translateX(0)" : "translateX(-16px)",
-            transition: "opacity 0.6s ease, transform 0.6s ease",
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.18em", color: T.muted, textTransform: "uppercase", marginBottom: 10 }}>
-              — Fantasy Premier League
-            </div>
-            <h2 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 900, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.03em", color: T.text, margin: "0 0 16px", lineHeight: 1.05 }}>
-              8 FPL tools.<br />
-              <span style={{ color: T.green }}>One command.</span>
+    <section className="hp4-section hp4-section--last">
+      <div className="hp4-container">
+        <div className="hp4-fpl-layout">
+          {/* Left */}
+          <div ref={ref} className="hp4-fpl-left" style={{ opacity:vis?1:0, transform:vis?"translateX(0)":"translateX(-16px)", transition:"all 0.6s ease" }}>
+            <div className="hp4-eyebrow">— Fantasy Premier League</div>
+            <h2 className="hp4-section-title hp4-section-title--big">
+              8 FPL tools.
+              <br />
+              <span className="hp4-gradient-text hp4-gradient-text--green">One command.</span>
             </h2>
-            <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.7, maxWidth: 320, margin: "0 0 32px" }}>
-              From squad selection to differential hunting — every FPL decision backed by data.
+            <p className="hp4-fpl-desc">
+              From squad selection to differential hunting — every FPL decision backed by model data.
             </p>
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "10px 20px",
-              borderRadius: 999,
-              background: "rgba(40,217,122,0.07)",
-              border: "1px solid rgba(40,217,122,0.2)",
-              fontSize: 11, fontWeight: 800, color: T.green,
-              fontFamily: "'JetBrains Mono',monospace",
-              letterSpacing: "0.04em",
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.green }} />
-              FPL INTEL SUITE
+            <div className="hp4-fpl-badge">
+              <span className="hp4-fpl-badge-dot" />
+              <span className="hp4-mono hp4-fpl-badge-text">FPL INTEL SUITE — 8 TOOLS</span>
+            </div>
+            {/* Decorative orbit */}
+            <div className="hp4-fpl-orbit" aria-hidden="true">
+              <div className="hp4-fpl-orbit-ring" />
+              <div className="hp4-fpl-orbit-ring hp4-fpl-orbit-ring--2" />
+              <div className="hp4-fpl-orbit-core" />
             </div>
           </div>
 
-          {/* Right: tool list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {FPL_TOOLS.map((tool, i) => (
-              <FPLRow key={tool.to} tool={tool} index={i} />
-            ))}
+          {/* Right */}
+          <div className="hp4-fpl-right">
+            {FPL_TOOLS.map((t, i) => <FPLRow key={t.to} tool={t} index={i} />)}
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function FPLRow({ tool, index }) {
-  const [hov, setHov] = useState(false);
-  const [ref, vis] = useReveal(0.05);
-  return (
-    <div ref={ref} style={{
-      opacity: vis ? 1 : 0,
-      transform: vis ? "translateX(0)" : "translateX(16px)",
-      transition: `opacity 0.4s ease ${index * 45}ms, transform 0.4s ease ${index * 45}ms`,
-    }}>
-      <Link to={tool.to} style={{ textDecoration: "none" }}>
-        <div
-          onMouseEnter={() => setHov(true)}
-          onMouseLeave={() => setHov(false)}
-          style={{
-            display: "flex", alignItems: "center", gap: 14,
-            padding: "11px 14px",
-            borderRadius: 10,
-            background: hov ? `${tool.color}0a` : "rgba(255,255,255,0.018)",
-            border: `1px solid ${hov ? tool.color + "28" : "rgba(255,255,255,0.042)"}`,
-            cursor: "pointer",
-            transform: hov ? "translateX(4px)" : "translateX(0)",
-            transition: "all 0.15s ease",
-          }}
-        >
-          {/* Index number */}
-          <span style={{
-            fontSize: 9, fontWeight: 900, color: T.dim,
-            fontFamily: "'JetBrains Mono',monospace",
-            minWidth: 16, flexShrink: 0,
-          }}>
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          {/* Dot */}
-          <div style={{
-            width: 7, height: 7, borderRadius: "50%",
-            background: tool.color,
-            flexShrink: 0,
-            boxShadow: hov ? `0 0 10px ${tool.color}` : "none",
-            transition: "box-shadow 0.15s",
-          }} />
-          {/* Label */}
-          <span style={{
-            fontSize: 12, fontWeight: 800, color: hov ? T.text : "rgba(255,255,255,0.65)",
-            flex: 1, transition: "color 0.15s",
-          }}>
-            {tool.label}
-          </span>
-          {/* Stat */}
-          <span style={{ fontSize: 9, fontWeight: 700, color: T.dim }}>
-            {tool.stat}
-          </span>
-          {/* Arrow */}
-          <div style={{ color: hov ? tool.color : "transparent", transition: "color 0.15s" }}>
-            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-              <path d="M2 4.5h5M4.5 2l2.5 2.5L4.5 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-          </div>
-        </div>
-      </Link>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// DIVIDER
-// ══════════════════════════════════════════════════════════════
-function Div() {
-  return (
-    <div style={{ maxWidth: 1200, margin: "0 auto 0", padding: "0 40px" }}>
-      <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${T.border}, transparent)` }} />
-    </div>
   );
 }
 
@@ -1139,12 +902,11 @@ export default function HomePage() {
           status:      c.status,
           minute:      c.minute,
           kickoff:     c.kickoff || c.date,
-          league_id:   c.league_id,
           league_name: c.league_name || c.league,
-          p_home_win:  c.p_home_win ?? null,
-          p_draw:      c.p_draw     ?? null,
-          p_away_win:  c.p_away_win ?? null,
-          confidence:  c.confidence ?? null,
+          p_home_win:  c.p_home_win  ?? null,
+          p_draw:      c.p_draw      ?? null,
+          p_away_win:  c.p_away_win  ?? null,
+          confidence:  c.confidence  ?? null,
         })));
       })
       .catch(() => {})
@@ -1152,38 +914,16 @@ export default function HomePage() {
   }, []);
 
   return (
-    <>
-      <style>{`
-        @keyframes hp3-up       { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes hp3-fadeinhalf { from{opacity:0} to{opacity:0.45} }
-        @keyframes hp3-pulse    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
-        @keyframes hp3-shimmer  { 0%{opacity:.3} 50%{opacity:.7} 100%{opacity:.3} }
-        @keyframes hp3-ticker   { from{transform:translateX(0)} to{transform:translateX(-33.333%)} }
-        @keyframes hp3-bounce   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
-        @media (max-width:768px){
-          .hp3-tool-grid { grid-template-columns: repeat(2,1fr) !important; }
-          .hp3-fpl-split { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width:520px){
-          .hp3-tool-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-
-      <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Inter','Sora',system-ui,sans-serif" }}>
-        <CinematicHero fixtures={fixtures} loading={loading} />
-        <LivePulse fixtures={fixtures} />
-        <div style={{ height: 80 }} />
-        <ToolGrid />
-        <Div />
-        <div style={{ height: 80 }} />
-        <TodaySlate fixtures={fixtures} />
-        <Div />
-        <div style={{ height: 80 }} />
-        <CompRail />
-        <Div />
-        <div style={{ height: 80 }} />
-        <FPLCommand />
-      </div>
-    </>
+    <div className="hp4-root">
+      <HeroSection fixtures={fixtures} loading={loading} />
+      <LivePulseStrip fixtures={fixtures} />
+      <ToolGrid />
+      <div className="hp4-divider-section" />
+      <TodaySlate fixtures={fixtures} />
+      <div className="hp4-divider-section" />
+      <CompRail />
+      <div className="hp4-divider-section" />
+      <FPLCommand />
+    </div>
   );
 }

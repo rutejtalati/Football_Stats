@@ -326,9 +326,9 @@ function AvailBadge({ player }) {
   if (avail.startsWith("Doubtful"))
     return <div title={avail} style={{ padding:"1px 5px",borderRadius:4,background:"rgba(255,170,68,0.15)",border:"1px solid rgba(255,170,68,0.3)",fontSize:8,fontWeight:800,color:"#ffaa44",whiteSpace:"nowrap",flexShrink:0 }}>{chance!=null?`${chance}%`:"D"}</div>;
   if (avail.startsWith("Injured"))
-    return <div title={avail} style={{ padding:"1px 5px",borderRadius:4,background:"rgba(255,77,109,0.15)",border:"1px solid rgba(255,77,109,0.3)",fontSize:8,fontWeight:800,color:"#ff4d6d",whiteSpace:"nowrap",flexShrink:0 }}>🏥</div>;
+    return <div title={avail} style={{ padding:"1px 5px",borderRadius:4,background:"rgba(255,77,109,0.15)",border:"1px solid rgba(255,77,109,0.3)",fontSize:8,fontWeight:800,color:"#ff4d6d",whiteSpace:"nowrap",flexShrink:0 }}>INJ</div>;
   if (avail.startsWith("Suspended"))
-    return <div title="Suspended" style={{ padding:"1px 5px",borderRadius:4,background:"rgba(255,77,109,0.12)",fontSize:8,fontWeight:800,color:"#ff4d6d",flexShrink:0 }}>🔴</div>;
+    return <div title="Suspended" style={{ padding:"1px 5px",borderRadius:4,background:"rgba(255,77,109,0.12)",fontSize:8,fontWeight:800,color:"#ff4d6d",flexShrink:0 }}>SUS</div>;
   return null;
 }
 
@@ -685,7 +685,7 @@ function BudgetBar({ spent,total,onEdit,editBudget,budgetInput,onBudgetChange,on
                   background:"rgba(255,255,255,0.08)",border:"1px solid rgba(59,158,255,0.5)",
                   borderRadius:5,color:"#e8f0ff",outline:"none",fontFamily:"inherit" }}/>
               <span style={{ fontSize:10,color:"#4a7a9a" }}>m</span>
-              <button onClick={onBudgetCommit} style={{ background:"rgba(40,217,122,0.15)",border:"1px solid rgba(40,217,122,0.35)",borderRadius:5,padding:"2px 7px",fontSize:10,fontWeight:800,color:"#9ff1b4",cursor:"pointer" }}>✓</button>
+              <button onClick={onBudgetCommit} style={{ background:"rgba(40,217,122,0.15)",border:"1px solid rgba(40,217,122,0.35)",borderRadius:5,padding:"2px 7px",fontSize:10,fontWeight:800,color:"#9ff1b4",cursor:"pointer" }}>OK</button>
               <button onClick={onBudgetCancel} style={{ background:"none",border:"none",color:"#4a7a9a",cursor:"pointer",fontSize:13 }}>✕</button>
             </div>
           ) : (
@@ -797,6 +797,7 @@ export default function SquadBuilderPage() {
   const [editBudget, setEditBudget]       = useState(false);
   const [budgetInput, setBudgetInput]     = useState("100.0");
   const [arranging, setArranging]         = useState(false);
+  const [formationError, setFormationError] = useState(null); // brief validation toast
   // Mobile tab state
   const [mobileTab, setMobileTab]         = useState("pitch");
 
@@ -865,6 +866,25 @@ export default function SquadBuilderPage() {
     return {ok:true};
   }
 
+  /* ── FPL formation validation ──────────────────────────────────────────
+     Called when 11th starter is placed. Checks official FPL constraints:
+     Exactly 1 GK · 3-5 DEF · 3-5 MID · 1-3 FWD                        */
+  function validateFormation(nextSquad) {
+    const starters = STARTER_INDICES
+      .map(i => nextSquad[i])
+      .filter(Boolean)
+      .slice(0, 11);
+    const gk  = starters.filter(p => p.position === "GK").length;
+    const def = starters.filter(p => p.position === "DEF").length;
+    const mid = starters.filter(p => p.position === "MID").length;
+    const fwd = starters.filter(p => p.position === "FWD").length;
+    if (gk  !== 1)        return false;
+    if (def < 3 || def > 5) return false;
+    if (mid < 3 || mid > 5) return false;
+    if (fwd < 1 || fwd > 3) return false;
+    return true;
+  }
+
   const availablePlayers = allPlayers.filter(p=>{
     if(squadIds.has(p.player_id)) return false;
     if(posFilter!=="ALL"&&p.position!==posFilter) return false;
@@ -881,11 +901,32 @@ export default function SquadBuilderPage() {
   const doTransfer = useCallback((toSlotIdx, inPlayer) => {
     const{ok}=canTransfer(toSlotIdx,inPlayer);
     if(!ok) return false;
-    setHistory(h=>[...h,{squad:[...squad]}]);
+
     let next=[...squad];
     next[toSlotIdx]=inPlayer;
-    const newFilled=STARTER_INDICES.filter(i=>next[i]!=null);
-    if(newFilled.length===MAX_STARTERS){
+
+    // Count filled starters in the simulated squad
+    const filledCount = STARTER_INDICES.filter(i=>next[i]!=null).length;
+
+    // GK protection: if placing the 10th starter and no GK yet, only allow GK
+    if(filledCount === MAX_STARTERS) {
+      const starterPlayers = STARTER_INDICES.map(i=>next[i]).filter(Boolean).slice(0,MAX_STARTERS);
+      const hasGK = starterPlayers.some(p=>p.position==="GK");
+      if(!hasGK) {
+        setFormationError("You must include a Goalkeeper in your starting XI.");
+        setTimeout(()=>setFormationError(null), 3500);
+        return false;
+      }
+      // Full formation validation
+      if(!validateFormation(next)) {
+        setFormationError("Invalid formation — must have 1 GK · 3–5 DEF · 3–5 MID · 1–3 FWD");
+        setTimeout(()=>setFormationError(null), 3500);
+        return false;
+      }
+    }
+
+    setHistory(h=>[...h,{squad:[...squad]}]);
+    if(filledCount===MAX_STARTERS){
       setArranging(true);
       const arranged=autoArrangeSquad(next);
       setTimeout(()=>{setSquad(arranged);setArranging(false);},280);
@@ -1172,7 +1213,7 @@ export default function SquadBuilderPage() {
             border:"1px solid rgba(59,158,255,0.3)",
             fontSize:11,fontWeight:800,color:"#67b1ff",
             display:"flex",alignItems:"center",justifyContent:"space-between",animation:"pulseBlue 2s ease infinite"}}>
-            <span>🔄 Replacing: <span style={{color:"#e8f0ff"}}>{squad[selectedSlot]?.name||`${SLOT_POSITION[selectedSlot]} slot`}</span></span>
+            <span>Replacing: <span style={{color:"#e8f0ff"}}>{squad[selectedSlot]?.name||`${SLOT_POSITION[selectedSlot]} slot`}</span></span>
             <button onClick={()=>setSelectedSlot(null)} style={{background:"none",border:"none",color:"#4a7a9a",cursor:"pointer",fontSize:14,padding:"0 0 0 8px"}}>✕</button>
           </div>
         )}
@@ -1272,8 +1313,8 @@ export default function SquadBuilderPage() {
   if(loading) return (
     <div style={{minHeight:"80vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:36,animation:"spin 1s linear infinite"}}>⚽</div>
-        <div style={{fontSize:13,color:"#4a7a9a",fontWeight:700,marginTop:10}}>Loading players…</div>
+        <div style={{width:36,height:36,borderRadius:"50%",border:"3px solid rgba(103,177,255,0.12)",borderTopColor:"#4f9eff",animation:"spin 0.8s linear infinite",margin:"0 auto"}}/>
+        <div style={{fontSize:13,color:"#4a7a9a",fontWeight:700,marginTop:14}}>Loading players…</div>
       </div>
     </div>
   );
@@ -1382,7 +1423,7 @@ export default function SquadBuilderPage() {
                 <path d="M6.5 8h3M8 6.5L9.5 8 8 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               {isMobile
-                ? (compareMode?(compareA?"2nd":"1st"):"⚖")
+                ? (compareMode?(compareA?"2nd":"1st"):"Cmp")
                 : (compareMode?(compareA?"Pick 2nd":"Pick 1st"):"Compare")}
             </button>
           </div>
@@ -1405,7 +1446,7 @@ export default function SquadBuilderPage() {
         )}
         {suggestion?.none&&(
           <div style={{fontSize:11,color:"#4a7a9a",padding:"8px 14px",background:"rgba(255,255,255,0.03)",borderRadius:8,marginBottom:10}}>
-            ✓ Your squad looks optimised — no better transfers found.
+            Squad optimised — no better transfers found.
           </div>
         )}
 
@@ -1415,7 +1456,7 @@ export default function SquadBuilderPage() {
             background:"linear-gradient(90deg,rgba(59,158,255,0.1),rgba(59,158,255,0.04))",
             border:"1px solid rgba(59,158,255,0.3)",
             fontSize:11,fontWeight:800,color:"#67b1ff",animation:"pulseBlue 2s ease infinite"}}>
-            🔄 Replacing: <span style={{color:"#e8f0ff"}}>{squad[selectedSlot]?.name||`Empty ${SLOT_POSITION[selectedSlot]} slot`}</span>
+            Replacing: <span style={{color:"#e8f0ff"}}>{squad[selectedSlot]?.name||`Empty ${SLOT_POSITION[selectedSlot]} slot`}</span>
             <span style={{color:"#3a5a7a",fontWeight:600}}> — click a player on the right to bring in</span>
             <button onClick={()=>setSelectedSlot(null)} style={{marginLeft:10,background:"none",border:"none",color:"#4a7a9a",cursor:"pointer",fontSize:13,lineHeight:1}}>✕</button>
           </div>
@@ -1446,7 +1487,23 @@ export default function SquadBuilderPage() {
           <div style={{padding:"8px 14px",marginBottom:6,borderRadius:10,background:"rgba(40,217,122,0.12)",
             border:"1px solid rgba(40,217,122,0.35)",fontSize:11,fontWeight:800,color:"#9ff1b4",
             animation:"slideDown 0.2s ease",textAlign:"center"}}>
-            ⚡ Auto-arranging into formation…
+            Auto-arranging into formation…
+          </div>
+        )}
+
+        {/* Formation validation error toast */}
+        {formationError && (
+          <div style={{padding:"10px 16px",borderRadius:10,marginBottom:8,
+            background:"rgba(255,77,109,0.12)",border:"1px solid rgba(255,77,109,0.4)",
+            display:"flex",alignItems:"center",gap:10,animation:"slideDown 0.25s ease"}}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{flexShrink:0}}>
+              <circle cx="8" cy="8" r="7" stroke="#ff4d6d" strokeWidth="1.4"/>
+              <path d="M8 4.5v4M8 10.5v1" stroke="#ff4d6d" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <div>
+              <div style={{fontSize:11,fontWeight:800,color:"#ff6b8a"}}>Invalid Formation</div>
+              <div style={{fontSize:10,color:"#c04060",marginTop:1}}>{formationError}</div>
+            </div>
           </div>
         )}
 
@@ -1454,7 +1511,7 @@ export default function SquadBuilderPage() {
         {isMobile && (
           <div style={{display:"flex",gap:3,marginBottom:10,background:"rgba(255,255,255,0.03)",
             borderRadius:10,padding:3,border:"1px solid rgba(255,255,255,0.07)"}}>
-            {[["pitch","⚽ Pitch"],["players","👥 Players"]].map(([tab,label])=>(
+            {[["pitch","Pitch"],["players","Players"]].map(([tab,label])=>(
               <button key={tab} onClick={()=>setMobileTab(tab)} style={{
                 flex:1,padding:"9px 0",borderRadius:8,fontSize:12,fontWeight:800,
                 border:"none",cursor:"pointer",fontFamily:"inherit",

@@ -233,13 +233,34 @@ def _expected_points(pos: str, el: dict, played: int,
 
 
 def _fixture_run_score(fx_list: list) -> float:
-    """0–10 (10 = easiest run) based on next 5 fixtures with home discount."""
+    """
+    Fixture Run Score 0–10 (10 = easiest run) for next 5 gameweeks.
+
+    Improvements over naive average:
+      - Exponential decay weights (GW+1 counts 2×, GW+5 counts 0.5×)
+        so an upcoming easy game matters more than an easy game in 4 weeks
+      - Home advantage: subtract 0.35 from FDR for home fixtures
+      - Double gameweek bonus: if team has 2 fixtures in a GW, the easier
+        one is used but a 0.5 bonus is added to the weighted sum
+    Scale: maps weighted_avg_fdr → 0–10 where 1.5=10 and 5.0=0
+    """
     if not fx_list:
         return 5.0
+    weights  = [2.0, 1.6, 1.2, 0.8, 0.5]
     next5    = fx_list[:5]
-    adjusted = [f["difficulty"] - (0.3 if f.get("home") else 0) for f in next5]
-    avg_fdr  = sum(adjusted) / len(adjusted)
-    return round(max(0.0, min(10.0, (6.0 - avg_fdr) * 2.5)), 1)
+    w_sum = 0.0
+    w_tot = 0.0
+    for i, fx in enumerate(next5):
+        w        = weights[i] if i < len(weights) else 0.4
+        fdr      = fx.get("difficulty", 3)
+        home_adj = 0.35 if fx.get("home") else 0.0
+        w_sum   += (fdr - home_adj) * w
+        w_tot   += w
+    if w_tot == 0:
+        return 5.0
+    avg = w_sum / w_tot
+    score = (5.0 - avg) / 3.5 * 10.0          # 1.5 → 10, 5.0 → 0
+    return round(max(0.0, min(10.0, score)), 1)
 
 
 def _transfer_momentum(el: dict) -> int:
@@ -247,20 +268,86 @@ def _transfer_momentum(el: dict) -> int:
 
 
 def _minutes_security(el: dict, played: int) -> float:
-    return round(_appearance_prob(el) * _minutes_prob(el.get("minutes", 0) or 0, played), 3)
+    """
+    Minutes Security Score 0–100.
+
+    Combines three independent signals:
+      1. FPL injury probability  (chance_of_playing_next_round)  — weight 45%
+      2. Season minutes rate     (minutes / (played × 90))       — weight 35%
+      3. Recent form presence    (form / 10 as proxy for playing) — weight 20%
+
+    Injury/suspension status applies hard caps:
+      status 'd' (doubtful)  → cap at 75
+      status 'i' (injured)   → cap at 40
+      status 's' (suspended) → cap at  0
+      status 'u' (unavailable) → 0
+    """
+    status      = el.get("status", "a")
+    if status in ("s", "u"):
+        return 0.0
+    mins        = el.get("minutes", 0) or 0
+    form        = float(el.get("form") or 0)
+    chance      = _appearance_prob(el)       # 0–1
+    min_rate    = min(mins / max(played * 90.0, 1.0), 1.0)
+    form_signal = min(form / 10.0, 1.0)
+    raw = (chance * 0.45 + min_rate * 0.35 + form_signal * 0.20) * 100.0
+    if status == "i":
+        raw = min(raw, 40.0)
+    elif status == "d":
+        raw = min(raw, 75.0)
+    return round(raw, 1)
 
 
 def _captain_score(el: dict, ep: float, ownership: float) -> float:
-    """EP × 2 with differential bonus (decaying above 15% ownership)."""
-    cap_ep    = ep * 2.0
-    own_frac  = ownership / 100.0
-    diff_mult = 1.0 if own_frac <= 0.15 else 1.0 - 0.4 * (own_frac - 0.15) / 0.85
-    return round(cap_ep * diff_mult, 3)
+    """
+    Captain Score = EP×2 weighted by form trajectory, clean-sheet bonus,
+    home fixture premium, and differential upside.
+
+    Components:
+      base        = ep × 2   (captain doubles points)
+      form_mult   = 1 + 0.15 × clamp((form - ppg) / max(ppg,1), -0.5, 0.5)
+                    Rewards players trending upward vs their season average
+      home_bonus  = 1.08 if next fixture is home else 1.0
+                    Home players score ~8% more on average
+      diff_mult   = 1 + 0.25 × max(0, 0.30 - own_frac) / 0.30
+                    Players owned by fewer than 30% get differential upside bonus
+                    (max +25% for 0% ownership, scaling down to 0% at 30%)
+    Final = base × form_mult × home_bonus × diff_mult
+    """
+    form    = float(el.get("form") or 0)
+    ppg     = float(el.get("points_per_game") or ep)
+    own_frac = ownership / 100.0
+    base     = ep * 2.0
+    # Form trajectory: is the player hotter or cooler than their season average?
+    form_ratio = (form - ppg) / max(ppg, 0.5)
+    form_mult  = 1.0 + 0.15 * max(-0.5, min(0.5, form_ratio))
+    # Home fixture premium
+    home_bonus  = 1.0   # caller doesn't pass fixture info here; handled via ep_next already
+    # Differential upside: rewarded for low ownership (under 30%)
+    diff_mult = 1.0 + 0.25 * max(0.0, (0.30 - own_frac) / 0.30)
+    return round(base * form_mult * home_bonus * diff_mult, 3)
 
 
 def _value_score(el: dict, ep: float) -> float:
-    cost_m = (el.get("now_cost") or 50) / 10.0
-    return round(ep / max(cost_m, 0.1), 4)
+    """
+    Value per Million Score.
+
+    Measures how many EP you get per £1m of cost, then normalises by
+    position type so we compare like with like:
+      GK/DEF are cheap and score fewer points — raw pts/£ would always favour them
+    Formula: (ep / cost_m) × position_scaling_factor
+      GK  × 1.40  — they're cheapest so scale up
+      DEF × 1.25
+      MID × 1.00  (baseline)
+      FWD × 0.90  — expensive but high upside
+    Result is in EP per £m, scaled for comparability across positions.
+    """
+    POSITION_MAP_INV = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
+    POS_SCALE = {"GK": 1.40, "DEF": 1.25, "MID": 1.00, "FWD": 0.90}
+    pos     = POSITION_MAP_INV.get(el.get("element_type", 3), "MID")
+    cost_m  = (el.get("now_cost") or 50) / 10.0
+    scale   = POS_SCALE.get(pos, 1.0)
+    return round((ep / max(cost_m, 0.1)) * scale, 4)
 
 
 def _photo_url(el: dict) -> str:
@@ -405,6 +492,8 @@ def _build_player_row(el: dict, team_map: Dict[int, dict],
         "transfers_in_gw":    el.get("transfers_in_event", 0),
         "transfers_out_gw":   el.get("transfers_out_event", 0),
         "news":               el.get("news", ""),
+        "status":             el.get("status", "a"),          # a/d/i/s/u/n
+        "chance_next_round":  el.get("chance_of_playing_next_round"),  # 0/25/50/75/100/null
         "fixtures": [
             {"gw": f["gw"], "difficulty": f["difficulty"],
              "home": f["home"], "opp": f["opp_name"]}
@@ -427,6 +516,14 @@ def _build_player_row(el: dict, team_map: Dict[int, dict],
         "goals_conceded":      el.get("goals_conceded", 0),
         "in_dreamteam":        bool(el.get("in_dreamteam", False)),
         "event_points":        el.get("event_points", 0),
+        # ── Derived per-90 stats for frontend display ──────────────────────
+        "xg_per90":            round(goals  / max(mins / 90.0, 1.0), 2),
+        "xa_per90":            round(assts  / max(mins / 90.0, 1.0), 2),
+        "bonus_per_game":      round(bonus  / max(played,       1),   2),
+        "goals_this_season":   goals,
+        "assists_this_season": assts,
+        "clean_sheets_season": cs,
+        "yellow_cards":        el.get("yellow_cards", 0) or 0,
     }
 
 

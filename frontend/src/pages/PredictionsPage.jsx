@@ -1,5 +1,5 @@
-// PredictionsPage.jsx — StatinSite v6
-// VS Split Cards · League Themes · Floating Simulator · Key Players · Charts
+ï»¿// PredictionsPage.jsx  StatinSite v6
+// VS Split Cards  League Themes  Floating Simulator  Key Players  Charts
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -8,24 +8,24 @@ import {
 } from "../api/api";
 
 /* ----------------------------------------------------------
-   UNIFIED THEME — Professional monochrome + accent system
+   UNIFIED THEME  Professional monochrome + accent system
    Home: #E8F4FD (cool white-blue)  Away: #10B981 (emerald)
    Accent: #6366F1 (indigo) for highlights / selected states
 ---------------------------------------------------------- */
 const UNIFIED = {
-  bg:"#000000",
-  grad:"radial-gradient(ellipse at 20% 10%,rgba(99,102,241,0.07) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(16,185,129,0.05) 0%,transparent 55%)",
-  accent:"#818CF8",        // soft indigo — selected, FAV, active highlights
-  accent2:"#F87171",       // soft red — relegation, negative
+  bg:"#000810",
+  grad:"radial-gradient(ellipse at 20% 10%,rgba(56,189,248,0.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(52,211,153,0.04) 0%,transparent 55%)",
+  accent:"#60a5fa",
+  accent2:"#f87171",
   mid:"rgba(255,255,255,0.55)",
-  panel:"rgba(255,255,255,0.04)",
-  border:"rgba(255,255,255,0.08)",
-  borderHi:"rgba(129,140,248,0.35)",
+  panel:"rgba(9,15,28,0.98)",
+  border:"rgba(255,255,255,0.065)",
+  borderHi:"rgba(96,165,250,0.35)",
   text:"rgba(255,255,255,0.92)",
-  muted:"rgba(255,255,255,0.3)",
-  faint:"rgba(255,255,255,0.04)",
-  homeCol:"#E2E8F0",        // near-white slate — home team (neutral, clean)
-  awayCol:"#10B981",        // emerald green — away team (professional, distinct)
+  muted:"rgba(90,122,154,0.9)",
+  faint:"rgba(255,255,255,0.025)",
+  homeCol:"#E2E8F0",
+  awayCol:"#34d399",
   label:"",
 };
 
@@ -58,7 +58,7 @@ const LEAGUE_TABS = [
 ];
 
 /* ----------------------------------------------------------
-   TASK 3 — KEY PLAYERS DATA
+   TASK 3  KEY PLAYERS DATA
 ---------------------------------------------------------- */
 const KP = {
   "Arsenal":         [{name:"Saka",pos:"RW",stat:"0.52 xA/90"},{name:"Havertz",pos:"ST",stat:"0.41 xG/90"},{name:"Raya",pos:"GK",stat:"+0.18 PSxG"}],
@@ -73,7 +73,7 @@ const KP = {
   "Barcelona":       [{name:"Yamal",pos:"RW",stat:"0.34 xA/90"},{name:"Lewandowski",pos:"ST",stat:"0.61 xG/90"},{name:"Ter Stegen",pos:"GK",stat:"+0.17 PSxG"}],
   "Real Madrid":     [{name:"Vinicius",pos:"LW",stat:"0.55 xG/90"},{name:"Bellingham",pos:"CM",stat:"0.40 xG/90"},{name:"Courtois",pos:"GK",stat:"+0.20 PSxG"}],
   "Atletico Madrid": [{name:"Griezmann",pos:"AM",stat:"0.38 xG/90"},{name:"Morata",pos:"ST",stat:"0.35 xG/90"},{name:"Oblak",pos:"GK",stat:"+0.25 PSxG"}],
-  "PSG":             [{name:"Mbappé",pos:"CF",stat:"0.78 xG/90"},{name:"Dembélé",pos:"RW",stat:"0.42 xA/90"},{name:"Donnarumma",pos:"GK",stat:"+0.18 PSxG"}],
+  "PSG":             [{name:"Mbapp",pos:"CF",stat:"0.78 xG/90"},{name:"Dembl",pos:"RW",stat:"0.42 xA/90"},{name:"Donnarumma",pos:"GK",stat:"+0.18 PSxG"}],
   "Monaco":          [{name:"Embolo",pos:"ST",stat:"0.44 xG/90"},{name:"Golovin",pos:"AM",stat:"0.22 xA/90"},{name:"Majecki",pos:"GK",stat:"+0.10 PSxG"}],
   "Inter Milan":     [{name:"Lautaro",pos:"ST",stat:"0.62 xG/90"},{name:"Calhanoglu",pos:"CM",stat:"0.30 xA/90"},{name:"Sommer",pos:"GK",stat:"+0.16 PSxG"}],
   "AC Milan":        [{name:"Leao",pos:"LW",stat:"0.48 xG/90"},{name:"Reijnders",pos:"CM",stat:"0.28 xA/90"},{name:"Maignan",pos:"GK",stat:"+0.21 PSxG"}],
@@ -83,7 +83,7 @@ function getKeyPlayers(name) {
   if(!name)return[];
   if(KP[name])return KP[name];
   const k=Object.keys(KP).find(k=>name.toLowerCase().includes(k.toLowerCase().split(" ")[0])||k.toLowerCase().includes(name.toLowerCase().split(" ")[0]));
-  return k?KP[k]:[{name:name.split(" ").pop()+" #9",pos:"ST",stat:"—"},{name:name.split(" ").pop()+" #8",pos:"CM",stat:"—"},{name:name.split(" ").pop()+" #1",pos:"GK",stat:"—"}];
+  return k?KP[k]:[{name:name.split(" ").pop()+" #9",pos:"ST",stat:""},{name:name.split(" ").pop()+" #8",pos:"CM",stat:""},{name:name.split(" ").pop()+" #1",pos:"GK",stat:""}];
 }
 
 /* --- Helpers ---------------------------------------------- */
@@ -160,14 +160,14 @@ const VersusBar=({label,hv,av,T,fmtFn})=>{
   const hNull=hv==null||hv===false,aNull=av==null||av===false;
   const h=hNull?0:parseFloat(hv)||0,a=aNull?0:parseFloat(av)||0;
   const tot=h+a||1,hp=h/tot*100,ap=a/tot*100;
-  const fmt=fmtFn||(v=>v!=null?typeof v==="number"?v.toFixed(1):v:"—");
+  const fmt=fmtFn||(v=>v!=null?typeof v==="number"?v.toFixed(1):v:"");
   const noData=hNull&&aNull;
   return(
     <div style={{display:"flex",flexDirection:"column",gap:5}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:13,fontWeight:700,color:hNull?"rgba(255,255,255,0.18)":T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hNull?"—":fmt(h)}</span>
+        <span style={{fontSize:13,fontWeight:700,color:hNull?"rgba(255,255,255,0.18)":T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hNull?"":fmt(h)}</span>
         <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-        <span style={{fontSize:13,fontWeight:700,color:aNull?"rgba(255,255,255,0.18)":T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{aNull?"—":fmt(a)}</span>
+        <span style={{fontSize:13,fontWeight:700,color:aNull?"rgba(255,255,255,0.18)":T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{aNull?"":fmt(a)}</span>
       </div>
       <div style={{display:"flex",height:5,borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.05)"}}>
         {noData
@@ -189,7 +189,7 @@ const ScoreGrid=({topScores,T})=>{
   topScores.forEach(({score,prob})=>{const[hg,ag]=score.split("-").map(Number);if(hg<G&&ag<G){pm[`${hg}-${ag}`]=prob;if(prob>mx)mx=prob;}});
   return(
     <div>
-      <div style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.12em",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>SCORE MATRIX — Home ? Away ?</div>
+      <div style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.12em",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>SCORE MATRIX  Home ? Away ?</div>
       <div style={{display:"grid",gridTemplateColumns:"20px repeat(5,1fr)",gap:4}}>
         <div/>
         {[0,1,2,3,4].map(ag=><div key={ag} style={{textAlign:"center",fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{ag}</div>)}
@@ -249,7 +249,7 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
           <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.05)"}}>
             <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",minWidth:70,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{r.date}</span>
             <span style={{flex:1,fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.home_team}</span>
-            <span style={{padding:"3px 10px",borderRadius:8,background:"rgba(255,255,255,0.06)",fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",minWidth:44,textAlign:"center",border:"1px solid rgba(255,255,255,0.08)"}}>{r.home_goals}–{r.away_goals}</span>
+            <span style={{padding:"3px 10px",borderRadius:8,background:"rgba(255,255,255,0.06)",fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",minWidth:44,textAlign:"center",border:"1px solid rgba(255,255,255,0.08)"}}>{r.home_goals}â€“{r.away_goals}</span>
             <span style={{flex:1,fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.away_team}</span>
           </div>
         ))}
@@ -262,7 +262,7 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
 const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
   const[odds,setOdds]=useState(null);
   useEffect(()=>{if(fixtureId)getFixtureOdds(fixtureId).then(setOdds).catch(()=>{});},[fixtureId]);
-  if(!odds?.bookmakers?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><div style={{width:12,height:12,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.15)",borderTopColor:T.accent,animation:"spin 0.8s linear infinite"}}/> Loading odds…</div>;
+  if(!odds?.bookmakers?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><div style={{width:12,height:12,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.15)",borderTopColor:T.accent,animation:"spin 0.8s linear infinite"}}/> Loading odds</div>;
   const bk=odds.bookmakers[0],mw=bk.bets?.["Match Winner"]||{};
   const imp=odd=>odd?Math.round(1/parseFloat(odd)*100):0;
   const outcomes=[
@@ -278,7 +278,7 @@ const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
           return(
             <div key={label} style={{flex:1,display:"flex",flexDirection:"column",gap:6,alignItems:"center",padding:"14px 8px",borderRadius:16,background:hasEdge&&diff>0?`${T.accent}0c`:"rgba(255,255,255,0.04)",border:`1px solid ${hasEdge&&diff>0?T.accent+"30":"rgba(255,255,255,0.07)"}`,transition:"all 0.2s"}}>
               <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.35)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-              <span style={{fontSize:26,fontWeight:700,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{odd||"—"}</span>
+              <span style={{fontSize:26,fontWeight:700,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{odd||""}</span>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                 <span style={{fontSize:9,color:"rgba(255,255,255,0.25)"}}>Implied {implied}%</span>
                 <span style={{fontSize:10,fontWeight:700,color:T.accent}}>Model {model}%</span>
@@ -294,7 +294,7 @@ const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
 };
 
 /* ----------------------------------------------------------
-   iOS MATCH CARD — frosted glass, big rounded corners,
+   iOS MATCH CARD  frosted glass, big rounded corners,
    clean VS split, smooth probability bars
 ---------------------------------------------------------- */
 const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
@@ -419,7 +419,7 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
         }}>
           {/* Score */}
           <div style={{textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:700,letterSpacing:"0.06em",lineHeight:1,fontFamily:"'SF Mono','JetBrains Mono',monospace",color:"rgba(255,255,255,0.92)"}}>{match.most_likely_score||"?–?"}</div>
+            <div style={{fontSize:28,fontWeight:700,letterSpacing:"0.06em",lineHeight:1,fontFamily:"'SF Mono','JetBrains Mono',monospace",color:"rgba(255,255,255,0.92)"}}>{match.most_likely_score||"-"}</div>
             <div style={{fontSize:8,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",marginTop:4,fontFamily:"'Inter',sans-serif"}}>PREDICTED</div>
           </div>
           {/* H D A pills */}
@@ -503,38 +503,38 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
                     l:"Goals / Game",
                     hv:hP>1?((hS.scored_home||0)+(hS.scored_away||0))/hP:null,
                     av:aP>1?((aS.scored_home||0)+(aS.scored_away||0))/aP:null,
-                    fmt:v=>v!=null?v.toFixed(2):"—"
+                    fmt:v=>v!=null?v.toFixed(2):""
                   },
-                  {l:"xG",hv:xgH||null,av:xgA||null,fmt:v=>v!=null?v.toFixed(2):"—"},
+                  {l:"xG",hv:xgH||null,av:xgA||null,fmt:v=>v!=null?v.toFixed(2):""},
                   {
                     l:"Shots / Game",
                     hv:hS.shots_pg>0?hS.shots_pg:null,
                     av:aS.shots_pg>0?aS.shots_pg:null,
-                    fmt:v=>v!=null?v.toFixed(1):"—"
+                    fmt:v=>v!=null?v.toFixed(1):""
                   },
                   {
                     l:"On Target %",
                     hv:hS.shots_on_target_pct>0?hS.shots_on_target_pct:null,
                     av:aS.shots_on_target_pct>0?aS.shots_on_target_pct:null,
-                    fmt:v=>v!=null?v.toFixed(0)+"%":"—"
+                    fmt:v=>v!=null?v.toFixed(0)+"%":""
                   },
                   {
                     l:"Possession",
                     hv:hS.possession_avg>0&&hS.possession_avg!==50?hS.possession_avg:null,
                     av:aS.possession_avg>0&&aS.possession_avg!==50?aS.possession_avg:null,
-                    fmt:v=>v!=null?v+"%":"—"
+                    fmt:v=>v!=null?v+"%":""
                   },
                   {
                     l:"Pass Accuracy",
                     hv:hS.pass_accuracy>0?hS.pass_accuracy:null,
                     av:aS.pass_accuracy>0?aS.pass_accuracy:null,
-                    fmt:v=>v!=null?v.toFixed(0)+"%":"—"
+                    fmt:v=>v!=null?v.toFixed(0)+"%":""
                   },
                   {
                     l:"Clean Sheets",
                     hv:hS.clean_sheets!=null?hS.clean_sheets:null,
                     av:aS.clean_sheets!=null?aS.clean_sheets:null,
-                    fmt:v=>v!=null?String(v):"—"
+                    fmt:v=>v!=null?String(v):""
                   },
                 ].map(({l,hv,av,fmt})=><VersusBar key={l} label={l} hv={hv} av={av} T={T} fmtFn={fmt}/>)}
               </div>
@@ -543,7 +543,7 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
                 {[{team:match.home_team,players:homePlayrs,col:T.homeCol,side:"HOME"},{team:match.away_team,players:awayPlayrs,col:T.awayCol,side:"AWAY"}].map(({team,players,col,side})=>(
                   <div key={side}>
-                    <div style={{fontSize:9,fontWeight:700,color:col,letterSpacing:"0.1em",marginBottom:10,fontFamily:"'Inter',sans-serif"}}>{side} · WATCH</div>
+                    <div style={{fontSize:9,fontWeight:700,color:col,letterSpacing:"0.1em",marginBottom:10,fontFamily:"'Inter',sans-serif"}}>{side}  WATCH</div>
                     <div style={{display:"flex",flexDirection:"column",gap:7}}>
                       {players.map((p,i)=>(
                         <div key={i} onClick={()=>navigate(`/player?search=${encodeURIComponent(p.name)}`)}
@@ -582,14 +582,14 @@ const MatchCard=({match,T,injuries,onSelect,isSelected,navigate})=>{
 };
 
 /* ----------------------------------------------------------
-   iOS SCENARIO SIMULATOR — frosted glass sidebar widget
+   iOS SCENARIO SIMULATOR  frosted glass sidebar widget
 ---------------------------------------------------------- */
 const PRESETS=[
-  {label:"Normal",icon:"??",mods:{homeAtk:0,awayAtk:0,homeDef:0,awayDef:0,tempo:0}},
-  {label:"Home Press",icon:"??",mods:{homeAtk:15,awayAtk:-5,homeDef:5,awayDef:-10,tempo:5}},
-  {label:"Both Attack",icon:"?",mods:{homeAtk:10,awayAtk:10,homeDef:-10,awayDef:-10,tempo:8}},
-  {label:"Defensive",icon:"???",mods:{homeAtk:-10,awayAtk:-10,homeDef:15,awayDef:15,tempo:-8}},
-  {label:"Away Upset",icon:"???",mods:{homeAtk:-10,awayAtk:18,homeDef:-5,awayDef:5,tempo:3}},
+  {label:"Normal",icon:"â—‹",mods:{homeAtk:0,awayAtk:0,homeDef:0,awayDef:0,tempo:0}},
+  {label:"Home Press",icon:"â—‹",mods:{homeAtk:15,awayAtk:-5,homeDef:5,awayDef:-10,tempo:5}},
+  {label:"Both Attack",icon:"â†•",mods:{homeAtk:10,awayAtk:10,homeDef:-10,awayDef:-10,tempo:8}},
+  {label:"Defensive",icon:"â– ",mods:{homeAtk:-10,awayAtk:-10,homeDef:15,awayDef:15,tempo:-8}},
+  {label:"Away Upset",icon:"â– ",mods:{homeAtk:-10,awayAtk:18,homeDef:-5,awayDef:5,tempo:3}},
 ];
 
 const ScenarioSimulator=({match,T})=>{
@@ -608,7 +608,7 @@ const ScenarioSimulator=({match,T})=>{
 
   if(!match)return(
     <div style={{...cardStyle,padding:32,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:240,gap:14}}>
-      <div style={{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>??</div>
+      <div style={{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"rgba(255,255,255,0.2)"}}>â€”</div>
       <div style={{textAlign:"center"}}>
         <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.5)",fontFamily:"'Inter',sans-serif",lineHeight:1.6}}>Select a match card</div>
         <div style={{fontSize:11,color:"rgba(255,255,255,0.2)",fontFamily:"'Inter',sans-serif",marginTop:4}}>to load the scenario simulator</div>
@@ -705,7 +705,7 @@ const ScenarioSimulator=({match,T})=>{
 };
 
 /* ----------------------------------------------------------
-   TASK 6 — STANDINGS + SCORERS
+   TASK 6  STANDINGS + SCORERS
 ---------------------------------------------------------- */
 const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
   const[sortCol,setSortCol]=useState("rank");const[dir,setDir]=useState(1);
@@ -870,7 +870,7 @@ const ScorersWidget=({league,T})=>{
     }}>
       {/* Tab switcher */}
       <div style={{display:"flex",background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-        {[["goals","? Top Scorers"],["assists","?? Top Assists"]].map(([k,l])=>(
+        {[["goals","Top Scorers"],["assists","Top Assists"]].map(([k,l])=>(
           <button key={k} onClick={()=>setTab(k)} style={{
             flex:1,padding:"14px 12px",fontSize:12,fontWeight:600,cursor:"pointer",
             background:"none",border:"none",fontFamily:"'Inter',sans-serif",
@@ -921,7 +921,7 @@ const ScorersWidget=({league,T})=>{
                 {p.photo
                   ? <img src={p.photo} style={{width:38,height:38,borderRadius:"50%",objectFit:"cover",flexShrink:0,border:"1px solid rgba(255,255,255,0.1)"}} onError={e=>{e.currentTarget.style.display="none";}}/>
                   : <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.05)",flexShrink:0,border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <span style={{fontSize:14}}>??</span>
+                      <span style={{fontSize:14,opacity:.3}}>â€“</span>
                     </div>
                 }
 
@@ -931,7 +931,7 @@ const ScorersWidget=({league,T})=>{
                   <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.05)",marginBottom:4,overflow:"hidden"}}>
                     <div style={{width:`${(p[statKey]||0)/maxVal*100}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.accent}88,${T.accent})`,transition:"width 0.5s cubic-bezier(.22,1,.36,1)"}}/>
                   </div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>{p.team_name} · {p.played||0} apps</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>{p.team_name}  {p.played||0} apps</div>
                 </div>
 
                 {/* Stat number */}
@@ -953,7 +953,7 @@ const ScorersWidget=({league,T})=>{
 };
 
 /* ----------------------------------------------------------
-   SEASON SIMULATOR — Monte Carlo engine v2
+   SEASON SIMULATOR  Monte Carlo engine v2
    Fixes: fixture shuffling, correct relegation zones per league,
    probability scaling, league-specific home advantage
    New: Title Race Chart, Points Projection, Relegation Battle Card,
@@ -1026,7 +1026,7 @@ function runMonteCarlo(teams, league, sims = 8000, excludeIdx = null) {
       allFixtures.push([i,j]);
 
   // How many unique fixture slots do we need per sim?
-  // Each team plays gamesLeft more games ˜ n*gamesLeft/2 fixtures total
+  // Each team plays gamesLeft more games  n*gamesLeft/2 fixtures total
   const fixturesNeeded = Math.round(n * gamesLeft / 2);
 
   // Accumulators
@@ -1043,7 +1043,7 @@ function runMonteCarlo(teams, league, sims = 8000, excludeIdx = null) {
     const gd  = teams.map(t => t.goal_diff || 0);
     const gf  = teams.map(t => t.goals_for || 0);
 
-    // ? FIX: shuffle fixtures each simulation so all matchups get sampled
+    // // shuffle fixtures each simulation so all matchups get sampled
     const pool = shuffle([...allFixtures]);
     const usedFixtures = pool.slice(0, fixturesNeeded);
 
@@ -1069,7 +1069,7 @@ function runMonteCarlo(teams, league, sims = 8000, excludeIdx = null) {
       if (pos === 0)                                     titleCount[ti]++;
       if (pos < cfg.ucl)                                 uclCount[ti]++;
       if (pos === cfg.uel - 1)                           uelCount[ti]++;
-      // ? FIX: use league-specific relegation zone
+      // // use league-specific relegation zone
       if (cfg.relPlay && pos === cfg.relPlay - 1)        relPlayCount[ti]++;
       if (pos >= cfg.relStart - 1)                       relegCount[ti]++;
     });
@@ -1107,7 +1107,7 @@ const ChancePill = ({ value, color, label }) => {
         color:v>0?color:"rgba(255,255,255,0.2)",
         fontFamily:"'JetBrains Mono',monospace",
         minWidth:46,textAlign:"center"}}>
-        {v > 0 ? `${v}%` : "—"}
+        {v > 0 ? `${v}%` : ""}
       </div>
       <span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
     </div>
@@ -1123,7 +1123,7 @@ const TitleRaceChart = ({ data, cfg, T }) => {
   return (
     <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px 24px"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
-        <span style={{fontSize:16}}>??</span>
+        
         <div>
           <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif"}}>Title Race</div>
           <div style={{fontSize:10,color:T.muted}}>Championship probability distribution</div>
@@ -1172,7 +1172,7 @@ const PointsProjection = ({ data, cfg, T }) => {
   return (
     <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px 24px"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
-        <span style={{fontSize:16}}>??</span>
+        
         <div>
           <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif"}}>Points Projection</div>
           <div style={{fontSize:10,color:T.muted}}>Current vs projected final points</div>
@@ -1234,7 +1234,7 @@ const PointsProjection = ({ data, cfg, T }) => {
 
 // -- Relegation Battle Card --------------------------------
 const RelegationBattleCard = ({ data, cfg, T }) => {
-  // Get bottom zone teams — those in or near relegation
+  // Get bottom zone teams  those in or near relegation
   const dangerZone = data.filter(r => {
     const pos = Math.round(r.avg_position);
     return pos >= cfg.relStart - 3; // show 3 above relegation too
@@ -1245,15 +1245,15 @@ const RelegationBattleCard = ({ data, cfg, T }) => {
   return (
     <div style={{background:"rgba(239,68,68,0.04)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:16,padding:"20px 24px"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-        <span style={{fontSize:16}}>??</span>
+        
         <div>
           <div style={{fontSize:13,fontWeight:900,color:"#ef4444",fontFamily:"'Sora',sans-serif"}}>Relegation Battle</div>
           <div style={{fontSize:10,color:T.muted}}>Survival probabilities for bottom clubs</div>
         </div>
       </div>
       <div style={{marginBottom:16,fontSize:10,color:T.muted,padding:"8px 12px",background:"rgba(239,68,68,0.06)",borderRadius:8,border:"1px solid rgba(239,68,68,0.12)"}}>
-        Relegation zone: positions {cfg.relStart}–{cfg.total} · {cfg.total - cfg.relStart + 1} teams go down
-        {cfg.relPlay ? ` · Position ${cfg.relPlay} enters playoff` : ""}
+        Relegation zone: positions {cfg.relStart}{cfg.total}  {cfg.total - cfg.relStart + 1} teams go down
+        {cfg.relPlay ? `  Position ${cfg.relPlay} enters playoff` : ""}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {[...dangerZone].sort((a,b) => b.relegation_prob - a.relegation_prob).map(row => {
@@ -1276,7 +1276,7 @@ const RelegationBattleCard = ({ data, cfg, T }) => {
                     : <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)"}}/>}
                   <div>
                     <div style={{fontSize:12,fontWeight:800,color:T.text,fontFamily:"'Sora',sans-serif"}}>{row.team_name}</div>
-                    <div style={{fontSize:9,color:T.muted}}>Avg pos: {row.avg_position?.toFixed(1)} · {row.currentPts ?? "?"} pts</div>
+                    <div style={{fontSize:9,color:T.muted}}>Avg pos: {row.avg_position?.toFixed(1)}  {row.currentPts ?? "?"} pts</div>
                   </div>
                 </div>
                 <div style={{textAlign:"right"}}>
@@ -1304,7 +1304,7 @@ const RelegationBattleCard = ({ data, cfg, T }) => {
                 <div style={{marginTop:8,fontSize:9,fontWeight:800,color:"#f97316",
                   background:"rgba(249,115,22,0.1)",border:"1px solid rgba(249,115,22,0.2)",
                   borderRadius:6,padding:"4px 8px",display:"inline-block"}}>
-                  ? Relegation Play-off spot
+                  Relegation Play-off spot
                 </div>
               )}
             </div>
@@ -1339,10 +1339,10 @@ const WhatIfPanel = ({ standings, league, T, onResult }) => {
   return (
     <div style={{background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px 24px"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-        <span style={{fontSize:16}}>??</span>
+        
         <div>
           <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif"}}>What-If Simulator</div>
-          <div style={{fontSize:10,color:T.muted}}>Remove a team's strength — see how the table changes</div>
+          <div style={{fontSize:10,color:T.muted}}>Remove a team's strength  see how the table changes</div>
         </div>
       </div>
       <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -1350,7 +1350,7 @@ const WhatIfPanel = ({ standings, league, T, onResult }) => {
           style={{flex:1,minWidth:160,padding:"8px 12px",borderRadius:8,fontSize:12,
             background:"rgba(255,255,255,0.06)",border:`1px solid ${T.border}`,
             color:T.text,outline:"none",cursor:"pointer"}}>
-          <option value="">Select a team to weaken…</option>
+          <option value="">Select a team to weaken</option>
           {teams.map(t => (
             <option key={t.team_name} value={t.team_name}>{t.team_name}</option>
           ))}
@@ -1360,7 +1360,7 @@ const WhatIfPanel = ({ standings, league, T, onResult }) => {
             background:selectedTeam?"rgba(99,102,241,0.15)":"rgba(255,255,255,0.04)",
             border:`1px solid ${selectedTeam?"#6366f140":"rgba(255,255,255,0.08)"}`,
             color:selectedTeam?"#6366f1":"rgba(255,255,255,0.3)"}}>
-          {running ? "Simulating…" : "Run Simulation"}
+          {running ? "Simulating" : "Run Simulation"}
         </button>
         {selectedTeam && (
           <button onClick={()=>{setSelectedTeam("");onResult(null);}}
@@ -1374,7 +1374,7 @@ const WhatIfPanel = ({ standings, league, T, onResult }) => {
         <div style={{marginTop:10,fontSize:10,color:"#f59e0b",
           background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",
           borderRadius:8,padding:"8px 12px"}}>
-          ? Simulating season with <strong>{selectedTeam}</strong> performing at relegation-level strength — showing how other teams benefit
+          ? Simulating season with <strong>{selectedTeam}</strong> performing at relegation-level strength  showing how other teams benefit
         </div>
       )}
     </div>
@@ -1411,7 +1411,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
 
     getSeasonSimulation(league)
       .then(raw => {
-        // ? Handle { league, results:[...] } format from backend
+        // // Handle { league, results:[...] } format from backend
         const items = Array.isArray(raw?.results) ? raw.results
           : Array.isArray(raw) ? raw
           : Object.entries(raw).filter(([k]) => k !== "league").map(([name,d]) => ({team:name,...d}));
@@ -1420,7 +1420,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
           team_name:       d.team || d.team_name || "",
           avg_position:    parseFloat(d.avg_position)    || 0,
           avg_pts:         parseFloat(d.avg_points || d.avg_pts) || 0,
-          // ? FIX: backend already sends percentages (e.g. 39.87), don't multiply by 100
+          // // backend already sends percentages (e.g. 39.87), don't multiply by 100
           title_prob:      parseFloat(d.title_prob)      || 0,
           top4_prob:       parseFloat(d.top4_prob)       || 0,
           uel_prob:        parseFloat(d.top5_prob)       || 0,
@@ -1448,7 +1448,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
           try { sessionStorage.setItem(cacheKey, JSON.stringify({data:rows, ts:Date.now()})); } catch {}
           setSimData(rows);
         } else {
-          setSimErr("Waiting for standings data… try switching to the Table tab first.");
+          setSimErr("Waiting for standings data try switching to the Table tab first.");
         }
       })
       .finally(() => setSimLoad(false));
@@ -1481,7 +1481,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
     else { setSortKey(key); setSortDir(key==="avg_position"?1:-1); }
   };
 
-  // Only block on simLoad — standLoad just means logos/pts may not be merged yet
+  // Only block on simLoad  standLoad just means logos/pts may not be merged yet
   const loading = simLoad;
 
   const zones = [
@@ -1529,15 +1529,15 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
             {whatIfTeam && (
               <span style={{fontSize:9,fontWeight:800,color:"#f59e0b",background:"rgba(245,158,11,0.12)",
                 border:"1px solid rgba(245,158,11,0.3)",borderRadius:999,padding:"2px 8px"}}>
-                ?? WHAT-IF: {whatIfTeam} weakened
+                WHAT-IF: {whatIfTeam} weakened
               </span>
             )}
           </div>
           <div style={{fontSize:22,fontWeight:900,color:T.text,fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>
-            {cfg.label} — Final Day Predictions
+            {cfg.label}  Final Day Predictions
           </div>
           <div style={{fontSize:11,color:T.muted,marginTop:4}}>
-            Monte Carlo · 8,000 simulations · Poisson xG · Shuffled fixtures · League-specific zones
+            Monte Carlo Â· 8,000 simulations  Poisson xG Â· Shuffled fixtures Â· League-specific zones
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:isMobile?"nowrap":"wrap",overflowX:isMobile?"auto":"visible",WebkitOverflowScrolling:"touch",paddingBottom:isMobile?4:0,scrollbarWidth:"none"}}>
@@ -1553,18 +1553,18 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
       {/* -- View switcher */}
       {!loading && !simErr && (
         <div style={{display:"flex",gap:6,flexWrap:"wrap",overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:4,scrollbarWidth:"none"}}>
-          <ViewBtn id="table"     icon="??" label="Full Table" />
-          <ViewBtn id="title"     icon="??" label="Title Race" />
-          <ViewBtn id="points"    icon="??" label="Points Projection" />
-          <ViewBtn id="relegation" icon="??" label="Relegation Battle" />
-          <ViewBtn id="whatif"    icon="??" label="What-If" />
+          <ViewBtn id="table" icon="â‰¡" label="Full Table" />
+          <ViewBtn id="title" icon="â—†" label="Title Race" />
+          <ViewBtn id="points" icon="â†—" label="Points Projection" />
+          <ViewBtn id="relegation" icon="â–¼" label="Relegation Battle" />
+          <ViewBtn id="whatif" icon="âŠ˜" label="What-If" />
         </div>
       )}
 
       {/* -- Error */}
       {simErr && (
         <div style={{padding:24,background:T.panel,border:`1px solid ${T.border}`,borderRadius:16,textAlign:"center"}}>
-          <div style={{fontSize:28,marginBottom:10,opacity:.4}}>??</div>
+          <div style={{width:40,height:40,borderRadius:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",margin:"0 auto 10px"}}></div>
           <div style={{color:T.muted,fontSize:13}}>Could not load simulation data</div>
           <div style={{color:"#ef4444",fontSize:11,marginTop:6,fontFamily:"'JetBrains Mono',monospace"}}>{simErr}</div>
         </div>
@@ -1635,14 +1635,14 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
             <SortBtn k="top4_prob"       label="Top 4 %" />
             <SortBtn k="relegation_prob" label="Relegation %" />
             <span style={{marginLeft:"auto",fontSize:10,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>
-              {sorted.length} teams{whatIfTeam ? ` · ?? ${whatIfTeam} weakened` : ""}
+              {sorted.length} teams{whatIfTeam ? `  â˜… ${whatIfTeam} weakened` : ""}
             </span>
           </div>
 
           {sorted.map((row, i) => {
             const pos   = Math.round(row.avg_position) || i+1;
             const zone  = getZoneStyle(pos, cfg, T);
-            // ? FIX: values already in % from backend, don't multiply again
+            // // values already in % from backend, don't multiply again
             const titleP = Math.round(row.title_prob);
             const top4P  = Math.round(row.top4_prob);
             const relegP = Math.round(row.relegation_prob);
@@ -1690,12 +1690,12 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
                   <div style={{minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:800,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Sora',sans-serif"}}>
                       {row.team_name}
-                      {isWhatIfTeam && <span style={{marginLeft:6,fontSize:9,color:"#f59e0b"}}>?? weakened</span>}
+                      {isWhatIfTeam && <span style={{marginLeft:6,fontSize:9,color:"#f59e0b"}}>â˜… weakened</span>}
                     </div>
                     <div style={{fontSize:10,color:T.muted,fontFamily:"'JetBrains Mono',monospace",marginTop:1,display:"flex",gap:8}}>
                       {row.currentPts != null && <span>{row.currentPts} pts</span>}
                       {delta != null && delta > 0 && <span style={{color:"#10b981"}}>? {Math.round(projPts)} proj (+{delta})</span>}
-                      {row.played && <span>· {row.played} played</span>}
+                      {row.played && <span> {row.played} played</span>}
                     </div>
                   </div>
                 </div>
@@ -1719,14 +1719,14 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
                   <ChancePill value={top4P} color="#f59e0b" label="Top 4"/>
                 </div>
 
-                {/* Relegation % — hidden on mobile */}
+                {/* Relegation %  hidden on mobile */}
                 {!isMobile && <div style={{textAlign:"center"}}>
                   <ChancePill value={relegP}
                     color={relegP>40?"#ef4444":relegP>20?"#f97316":relegP>5?"#f59e0b":T.muted}
                     label="Rel %"/>
                 </div>}
 
-                {/* Avg Pos — hidden on mobile (shown inline) */}
+                {/* Avg Pos  hidden on mobile (shown inline) */}
                 {!isMobile && <div style={{textAlign:"center"}}>
                   <div style={{fontSize:16,fontWeight:900,color:T.text,fontFamily:"'JetBrains Mono',monospace"}}>
                     {row.avg_position?.toFixed(1)}
@@ -1743,7 +1743,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
       {/* -- Footer */}
       {!loading && !simErr && (
         <div style={{padding:"12px 16px",borderRadius:10,background:T.faint,border:`1px solid ${T.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
-          <span style={{fontSize:14,flexShrink:0}}>??</span>
+          
           <span style={{fontSize:10,color:T.muted,lineHeight:1.6}}>
             Monte Carlo simulation (8,000 runs) using Poisson goal models with shuffled fixture sampling, league-specific home advantage ({(cfg.homeAdv*100).toFixed(0)}% for {cfg.label}), and per-team attack/defence ratings derived from current season stats. Relegation zones reflect {cfg.label} rules ({cfg.total-cfg.relStart+1} teams relegated). Not guaranteed predictions.
           </span>
@@ -1758,12 +1758,12 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
    MAIN PAGE
 ---------------------------------------------------------- */
 
-// Maps frontend league code ? backend API code
-// All codes now match directly — bundesliga added to backend LEAGUE_IDS
+// Maps frontend league code // backend API code
+// All codes now match directly  bundesliga added to backend LEAGUE_IDS
 const BACKEND_LEAGUE = {
   epl:        "epl",
   laliga:     "laliga",
-  bundesliga: "bundesliga",  // ? backend now has this in LEAGUE_IDS
+  bundesliga: "bundesliga",  // // backend now has this in LEAGUE_IDS
   seriea:     "seriea",
   ligue1:     "ligue1",
 };
@@ -1806,7 +1806,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const avgXgA=matches.length?(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length).toFixed(2):"0.00";
 
   return(
-    <div style={{minHeight:"100vh",background:"#000",position:"relative",fontFamily:"'Inter',sans-serif"}}>
+    <div className="sn-page-wrap" style={{background:"var(--bg,#000810)",position:"relative",fontFamily:"'Inter',sans-serif"}}>
 
       {/* -- Ambient gradient background */}
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0}}>
@@ -1841,7 +1841,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                 fontSize:11,color:"rgba(255,255,255,0.2)",margin:0,
                 fontFamily:"'SF Mono','JetBrains Mono',monospace",
                 letterSpacing:"0.06em",
-              }}>ELO · DIXON-COLES · REAL xG · PRO DATA</p>
+              }}>ELO Â· DIXON-COLES Â· REAL xG Â· PRO DATA</p>
             </div>
           </div>
 
@@ -1966,7 +1966,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               {/* Error */}
               {predErr&&(
                 <div style={{padding:"16px 20px",background:"rgba(255,50,50,0.06)",border:"1px solid rgba(255,50,50,0.15)",borderRadius:14,color:"rgba(255,100,100,0.8)",fontSize:13,fontFamily:"'Inter',sans-serif"}}>
-                  ?? {predErr}
+                  {predErr}
                 </div>
               )}
 
@@ -1981,14 +1981,14 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
               {!predLoad&&!predErr&&matches.length===0&&(
                 <div style={{padding:48,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:14,fontFamily:"'Inter',sans-serif"}}>
-                  <div style={{fontSize:36,marginBottom:12,opacity:.3}}>??</div>
+                  <div style={{width:44,height:44,borderRadius:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",margin:"0 auto 12px"}}></div>
                   No upcoming fixtures found.
                 </div>
               )}
 
               {/* Match cards grid */}
               {!predLoad&&!predErr&&(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(480px,1fr))",gap:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:12}}>
                   {sorted.map((m,i)=>(
                     <MatchCard key={(m.home_team||"")+(m.away_team||"")+i} match={m} T={T}
                       onSelect={()=>setSelectedMatch(m)}
@@ -2001,7 +2001,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
             </div>
 
             {/* Sticky sidebar */}
-            <div style={{position:"sticky",top:24,display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{position:"sticky",top:"calc(var(--bar-total, 84px) + 16px)",display:"flex",flexDirection:"column",gap:12}}>
               <ScenarioSimulator match={selectedMatch||sorted[0]} T={T}/>
             </div>
           </div>
@@ -2031,16 +2031,11 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
       </div>
 
-      {/* -- Global CSS --------------------------------------- */}
+      {/* -- Page-specific CSS --------------------------------------- */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes spin   { to{transform:rotate(360deg)} }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width:4px; height:4px }
-        ::-webkit-scrollbar-track { background:transparent }
-        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:999px }
-        ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.22) }
+        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         input[type=range] { height:4px; border-radius:999px; outline:none }
         input[type=range]::-webkit-slider-thumb { width:14px; height:14px; border-radius:50% }
         ::selection { background:${T.accent}40 }

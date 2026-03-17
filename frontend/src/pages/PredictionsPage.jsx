@@ -47,6 +47,24 @@ const LEAGUE_LABELS = {
   uecl:"Conference League", facup:"FA Cup",
 };
 
+// Competition accent colours
+const COMP_COLORS = {
+  epl:"#60a5fa", laliga:"#f97316", bundesliga:"#f59e0b",
+  seriea:"#34d399", ligue1:"#a78bfa",
+  ucl:"#1e40af",    // deep UCL blue
+  uel:"#f97316",    // Europa orange
+  uecl:"#16a34a",   // Conference green
+  facup:"#dc2626",  // FA Cup red
+};
+
+// Competition theme overrides
+const COMP_THEMES = {
+  ucl:  {...UNIFIED, accent:"#3b82f6", accent2:"#f87171", awayCol:"#93c5fd", label:"Champions League"},
+  uel:  {...UNIFIED, accent:"#f97316", accent2:"#f87171", awayCol:"#fdba74", label:"Europa League"},
+  uecl: {...UNIFIED, accent:"#22c55e", accent2:"#f87171", awayCol:"#86efac", label:"Conference League"},
+  facup:{...UNIFIED, accent:"#ef4444", accent2:"#f87171", awayCol:"#fca5a5", label:"FA Cup"},
+};
+
 const THEMES = {
   ...Object.fromEntries(Object.entries(LEAGUE_LABELS).map(([code,label])=>[code,{...UNIFIED,label}])),
   ...COMP_THEMES,
@@ -66,24 +84,6 @@ const LEAGUE_TABS = [
   // Cup
   {code:"facup",      slug:"fa-cup",            label:"FA Cup",         group:"cup",      hasKnockout:true},
 ];
-
-// Competition accent colours
-const COMP_COLORS = {
-  epl:"#60a5fa", laliga:"#f97316", bundesliga:"#f59e0b",
-  seriea:"#34d399", ligue1:"#a78bfa",
-  ucl:"#1e40af",    // deep UCL blue
-  uel:"#f97316",    // Europa orange
-  uecl:"#16a34a",   // Conference green
-  facup:"#dc2626",  // FA Cup red
-};
-
-// Competition theme overrides
-const COMP_THEMES = {
-  ucl:  {...UNIFIED, accent:"#3b82f6", accent2:"#f87171", awayCol:"#93c5fd", label:"Champions League"},
-  uel:  {...UNIFIED, accent:"#f97316", accent2:"#f87171", awayCol:"#fdba74", label:"Europa League"},
-  uecl: {...UNIFIED, accent:"#22c55e", accent2:"#f87171", awayCol:"#86efac", label:"Conference League"},
-  facup:{...UNIFIED, accent:"#ef4444", accent2:"#f87171", awayCol:"#fca5a5", label:"FA Cup"},
-};
 
 /* ----------------------------------------------------------
    TASK 3  KEY PLAYERS DATA

@@ -46,15 +46,28 @@ import DifferentialFinderPage   from "./pages/DifferentialFinderPage";
 /* ───────────────── League slug mapping ───────────────── */
 
 const SLUG_MAP = {
+  // Domestic
   "premier-league": "epl",
-  "la-liga": "laliga",
-  "serie-a": "seriea",
-  "ligue-1": "ligue1",
-
-  "epl": "epl",
-  "laliga": "laliga",
-  "seriea": "seriea",
-  "ligue1": "ligue1",
+  "la-liga":        "laliga",
+  "serie-a":        "seriea",
+  "ligue-1":        "ligue1",
+  "bundesliga":     "bundesliga",
+  // European
+  "champions-league":  "ucl",
+  "europa-league":     "uel",
+  "conference-league": "uecl",
+  // Cup
+  "fa-cup":         "facup",
+  // Direct codes
+  "epl":        "epl",
+  "laliga":     "laliga",
+  "seriea":     "seriea",
+  "ligue1":     "ligue1",
+  "bundesliga": "bundesliga",
+  "ucl":        "ucl",
+  "uel":        "uel",
+  "uecl":       "uecl",
+  "facup":      "facup",
 };
 
 
@@ -88,6 +101,11 @@ export default function App() {
               path="/predictions"
               element={<Navigate to="/predictions/premier-league" replace />}
             />
+            {/* European competition shortcuts */}
+            <Route path="/ucl"   element={<Navigate to="/predictions/champions-league" replace />} />
+            <Route path="/uel"   element={<Navigate to="/predictions/europa-league" replace />} />
+            <Route path="/uecl"  element={<Navigate to="/predictions/conference-league" replace />} />
+            <Route path="/facup" element={<Navigate to="/predictions/fa-cup" replace />} />
 
             <Route
               path="/predictions/:league"

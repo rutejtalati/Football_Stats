@@ -117,10 +117,23 @@ NEWS_API_KEY      = os.getenv("NEWS_API_KEY")
 OPENROUTER_KEY    = os.getenv("OPENROUTER_API_KEY", "")
 CURRENT_SEASON    = 2025
 
-LEAGUE_IDS = {"epl":39,"laliga":140,"seriea":135,"ligue1":61,"bundesliga":78}
-LEAGUE_NAMES = {"epl":"Premier League","laliga":"La Liga","seriea":"Serie A","ligue1":"Ligue 1","bundesliga":"Bundesliga"}
+LEAGUE_IDS = {
+    # Domestic
+    "epl":39, "laliga":140, "seriea":135, "ligue1":61, "bundesliga":78,
+    # European
+    "ucl":2, "uel":3, "uecl":848,
+    # Cup
+    "facup":45,
+}
+LEAGUE_NAMES = {
+    "epl":"Premier League", "laliga":"La Liga", "seriea":"Serie A",
+    "ligue1":"Ligue 1", "bundesliga":"Bundesliga",
+    "ucl":"Champions League", "uel":"Europa League",
+    "uecl":"Conference League", "facup":"FA Cup",
+}
 LEAGUE_FULL    = LEAGUE_NAMES
-TOP5_LEAGUES   = {v: k for k, v in LEAGUE_IDS.items()}
+DOMESTIC_IDS   = {k:v for k,v in LEAGUE_IDS.items() if k in ("epl","laliga","seriea","ligue1","bundesliga")}
+TOP5_LEAGUES   = {v: k for k, v in DOMESTIC_IDS.items()}  # used for live ticker slug lookup
 ALL_LEAGUE_IDS = list(LEAGUE_IDS.values())
 
 TTL_1H=3600; TTL_24H=86400; TTL_PERM=604800

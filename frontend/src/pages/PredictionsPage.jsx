@@ -875,20 +875,6 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
   const sorted=useMemo(()=>{if(loading)return[];return[...rows].sort((a,b)=>{let va=a[sortCol],vb=b[sortCol];if(va==null)va=sortCol==="rank"?999:0;if(vb==null)vb=sortCol==="rank"?999:0;if(typeof va==="string"){va=va.toLowerCase();vb=vb.toLowerCase();}return va<vb?-dir:va>vb?dir:0;});},[rows,sortCol,dir,loading]);
   const toggle=col=>{if(sortCol===col)setDir(d=>-d);else{setSortCol(col);setDir(col==="rank"?1:-1);}};
 
-  const filtered=useMemo(()=>{
-    if(predFilter==="all")return sorted;
-    if(predFilter==="high")return sorted.filter(m=>m.confidence>=65);
-    if(predFilter==="edge")return sorted.filter(m=>m.model_edge!=null&&Math.abs(m.model_edge)>=5);
-    if(predFilter==="over25")return sorted.filter(m=>(m.over_2_5||0)>=0.6);
-    if(predFilter==="btts")return sorted.filter(m=>(m.btts||0)>=0.55);
-    if(predFilter==="upsets")return sorted.filter(m=>{
-      const hp=m.p_home_win||0,ap=m.p_away_win||0;
-      const fav=hp>ap?"home":"away";
-      return(fav==="home"&&ap>0.35)||(fav==="away"&&hp>0.35);
-    });
-    return sorted;
-  },[sorted,predFilter]);
-
   const colStyle=(col,align)=>({
     padding:"11px 12px",fontSize:9,fontWeight:600,letterSpacing:"0.1em",
     color:sortCol===col?T.accent:"rgba(255,255,255,0.25)",
@@ -1957,7 +1943,6 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const[predErr,setPredErr]=useState(null);const[standErr,setStandErr]=useState(null);
   const[sort,setSort]=useState("confidence");const[selectedMatch,setSelectedMatch]=useState(null);
 
-  const[predFilter,setPredFilter]=useState("all");
 
   const cache=useCallback((key,fn,setter,setLoading,setErr)=>{
     setLoading(true);setErr&&setErr(null);
@@ -1974,6 +1959,21 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
   const sorted=useMemo(()=>{if(!matches.length)return matches;return[...matches].sort((a,b)=>{if(sort==="confidence")return(b.confidence||0)-(a.confidence||0);if(sort==="date")return(a.date||"").localeCompare(b.date||"");if(sort==="home")return(b.p_home_win||0)-(a.p_home_win||0);return 0;});},[matches,sort]);
 
+
+  const[predFilter,setPredFilter]=useState("all");
+  const filtered=useMemo(()=>{
+    if(predFilter==="all")return sorted;
+    if(predFilter==="high")return sorted.filter(m=>m.confidence>=65);
+    if(predFilter==="edge")return sorted.filter(m=>m.model_edge!=null&&Math.abs(m.model_edge)>=5);
+    if(predFilter==="over25")return sorted.filter(m=>(m.over_2_5||0)>=0.6);
+    if(predFilter==="btts")return sorted.filter(m=>(m.btts||0)>=0.55);
+    if(predFilter==="upsets")return sorted.filter(m=>{
+      const hp=m.p_home_win||0,ap=m.p_away_win||0;
+      const fav=hp>ap?"home":"away";
+      return(fav==="home"&&ap>0.35)||(fav==="away"&&hp>0.35);
+    });
+    return sorted;
+  },[sorted,predFilter]);
   const homeWins=matches.filter(m=>m.p_home_win>m.p_away_win&&m.p_home_win>m.p_draw).length;
   const draws=matches.filter(m=>m.p_draw>=m.p_home_win&&m.p_draw>=m.p_away_win).length;
   const avgConf=matches.length?Math.round(matches.reduce((s,m)=>s+(m.confidence||0),0)/matches.length):0;

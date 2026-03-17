@@ -41,7 +41,6 @@ import CaptaincyPage            from "./pages/CaptaincyPage";
 import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 import TransferPlannerPage      from "./pages/TransferPlannerPage";
 import DifferentialFinderPage   from "./pages/DifferentialFinderPage";
-import BestXIPage               from "./pages/BestXIPage";
 
 
 /* ───────────────── League slug mapping ───────────────── */

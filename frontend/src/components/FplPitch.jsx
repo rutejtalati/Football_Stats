@@ -1,54 +1,49 @@
-// components/FplPitch.jsx  —  Stadium broadcast aesthetic
+// components/FplPitch.jsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Self-contained pitch renderer.  Zero external component dependencies.
+// Stadium pitch renderer — matches screenshot exactly.
+// Uses lineup = { gk, defenders[], midfielders[], forwards[] }
 //
-// Accepts lineup shape from BestTeamPage:
-//   lineup = { gk: player, defenders:[], midfielders:[], forwards:[] }
-//
-// Also accepts flat xi[] for BestXIPage (backward compat):
-//   xi = Player[]  (grouped by position internally)
-//
-// Player objects need: player_id|id, name|player|web_name, position,
-//   projected_points|ep_next|pts_gw_1, cost, team, next_opp,
-//   fixture_difficulty, code (for photo CDN URL)
-//
-// Props:
-//   lineup        { gk, defenders[], midfielders[], forwards[] }
-//   xi            Player[]  (alternative to lineup)
-//   bench         Player[]
-//   captain       player object
-//   vc            player object
-//   highlightedId player_id to highlight (cross-panel hover sync)
-//   onPlayerClick (player) => void
-//   loading       bool
+// Player fields needed: player_id|id, name|player|web_name, team, position,
+//   projected_points|pts_gw_1, cost, next_opp, fixture_difficulty,
+//   code (for shirt CDN URL), appearance_prob|prob_appear,
+//   selected_by_pct, form
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState, useCallback, useMemo, useRef, useEffect, memo } from "react";
+import { useState, useCallback, useEffect, useMemo, memo } from "react";
 import "./pitch.css";
 
-/* ── Constants ───────────────────────────────────────────────────────────── */
-const POS_ORDER = ["GK", "DEF", "MID", "FWD"];
-
+/* ── Position colours ────────────────────────────────────────────────────── */
 const POS_META = {
-  GK:  { color: "#f59e0b", glow: "rgba(245,158,11,0.35)",  css: "var(--pos-gk-color)",  glowCss: "var(--pos-gk-glow)"  },
-  DEF: { color: "#3b82f6", glow: "rgba(59,130,246,0.35)",  css: "var(--pos-def-color)", glowCss: "var(--pos-def-glow)" },
-  MID: { color: "#22c55e", glow: "rgba(34,197,94,0.35)",   css: "var(--pos-mid-color)", glowCss: "var(--pos-mid-glow)" },
-  FWD: { color: "#ef4444", glow: "rgba(239,68,68,0.35)",   css: "var(--pos-fwd-color)", glowCss: "var(--pos-fwd-glow)" },
+  GK:  { color: "#f59e0b", glow: "rgba(245,158,11,0.40)" },
+  DEF: { color: "#3b82f6", glow: "rgba(59,130,246,0.40)" },
+  MID: { color: "#22c55e", glow: "rgba(34,197,94,0.40)"  },
+  FWD: { color: "#ef4444", glow: "rgba(239,68,68,0.40)"  },
 };
 
-const FDR_BG  = { 1:"#14532d", 2:"#14532d", 3:"#44403c", 4:"#7f1d1d", 5:"#450a0a" };
-const FDR_FG  = { 1:"#86efac", 2:"#86efac", 3:"#d6d3d1", 4:"#fca5a5", 5:"#fca5a5" };
+const DIFF_CFG = {
+  1: { bg:"#14532d", fg:"#86efac" },
+  2: { bg:"#14532d", fg:"#86efac" },
+  3: { bg:"#3d3a2e", fg:"#d4c97a" },
+  4: { bg:"#7f1d1d", fg:"#fca5a5" },
+  5: { bg:"#450a0a", fg:"#fca5a5" },
+};
+
+const SHIRT_IDS = {
+  ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,IPS:40,
+  LEI:13,LIV:14,MCI:43,MUN:1,NEW:4,NFO:17,SOU:20,TOT:6,WHU:21,WOL:39,
+};
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
+function pid(p) { return p?.player_id ?? p?.id; }
+
 function resolveName(p) {
-  return p?.name || p?.player || p?.web_name || p?.player_name || "?";
+  return p?.name || p?.player || p?.web_name || p?.player_name || "—";
 }
 
-function shortName(full) {
-  if (!full || full === "?") return "?";
+function shortSurname(full) {
+  if (!full || full === "—") return "—";
   const parts = full.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0];
-  return parts[parts.length - 1]; // surname only on pitch
+  return parts.length === 1 ? parts[0] : parts[parts.length - 1];
 }
 
 function resolvePoints(p) {
@@ -56,145 +51,148 @@ function resolvePoints(p) {
   return v != null ? Number(v) : null;
 }
 
-function resolvePhoto(p) {
-  if (p?.photo) return p.photo;
-  if (p?.code)  return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${p.code}.png`;
+function shirtUrl(p) {
+  // Prefer code-based face photo, fall back to shirt
+  if (p?.code) {
+    return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${p.code}.png`;
+  }
+  const id = SHIRT_IDS[p?.team];
+  const isGK = p?.position === "GK";
+  if (id) {
+    return `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${id}${isGK ? "_1" : ""}-66.png`;
+  }
   return null;
 }
 
-function buildRows(lineup, xi) {
-  if (xi?.length) {
-    const g = { GK:[], DEF:[], MID:[], FWD:[] };
-    for (const p of xi) (g[p.position] = g[p.position] || []).push(p);
-    return g;
-  }
-  if (lineup) {
-    return {
-      GK:  lineup.gk  ? [lineup.gk] : [],
-      DEF: lineup.defenders   || [],
-      MID: lineup.midfielders || [],
-      FWD: lineup.forwards    || [],
-    };
-  }
-  return { GK:[], DEF:[], MID:[], FWD:[] };
-}
-
-function playerId(p) { return p?.player_id ?? p?.id; }
-
-/* ── Pitch SVG lines ─────────────────────────────────────────────────────── */
-const PitchLines = memo(function PitchLines() {
+/* ── Arc meter (projected points dial) ──────────────────────────────────── */
+const ArcMeter = memo(function ArcMeter({ pts, color }) {
+  const MAX = 12, R = 18, SW = 3, cx = 21, cy = 21, W = 42;
+  const spanDeg = 220, startDeg = 160;
+  const fill = Math.min((pts || 0) / MAX, 1) * spanDeg;
+  const toRad = d => (d * Math.PI) / 180;
+  const arc = (sd, sw) => {
+    const s = { x: cx + R * Math.cos(toRad(sd)), y: cy + R * Math.sin(toRad(sd)) };
+    const e = { x: cx + R * Math.cos(toRad(sd + sw)), y: cy + R * Math.sin(toRad(sd + sw)) };
+    return `M${s.x.toFixed(2)} ${s.y.toFixed(2)}A${R} ${R} 0 ${sw > 180 ? 1 : 0} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+  };
   return (
-    <svg className="fpl-pitch-svg" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <filter id="pitch-line-blur">
-          <feGaussianBlur stdDeviation="0.4"/>
-        </filter>
-      </defs>
-      <g stroke="rgba(255,255,255,0.13)" fill="none" strokeWidth="1.2" filter="url(#pitch-line-blur)">
-        {/* Outer boundary */}
-        <rect x="24" y="16" width="752" height="488" rx="4"/>
-        {/* Halfway line */}
-        <line x1="24" y1="260" x2="776" y2="260"/>
-        {/* Centre circle */}
-        <circle cx="400" cy="260" r="72"/>
-        <circle cx="400" cy="260" r="3" fill="rgba(255,255,255,0.18)" stroke="none"/>
-        {/* Left penalty area */}
-        <rect x="24" y="170" width="110" height="180"/>
-        {/* Right penalty area */}
-        <rect x="666" y="170" width="110" height="180"/>
-        {/* Left 6-yard box */}
-        <rect x="24" y="208" width="42" height="104"/>
-        {/* Right 6-yard box */}
-        <rect x="734" y="208" width="42" height="104"/>
-        {/* Left penalty spot */}
-        <circle cx="95" cy="260" r="3" fill="rgba(255,255,255,0.16)" stroke="none"/>
-        {/* Right penalty spot */}
-        <circle cx="705" cy="260" r="3" fill="rgba(255,255,255,0.16)" stroke="none"/>
-        {/* Left penalty arc */}
-        <path d="M 110 216 A 72 72 0 0 1 110 304" strokeDasharray="none"/>
-        {/* Right penalty arc */}
-        <path d="M 690 216 A 72 72 0 0 0 690 304"/>
-        {/* Corner arcs */}
-        <path d="M 24 32 A 12 12 0 0 1 36 20"/>
-        <path d="M 764 20 A 12 12 0 0 1 776 32"/>
-        <path d="M 24 488 A 12 12 0 0 0 36 500"/>
-        <path d="M 764 500 A 12 12 0 0 0 776 488"/>
-      </g>
+    <svg width={W} height={W * 0.65} viewBox={`0 0 ${W} ${W * 0.65}`} style={{ display:"block", overflow:"visible" }}>
+      <path d={arc(startDeg, spanDeg)} fill="none"
+        stroke="rgba(255,255,255,0.08)" strokeWidth={SW} strokeLinecap="round"/>
+      {fill > 2 && (
+        <path d={arc(startDeg, fill)} fill="none"
+          stroke={color} strokeWidth={SW} strokeLinecap="round"
+          style={{ filter:`drop-shadow(0 0 4px ${color})` }}/>
+      )}
+      <text x={cx} y={cy * 0.72} textAnchor="middle" dominantBaseline="middle"
+        fontSize="9" fontWeight="800" fill={color} fontFamily="DM Mono, monospace">
+        {pts != null ? pts.toFixed(1) : "—"}
+      </text>
     </svg>
   );
 });
 
-/* ── Player photo with graceful fallback ────────────────────────────────── */
-const PlayerPhoto = memo(function PlayerPhoto({ player, size = 48 }) {
-  const [err, setErr] = useState(false);
-  const url           = resolvePhoto(player);
-  const meta          = POS_META[player.position] || POS_META.MID;
-
-  if (!url || err) {
-    return (
-      <div className="fpl-chip-photo-fallback" style={{ color: meta.color }}>
-        {(player.position || "?").slice(0, 2)}
-      </div>
-    );
-  }
-  return (
-    <img
-      className="fpl-chip-photo"
-      src={url}
-      alt=""
-      onError={() => setErr(true)}
-      loading="lazy"
-      decoding="async"
-    />
-  );
-});
-
-/* ── Individual player chip ──────────────────────────────────────────────── */
-const PlayerChip = memo(function PlayerChip({
+/* ── Pitch player card (matches screenshot style) ────────────────────────── */
+const PitchCard = memo(function PitchCard({
   player, isCaptain, isVC, isHighlighted,
-  onPlayerClick, onHover, onLeave, delay = 0, isBench = false,
+  onPlayerClick, onHover, onLeave, delay,
 }) {
-  const meta   = POS_META[player.position] || POS_META.MID;
-  const pts    = resolvePoints(player);
-  const pid    = playerId(player);
-  const name   = resolveName(player);
+  const [imgErr, setImgErr] = useState(false);
+  const [hov,    setHov]    = useState(false);
 
-  const chipClass = isBench
-    ? "fpl-bench-chip"
-    : `fpl-chip${isHighlighted ? " highlighted" : ""}`;
+  const meta  = POS_META[player.position] || POS_META.MID;
+  const pts   = resolvePoints(player);
+  const diff  = player.fixture_difficulty;
+  const dc    = DIFF_CFG[diff] || DIFF_CFG[3];
+  const url   = shirtUrl(player);
+  const name  = resolveName(player);
+  const prob  = Math.round((player.appearance_prob || player.prob_appear || 0.92) * 100);
+  const active = hov || isHighlighted;
 
   return (
     <div
-      className={chipClass}
+      className={`fpl-pcard${active ? " fpl-pcard-hov" : ""}${isCaptain ? " fpl-pcard-captain" : ""}`}
       style={{
         "--pos-color": meta.color,
         "--pos-glow":  meta.glow,
-        animationDelay: `${delay}ms`,
+        animationDelay: `${delay ?? 0}ms`,
+        borderColor: active ? meta.color + "66" : undefined,
+        boxShadow: active
+          ? `0 0 0 1px ${meta.color}44, 0 12px 32px rgba(0,0,0,0.7), 0 0 18px ${meta.glow}`
+          : undefined,
       }}
       onClick={() => onPlayerClick?.(player)}
-      onMouseEnter={(e) => onHover?.(pid, player, e)}
-      onMouseLeave={() => onLeave?.()}
+      onMouseEnter={(e) => { setHov(true); onHover?.(pid(player), player, e); }}
+      onMouseLeave={() => { setHov(false); onLeave?.(); }}
     >
-      {/* C / VC badge */}
+      {/* Captain / VC badge */}
       {(isCaptain || isVC) && (
-        <div className={`fpl-chip-cvc ${isCaptain ? "fpl-chip-cvc-c" : "fpl-chip-cvc-vc"}`}>
+        <div className={`fpl-pcard-cvc ${isCaptain ? "fpl-pcard-cvc-c" : "fpl-pcard-cvc-vc"}`}>
           {isCaptain ? "C" : "V"}
         </div>
       )}
 
-      {/* Photo ring */}
-      <div className="fpl-chip-photo-ring">
-        <PlayerPhoto player={player}/>
+      {/* Shirt / face image */}
+      <div className="fpl-pcard-img-wrap">
+        {url && !imgErr ? (
+          <img
+            src={url} alt=""
+            className="fpl-pcard-img"
+            onError={() => setImgErr(true)}
+            loading="lazy"
+          />
+        ) : (
+          <div className="fpl-pcard-img-fallback" style={{ color: meta.color }}>
+            {(player.position || "?").slice(0, 2)}
+          </div>
+        )}
       </div>
 
-      {/* Name */}
-      <div className="fpl-chip-name">{shortName(name)}</div>
+      {/* Name + team/fixture chip */}
+      <div className="fpl-pcard-name">{shortSurname(name)}</div>
+      <div className="fpl-pcard-chip" style={{ background: dc.bg, color: dc.fg }}>
+        <span className="fpl-pcard-team">{player.team ?? "?"}</span>
+        {player.next_opp && (
+          <span className="fpl-pcard-fix">{player.next_opp}</span>
+        )}
+      </div>
 
-      {/* Points */}
-      {pts != null && (
-        <div className="fpl-chip-pts">{pts.toFixed(1)}</div>
-      )}
+      {/* Arc meter */}
+      <ArcMeter pts={pts} color={meta.color}/>
     </div>
+  );
+});
+
+/* ── Pitch SVG lines ─────────────────────────────────────────────────────── */
+const PitchLines = memo(function PitchLines() {
+  return (
+    <svg className="fpl-pitch-svg" viewBox="0 0 900 560" preserveAspectRatio="xMidYMid slice">
+      <g stroke="rgba(255,255,255,0.18)" fill="none" strokeWidth="1.5">
+        <rect x="20" y="14" width="860" height="532" rx="3"/>
+        <line x1="20" y1="280" x2="880" y2="280"/>
+        <circle cx="450" cy="280" r="78"/>
+        <circle cx="450" cy="280" r="4" fill="rgba(255,255,255,0.25)" stroke="none"/>
+        {/* Left penalty area */}
+        <rect x="20" y="183" width="116" height="194"/>
+        {/* Right penalty area */}
+        <rect x="764" y="183" width="116" height="194"/>
+        {/* Left 6-yard */}
+        <rect x="20" y="220" width="44" height="120"/>
+        {/* Right 6-yard */}
+        <rect x="836" y="220" width="44" height="120"/>
+        {/* Spots */}
+        <circle cx="100" cy="280" r="3" fill="rgba(255,255,255,0.2)" stroke="none"/>
+        <circle cx="800" cy="280" r="3" fill="rgba(255,255,255,0.2)" stroke="none"/>
+        {/* Penalty arcs */}
+        <path d="M136 228 A78 78 0 0 1 136 332"/>
+        <path d="M764 228 A78 78 0 0 0 764 332"/>
+        {/* Corner arcs */}
+        <path d="M20 28 A14 14 0 0 1 34 14"/>
+        <path d="M866 14 A14 14 0 0 1 880 28"/>
+        <path d="M20 532 A14 14 0 0 0 34 546"/>
+        <path d="M866 546 A14 14 0 0 0 880 532"/>
+      </g>
+    </svg>
   );
 });
 
@@ -203,7 +201,7 @@ function SkeletonRow({ count }) {
   return (
     <div className="fpl-pitch-row">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="fpl-pitch-skel-chip" style={{ animationDelay: `${i * 80}ms` }}/>
+        <div key={i} className="fpl-pitch-skel-chip" style={{ animationDelay: `${i * 90}ms` }}/>
       ))}
     </div>
   );
@@ -212,23 +210,18 @@ function SkeletonRow({ count }) {
 /* ── Tooltip ─────────────────────────────────────────────────────────────── */
 const Tooltip = memo(function Tooltip({ player, pos }) {
   if (!player || !pos) return null;
-  const meta  = POS_META[player.position] || POS_META.MID;
-  const pts   = resolvePoints(player);
-  const prob  = Math.round((player.appearance_prob || player.prob_appear || 0.92) * 100);
-  const diff  = player.fixture_difficulty;
+  const meta = POS_META[player.position] || POS_META.MID;
+  const pts  = resolvePoints(player);
+  const prob = Math.round((player.appearance_prob || player.prob_appear || 0.92) * 100);
+  const diff = player.fixture_difficulty;
+  const dc   = DIFF_CFG[diff] || DIFF_CFG[3];
+  const x    = Math.min(pos.x + 16, window.innerWidth - 260);
+  const y    = Math.max(pos.y - 130, 8);
 
   return (
-    <div
-      className="fpl-pitch-tooltip"
-      style={{
-        left:  Math.min(pos.x + 14, window.innerWidth - 256),
-        top:   Math.max(pos.y - 120, 8),
-        borderColor: `${meta.color}33`,
-      }}
-    >
+    <div className="fpl-pitch-tooltip" style={{ left: x, top: y, borderColor: `${meta.color}44` }}>
       <div className="fpl-tooltip-name">{resolveName(player)}</div>
       <div className="fpl-tooltip-team">{player.team} · {player.position}</div>
-
       <div className="fpl-tooltip-grid">
         <div className="fpl-tooltip-stat">
           <div className="fpl-tooltip-stat-label">Proj Pts</div>
@@ -238,15 +231,13 @@ const Tooltip = memo(function Tooltip({ player, pos }) {
         </div>
         <div className="fpl-tooltip-stat">
           <div className="fpl-tooltip-stat-label">Cost</div>
-          <div className="fpl-tooltip-stat-val">£{player.cost}m</div>
+          <div className="fpl-tooltip-stat-val">£{player.cost ?? "?"}m</div>
         </div>
         <div className="fpl-tooltip-stat">
           <div className="fpl-tooltip-stat-label">Avail</div>
           <div className="fpl-tooltip-stat-val" style={{
             color: prob >= 90 ? "#22c55e" : prob >= 70 ? "#f59e0b" : "#ef4444"
-          }}>
-            {prob}%
-          </div>
+          }}>{prob}%</div>
         </div>
         <div className="fpl-tooltip-stat">
           <div className="fpl-tooltip-stat-label">Own%</div>
@@ -255,22 +246,16 @@ const Tooltip = memo(function Tooltip({ player, pos }) {
           </div>
         </div>
       </div>
-
       {player.next_opp && (
         <div className="fpl-tooltip-fixture">
           <span>Next:</span>
           <span className="fpl-tooltip-fixture-opp">{player.next_opp}</span>
           {diff && (
             <span style={{
-              marginLeft: "auto",
-              background: FDR_BG[diff] || FDR_BG[3],
-              color:      FDR_FG[diff] || FDR_FG[3],
-              padding:    "1px 6px", borderRadius: 4,
-              fontSize:   9, fontWeight: 700,
-              fontFamily: "'DM Mono', monospace",
-            }}>
-              FDR {diff}
-            </span>
+              marginLeft:"auto", background: dc.bg, color: dc.fg,
+              padding:"1px 7px", borderRadius:4,
+              fontSize:9, fontWeight:700, fontFamily:"'DM Mono',monospace",
+            }}>FDR {diff}</span>
           )}
         </div>
       )}
@@ -280,10 +265,10 @@ const Tooltip = memo(function Tooltip({ player, pos }) {
 
 /* ══════════════════════════════════════════════════════════════════════════
    FplPitch — main export
+   Accepts: lineup = { gk, defenders[], midfielders[], forwards[] }
    ══════════════════════════════════════════════════════════════════════════ */
 export default function FplPitch({
   lineup        = null,
-  xi            = null,
   bench         = [],
   captain       = null,
   vc            = null,
@@ -291,82 +276,83 @@ export default function FplPitch({
   onPlayerClick = null,
   loading       = false,
 }) {
-  const [tooltip, setTooltip] = useState(null); // { player, x, y }
+  const [tooltip, setTooltip] = useState(null);
 
-  const capId = playerId(captain);
-  const vcId  = playerId(vc);
+  /* Guard: nothing to render */
+  if (!loading && (!lineup || !lineup.gk)) {
+    return (
+      <div style={{
+        height:400, display:"flex", alignItems:"center", justifyContent:"center",
+        color:"#334155", fontSize:13, fontFamily:"'IBM Plex Sans',sans-serif",
+        background:"rgba(10,20,36,0.6)", borderRadius:20,
+      }}>
+        Loading pitch…
+      </div>
+    );
+  }
 
-  /* Build row groups from whatever shape we receive */
-  const rows = useMemo(() => buildRows(lineup, xi), [lineup, xi]);
+  const capId = pid(captain);
+  const vcId  = pid(vc);
 
-  /* Stagger delays per position row */
-  const rowDelays = { GK: 0, DEF: 80, MID: 160, FWD: 240 };
-
-  const handleHover = useCallback((pid, player, e) => {
-    if (!e) return;
-    setTooltip({ player, x: e.clientX, y: e.clientY });
+  const handleHover = useCallback((id, player, e) => {
+    if (e) setTooltip({ player, x: e.clientX, y: e.clientY });
   }, []);
-
   const handleLeave = useCallback(() => setTooltip(null), []);
 
-  /* Close tooltip on scroll */
   useEffect(() => {
     const fn = () => setTooltip(null);
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const totalPlayers = Object.values(rows).flat().length;
+  /* Row definitions — GK at bottom (visually), FWD at top */
+  const rows = loading ? [] : [
+    { pos:"FWD", players: lineup?.forwards    || [], baseDelay:  0 },
+    { pos:"MID", players: lineup?.midfielders || [], baseDelay: 80 },
+    { pos:"DEF", players: lineup?.defenders   || [], baseDelay:160 },
+    { pos:"GK",  players: lineup?.gk ? [lineup.gk] : [], baseDelay:240 },
+  ];
 
   return (
     <div>
       {/* ── Pitch ───────────────────────────────────────────────────────── */}
       <div className="fpl-pitch-outer">
-        {/* Grass texture */}
+        {/* Grass stripes */}
         <div className="fpl-pitch-grass"/>
-        {/* Stadium lighting orbs */}
+        {/* Stadium lighting */}
         <div className="fpl-pitch-light fpl-pitch-light-tl"/>
         <div className="fpl-pitch-light fpl-pitch-light-tr"/>
         <div className="fpl-pitch-light fpl-pitch-light-c"/>
-        {/* SVG lines */}
+        {/* Pitch SVG lines */}
         <PitchLines/>
-        {/* Players layer */}
+
+        {/* Players */}
         <div className="fpl-pitch-players">
           {loading ? (
             <>
-              <SkeletonRow count={1}/>
-              <SkeletonRow count={4}/>
-              <SkeletonRow count={4}/>
               <SkeletonRow count={3}/>
+              <SkeletonRow count={4}/>
+              <SkeletonRow count={4}/>
+              <SkeletonRow count={1}/>
             </>
-          ) : totalPlayers === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "60px 20px",
-              color: "#334155", fontSize: 13,
-              fontFamily: "'IBM Plex Sans', sans-serif",
-            }}>
-              No lineup data available.
-            </div>
           ) : (
-            POS_ORDER.map(pos => {
-              const rowPlayers = rows[pos];
-              if (!rowPlayers?.length) return null;
-              const baseDelay = rowDelays[pos] ?? 0;
+            rows.map(({ pos, players, baseDelay }) => {
+              if (!players.length) return null;
               return (
                 <div key={pos} className="fpl-pitch-row">
-                  {rowPlayers.map((p, i) => {
-                    const pid = playerId(p);
+                  {players.map((p, i) => {
+                    const id = pid(p);
                     return (
-                      <PlayerChip
-                        key={pid ?? `${pos}-${i}`}
+                      <PitchCard
+                        key={id ?? `${pos}-${i}`}
                         player={p}
-                        isCaptain={capId != null && capId === pid}
-                        isVC={vcId != null && vcId === pid}
-                        isHighlighted={highlightedId != null && highlightedId === pid}
+                        isCaptain={capId != null && capId === id}
+                        isVC={vcId != null && vcId === id}
+                        isHighlighted={highlightedId != null && highlightedId === id}
                         onPlayerClick={onPlayerClick}
                         onHover={handleHover}
                         onLeave={handleLeave}
-                        delay={baseDelay + i * 40}
+                        delay={baseDelay + i * 45}
                       />
                     );
                   })}
@@ -375,34 +361,33 @@ export default function FplPitch({
             })
           )}
         </div>
-
-
       </div>
 
       {/* ── Bench tray ──────────────────────────────────────────────────── */}
-      {bench.length > 0 && (
+      {!loading && bench.length > 0 && (
         <div className="fpl-bench-tray">
           <div className="fpl-bench-divider"/>
           <div className="fpl-bench-label">Bench</div>
           <div className="fpl-bench-grid">
             {bench.map((p, i) => {
               if (!p) return null;
-              const pid      = playerId(p);
+              const id = pid(p);
               const slotLabels = ["GK", "B1", "B2", "B3"];
               return (
-                <div key={pid ?? i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                <div key={id ?? i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
                   <div className="fpl-bench-slot-label">{slotLabels[i] ?? `B${i}`}</div>
-                  <PlayerChip
-                    player={p}
-                    isCaptain={capId != null && capId === pid}
-                    isVC={vcId != null && vcId === pid}
-                    isHighlighted={highlightedId != null && highlightedId === pid}
-                    onPlayerClick={onPlayerClick}
-                    onHover={handleHover}
-                    onLeave={handleLeave}
-                    delay={i * 60}
-                    isBench
-                  />
+                  <div className="fpl-bench-chip">
+                    <PitchCard
+                      player={p}
+                      isCaptain={capId != null && capId === id}
+                      isVC={vcId != null && vcId === id}
+                      isHighlighted={highlightedId != null && highlightedId === id}
+                      onPlayerClick={onPlayerClick}
+                      onHover={handleHover}
+                      onLeave={handleLeave}
+                      delay={i * 60}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -410,8 +395,9 @@ export default function FplPitch({
         </div>
       )}
 
-      {/* ── Tooltip (portal-like fixed position) ────────────────────────── */}
+      {/* ── Tooltip ─────────────────────────────────────────────────────── */}
       {tooltip && <Tooltip player={tooltip.player} pos={{ x: tooltip.x, y: tooltip.y }}/>}
     </div>
   );
 }
+// verify: lineup prop used, no xi or players prop

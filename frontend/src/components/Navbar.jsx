@@ -95,7 +95,7 @@ const NAV_ITEMS = [
   { to: "/leagues",                    label: "Leagues",     Icon: Icons.Leagues,    color: "#34d399" },
   { to: "/predictions/premier-league", label: "Predictions", Icon: Icons.Predict,    color: "#60a5fa" },
   { to: "/best-team",                  label: "Fantasy",     Icon: Icons.Fantasy,    color: "#28d97a", fplGroup: true },
-  { to: "/players",                    label: "Players",     Icon: Icons.Players,    color: "#a78bfa" },
+  { to: "/player",                     label: "Players",     Icon: Icons.Players,    color: "#a78bfa" },
   { to: "/news",                       label: "News",        Icon: Icons.News,       color: "#f472b6" },
   { to: "/learn",                      label: "Ground Zero", Icon: Icons.GroundZero, color: "#fbbf24", secondary: true },
   { to: "/games",                      label: "Games",       Icon: Icons.Games,      color: "#fb923c", secondary: true },
@@ -244,15 +244,14 @@ export default function Navbar() {
           top: 0; left: 0; right: 0;
           height: 48px;
           z-index: 200;
-          background: rgba(4, 7, 14, 0.82);
-          backdrop-filter: blur(40px) saturate(220%) brightness(0.85);
-          -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(0.85);
-          border-bottom: 1px solid rgba(255,255,255,0.072);
+          background: rgba(5, 8, 16, 0.76);
+          backdrop-filter: blur(32px) saturate(200%) brightness(0.88);
+          -webkit-backdrop-filter: blur(32px) saturate(200%) brightness(0.88);
+          border-bottom: 1px solid rgba(255,255,255,0.065);
           box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.06),
-            0 12px 48px rgba(0,0,0,0.6),
-            0 2px 10px rgba(0,0,0,0.3),
-            0 0 0 0.5px rgba(255,255,255,0.03);
+            inset 0 1px 0 rgba(255,255,255,0.045),
+            0 8px 40px rgba(0,0,0,0.5),
+            0 2px 8px rgba(0,0,0,0.25);
           transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
           overflow: visible;
         }
@@ -314,7 +313,7 @@ export default function Navbar() {
           text-decoration: none; white-space: nowrap;
           background: transparent; cursor: pointer;
           font-family: 'Inter', sans-serif; line-height: 1;
-          transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.18s ease;
+          transition: color 0.14s, background 0.14s, border-color 0.14s, box-shadow 0.14s;
           flex-shrink: 0; overflow: visible; position: relative;
         }
         .sn-pill svg { flex-shrink: 0; }
@@ -322,18 +321,15 @@ export default function Navbar() {
         .sn-pill--secondary { color: rgba(255,255,255,0.24); font-size: 12px; }
 
         .sn-pill:hover {
-          color: rgba(255,255,255,0.78);
-          background: rgba(255,255,255,0.065);
-          border-color: rgba(255,255,255,0.09);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          color: rgba(255,255,255,0.72);
+          background: rgba(255,255,255,0.055);
+          border-color: rgba(255,255,255,0.07);
         }
         .sn-pill--active {
-          color: var(--pill-color, rgba(255,255,255,0.9));
-          background: color-mix(in srgb, var(--pill-color,white) 13%, transparent);
-          border-color: color-mix(in srgb, var(--pill-color,white) 28%, transparent);
-          box-shadow:
-            0 0 16px color-mix(in srgb, var(--pill-color,white) 12%, transparent),
-            inset 0 1px 0 color-mix(in srgb, var(--pill-color,white) 8%, transparent);
+          color: var(--pill-color, rgba(255,255,255,0.88));
+          background: color-mix(in srgb, var(--pill-color,white) 11%, transparent);
+          border-color: color-mix(in srgb, var(--pill-color,white) 22%, transparent);
+          box-shadow: 0 0 14px color-mix(in srgb, var(--pill-color,white) 10%, transparent);
         }
 
         /* ─ Live pill ─ */
@@ -397,7 +393,7 @@ export default function Navbar() {
           -webkit-backdrop-filter: blur(28px) saturate(180%);
           border: 1px solid rgba(40,217,122,0.17);
           border-radius: 14px; padding: 6px;
-          box-shadow: 0 28px 72px rgba(0,0,0,0.8), 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+          box-shadow: 0 24px 64px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.04);
           animation: snFadeDown 0.17s cubic-bezier(0.22,1,0.36,1) both;
         }
         .sn-fpl-dropdown-label {
@@ -428,10 +424,9 @@ export default function Navbar() {
         }
         .sn-search-input::placeholder { color: rgba(255,255,255,0.22); }
         .sn-search-input:focus {
-          border-color: rgba(96,165,250,0.45);
-          box-shadow: 0 0 0 3px rgba(96,165,250,0.1), 0 2px 8px rgba(0,0,0,0.2);
-          width: 230px;
-          background: rgba(255,255,255,0.07);
+          border-color: rgba(96,165,250,0.38);
+          box-shadow: 0 0 0 3px rgba(96,165,250,0.08);
+          width: 220px;
         }
 
         /* ─ Icon button ─ */
@@ -454,11 +449,10 @@ export default function Navbar() {
         .sn-mobile-drawer {
           position: fixed; top: 86px; left: 0; bottom: 0;
           width: min(268px, 80vw); z-index: 203;
-          background: rgba(4,7,14,0.98);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border-right: 1px solid rgba(255,255,255,0.09);
-          box-shadow: 12px 0 40px rgba(0,0,0,0.5);
+          background: rgba(4,7,14,0.97);
+          backdrop-filter: blur(28px) saturate(160%);
+          -webkit-backdrop-filter: blur(28px) saturate(160%);
+          border-right: 1px solid rgba(255,255,255,0.07);
           overflow-y: auto; padding: 10px 8px 32px;
           animation: snDrawerIn 0.2s cubic-bezier(0.22,1,0.36,1) both;
         }
@@ -483,6 +477,17 @@ export default function Navbar() {
         .sn-backdrop {
           position: fixed; inset: 0; z-index: 201;
           background: rgba(0,0,0,0.58); backdrop-filter: blur(2px);
+        }
+
+        /* ─ Desktop page offset ─────────────────────────────────────────────
+           Navbar is fixed (48px) + LiveTicker is fixed (38px) = 86px combined.
+           Without this, page content starts at top:0 and slides under both bars.  */
+        /* ─ Page content offset ─
+           .sn-bar (navbar): fixed, height 48px
+           .sn-live-ticker:  fixed, top 48px, height 36px
+           Combined: 84px                                  */
+        .sn-page-wrap {
+          padding-top: 84px;
         }
 
         /* ─ Bottom tabs ─ */
@@ -512,10 +517,10 @@ export default function Navbar() {
             justify-content: space-around;
           }
           .sn-page-wrap {
-            padding-top: 86px !important;
+            padding-top: 84px !important;
             padding-bottom: 72px !important;
           }
-          .sn-drawer { top: 86px; }
+          .sn-drawer { top: 84px; }
         }
         @media (max-width: 480px) {
           .sn-brand span  { display: none; }

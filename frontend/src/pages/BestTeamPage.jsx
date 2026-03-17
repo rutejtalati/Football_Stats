@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import "../styles/bestTeam.css";
+import "./bestTeam.css";
 
 /* ── Animated count-up hook ── */
 function useCountUp(target, duration = 900, decimals = 1) {

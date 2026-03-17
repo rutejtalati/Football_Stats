@@ -170,14 +170,17 @@ export default function FplTablePage() {
   const enrichedRows = useMemo(()=>rows.map(r=>{
     const creativity=Number(r.creativity||0),threat=Number(r.threat||0);
     const influence=Number(r.influence||0),ict=Number(r.ict_index||0);
-    const form=Number(r.form||0),ppc=Number(r.value_rest_season||0);
+    const form=Number(r.form||0);
+    // Backend sends value_score (not value_rest_season) — handle both
+    const ppc=Number(r.value_rest_season||r.value_score||0);
     const p1=Number(r.pts_gw_1||0),p2=Number(r.pts_gw_2||0),p3=Number(r.pts_gw_3||0);
     const p4=Number(r.pts_gw_4||0),p5=Number(r.pts_gw_5||0);
     const next5=p1+p2+p3+p4+p5;
     const gt=Number((threat/55+ict/24).toFixed(2));
     const cc=Number((creativity/70+influence/180).toFixed(2));
     const ai=Number((gt+cc).toFixed(2));
-    const appearance=Number(r.prob_appear||0);
+    // Backend sends appearance_prob (not prob_appear) — handle both
+    const appearance=Number(r.appearance_prob||r.prob_appear||0);
     const oc=Number(r.official_chance),ap=Number(r.availability_pct);
     const cs=Number((p1*0.58+ai*1.2+appearance*2.4+ppc*0.42).toFixed(2));
     const fes=clamp(p1/8.5,0,1);
@@ -188,12 +191,34 @@ export default function FplTablePage() {
     const frs=Number(clamp((next5/35)*100,0,100).toFixed(1));
     const sps=Number(clamp(ms*0.45+clamp(avr,0,100)*0.2+clamp((next5/30)*100,0,100)*0.2+clamp((form/8)*100,0,100)*0.15,0,100).toFixed(1));
     const tm=Number((Number(r.transfers_in_gw||0)-Number(r.transfers_out_gw||0)).toFixed(0));
+    // Backend sends total_points (not points_so_far) and projected_points (not pts_rest_season)
+    const pointsSoFar    = r.points_so_far    ?? r.total_points     ?? 0;
+    const ptsRestSeason  = r.pts_rest_season  ?? r.projected_points ?? 0;
+    // merit: use backend value if present, else derive from ep_next rank proxy
+    const merit          = r.merit ?? r.ep_next ?? r.captain_score ?? p1;
+    // player name: backend sends name/web_name, not player
+    const playerName     = r.player || r.name || r.web_name || "";
     const POS_COLORS = {"GK":"#f2c94c","DEF":"#4f9eff","MID":"#00e09e","FWD":"#ff6b6b"};
-    return{...r,player_display:formatPlayerName(r.player),_posColor:POS_COLORS[r.position]||"#4f9eff",goal_threat:gt,chance_creation:cc,attack_involvement:ai,
+    return{
+      ...r,
+      // Normalised aliases so every column reads the right value
+      player:          playerName,
+      prob_appear:     appearance,
+      value_rest_season: ppc,
+      pts_rest_season: ptsRestSeason,
+      points_so_far:   pointsSoFar,
+      merit,
+      player_display:formatPlayerName(playerName),
+      _posColor:POS_COLORS[r.position]||"#4f9eff",
+      goal_threat:gt,chance_creation:cc,attack_involvement:ai,
       fixture_ease_score:Number(fes.toFixed(2)),fixture_difficulty:fd,fixture_label:fl,
       points_per_cost:Number(ppc.toFixed(2)),next5_points:Number(next5.toFixed(1)),
-      captain_score:cs,availability_status:formatAvailabilityStatus(r),
-      minutes_security:ms,fixture_run_score:frs,safe_pick_score:sps,transfer_momentum:tm};
+      captain_score: r.captain_score ?? cs,
+      availability_status:formatAvailabilityStatus({...r,appearance_prob:appearance}),
+      minutes_security: r.minutes_security ?? ms,
+      fixture_run_score: r.fixture_run_score ?? frs,
+      safe_pick_score:sps,transfer_momentum: r.transfer_momentum ?? tm,
+    };
   }),[rows]);
 
   const teams=useMemo(()=>["ALL",...Array.from(new Set(enrichedRows.map(r=>r.team))).sort()],[enrichedRows]);

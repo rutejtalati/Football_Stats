@@ -1,243 +1,72 @@
-// components/FplPitch.jsx
+// components/FplPitch.jsx  —  Stadium broadcast aesthetic
 // ─────────────────────────────────────────────────────────────────────────────
-// Self-contained pitch renderer for FPL pages.
-// No external component dependencies — drop into any page.
+// Self-contained pitch renderer.  Zero external component dependencies.
 //
-// Accepts two data shapes:
+// Accepts lineup shape from BestTeamPage:
+//   lineup = { gk: player, defenders:[], midfielders:[], forwards:[] }
 //
-//   A) "lineup" shape (BestTeamPage):
-//      lineup = { gk: player, defenders: [], midfielders: [], forwards: [] }
-//      Players have: name, position, projected_points, cost, next_opp,
-//                    fixture_difficulty, code (for FPL photo URL),
-//                    appearance_prob, player_id/id
+// Also accepts flat xi[] for BestXIPage (backward compat):
+//   xi = Player[]  (grouped by position internally)
 //
-//   B) "xi" shape (BestXIPage):
-//      xi = flat Player[] grouped internally by position
-//      Players have: name, position, ep_next, cost, next_opp,
-//                    fixture_difficulty, photo (direct URL),
-//                    player_id/id, captain_score
+// Player objects need: player_id|id, name|player|web_name, position,
+//   projected_points|ep_next|pts_gw_1, cost, team, next_opp,
+//   fixture_difficulty, code (for photo CDN URL)
 //
 // Props:
-//   lineup        — shape A object  (pass one of lineup or xi)
-//   xi            — shape B array
-//   captain       — player object that is captain
-//   vc            — player object that is vice captain
-//   highlightedId — player_id to highlight (for cross-component hover)
-//   onPlayerClick — (player) => void
-//   showPoints    — "projected" | "ep" | "cost" | false  (default "projected")
-//   showFixture   — bool (default true)
-//   loading       — bool
+//   lineup        { gk, defenders[], midfielders[], forwards[] }
+//   xi            Player[]  (alternative to lineup)
+//   bench         Player[]
+//   captain       player object
+//   vc            player object
+//   highlightedId player_id to highlight (cross-panel hover sync)
+//   onPlayerClick (player) => void
+//   loading       bool
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect, memo } from "react";
+import "./pitch.css";
 
-const POS_COL = { GK:"#f2c94c", DEF:"#4f9eff", MID:"#00e09e", FWD:"#ff6b6b" };
-const FDR_BG  = { 1:"#1a7a3e", 2:"#1a7a3e", 3:"#2d2d2d", 4:"#7a2020", 5:"#4a0a0a" };
-const POS_ORDER = ["GK","DEF","MID","FWD"];
+/* ── Constants ───────────────────────────────────────────────────────────── */
+const POS_ORDER = ["GK", "DEF", "MID", "FWD"];
 
-/* ── Derive photo URL from player regardless of shape ──────────────── */
-function photoUrl(player) {
-  if (player?.photo) return player.photo;
-  if (player?.code)  return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${player.code}.png`;
+const POS_META = {
+  GK:  { color: "#f59e0b", glow: "rgba(245,158,11,0.35)",  css: "var(--pos-gk-color)",  glowCss: "var(--pos-gk-glow)"  },
+  DEF: { color: "#3b82f6", glow: "rgba(59,130,246,0.35)",  css: "var(--pos-def-color)", glowCss: "var(--pos-def-glow)" },
+  MID: { color: "#22c55e", glow: "rgba(34,197,94,0.35)",   css: "var(--pos-mid-color)", glowCss: "var(--pos-mid-glow)" },
+  FWD: { color: "#ef4444", glow: "rgba(239,68,68,0.35)",   css: "var(--pos-fwd-color)", glowCss: "var(--pos-fwd-glow)" },
+};
+
+const FDR_BG  = { 1:"#14532d", 2:"#14532d", 3:"#44403c", 4:"#7f1d1d", 5:"#450a0a" };
+const FDR_FG  = { 1:"#86efac", 2:"#86efac", 3:"#d6d3d1", 4:"#fca5a5", 5:"#fca5a5" };
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+function resolveName(p) {
+  return p?.name || p?.player || p?.web_name || p?.player_name || "?";
+}
+
+function shortName(full) {
+  if (!full || full === "?") return "?";
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0];
+  return parts[parts.length - 1]; // surname only on pitch
+}
+
+function resolvePoints(p) {
+  const v = p?.projected_points ?? p?.ep_next ?? p?.pts_gw_1;
+  return v != null ? Number(v) : null;
+}
+
+function resolvePhoto(p) {
+  if (p?.photo) return p.photo;
+  if (p?.code)  return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${p.code}.png`;
   return null;
 }
 
-/* ── Derive display points value ─────────────────────────────────── */
-function pointsDisplay(player, mode) {
-  if (!mode || mode === false) return null;
-  if (mode === "ep") {
-    const v = player.ep_next ?? player.pts_gw_1 ?? player.projected_points;
-    return v != null ? `${Number(v).toFixed(2)} EP` : null;
-  }
-  if (mode === "cost") return player.cost != null ? `£${player.cost}m` : null;
-  // "projected" (default)
-  const v = player.projected_points ?? player.ep_next ?? player.pts_gw_1;
-  return v != null ? `${Number(v).toFixed(1)} pts` : null;
-}
-
-/* ── Single player chip on the pitch ─────────────────────────────── */
-function PlayerChip({ player, isCaptain, isVC, highlighted, onPlayerClick, showPoints, showFixture }) {
-  const [hov, setHov] = useState(false);
-  const col  = POS_COL[player.position] || "#4f9eff";
-  const url  = photoUrl(player);
-  const pts  = pointsDisplay(player, showPoints);
-  const diff = player.fixture_difficulty;
-  const isHighlighted = highlighted || hov;
-  const pid  = player.player_id || player.id;
-
-  return (
-    <div
-      onClick={() => onPlayerClick?.(player)}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display:"flex", flexDirection:"column", alignItems:"center", gap:3,
-        cursor: onPlayerClick ? "pointer" : "default",
-        position:"relative",
-        transition:"transform 180ms cubic-bezier(0.22,1,0.36,1)",
-        transform: isHighlighted ? "scale(1.08) translateY(-2px)" : "scale(1)",
-      }}
-    >
-      {/* C / VC badge */}
-      {(isCaptain || isVC) && (
-        <div style={{
-          position:"absolute", top:-6, right:-6, zIndex:2,
-          width:18, height:18, borderRadius:"50%",
-          background: isCaptain ? "#f2c94c" : "rgba(200,220,255,0.28)",
-          color: isCaptain ? "#000" : "#e8f0ff",
-          fontSize:9, fontWeight:900,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          boxShadow: isCaptain ? "0 0 8px #f2c94c99" : "none",
-          border: isVC ? "1px solid rgba(200,220,255,0.3)" : "none",
-        }}>{isCaptain ? "C" : "V"}</div>
-      )}
-
-      {/* Photo / avatar circle */}
-      <div style={{
-        width:44, height:44, borderRadius:"50%", overflow:"hidden",
-        border:`2px solid ${isHighlighted ? col : col+"55"}`,
-        background:"rgba(255,255,255,0.06)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        transition:"border-color 180ms, box-shadow 180ms",
-        boxShadow: isHighlighted ? `0 0 14px ${col}66` : "none",
-        flexShrink:0,
-      }}>
-        {url ? (
-          <img
-            src={url} alt=""
-            style={{ width:"100%", height:"100%", objectFit:"cover" }}
-            onError={e => { e.target.style.display="none"; }}
-          />
-        ) : (
-          <span style={{ fontSize:10, fontWeight:900, color:col, letterSpacing:"0.04em" }}>
-            {player.position}
-          </span>
-        )}
-      </div>
-
-      {/* Surname */}
-      <div style={{
-        fontSize:10, fontWeight:800, color: isHighlighted ? "#fff" : "#e8f0ff",
-        textAlign:"center", maxWidth:68,
-        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-        textShadow: isHighlighted ? `0 0 10px ${col}88` : "none",
-        transition:"color 180ms, text-shadow 180ms",
-      }}>
-        {(player.name || "").split(" ").at(-1)}
-      </div>
-
-      {/* Points / EP / cost */}
-      {pts && (
-        <div style={{
-          fontSize:9, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-          color:col, background:`${col}18`,
-          padding:"1px 6px", borderRadius:999,
-          border:`1px solid ${col}33`,
-        }}>
-          {pts}
-        </div>
-      )}
-
-      {/* Next fixture FDR chip */}
-      {showFixture && player.next_opp && (
-        <div style={{
-          fontSize:8, color:"rgba(200,220,255,0.65)",
-          background: FDR_BG[diff] || "#2d2d2d",
-          padding:"1px 5px", borderRadius:4,
-        }}>
-          {player.next_opp}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Row of players across the pitch ─────────────────────────────── */
-function PitchRow({ players, captain, vc, highlightedId, onPlayerClick, showPoints, showFixture }) {
-  if (!players?.length) return null;
-  const capId = captain?.player_id ?? captain?.id;
-  const vcId  = vc?.player_id ?? vc?.id;
-  return (
-    <div style={{
-      display:"flex", justifyContent:"center",
-      gap:"clamp(8px, 3vw, 24px)",
-      flexWrap:"nowrap", padding:"8px 4px",
-      minHeight:100,
-    }}>
-      {players.map(p => {
-        const pid = p.player_id ?? p.id;
-        return (
-          <PlayerChip
-            key={pid ?? p.name}
-            player={p}
-            isCaptain={capId != null && capId === pid}
-            isVC={vcId != null && vcId === pid}
-            highlighted={highlightedId != null && highlightedId === pid}
-            onPlayerClick={onPlayerClick}
-            showPoints={showPoints}
-            showFixture={showFixture}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-/* ── Skeleton row ─────────────────────────────────────────────────── */
-function SkeletonRow({ count = 4 }) {
-  return (
-    <div style={{ display:"flex", justifyContent:"center", gap:20, padding:"8px 0" }}>
-      {Array.from({ length:count }).map((_,i) => (
-        <div key={i} style={{
-          width:44, height:80, borderRadius:8,
-          background:"linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 75%)",
-          backgroundSize:"200% 100%", animation:"fplPitchShimmer 1.4s infinite",
-          animationDelay:`${i*0.1}s`,
-        }}/>
-      ))}
-    </div>
-  );
-}
-
-/* ── Pitch SVG background ─────────────────────────────────────────── */
-function PitchSVG() {
-  return (
-    <svg
-      style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:0.07, pointerEvents:"none" }}
-      viewBox="0 0 600 420" preserveAspectRatio="xMidYMid slice"
-    >
-      {/* Outer boundary */}
-      <rect x="12" y="10" width="576" height="400" rx="4" fill="none" stroke="white" strokeWidth="1.5"/>
-      {/* Centre line */}
-      <line x1="12" y1="210" x2="588" y2="210" stroke="white" strokeWidth="1"/>
-      {/* Centre circle */}
-      <circle cx="300" cy="210" r="55" fill="none" stroke="white" strokeWidth="1"/>
-      <circle cx="300" cy="210" r="4" fill="white" opacity="0.7"/>
-      {/* Left penalty area */}
-      <rect x="12" y="140" width="78" height="140" fill="none" stroke="white" strokeWidth="1"/>
-      {/* Right penalty area */}
-      <rect x="510" y="140" width="78" height="140" fill="none" stroke="white" strokeWidth="1"/>
-      {/* Left 6-yard box */}
-      <rect x="12" y="170" width="30" height="80" fill="none" stroke="white" strokeWidth="0.8" opacity="0.6"/>
-      {/* Right 6-yard box */}
-      <rect x="558" y="170" width="30" height="80" fill="none" stroke="white" strokeWidth="0.8" opacity="0.6"/>
-      {/* Left penalty spot */}
-      <circle cx="68" cy="210" r="3" fill="white" opacity="0.5"/>
-      {/* Right penalty spot */}
-      <circle cx="532" cy="210" r="3" fill="white" opacity="0.5"/>
-    </svg>
-  );
-}
-
-/* ── Normalise lineup into rows per position ──────────────────────── */
 function buildRows(lineup, xi) {
   if (xi?.length) {
-    // xi is a flat array — group by position
-    const groups = { GK:[], DEF:[], MID:[], FWD:[] };
-    for (const p of xi) {
-      (groups[p.position] = groups[p.position] || []).push(p);
-    }
-    return groups;
+    const g = { GK:[], DEF:[], MID:[], FWD:[] };
+    for (const p of xi) (g[p.position] = g[p.position] || []).push(p);
+    return g;
   }
   if (lineup) {
     return {
@@ -250,45 +79,260 @@ function buildRows(lineup, xi) {
   return { GK:[], DEF:[], MID:[], FWD:[] };
 }
 
-/* ══════════════════════════════════════════════════════════════════════
+function playerId(p) { return p?.player_id ?? p?.id; }
+
+/* ── Pitch SVG lines ─────────────────────────────────────────────────────── */
+const PitchLines = memo(function PitchLines() {
+  return (
+    <svg className="fpl-pitch-svg" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <filter id="pitch-line-blur">
+          <feGaussianBlur stdDeviation="0.4"/>
+        </filter>
+      </defs>
+      <g stroke="rgba(255,255,255,0.13)" fill="none" strokeWidth="1.2" filter="url(#pitch-line-blur)">
+        {/* Outer boundary */}
+        <rect x="24" y="16" width="752" height="488" rx="4"/>
+        {/* Halfway line */}
+        <line x1="24" y1="260" x2="776" y2="260"/>
+        {/* Centre circle */}
+        <circle cx="400" cy="260" r="72"/>
+        <circle cx="400" cy="260" r="3" fill="rgba(255,255,255,0.18)" stroke="none"/>
+        {/* Left penalty area */}
+        <rect x="24" y="170" width="110" height="180"/>
+        {/* Right penalty area */}
+        <rect x="666" y="170" width="110" height="180"/>
+        {/* Left 6-yard box */}
+        <rect x="24" y="208" width="42" height="104"/>
+        {/* Right 6-yard box */}
+        <rect x="734" y="208" width="42" height="104"/>
+        {/* Left penalty spot */}
+        <circle cx="95" cy="260" r="3" fill="rgba(255,255,255,0.16)" stroke="none"/>
+        {/* Right penalty spot */}
+        <circle cx="705" cy="260" r="3" fill="rgba(255,255,255,0.16)" stroke="none"/>
+        {/* Left penalty arc */}
+        <path d="M 110 216 A 72 72 0 0 1 110 304" strokeDasharray="none"/>
+        {/* Right penalty arc */}
+        <path d="M 690 216 A 72 72 0 0 0 690 304"/>
+        {/* Corner arcs */}
+        <path d="M 24 32 A 12 12 0 0 1 36 20"/>
+        <path d="M 764 20 A 12 12 0 0 1 776 32"/>
+        <path d="M 24 488 A 12 12 0 0 0 36 500"/>
+        <path d="M 764 500 A 12 12 0 0 0 776 488"/>
+      </g>
+    </svg>
+  );
+});
+
+/* ── Player photo with graceful fallback ────────────────────────────────── */
+const PlayerPhoto = memo(function PlayerPhoto({ player, size = 48 }) {
+  const [err, setErr] = useState(false);
+  const url           = resolvePhoto(player);
+  const meta          = POS_META[player.position] || POS_META.MID;
+
+  if (!url || err) {
+    return (
+      <div className="fpl-chip-photo-fallback" style={{ color: meta.color }}>
+        {(player.position || "?").slice(0, 2)}
+      </div>
+    );
+  }
+  return (
+    <img
+      className="fpl-chip-photo"
+      src={url}
+      alt=""
+      onError={() => setErr(true)}
+      loading="lazy"
+      decoding="async"
+    />
+  );
+});
+
+/* ── Individual player chip ──────────────────────────────────────────────── */
+const PlayerChip = memo(function PlayerChip({
+  player, isCaptain, isVC, isHighlighted,
+  onPlayerClick, onHover, onLeave, delay = 0, isBench = false,
+}) {
+  const meta   = POS_META[player.position] || POS_META.MID;
+  const pts    = resolvePoints(player);
+  const pid    = playerId(player);
+  const name   = resolveName(player);
+
+  const chipClass = isBench
+    ? "fpl-bench-chip"
+    : `fpl-chip${isHighlighted ? " highlighted" : ""}`;
+
+  return (
+    <div
+      className={chipClass}
+      style={{
+        "--pos-color": meta.color,
+        "--pos-glow":  meta.glow,
+        animationDelay: `${delay}ms`,
+      }}
+      onClick={() => onPlayerClick?.(player)}
+      onMouseEnter={(e) => onHover?.(pid, player, e)}
+      onMouseLeave={() => onLeave?.()}
+    >
+      {/* C / VC badge */}
+      {(isCaptain || isVC) && (
+        <div className={`fpl-chip-cvc ${isCaptain ? "fpl-chip-cvc-c" : "fpl-chip-cvc-vc"}`}>
+          {isCaptain ? "C" : "V"}
+        </div>
+      )}
+
+      {/* Photo ring */}
+      <div className="fpl-chip-photo-ring">
+        <PlayerPhoto player={player}/>
+      </div>
+
+      {/* Name */}
+      <div className="fpl-chip-name">{shortName(name)}</div>
+
+      {/* Points */}
+      {pts != null && (
+        <div className="fpl-chip-pts">{pts.toFixed(1)}</div>
+      )}
+    </div>
+  );
+});
+
+/* ── Skeleton row ────────────────────────────────────────────────────────── */
+function SkeletonRow({ count }) {
+  return (
+    <div className="fpl-pitch-row">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="fpl-pitch-skel-chip" style={{ animationDelay: `${i * 80}ms` }}/>
+      ))}
+    </div>
+  );
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+const Tooltip = memo(function Tooltip({ player, pos }) {
+  if (!player || !pos) return null;
+  const meta  = POS_META[player.position] || POS_META.MID;
+  const pts   = resolvePoints(player);
+  const prob  = Math.round((player.appearance_prob || player.prob_appear || 0.92) * 100);
+  const diff  = player.fixture_difficulty;
+
+  return (
+    <div
+      className="fpl-pitch-tooltip"
+      style={{
+        left:  Math.min(pos.x + 14, window.innerWidth - 256),
+        top:   Math.max(pos.y - 120, 8),
+        borderColor: `${meta.color}33`,
+      }}
+    >
+      <div className="fpl-tooltip-name">{resolveName(player)}</div>
+      <div className="fpl-tooltip-team">{player.team} · {player.position}</div>
+
+      <div className="fpl-tooltip-grid">
+        <div className="fpl-tooltip-stat">
+          <div className="fpl-tooltip-stat-label">Proj Pts</div>
+          <div className="fpl-tooltip-stat-val" style={{ color: meta.color }}>
+            {pts != null ? pts.toFixed(1) : "—"}
+          </div>
+        </div>
+        <div className="fpl-tooltip-stat">
+          <div className="fpl-tooltip-stat-label">Cost</div>
+          <div className="fpl-tooltip-stat-val">£{player.cost}m</div>
+        </div>
+        <div className="fpl-tooltip-stat">
+          <div className="fpl-tooltip-stat-label">Avail</div>
+          <div className="fpl-tooltip-stat-val" style={{
+            color: prob >= 90 ? "#22c55e" : prob >= 70 ? "#f59e0b" : "#ef4444"
+          }}>
+            {prob}%
+          </div>
+        </div>
+        <div className="fpl-tooltip-stat">
+          <div className="fpl-tooltip-stat-label">Own%</div>
+          <div className="fpl-tooltip-stat-val">
+            {player.selected_by_pct != null ? `${Number(player.selected_by_pct).toFixed(1)}%` : "—"}
+          </div>
+        </div>
+      </div>
+
+      {player.next_opp && (
+        <div className="fpl-tooltip-fixture">
+          <span>Next:</span>
+          <span className="fpl-tooltip-fixture-opp">{player.next_opp}</span>
+          {diff && (
+            <span style={{
+              marginLeft: "auto",
+              background: FDR_BG[diff] || FDR_BG[3],
+              color:      FDR_FG[diff] || FDR_FG[3],
+              padding:    "1px 6px", borderRadius: 4,
+              fontSize:   9, fontWeight: 700,
+              fontFamily: "'DM Mono', monospace",
+            }}>
+              FDR {diff}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
    FplPitch — main export
-   ══════════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════════════ */
 export default function FplPitch({
   lineup        = null,
   xi            = null,
+  bench         = [],
   captain       = null,
   vc            = null,
   highlightedId = null,
   onPlayerClick = null,
-  showPoints    = "projected",
-  showFixture   = true,
   loading       = false,
 }) {
-  const rows = buildRows(lineup, xi);
+  const [tooltip, setTooltip] = useState(null); // { player, x, y }
+
+  const capId = playerId(captain);
+  const vcId  = playerId(vc);
+
+  /* Build row groups from whatever shape we receive */
+  const rows = useMemo(() => buildRows(lineup, xi), [lineup, xi]);
+
+  /* Stagger delays per position row */
+  const rowDelays = { GK: 0, DEF: 80, MID: 160, FWD: 240 };
+
+  const handleHover = useCallback((pid, player, e) => {
+    if (!e) return;
+    setTooltip({ player, x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleLeave = useCallback(() => setTooltip(null), []);
+
+  /* Close tooltip on scroll */
+  useEffect(() => {
+    const fn = () => setTooltip(null);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
   const totalPlayers = Object.values(rows).flat().length;
 
   return (
-    <>
-      <style>{`
-        @keyframes fplPitchShimmer {
-          0%   { background-position: -200% 0 }
-          100% { background-position:  200% 0 }
-        }
-      `}</style>
-      <div style={{
-        background:"linear-gradient(180deg, #0b2e12 0%, #071f0a 100%)",
-        border:"1px solid rgba(255,255,255,0.08)",
-        borderRadius:18,
-        padding:"16px 12px",
-        position:"relative",
-        overflow:"hidden",
-        minHeight:320,
-      }}>
-        <PitchSVG />
-
-        <div style={{ position:"relative", zIndex:1 }}>
+    <div>
+      {/* ── Pitch ───────────────────────────────────────────────────────── */}
+      <div className="fpl-pitch-outer">
+        {/* Grass texture */}
+        <div className="fpl-pitch-grass"/>
+        {/* Stadium lighting orbs */}
+        <div className="fpl-pitch-light fpl-pitch-light-tl"/>
+        <div className="fpl-pitch-light fpl-pitch-light-tr"/>
+        <div className="fpl-pitch-light fpl-pitch-light-c"/>
+        {/* SVG lines */}
+        <PitchLines/>
+        {/* Players layer */}
+        <div className="fpl-pitch-players">
           {loading ? (
-            // Skeleton: 4 rows of 4 chips
             <>
               <SkeletonRow count={1}/>
               <SkeletonRow count={4}/>
@@ -297,27 +341,77 @@ export default function FplPitch({
             </>
           ) : totalPlayers === 0 ? (
             <div style={{
-              textAlign:"center", padding:"40px 20px",
-              color:"#4a6a8a", fontSize:13, fontFamily:"'Inter',sans-serif",
+              textAlign: "center", padding: "60px 20px",
+              color: "#334155", fontSize: 13,
+              fontFamily: "'IBM Plex Sans', sans-serif",
             }}>
-              No lineup data. Try adjusting filters.
+              No lineup data available.
             </div>
           ) : (
-            POS_ORDER.map(pos => (
-              <PitchRow
-                key={pos}
-                players={rows[pos]}
-                captain={captain}
-                vc={vc}
-                highlightedId={highlightedId}
-                onPlayerClick={onPlayerClick}
-                showPoints={showPoints}
-                showFixture={showFixture}
-              />
-            ))
+            POS_ORDER.map(pos => {
+              const rowPlayers = rows[pos];
+              if (!rowPlayers?.length) return null;
+              const baseDelay = rowDelays[pos] ?? 0;
+              return (
+                <div key={pos} className="fpl-pitch-row">
+                  {rowPlayers.map((p, i) => {
+                    const pid = playerId(p);
+                    return (
+                      <PlayerChip
+                        key={pid ?? `${pos}-${i}`}
+                        player={p}
+                        isCaptain={capId != null && capId === pid}
+                        isVC={vcId != null && vcId === pid}
+                        isHighlighted={highlightedId != null && highlightedId === pid}
+                        onPlayerClick={onPlayerClick}
+                        onHover={handleHover}
+                        onLeave={handleLeave}
+                        delay={baseDelay + i * 40}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })
           )}
         </div>
+
+
       </div>
-    </>
+
+      {/* ── Bench tray ──────────────────────────────────────────────────── */}
+      {bench.length > 0 && (
+        <div className="fpl-bench-tray">
+          <div className="fpl-bench-divider"/>
+          <div className="fpl-bench-label">Bench</div>
+          <div className="fpl-bench-grid">
+            {bench.map((p, i) => {
+              if (!p) return null;
+              const pid      = playerId(p);
+              const slotLabels = ["GK", "B1", "B2", "B3"];
+              return (
+                <div key={pid ?? i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                  <div className="fpl-bench-slot-label">{slotLabels[i] ?? `B${i}`}</div>
+                  <PlayerChip
+                    player={p}
+                    isCaptain={capId != null && capId === pid}
+                    isVC={vcId != null && vcId === pid}
+                    isHighlighted={highlightedId != null && highlightedId === pid}
+                    onPlayerClick={onPlayerClick}
+                    onHover={handleHover}
+                    onLeave={handleLeave}
+                    delay={i * 60}
+                    isBench
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tooltip (portal-like fixed position) ────────────────────────── */}
+      {tooltip && <Tooltip player={tooltip.player} pos={{ x: tooltip.x, y: tooltip.y }}/>}
+    </div>
   );
 }

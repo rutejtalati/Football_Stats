@@ -115,7 +115,6 @@ export default function App() {
             <Route path="/fixture-difficulty"  element={<FixtureDifficultyHeatmap />} />
             <Route path="/transfer-planner"    element={<TransferPlannerPage />} />
             <Route path="/differentials"       element={<DifferentialFinderPage />} />
-            <Route path="/best-xi"             element={<BestXIPage />} />
 
             {/* ───── Player Pages ───── */}
             <Route path="/player" element={<PlayerBrowsePage />} />

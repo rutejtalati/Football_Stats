@@ -22,7 +22,6 @@ function useCountUp(target, duration = 900, decimals = 1) {
 import { useNavigate } from "react-router-dom";
 import { getFplBootstrap, getFplPredictorTable } from "../api/api";
 import FplPitch from "../components/FplPitch";
-import PlayerCard from "../components/PlayerCard";
 
 const FORMATIONS = [
   { name: "4-3-3", DEF: 4, MID: 3, FWD: 3 },
@@ -248,33 +247,6 @@ function OwnerArc({ pct, name }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════
-   BENCH CARD — wraps PlayerCard for visual consistency
-   Bench slot label + C/VC buttons below the identical card
-   ══════════════════════════════════════════════════════ */
-function BenchCard({ player, index, isCaptain, isVC, onPlayerClick }) {
-  const labels    = ["GK", "B1", "B2", "B3"];
-  const subLabels = ["Bench GK", "Top sub", "2nd sub", "3rd sub"];
-  return (
-    <div className="bt-bench-slot">
-      {/* Slot header */}
-      <div className="bt-bench-slot-header">
-        <span className="bt-bench-slot-label">{labels[index] ?? `B${index}`}</span>
-        <span className="bt-bench-slot-sub">{subLabels[index] ?? ""}</span>
-      </div>
-
-      {/* PlayerCard — clickable to Player Insight, no C/VC buttons */}
-      <div onClick={() => onPlayerClick?.(player)} style={{ cursor:"pointer" }}>
-        <PlayerCard
-          player={player}
-          size="bench"
-          isCaptain={isCaptain}
-          isViceCaptain={isVC}
-        />
-      </div>
-    </div>
-  );
-}
 
 /* ── Stat card — with animated count-up for numeric values ── */
 const ACCENT_COLORS = {
@@ -660,51 +632,17 @@ export default function BestTeamPage() {
               </div>
             </div>
 
-            {/* CENTRE — Pitch + Bench */}
+            {/* CENTRE — Pitch + Bench (rendered by FplPitch) */}
             <div className="bt-centre-col">
-              <div className="bt-pitch-wrap">
-                <FplPitch
-                  lineup={best.lineup}
-                  captain={captain}
-                  vc={vc}
-                  highlightedId={hoveredPlayer}
-                  onPlayerClick={handlePlayerClick}
-                  showPoints="projected"
-                  showFixture={true}
-                  loading={loading}
-                />
-              </div>
-
-              {/* ── BENCH TRAY ── */}
-              {bench.length > 0 && (
-                <div className="bt-bench-tray">
-                  <div className="bt-bench-tray-line bt-bench-tray-line-left" />
-                  <div className="bt-bench-tray-line bt-bench-tray-line-right" />
-                  <div className="bt-bench-tray-center-circle" />
-                  <div className="bt-bench-tray-header">
-                    <div className="bt-bench-tray-title-row">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{flexShrink:0}}>
-                        <rect x="1" y="4" width="12" height="8" rx="2" stroke="rgba(220,240,220,0.7)" strokeWidth="1.3"/>
-                        <path d="M5 4V2.5a2 2 0 014 0V4" stroke="rgba(220,240,220,0.7)" strokeWidth="1.3" strokeLinecap="round"/>
-                      </svg>
-                      <span className="bt-bench-tray-title">Bench</span>
-                    </div>
-                    <span className="bt-bench-tray-hint">Bench GK + top 3 outfield by projected pts · Click player for insights</span>
-                  </div>
-                  <div className="bt-bench-tray-grid">
-                    {bench.map((p, i) => p ? (
-                      <BenchCard
-                        key={p.player_id||p.id||i}
-                        player={p}
-                        index={i}
-                        isCaptain={(captain?.player_id||captain?.id)===(p?.player_id||p?.id)}
-                        isVC={(vc?.player_id||vc?.id)===(p?.player_id||p?.id)}
-                        onPlayerClick={handlePlayerClick}
-                      />
-                    ) : null)}
-                  </div>
-                </div>
-              )}
+              <FplPitch
+                lineup={best.lineup}
+                bench={bench}
+                captain={captain}
+                vc={vc}
+                highlightedId={hoveredPlayer}
+                onPlayerClick={handlePlayerClick}
+                loading={loading}
+              />
             </div>
 
             {/* RIGHT PANEL */}

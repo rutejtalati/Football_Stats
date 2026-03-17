@@ -1045,21 +1045,25 @@ function TodayIntelligence({ dash, fixtures, loading }) {
           <div><div className="hp7-eyebrow">— Model Signals</div><h2 className="hp7-section-title">Today's Intelligence</h2></div>
         </div>
         <div className="hp7-intel-grid">
-          {signals.map((s,i)=>{
-            const [cref, cvis] = useReveal(0.05);
-            return (
-              <div key={i} ref={cref} style={{opacity:cvis?1:0,transform:cvis?"translateY(0)":"translateY(14px)",transition:`all .4s ease ${i*60}ms`}}>
-                <div className="hp7-intel-card" style={{"--ic-color":s.color,"--ic-rgb":s.rgb}} onClick={()=>nav(s.to)}>
-                  <div className="hp7-ic-signal">{s.type}</div>
-                  <div className="hp7-ic-title">{s.title}</div>
-                  {s.detail && <div className="hp7-ic-detail">{s.detail}</div>}
-                </div>
-              </div>
-            );
-          })}
+          {signals.map((s,i)=>(
+            <IntelCard key={i} signal={s} index={i} nav={nav}/>
+          ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function IntelCard({ signal: s, index: i, nav }) {
+  const [cref, cvis] = useReveal(0.05);
+  return (
+    <div ref={cref} style={{opacity:cvis?1:0,transform:cvis?"translateY(0)":"translateY(14px)",transition:`all .4s ease ${i*60}ms`}}>
+      <div className="hp7-intel-card" style={{"--ic-color":s.color,"--ic-rgb":s.rgb}} onClick={()=>nav(s.to)}>
+        <div className="hp7-ic-signal">{s.type}</div>
+        <div className="hp7-ic-title">{s.title}</div>
+        {s.detail && <div className="hp7-ic-detail">{s.detail}</div>}
+      </div>
+    </div>
   );
 }
 
@@ -1672,6 +1676,29 @@ const FACTS = [
   {val:"8K",label:"Simulations/Run"},
 ];
 
+function ModelCard({ model: m, index: i }) {
+  const [mref, mvis] = useReveal(0.05);
+  return (
+    <div ref={mref} className="hp7-model-card" style={{opacity:mvis?1:0,transform:mvis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${i*50}ms`,"--mc-color":m.color}}>
+      <div className="hp7-mc-dot"/>
+      <div>
+        <div className="hp7-mc-name">{m.name}</div>
+        <div className="hp7-mc-desc">{m.desc}</div>
+      </div>
+    </div>
+  );
+}
+
+function FactCard({ fact: f, index: i }) {
+  const [fref, fvis] = useReveal(0.05);
+  return (
+    <div ref={fref} className="hp7-fact-card" style={{opacity:fvis?1:0,transform:fvis?"scale(1)":"scale(.9)",transition:`all .4s ease ${i*60}ms`}}>
+      <div className="hp7-fact-val hp7-mono">{f.val}</div>
+      <div className="hp7-fact-label">{f.label}</div>
+    </div>
+  );
+}
+
 function WhyStatinSite() {
   const [ref, vis] = useReveal(0.04);
   return (
@@ -1684,32 +1711,17 @@ function WhyStatinSite() {
           <div>
             <div className="hp7-sub-label">Data Models</div>
             <div className="hp7-models-grid">
-              {MODELS.map((m,i)=>{
-                const [mref, mvis]=useReveal(0.05);
-                return (
-                  <div key={m.name} ref={mref} className="hp7-model-card" style={{opacity:mvis?1:0,transform:mvis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${i*50}ms`,"--mc-color":m.color}}>
-                    <div className="hp7-mc-dot"/>
-                    <div>
-                      <div className="hp7-mc-name">{m.name}</div>
-                      <div className="hp7-mc-desc">{m.desc}</div>
-                    </div>
-                  </div>
-                );
-              })}
+              {MODELS.map((m,i)=>(
+                <ModelCard key={m.name} model={m} index={i}/>
+              ))}
             </div>
           </div>
           <div>
             <div className="hp7-sub-label">Platform Scale</div>
             <div className="hp7-facts-grid">
-              {FACTS.map((f,i)=>{
-                const [fref,fvis]=useReveal(0.05);
-                return (
-                  <div key={f.label} ref={fref} className="hp7-fact-card" style={{opacity:fvis?1:0,transform:fvis?"scale(1)":"scale(.9)",transition:`all .4s ease ${i*60}ms`}}>
-                    <div className="hp7-fact-val hp7-mono">{f.val}</div>
-                    <div className="hp7-fact-label">{f.label}</div>
-                  </div>
-                );
-              })}
+              {FACTS.map((f,i)=>(
+                <FactCard key={f.label} fact={f} index={i}/>
+              ))}
             </div>
             <div className="hp7-platform-note">
               All predictions use real season statistics from API-Football Pro. Model probabilities are not guaranteed outcomes.

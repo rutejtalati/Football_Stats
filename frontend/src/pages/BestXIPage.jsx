@@ -7,111 +7,18 @@
 //                          next_opp, fixture_difficulty, photo
 
 import { useEffect, useState, useMemo } from "react";
+import FplPitch from "../components/FplPitch";
 
 const API = (import.meta?.env?.VITE_API_URL ?? "");
 const POS_COL = { GK:"#f2c94c", DEF:"#4f9eff", MID:"#00e09e", FWD:"#ff6b6b" };
 const FDR_BG  = { 1:"#1a7a3e", 2:"#1a7a3e", 3:"#2d2d2d", 4:"#7a2020", 5:"#4a0a0a" };
 // Backend-supported formations only
 const FORMATIONS = ["442","433","352","343","451","541"];
-const POS_ORDER  = ["GK","DEF","MID","FWD"];
 
 const CSS = `
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 `;
-
-function PlayerChip({ player, isCaptain, isVC, showEP }) {
-  const [hov, setHov] = useState(false);
-  const col = POS_COL[player.position] || "#4f9eff";
-
-  return (
-    <div
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, cursor:"default", position:"relative" }}
-    >
-      {/* C / VC badge */}
-      {(isCaptain || isVC) && (
-        <div style={{
-          position:"absolute", top:-6, right:-6, zIndex:2,
-          width:18, height:18, borderRadius:"50%",
-          background: isCaptain ? "#f2c94c" : "rgba(200,220,255,0.25)",
-          color: isCaptain ? "#000" : "#e8f0ff",
-          fontSize:9, fontWeight:900,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          boxShadow: isCaptain ? "0 0 8px #f2c94c99" : "none",
-        }}>{isCaptain ? "C" : "V"}</div>
-      )}
-
-      {/* Photo / position avatar */}
-      <div style={{
-        width:44, height:44, borderRadius:"50%", overflow:"hidden",
-        border:`2px solid ${hov ? col : col+"55"}`,
-        background:"rgba(255,255,255,0.06)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        transition:"border-color 200ms, box-shadow 200ms",
-        boxShadow: hov ? `0 0 12px ${col}55` : "none",
-      }}>
-        {player.photo
-          ? <img src={player.photo} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}
-              onError={e => { e.target.style.display="none"; }}/>
-          : <span style={{ fontSize:10, fontWeight:900, color:col }}>{player.position}</span>
-        }
-      </div>
-
-      {/* Surname */}
-      <div style={{
-        fontSize:10, fontWeight:800, color:"#e8f0ff",
-        textAlign:"center", maxWidth:64,
-        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-      }}>
-        {/* Show last name only for space */}
-        {(player.name || "").split(" ").at(-1)}
-      </div>
-
-      {/* EP or cost */}
-      {showEP ? (
-        <div style={{
-          fontSize:9, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-          color:col, background:`${col}18`, padding:"1px 6px", borderRadius:999,
-        }}>
-          {player.ep_next?.toFixed(2)} EP
-        </div>
-      ) : (
-        <div style={{ fontSize:9, color:"rgba(200,220,255,0.5)" }}>£{player.cost}m</div>
-      )}
-
-      {/* Next fixture chip */}
-      {player.next_opp && (
-        <div style={{
-          fontSize:8, color:"rgba(200,220,255,0.6)",
-          background: FDR_BG[player.fixture_difficulty] || "#2d2d2d",
-          padding:"1px 5px", borderRadius:4,
-        }}>
-          {player.next_opp}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PitchRow({ players, captain, vc, showEP }) {
-  return (
-    <div style={{
-      display:"flex", justifyContent:"center", gap:20,
-      flexWrap:"wrap", padding:"10px 0",
-    }}>
-      {players.map(p => (
-        <PlayerChip
-          key={p.player_id || p.id}
-          player={p}
-          isCaptain={captain?.player_id === p.player_id || captain?.id === p.id}
-          isVC={vc?.player_id === p.player_id || vc?.id === p.id}
-          showEP={showEP}
-        />
-      ))}
-    </div>
-  );
-}
 
 function StatBadge({ label, value, color="#4f9eff" }) {
   return (
@@ -158,15 +65,6 @@ export default function BestXIPage() {
     return () => { cancelled = true; };
   }, [budget, formation]);
 
-  // Group xi[] by position for pitch rendering
-  const lineupByPos = useMemo(() => {
-    if (!data?.xi) return {};
-    const g = { GK:[], DEF:[], MID:[], FWD:[] };
-    for (const p of data.xi) {
-      (g[p.position] = g[p.position] || []).push(p);
-    }
-    return g;
-  }, [data]);
 
   // Captain = highest captain_score in xi
   const captain = useMemo(() => {
@@ -273,42 +171,16 @@ export default function BestXIPage() {
           </div>
         )}
 
-        {/* Pitch */}
-        <div style={{
-          background:"linear-gradient(180deg,#0a2e10 0%,#082808 100%)",
-          border:"1px solid rgba(255,255,255,0.08)", borderRadius:20,
-          padding:"24px 20px", marginBottom:20,
-          position:"relative", overflow:"hidden",
-        }}>
-          {/* Pitch SVG lines */}
-          <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:0.07 }}
-            viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice">
-            <rect x="10" y="10" width="580" height="380" rx="4" fill="none" stroke="white" strokeWidth="1.5"/>
-            <line x1="10" y1="200" x2="590" y2="200" stroke="white" strokeWidth="1"/>
-            <circle cx="300" cy="200" r="55" fill="none" stroke="white" strokeWidth="1"/>
-            <circle cx="300" cy="200" r="4" fill="white"/>
-            <rect x="10" y="130" width="70" height="140" fill="none" stroke="white" strokeWidth="1"/>
-            <rect x="520" y="130" width="70" height="140" fill="none" stroke="white" strokeWidth="1"/>
-          </svg>
-
-          <div style={{ position:"relative", zIndex:1 }}>
-            {loading ? (
-              <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-                {Array.from({length:4}).map((_,i) => <Skel key={i} h={70}/>)}
-              </div>
-            ) : data?.xi?.length > 0 ? (
-              POS_ORDER.map(pos => {
-                const rowPlayers = lineupByPos[pos] || [];
-                return rowPlayers.length > 0 ? (
-                  <PitchRow key={pos} players={rowPlayers} captain={captain} vc={vc} showEP={showEP}/>
-                ) : null;
-              })
-            ) : (
-              <div style={{ textAlign:"center", padding:40, color:"#4a6a8a", fontSize:13 }}>
-                No lineup generated. Try adjusting budget or formation.
-              </div>
-            )}
-          </div>
+        {/* Pitch — rendered by shared FplPitch component */}
+        <div style={{ marginBottom:20 }}>
+          <FplPitch
+            xi={data?.xi}
+            captain={captain}
+            vc={vc}
+            showPoints={showEP ? "ep" : "cost"}
+            showFixture={true}
+            loading={loading}
+          />
         </div>
 
         {/* Player list below pitch */}

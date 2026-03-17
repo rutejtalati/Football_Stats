@@ -21,7 +21,7 @@ function useCountUp(target, duration = 900, decimals = 1) {
 }
 import { useNavigate } from "react-router-dom";
 import { getFplBootstrap, getFplPredictorTable } from "../api/api";
-import PitchView from "../components/PitchView";
+import FplPitch from "../components/FplPitch";
 import PlayerCard from "../components/PlayerCard";
 
 const FORMATIONS = [
@@ -663,15 +663,15 @@ export default function BestTeamPage() {
             {/* CENTRE — Pitch + Bench */}
             <div className="bt-centre-col">
               <div className="bt-pitch-wrap">
-                <PitchView
+                <FplPitch
                   lineup={best.lineup}
-                  bench={[]}
                   captain={captain}
-                  viceCaptain={vc}
-                  highlightedPlayerId={hoveredPlayer}
-                  hideInsights={true}
-                  hideBench={true}
+                  vc={vc}
+                  highlightedId={hoveredPlayer}
                   onPlayerClick={handlePlayerClick}
+                  showPoints="projected"
+                  showFixture={true}
+                  loading={loading}
                 />
               </div>
 

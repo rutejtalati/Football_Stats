@@ -102,13 +102,20 @@ const NAV_ITEMS = [
 ];
 
 const FPL_ITEMS = [
-  { to: "/best-team",         label: "Best XI",       desc: "Optimal FPL starting 11"  },
-  { to: "/squad-builder",     label: "Squad Builder", desc: "Build your 15-man squad"   },
-  { to: "/gameweek-insights", label: "GW Insights",   desc: "Gameweek stats & analysis" },
-  { to: "/fpl-table",         label: "FPL Table",     desc: "Live FPL leaderboard"      },
+  { to: "/best-team",          label: "Best XI",            desc: "Optimal FPL starting 11"          },
+  { to: "/squad-builder",      label: "Squad Builder",      desc: "Build your 15-man squad"           },
+  { to: "/gameweek-insights",  label: "GW Insights",        desc: "Gameweek stats & analysis"         },
+  { to: "/fpl-table",          label: "FPL Table",          desc: "Live FPL leaderboard"              },
+  { to: "/captaincy",          label: "Captaincy",          desc: "Captain picks & ownership data"    },
+  { to: "/fixture-difficulty", label: "Fixture Difficulty", desc: "FDR heatmap across gameweeks"      },
+  { to: "/transfer-planner",   label: "Transfer Planner",   desc: "Plan transfers & free hits"        },
+  { to: "/differentials",      label: "Differentials",      desc: "Low-owned high-ceiling picks"      },
 ];
 
-const FPL_PATHS = ["/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table"];
+const FPL_PATHS = [
+  "/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table",
+  "/captaincy", "/fixture-difficulty", "/transfer-planner", "/differentials",
+];
 
 const BOTTOM_TABS = [
   { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "#94a3b8", end: true },
@@ -387,7 +394,7 @@ export default function Navbar() {
         .sn-fpl-dropdown {
           position: absolute; top: calc(100% + 10px);
           left: 50%; transform: translateX(-50%);
-          min-width: 224px; z-index: 300;
+          min-width: 256px; z-index: 300;
           background: rgba(5,8,16,0.97);
           backdrop-filter: blur(28px) saturate(180%);
           -webkit-backdrop-filter: blur(28px) saturate(180%);
@@ -480,11 +487,10 @@ export default function Navbar() {
         }
 
         /* ─ Desktop page offset ─────────────────────────────────────────────
-           Navbar is fixed (48px) + LiveTicker is fixed (38px) = 86px combined.
-           Without this, page content starts at top:0 and slides under both bars.  */
-        .sn-page-wrap {
-          padding-top: 86px;
-        }
+           .sn-bar (navbar): fixed, height 48px
+           .sn-live-ticker:  fixed, top 48px, height 36px
+           Combined: 84px → handled by --bar-total in index.css.
+           No override needed here.                                          */
 
         /* ─ Bottom tabs ─ */
         .sn-bottom-tabs { display: none; }
@@ -513,10 +519,10 @@ export default function Navbar() {
             justify-content: space-around;
           }
           .sn-page-wrap {
-            padding-top: 86px !important;
+            padding-top: var(--bar-total) !important;
             padding-bottom: 72px !important;
           }
-          .sn-drawer { top: 86px; }
+          .sn-drawer { top: var(--bar-total); }
         }
         @media (max-width: 480px) {
           .sn-brand span  { display: none; }
@@ -591,8 +597,19 @@ export default function Navbar() {
                   </button>
                   {fplOpen && (
                     <div className="sn-fpl-dropdown" role="menu">
-                      <div className="sn-fpl-dropdown-label">Fantasy Premier League</div>
-                      {FPL_ITEMS.map(sub => (
+                      <div className="sn-fpl-dropdown-label">Squad & Selection</div>
+                      {FPL_ITEMS.slice(0, 4).map(sub => (
+                        <NavLink
+                          key={sub.to} to={sub.to} role="menuitem"
+                          className={`sn-fpl-item${location.pathname.startsWith(sub.to) ? " sn-fpl-item--active" : ""}`}
+                        >
+                          <div className="sn-fpl-item-name">{sub.label}</div>
+                          <div className="sn-fpl-item-desc">{sub.desc}</div>
+                        </NavLink>
+                      ))}
+                      <div style={{ height:1, background:"rgba(255,255,255,0.05)", margin:"4px 0" }} />
+                      <div className="sn-fpl-dropdown-label" style={{ paddingTop:8 }}>Analysis & Planning</div>
+                      {FPL_ITEMS.slice(4).map(sub => (
                         <NavLink
                           key={sub.to} to={sub.to} role="menuitem"
                           className={`sn-fpl-item${location.pathname.startsWith(sub.to) ? " sn-fpl-item--active" : ""}`}

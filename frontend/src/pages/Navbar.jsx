@@ -102,21 +102,13 @@ const NAV_ITEMS = [
 ];
 
 const FPL_ITEMS = [
-  { to: "/best-team",          label: "Best XI",             desc: "Optimal FPL starting 11"          },
-  { to: "/squad-builder",      label: "Squad Builder",       desc: "Build your 15-man squad"           },
-  { to: "/gameweek-insights",  label: "GW Insights",         desc: "Gameweek stats & analysis"         },
-  { to: "/fpl-table",          label: "FPL Table",           desc: "Live FPL leaderboard"              },
-  { to: "/captaincy",          label: "Captain Picker",      desc: "EP-ranked captain suggestions"     },
-  { to: "/fixture-difficulty", label: "Fixture Heatmap",     desc: "FDR grid for all 20 teams"         },
-  { to: "/transfer-planner",   label: "Transfer Planner",    desc: "Best transfers in & out by EP"     },
-  { to: "/differentials",      label: "Differential Finder", desc: "High-EP, low-ownership picks"      },
-  { to: "/best-xi",            label: "Best XI Optimizer",   desc: "Budget-constrained optimal XI"     },
+  { to: "/best-team",         label: "Best XI",       desc: "Optimal FPL starting 11"  },
+  { to: "/squad-builder",     label: "Squad Builder", desc: "Build your 15-man squad"   },
+  { to: "/gameweek-insights", label: "GW Insights",   desc: "Gameweek stats & analysis" },
+  { to: "/fpl-table",         label: "FPL Table",     desc: "Live FPL leaderboard"      },
 ];
 
-const FPL_PATHS = [
-  "/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table",
-  "/captaincy", "/fixture-difficulty", "/transfer-planner", "/differentials", "/best-xi",
-];
+const FPL_PATHS = ["/best-team", "/squad-builder", "/gameweek-insights", "/fpl-table"];
 
 const BOTTOM_TABS = [
   { to: "/",                           label: "Home",    Icon: Icons.Home,    color: "#94a3b8", end: true },
@@ -485,6 +477,13 @@ export default function Navbar() {
         .sn-backdrop {
           position: fixed; inset: 0; z-index: 201;
           background: rgba(0,0,0,0.58); backdrop-filter: blur(2px);
+        }
+
+        /* ─ Desktop page offset ─────────────────────────────────────────────
+           Navbar is fixed (48px) + LiveTicker is fixed (38px) = 86px combined.
+           Without this, page content starts at top:0 and slides under both bars.  */
+        .sn-page-wrap {
+          padding-top: 86px;
         }
 
         /* ─ Bottom tabs ─ */

@@ -13,9 +13,7 @@ export default function LiveRibbon({ matches = [] }) {
       <div className="hp-inner">
         <div className="live-ribbon-header">
           {hasLive && <div className="live-pulse" />}
-          <span className="live-ribbon-title">
-            {hasLive ? `${live.length} Live` : "Upcoming"}
-          </span>
+          <span className="live-ribbon-title">{hasLive ? `${live.length} Live` : "Upcoming"}</span>
         </div>
         <div className="live-ribbon-scroll">
           {display.map((m, i) => {

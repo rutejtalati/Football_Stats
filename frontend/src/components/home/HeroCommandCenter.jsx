@@ -1,12 +1,12 @@
 // ═══════════════════════════════════════════════════════════
-// HeroCommandCenter — Compact hero, gets to content fast
+// HeroCommandCenter — "Read the Game" hero
+// heroStats from backend: { competitionsCount, fixturesPredicted, playersTracked, matchAccuracy }
 // ═══════════════════════════════════════════════════════════
 import { Link } from "react-router-dom";
 
-export default function HeroCommandCenter({ predictions = { predictions: [] } }) {
+export default function HeroCommandCenter({ heroStats = {} }) {
   return (
     <div className="hero-cmd">
-      {/* Background field geometry */}
       <div className="hero-field">
         <svg className="hero-field-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
           <circle cx="600" cy="300" r="120" fill="none" stroke="#38bdf8" strokeWidth="1" />
@@ -22,7 +22,6 @@ export default function HeroCommandCenter({ predictions = { predictions: [] } })
         <div className="hero-field-glow hero-field-glow--green" />
       </div>
 
-      {/* Radar */}
       <div className="hero-radar">
         <div className="hero-radar-ring hero-radar-ring--1" />
         <div className="hero-radar-ring hero-radar-ring--2" />
@@ -35,7 +34,6 @@ export default function HeroCommandCenter({ predictions = { predictions: [] } })
       <div className="hero-node hero-node--3" />
       <div className="hero-node hero-node--4" />
 
-      {/* Content */}
       <div className="hero-content">
         <div className="hero-tag">
           <span className="hero-tag-dot" />
@@ -43,12 +41,11 @@ export default function HeroCommandCenter({ predictions = { predictions: [] } })
         </div>
 
         <h1 className="hero-h1">
-          See the game<br />before it <span>happens</span>.
+          Read the <span>Game</span>.
         </h1>
 
         <p className="hero-sub">
-          Predictions, live intelligence, tactical analysis, and FPL tools
-          — powered by data you can verify.
+          Football intelligence for predictions, FPL decisions, and deeper match insight.
         </p>
 
         <div className="hero-actions">

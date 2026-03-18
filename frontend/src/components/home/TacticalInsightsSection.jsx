@@ -6,8 +6,8 @@ export default function TacticalInsightsSection({ tacticalInsight = { primary: {
 
   return (
     <section className="hp-section">
-      <HomeSectionHeader icon="♟️" iconBg="rgba(103,177,255,0.1)" title="Tactical Board"
-        subtitle="Key tactical observations" />
+      <HomeSectionHeader icon="♟️" iconBg="rgba(103,177,255,0.1)" title="Attacking Output"
+        subtitle="Goals per game leaders from standings" />
       <div className="edge-grid">
         {all.map((ins, i) => (
           <div key={i} className="hp-card edge-card" style={{ cursor: "default" }}>

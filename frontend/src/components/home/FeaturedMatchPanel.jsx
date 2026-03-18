@@ -17,13 +17,9 @@ export default function FeaturedMatchPanel({ match }) {
           </div>
           <div className="featured-match-center">
             <div className="featured-match-vs">VS</div>
-            <div className="featured-match-datetime">
-              {match.kickoff}{match.time ? ` · ${match.time}` : ""}
-            </div>
+            <div className="featured-match-datetime">{match.kickoff}{match.time ? ` · ${match.time}` : ""}</div>
             {match.score && match.score !== "—" && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#4a6a8a", marginTop: 2 }}>
-                Predicted: {match.score}
-              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#4a6a8a", marginTop: 2 }}>Predicted: {match.score}</div>
             )}
           </div>
           <div className="featured-match-team">

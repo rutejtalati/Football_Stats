@@ -10,8 +10,6 @@ export default function TrendingPlayersSection({ trendingPlayers = { items: [] }
     <section className="hp-section">
       <HomeSectionHeader icon="🔥" iconBg="rgba(167,139,250,0.1)" title="Players"
         subtitle="Top performers and trending names" linkTo="/player" linkLabel="Player Hub" />
-
-      {/* xG Leaders */}
       {leaders.length > 0 && (
         <>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 10 }}>
@@ -23,11 +21,10 @@ export default function TrendingPlayersSection({ trendingPlayers = { items: [] }
                 {p.photo ? (
                   <img className="player-card-hp-img" src={p.photo} alt={p.name} loading="lazy" />
                 ) : (
-                  <div className="player-card-hp-img" style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontFamily: "var(--font-display)", fontSize: 15, color: "#a78bfa",
-                    background: "rgba(167,139,250,0.06)",
-                  }}>{(p.name || "?")[0]}</div>
+                  <div className="player-card-hp-img" style={{ display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "var(--font-display)", fontSize: 15, color: "#a78bfa", background: "rgba(167,139,250,0.06)" }}>
+                    {(p.name || "?")[0]}
+                  </div>
                 )}
                 <div className="player-card-hp-info">
                   <div className="player-card-hp-name">{p.name}</div>
@@ -50,13 +47,9 @@ export default function TrendingPlayersSection({ trendingPlayers = { items: [] }
           </div>
         </>
       )}
-
-      {/* FPL trending strip */}
       {trending.length > 0 && (
         <div style={{ marginTop: leaders.length > 0 ? 18 : 0 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 10 }}>
-            Trending in FPL
-          </div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 10 }}>Trending in FPL</div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 2 }}>
             {trending.slice(0, 8).map((t, i) => (
               <Link key={t.playerId || i} to="/player" className="hp-card"

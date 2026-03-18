@@ -9,19 +9,16 @@ export default function TopPredictionsSection({ predictions = { predictions: [] 
   return (
     <section className="hp-section">
       <HomeSectionHeader icon="📊" iconBg="rgba(79,158,255,0.1)" title="Top Predictions"
-        subtitle="Highest-confidence upcoming forecasts" linkTo="/predictions/premier-league" linkLabel="All" />
-
+        subtitle="Highest confidence upcoming forecasts" linkTo="/predictions/premier-league" linkLabel="All" />
       <div className="predictions-grid">
         {preds.map((p, i) => (
           <Link key={p.fixtureId || i}
             to={p.fixtureId ? `/match/${p.fixtureId}` : `/predictions/${p.leagueCode || "premier-league"}`}
             className="hp-card pred-card">
-
             <div className="pred-card-top">
               <span className="pred-card-league">{p.league || p.kickoff}</span>
               <span className={`pred-conf-badge pred-conf-badge--${p.conf}`}>{p.confPct}%</span>
             </div>
-
             <div className="pred-card-matchup">
               <div className="pred-card-side">
                 {p.homeLogo && <img src={p.homeLogo} alt="" loading="lazy" />}
@@ -33,19 +30,16 @@ export default function TopPredictionsSection({ predictions = { predictions: [] 
                 <span className="pred-card-side-name">{p.away}</span>
               </div>
             </div>
-
             <div className="pred-bar">
               <div className="pred-bar-h" style={{ flex: p.homeProb }} />
               <div className="pred-bar-d" style={{ flex: p.draw }} />
               <div className="pred-bar-a" style={{ flex: p.awayProb }} />
             </div>
-
             <div className="pred-card-probs">
               <span><b>{p.homeProb}%</b> H</span>
               <span><b>{p.draw}%</b> D</span>
               <span><b>{p.awayProb}%</b> A</span>
             </div>
-
             <div className="hp-card-reveal">
               <div className="pred-reveal">
                 {p.xgHome !== null && <div className="pred-reveal-item"><div className="label">xG Home</div><div className="value">{formatXg(p.xgHome)}</div></div>}

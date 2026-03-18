@@ -205,21 +205,23 @@ export const mapPowerRankings = (data) => ({
 });
 
 export const mapModelMetrics = (data) => ({
-  overallAccuracy: safePct(data?.overall_accuracy, 64),
-  logLoss: safeNum(data?.log_loss, null),
-  brierScore: safeNum(data?.brier_score, null),
-  last30Accuracy: safePct(data?.last_30_accuracy, null),
+  overallAccuracy: data?.overall_accuracy ?? null,
+  logLoss: data?.log_loss ?? null,
+  brierScore: data?.brier_score ?? null,
+  last30Accuracy: data?.last_30_accuracy ?? null,
+  assessed: safeNum(data?.assessed, 0),
   trend: (data?.trend || []).map((t) => ({
     gw: safeStr(t.gw, ''),
     acc: safePct(t.acc, 0),
   })),
-  byMarket: (data?.by_market || []).map((m) => ({
-    label: safeStr(m.l, 'Market'),
-    value: safePct(m.v, 0),
-    col: safeStr(m.col, '#4f9eff'),
+  confidenceBreakdown: (data?.confidence_breakdown || []).map((b) => ({
+    bracket: safeStr(b.bracket, ''),
+    count: safeNum(b.count, 0),
+    correct: safeNum(b.correct, 0),
+    accuracy: b.accuracy ?? null,
   })),
-  fixturesCount: safeStr(data?.fixtures_count, '15,000+'),
-  leaguesNote: safeStr(data?.leagues_note, ''),
+  outcomeAccuracy: data?.outcome_accuracy || {},
+  fixturesCount: data?.fixtures_count ?? null,
 });
 
 export const mapDifferentialCaptain = (c) => {
@@ -343,6 +345,12 @@ export const mapDashboard = (raw) => {
       highScoringMatches: [],
       defenseTable: [],
       analyticsTerm: {},
+      heroStats: {},
+      accountabilitySummary: {},
+      competitionsSupported: [],
+      featureStatus: [],
+      modelConfidence: { high: 0, medium: 0, low: 0, avg: 0 },
+      leagueCoverage: { leagues: [] },
     };
   }
 
@@ -379,5 +387,36 @@ export const mapDashboard = (raw) => {
       avg: safeNum(raw.model_confidence?.avg_confidence, 0),
     },
     leagueCoverage: mapLeagueCoverage(raw.power_rankings, raw.title_race),
+    // ── New backend-driven blocks ──
+    heroStats: {
+      competitionsCount: safeNum(raw.hero_stats?.competitions_count, 0),
+      fixturesPredicted: raw.hero_stats?.fixtures_predicted ?? null,
+      playersTracked: raw.hero_stats?.players_tracked ?? null,
+      matchAccuracy: raw.hero_stats?.match_accuracy ?? null,
+    },
+    accountabilitySummary: {
+      logged: safeNum(raw.accountability_summary?.logged, 0),
+      verified: safeNum(raw.accountability_summary?.verified, 0),
+      pending: safeNum(raw.accountability_summary?.pending, 0),
+      hitRate: raw.accountability_summary?.hit_rate ?? null,
+      assessed: safeNum(raw.accountability_summary?.assessed, 0),
+      highConfidenceAccuracy: raw.accountability_summary?.high_confidence_accuracy ?? null,
+      mediumConfidenceAccuracy: raw.accountability_summary?.medium_confidence_accuracy ?? null,
+      lowConfidenceAccuracy: raw.accountability_summary?.low_confidence_accuracy ?? null,
+    },
+    competitionsSupported: (raw.competitions_supported || []).map((c) => ({
+      code: safeStr(c.code, ''),
+      name: safeStr(c.name, ''),
+      slug: safeStr(c.slug, ''),
+      country: safeStr(c.country, ''),
+      color: safeStr(c.color, '#4f9eff'),
+    })),
+    featureStatus: (raw.feature_status || []).map((f) => ({
+      key: safeStr(f.key, ''),
+      title: safeStr(f.title, ''),
+      route: safeStr(f.route, ''),
+      status: safeStr(f.status, 'coming_soon'),
+      backendReady: !!f.backend_ready,
+    })),
   };
 };

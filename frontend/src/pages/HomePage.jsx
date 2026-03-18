@@ -70,32 +70,33 @@ export default function HomePage() {
   }
 
   const d = data || mapDashboard(null);
-  const preds = d.predictions.predictions || [];
+  const preds = (d.predictions?.predictions) || [];
   const topPred = preds[0] || null;
-  const mm = d.modelMetrics;
-  const mc = d.modelConfidence;
+  const mm = d.modelMetrics || {};
+  const mc = d.modelConfidence || {};
+  const rr = d.recentResults || { results: [], correct: 0, total: 0 };
 
   // Build intelligence summary cards (like old SummaryCard row)
   const summaryCards = [];
-  if (mm.overallAccuracy > 0) summaryCards.push({
+  if ((mm.overallAccuracy || 0) > 0) summaryCards.push({
     title: "Model Accuracy", value: `${mm.overallAccuracy}%`,
-    sub: mm.last30Accuracy > 0 ? `Last 30: ${mm.last30Accuracy}%` : mm.leaguesNote,
+    sub: (mm.last30Accuracy || 0) > 0 ? `Last 30: ${mm.last30Accuracy}%` : (mm.leaguesNote || ""),
     accent: "#00e09e",
   });
-  if (mc.avg > 0) summaryCards.push({
+  if ((mc.avg || 0) > 0) summaryCards.push({
     title: "Avg Confidence", value: `${Math.round(mc.avg)}%`,
-    sub: `${mc.high} high · ${mc.medium} med · ${mc.low} low`,
+    sub: `${mc.high || 0} high · ${mc.medium || 0} med · ${mc.low || 0} low`,
     accent: "#4f9eff",
   });
   if (preds.length > 0) summaryCards.push({
     title: "Active Predictions", value: `${preds.length}`,
-    sub: d.predictions.league ? `${d.predictions.league} focused` : "Across top leagues",
+    sub: d.predictions?.league ? `${d.predictions.league} focused` : "Across top leagues",
     accent: "#f2c94c",
   });
-  if (d.recentResults.total > 0) {
-    const hitPct = Math.round((d.recentResults.correct / d.recentResults.total) * 100);
+  if ((rr.total || 0) > 0) {
+    const hitPct = Math.round(((rr.correct || 0) / rr.total) * 100);
     summaryCards.push({
-      title: "Recent Record", value: `${d.recentResults.correct}/${d.recentResults.total}`,
+      title: "Recent Record", value: `${rr.correct || 0}/${rr.total}`,
       sub: `${hitPct}% hit rate`,
       accent: hitPct >= 55 ? "#00e09e" : hitPct >= 45 ? "#f2c94c" : "#ff4d6d",
     });
@@ -139,28 +140,28 @@ export default function HomePage() {
 
         {/* 5 ── Top Predictions */}
         {preds.length > 1 && (
-          <TopPredictionsSection predictions={d.predictions} />
+          <TopPredictionsSection predictions={d.predictions || { predictions: [] }} />
         )}
 
         {/* 6 ── Edge Board + Tactical */}
-        <EdgeBoardSection edges={d.edges} tacticalInsight={d.tacticalInsight} />
+        <EdgeBoardSection edges={d.edges || { edges: [] }} tacticalInsight={d.tacticalInsight || { primary: {}, all: [] }} />
 
         {/* 7 ── Competition Coverage */}
-        <CompetitionCoverageSection leagueCoverage={d.leagueCoverage} />
+        <CompetitionCoverageSection leagueCoverage={d.leagueCoverage || { leagues: [] }} />
 
         {/* 8 ── FPL Spotlight */}
-        <FPLSpotlightSection fplSpotlight={d.fplSpotlight} />
+        <FPLSpotlightSection fplSpotlight={d.fplSpotlight || { captains: [], valuePlayers: [] }} />
 
         {/* 9 ── Players */}
-        <TrendingPlayersSection trendingPlayers={d.trendingPlayers} xgLeaders={d.xgLeaders} />
+        <TrendingPlayersSection trendingPlayers={d.trendingPlayers || { items: [] }} xgLeaders={d.xgLeaders || { leaders: [] }} />
 
         {/* 10 ── Platform (News, Ground Zero, Games) */}
-        <PlatformCapabilitiesSection analyticsTerm={d.analyticsTerm} />
+        <PlatformCapabilitiesSection analyticsTerm={d.analyticsTerm || {}} />
 
         {/* 11 ── Accountability */}
         <PredictionAccountabilitySection
-          modelMetrics={d.modelMetrics}
-          recentResults={d.recentResults}
+          modelMetrics={mm}
+          recentResults={rr}
         />
       </div>
     </div>

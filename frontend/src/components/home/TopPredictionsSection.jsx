@@ -1,42 +1,25 @@
-// ═══════════════════════════════════════════════════════════
-// TopPredictionsSection — Grid of top prediction cards
-// Prop: predictions = { predictions: [mapPrediction output], league }
-// ═══════════════════════════════════════════════════════════
 import { Link } from "react-router-dom";
 import { formatXg } from "../../utils/homeDataMappers";
 import HomeSectionHeader from "./HomeSectionHeader";
 
 export default function TopPredictionsSection({ predictions = { predictions: [] } }) {
-  const preds = predictions.predictions || [];
+  const preds = (predictions.predictions || []).slice(1, 7);
   if (preds.length === 0) return null;
-
-  // Skip first one if it's used in FeaturedMatchPanel
-  const display = preds.slice(1, 7);
-  if (display.length === 0) return null;
 
   return (
     <section className="hp-section">
-      <HomeSectionHeader
-        icon="📊"
-        iconBg="rgba(96,165,250,0.1)"
-        title="Top Predictions"
-        subtitle="Highest-confidence upcoming match forecasts"
-        linkTo="/predictions/premier-league"
-        linkLabel="All Predictions"
-      />
+      <HomeSectionHeader icon="📊" iconBg="rgba(79,158,255,0.1)" title="Top Predictions"
+        subtitle="Highest-confidence upcoming forecasts" linkTo="/predictions/premier-league" linkLabel="All" />
 
       <div className="predictions-grid">
-        {display.map((p, i) => (
-          <Link
-            key={p.fixtureId || i}
+        {preds.map((p, i) => (
+          <Link key={p.fixtureId || i}
             to={p.fixtureId ? `/match/${p.fixtureId}` : `/predictions/${p.leagueCode || "premier-league"}`}
-            className="hp-card pred-card"
-          >
+            className="hp-card pred-card">
+
             <div className="pred-card-top">
               <span className="pred-card-league">{p.league || p.kickoff}</span>
-              <span className={`pred-card-conf pred-card-conf--${p.conf}`}>
-                {p.confPct}%
-              </span>
+              <span className={`pred-conf-badge pred-conf-badge--${p.conf}`}>{p.confPct}%</span>
             </div>
 
             <div className="pred-card-matchup">
@@ -51,11 +34,10 @@ export default function TopPredictionsSection({ predictions = { predictions: [] 
               </div>
             </div>
 
-            {/* Probability bar */}
-            <div className="pred-card-bar">
-              <div className="pred-card-bar-seg pred-card-bar-seg--h" style={{ flex: p.homeProb }} />
-              <div className="pred-card-bar-seg pred-card-bar-seg--d" style={{ flex: p.draw }} />
-              <div className="pred-card-bar-seg pred-card-bar-seg--a" style={{ flex: p.awayProb }} />
+            <div className="pred-bar">
+              <div className="pred-bar-h" style={{ flex: p.homeProb }} />
+              <div className="pred-bar-d" style={{ flex: p.draw }} />
+              <div className="pred-bar-a" style={{ flex: p.awayProb }} />
             </div>
 
             <div className="pred-card-probs">
@@ -64,33 +46,12 @@ export default function TopPredictionsSection({ predictions = { predictions: [] 
               <span><b>{p.awayProb}%</b> A</span>
             </div>
 
-            {/* Hover reveal: xG, predicted score, date */}
             <div className="hp-card-reveal">
               <div className="pred-reveal">
-                {p.xgHome !== null && (
-                  <div className="pred-reveal-item">
-                    <div className="label">xG Home</div>
-                    <div className="value">{formatXg(p.xgHome)}</div>
-                  </div>
-                )}
-                {p.xgAway !== null && (
-                  <div className="pred-reveal-item">
-                    <div className="label">xG Away</div>
-                    <div className="value">{formatXg(p.xgAway)}</div>
-                  </div>
-                )}
-                {p.score && p.score !== "—" && (
-                  <div className="pred-reveal-item">
-                    <div className="label">Predicted</div>
-                    <div className="value">{p.score}</div>
-                  </div>
-                )}
-                {p.kickoff && (
-                  <div className="pred-reveal-item">
-                    <div className="label">Date</div>
-                    <div className="value" style={{ fontSize: 12 }}>{p.kickoff}</div>
-                  </div>
-                )}
+                {p.xgHome !== null && <div className="pred-reveal-item"><div className="label">xG Home</div><div className="value">{formatXg(p.xgHome)}</div></div>}
+                {p.xgAway !== null && <div className="pred-reveal-item"><div className="label">xG Away</div><div className="value">{formatXg(p.xgAway)}</div></div>}
+                {p.score && p.score !== "—" && <div className="pred-reveal-item"><div className="label">Predicted</div><div className="value">{p.score}</div></div>}
+                {p.kickoff && <div className="pred-reveal-item"><div className="label">Date</div><div className="value" style={{ fontSize: 11 }}>{p.kickoff}</div></div>}
               </div>
             </div>
           </Link>

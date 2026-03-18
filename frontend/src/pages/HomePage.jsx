@@ -1,10 +1,11 @@
 // ═══════════════════════════════════════════════════════════
-// HomePage.jsx — StatinSite Intelligence Command Center
-// Uses mapDashboard from homeDataMappers.js for all data
+// HomePage.jsx — Dense Intelligence Console
+// Structure mirrors old FPL page: hero → summary strip → sections → accountability
+// All data via mapDashboard from homeDataMappers.js
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
 import "../styles/homepage.css";
-import { mapDashboard } from "../utils/homeDataMappers";
+import { mapDashboard, formatPct, formatXg, confLevel } from "../utils/homeDataMappers";
 
 import HeroCommandCenter from "../components/home/HeroCommandCenter";
 import LiveRibbon from "../components/home/LiveRibbon";
@@ -45,85 +46,121 @@ export default function HomePage() {
         const res = await fetch(`${API}/api/matches/upcoming`);
         if (!res.ok) return;
         const raw = await res.json();
-        const matches = Array.isArray(raw) ? raw : raw.matches || raw.response || [];
-        if (mounted) setLiveMatches(matches);
-      } catch {
-        // Live ribbon is optional
-      }
+        if (mounted) setLiveMatches(raw.matches || []);
+      } catch { /* optional */ }
     }
 
     fetchDashboard();
     fetchLive();
-    const liveInterval = setInterval(fetchLive, 60000);
-    return () => { mounted = false; clearInterval(liveInterval); };
+    const iv = setInterval(fetchLive, 60000);
+    return () => { mounted = false; clearInterval(iv); };
   }, []);
 
   if (loading) {
     return (
       <div className="hp">
         <div className="hp-gridlines" />
-        <div className="hp-inner" style={{ paddingTop: 120, textAlign: "center" }}>
-          <div className="hp-skeleton" style={{ width: 200, height: 32, margin: "0 auto 16px" }} />
-          <div className="hp-skeleton" style={{ width: 320, height: 16, margin: "0 auto 12px" }} />
-          <div className="hp-skeleton" style={{ width: 260, height: 16, margin: "0 auto" }} />
+        <div className="hp-inner" style={{ paddingTop: 100, textAlign: "center" }}>
+          <div className="hp-skeleton" style={{ width: 180, height: 28, margin: "0 auto 12px" }} />
+          <div className="hp-skeleton" style={{ width: 300, height: 14, margin: "0 auto 10px" }} />
+          <div className="hp-skeleton" style={{ width: 240, height: 14, margin: "0 auto" }} />
         </div>
       </div>
     );
   }
 
   const d = data || mapDashboard(null);
+  const preds = d.predictions.predictions || [];
+  const topPred = preds[0] || null;
+  const mm = d.modelMetrics;
+  const mc = d.modelConfidence;
+
+  // Build intelligence summary cards (like old SummaryCard row)
+  const summaryCards = [];
+  if (mm.overallAccuracy > 0) summaryCards.push({
+    title: "Model Accuracy", value: `${mm.overallAccuracy}%`,
+    sub: mm.last30Accuracy > 0 ? `Last 30: ${mm.last30Accuracy}%` : mm.leaguesNote,
+    accent: "#00e09e",
+  });
+  if (mc.avg > 0) summaryCards.push({
+    title: "Avg Confidence", value: `${Math.round(mc.avg)}%`,
+    sub: `${mc.high} high · ${mc.medium} med · ${mc.low} low`,
+    accent: "#4f9eff",
+  });
+  if (preds.length > 0) summaryCards.push({
+    title: "Active Predictions", value: `${preds.length}`,
+    sub: d.predictions.league ? `${d.predictions.league} focused` : "Across top leagues",
+    accent: "#f2c94c",
+  });
+  if (d.recentResults.total > 0) {
+    const hitPct = Math.round((d.recentResults.correct / d.recentResults.total) * 100);
+    summaryCards.push({
+      title: "Recent Record", value: `${d.recentResults.correct}/${d.recentResults.total}`,
+      sub: `${hitPct}% hit rate`,
+      accent: hitPct >= 55 ? "#00e09e" : hitPct >= 45 ? "#f2c94c" : "#ff4d6d",
+    });
+  }
+  if (mm.fixturesCount) summaryCards.push({
+    title: "Fixtures Analyzed", value: mm.fixturesCount,
+    sub: mm.leaguesNote || "Multi-league coverage",
+    accent: "#b388ff",
+  });
 
   return (
     <div className="hp">
       <div className="hp-gridlines" />
       <div className="hp-inner">
 
-        {/* 1 ── Hero Command Center */}
-        <HeroCommandCenter
-          predictions={d.predictions}
-          modelMetrics={d.modelMetrics}
-          modelConfidence={d.modelConfidence}
-        />
+        {/* 1 ── Compact Hero */}
+        <HeroCommandCenter predictions={d.predictions} />
 
-        {/* 2 ── Live Ribbon */}
+        {/* 2 ── Intelligence Summary Strip (like old SummaryCard row) */}
+        {summaryCards.length > 0 && (
+          <div className="intel-strip">
+            {summaryCards.map((c, i) => (
+              <div key={i} className="intel-card" style={{ "--ic-accent": c.accent }}>
+                <div className="intel-card-title">{c.title}</div>
+                <div className="intel-card-value">{c.value}</div>
+                {c.sub && <div className="intel-card-sub">{c.sub}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 3 ── Live Ribbon */}
         <LiveRibbon matches={liveMatches} />
 
-        {/* 3 ── Featured Match (top prediction) */}
-        {d.predictions.predictions.length > 0 && (
-          <section className="hp-section">
-            <FeaturedMatchPanel match={d.predictions.predictions[0]} />
+        {/* 4 ── Featured Match */}
+        {topPred && (
+          <section className="hp-section" style={{ paddingTop: 20 }}>
+            <FeaturedMatchPanel match={topPred} />
           </section>
         )}
 
-        {/* 4 ── Top Predictions */}
-        <TopPredictionsSection predictions={d.predictions} />
+        {/* 5 ── Top Predictions */}
+        {preds.length > 1 && (
+          <TopPredictionsSection predictions={d.predictions} />
+        )}
 
-        {/* 5 ── Edge Board + Tactical Insights */}
-        <EdgeBoardSection
-          edges={d.edges}
-          tacticalInsight={d.tacticalInsight}
-        />
+        {/* 6 ── Edge Board + Tactical */}
+        <EdgeBoardSection edges={d.edges} tacticalInsight={d.tacticalInsight} />
 
-        {/* 6 ── Competition Coverage */}
+        {/* 7 ── Competition Coverage */}
         <CompetitionCoverageSection leagueCoverage={d.leagueCoverage} />
 
-        {/* 7 ── FPL Spotlight */}
+        {/* 8 ── FPL Spotlight */}
         <FPLSpotlightSection fplSpotlight={d.fplSpotlight} />
 
-        {/* 8 ── Trending Players + xG Leaders */}
-        <TrendingPlayersSection
-          trendingPlayers={d.trendingPlayers}
-          xgLeaders={d.xgLeaders}
-        />
+        {/* 9 ── Players */}
+        <TrendingPlayersSection trendingPlayers={d.trendingPlayers} xgLeaders={d.xgLeaders} />
 
-        {/* 9 ── News + Ground Zero + Games */}
-        <PlatformCapabilitiesSection />
+        {/* 10 ── Platform (News, Ground Zero, Games) */}
+        <PlatformCapabilitiesSection analyticsTerm={d.analyticsTerm} />
 
-        {/* 10 ── Prediction Accountability */}
+        {/* 11 ── Accountability */}
         <PredictionAccountabilitySection
           modelMetrics={d.modelMetrics}
           recentResults={d.recentResults}
-          modelConfidence={d.modelConfidence}
         />
       </div>
     </div>

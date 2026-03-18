@@ -1,22 +1,13 @@
-// ═══════════════════════════════════════════════════════════
-// FPLSpotlightSection — Fantasy tools + differential captain picks
-// fplSpotlight: {
-//   captains: [{ playerId, name, team, teamShort, position,
-//     ownership, form, cost, totalPoints, diffScore }],
-//   valuePlayers: [{ playerId, name, team, teamShort, position,
-//     cost, totalPoints, form, valueScore, ownership }]
-// }
-// ═══════════════════════════════════════════════════════════
 import { Link } from "react-router-dom";
 import HomeSectionHeader from "./HomeSectionHeader";
 
 const FPL_TOOLS = [
-  { to: "/best-team",          icon: "⭐", name: "Best XI",            desc: "Optimal FPL starting eleven" },
-  { to: "/squad-builder",      icon: "🏗️", name: "Squad Builder",      desc: "Build your 15-man squad" },
-  { to: "/captaincy",          icon: "©️", name: "Captaincy",          desc: "Captain & vice-captain picks" },
-  { to: "/fixture-difficulty",  icon: "📅", name: "Fixture Difficulty", desc: "FDR heatmap across GWs" },
-  { to: "/transfer-planner",   icon: "🔄", name: "Transfer Planner",   desc: "Plan transfers ahead" },
-  { to: "/differentials",      icon: "💎", name: "Differentials",      desc: "Low-owned high-ceiling picks" },
+  { to: "/best-team", icon: "⭐", name: "Best XI", desc: "Optimal starting 11" },
+  { to: "/squad-builder", icon: "🏗️", name: "Squad Builder", desc: "15-man squad" },
+  { to: "/captaincy", icon: "©️", name: "Captaincy", desc: "Captain picks" },
+  { to: "/fixture-difficulty", icon: "📅", name: "FDR", desc: "Fixture heatmap" },
+  { to: "/transfer-planner", icon: "🔄", name: "Transfers", desc: "Plan ahead" },
+  { to: "/differentials", icon: "💎", name: "Differentials", desc: "Low-owned picks" },
 ];
 
 export default function FPLSpotlightSection({ fplSpotlight = { captains: [], valuePlayers: [] } }) {
@@ -27,16 +18,9 @@ export default function FPLSpotlightSection({ fplSpotlight = { captains: [], val
 
   return (
     <section className="hp-section">
-      <HomeSectionHeader
-        icon="⭐"
-        iconBg="rgba(40,217,122,0.1)"
-        title="Fantasy Spotlight"
-        subtitle="FPL tools, captaincy picks, and value insights"
-        linkTo="/best-team"
-        linkLabel="All FPL Tools"
-      />
+      <HomeSectionHeader icon="⭐" iconBg="rgba(40,217,122,0.1)" title="FPL Spotlight"
+        subtitle="Fantasy tools and player picks" linkTo="/best-team" linkLabel="All Tools" />
 
-      {/* Tool cards */}
       <div className="fpl-grid">
         {FPL_TOOLS.map((t) => (
           <Link key={t.to} to={t.to} className="hp-card fpl-tool-card">
@@ -44,53 +28,34 @@ export default function FPLSpotlightSection({ fplSpotlight = { captains: [], val
             <div className="fpl-tool-name">{t.name}</div>
             <div className="fpl-tool-desc">{t.desc}</div>
             <div className="hp-card-reveal">
-              <div style={{ marginTop: 10, fontFamily: "var(--font-mono)", fontSize: 10, color: "#28d97a" }}>
-                Open tool →
-              </div>
+              <div style={{ marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 9, color: "#00e09e" }}>Open →</div>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Player picks */}
       {picks.length > 0 && (
         <>
-          <div style={{ marginTop: 28, marginBottom: 12 }}>
-            <span style={{
-              fontFamily: "var(--font-display)", fontSize: 13,
-              fontWeight: 800, color: "#c8d8f0", letterSpacing: "-0.01em",
-            }}>
-              {pickLabel}
-            </span>
+          <div style={{ marginTop: 18, marginBottom: 8, fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 800, color: "#c8d8f0" }}>
+            {pickLabel}
           </div>
-
           <div className="fpl-picks-row">
             {picks.slice(0, 8).map((p, i) => (
-              <Link
-                key={p.playerId || i}
-                to={captains.length > 0 ? "/differentials" : "/best-team"}
-                className="hp-card fpl-pick"
-              >
+              <Link key={p.playerId || i} to={captains.length > 0 ? "/differentials" : "/best-team"} className="hp-card fpl-pick">
                 <div style={{
-                  width: 44, height: 44, borderRadius: "50%",
-                  background: "rgba(40,217,122,0.1)", margin: "0 auto 8px",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "var(--font-display)", fontSize: 16, color: "#28d97a",
-                  border: "2px solid rgba(40,217,122,0.2)",
+                  width: 32, height: 32, borderRadius: "50%", background: "rgba(40,217,122,0.08)",
+                  margin: "0 auto 6px", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font-display)", fontSize: 13, color: "#00e09e",
+                  border: "1.5px solid rgba(40,217,122,0.15)",
                 }}>
                   {(p.name || "?")[0]}
                 </div>
                 <div className="fpl-pick-name">{p.name}</div>
                 <div className="fpl-pick-team">{p.teamShort || p.team}</div>
                 <div className="fpl-pick-stat">
-                  {captains.length > 0
-                    ? `${p.form} form`
-                    : `${p.totalPoints} pts`
-                  }
+                  {captains.length > 0 ? `${p.form} form` : `${p.totalPoints} pts`}
                 </div>
-                <div className="fpl-pick-stat-lbl">
-                  £{p.cost}m · {p.ownership}% owned
-                </div>
+                <div className="fpl-pick-sub">£{p.cost}m · {p.ownership}%</div>
               </Link>
             ))}
           </div>

@@ -1,127 +1,78 @@
-import React from 'react';
-import HomeSectionHeader from './HomeSectionHeader';
+// ═══════════════════════════════════════════════════════════
+// PlatformCapabilitiesSection — News + Ground Zero + Games
+// Static cards linking to real pages in App.jsx
+// ═══════════════════════════════════════════════════════════
+import { Link } from "react-router-dom";
+import HomeSectionHeader from "./HomeSectionHeader";
 
-const CAPABILITIES = [
-  {
-    title: 'Match Predictions',
-    desc: 'Dixon-Coles Poisson model with Elo adjustments. Probabilities, scorelines, and confidence ratings for every fixture across five leagues.',
-    stat: '15,000+',
-    statLabel: 'fixtures modelled',
-    color: 'var(--hp-blue)',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <path d="M11 1L14 7.5L21 8.5L16 13.5L17 20.5L11 17L5 20.5L6 13.5L1 8.5L8 7.5L11 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Live Intelligence',
-    desc: 'Real-time match momentum, win probability shifts, and tactical pattern detection. Updated every 60 seconds during live play.',
-    stat: '60s',
-    statLabel: 'refresh cycle',
-    color: 'var(--hp-green)',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <circle cx="11" cy="11" r="9" stroke="currentColor" strokeWidth="1.5" />
-        <polyline points="11,5 11,11 15,14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'FPL Engine',
-    desc: 'Captain picks, differential signals, best XI optimization, fixture difficulty ratings, and points-per-million value analysis.',
-    stat: '600+',
-    statLabel: 'players tracked',
-    color: 'var(--hp-teal)',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <rect x="3" y="3" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" strokeWidth="1" />
-        <line x1="9" y1="3" x2="9" y2="19" stroke="currentColor" strokeWidth="1" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Lineup Predictor',
-    desc: 'Predicted starting XIs using exponential decay weighting, injury data, and formation detection from recent official lineups.',
-    stat: '94%',
-    statLabel: 'max confidence',
-    color: 'var(--hp-yellow)',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <circle cx="11" cy="6" r="3" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M4 19C4 15.134 7.134 12 11 12C14.866 12 18 15.134 18 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Shot Maps & xG',
-    desc: 'Zonal shot placement, expected goals per shot, and conversion efficiency analysis. Visual pitch-mapped data for every tracked fixture.',
-    stat: '9',
-    statLabel: 'shot zones',
-    color: 'var(--hp-orange)',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <circle cx="11" cy="11" r="9" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="11" cy="11" r="5" stroke="currentColor" strokeWidth="1" />
-        <circle cx="11" cy="11" r="1.5" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Season Simulation',
-    desc: 'Monte Carlo engine running 50,000 season simulations. Title probability, top-four odds, and relegation risk per team.',
-    stat: '50K',
-    statLabel: 'simulations',
-    color: 'var(--hp-red)',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <polyline points="2,18 7,10 12,14 20,4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <polyline points="15,4 20,4 20,9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-];
-
-const PlatformCapabilitiesSection = () => {
+export default function PlatformCapabilitiesSection() {
   return (
     <section className="hp-section">
-      <div className="hp-container">
-        <HomeSectionHeader
-          title="Platform Capabilities"
-          subtitle="A complete football intelligence operating system"
-          accentColor="var(--hp-orange)"
-        />
+      <HomeSectionHeader
+        icon="🧠"
+        iconBg="rgba(251,191,36,0.1)"
+        title="Platform"
+        subtitle="News intelligence, research methodology, and interactive experiences"
+      />
 
-        <div className="platform-grid">
-          {CAPABILITIES.map((cap, i) => (
-            <div className="hp-card platform-card" key={i} style={{ cursor: 'pointer' }}>
-              <div className="platform-card__body">
-                <div className="platform-card__top">
-                  <div className="platform-card__icon" style={{
-                    background: `${cap.color}12`,
-                    color: cap.color,
-                  }}>
-                    {cap.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div className="platform-card__title">{cap.title}</div>
-                  </div>
-                </div>
-                <div className="platform-card__desc">{cap.desc}</div>
-                <div className="platform-card__stat">
-                  <span className="platform-card__stat-val" style={{ color: cap.color }}>
-                    {cap.stat}
-                  </span>
-                  <span className="platform-card__stat-label">{cap.statLabel}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="platform-grid">
+        {/* ── News ── */}
+        <Link to="/news" className="platform-card platform-card--news">
+          <div className="platform-card-icon"
+            style={{ background: "rgba(244,114,182,0.08)", border: "1px solid rgba(244,114,182,0.12)" }}>
+            📰
+          </div>
+          <div className="platform-card-title">News Intelligence</div>
+          <div className="platform-card-desc">
+            Curated football news with analytical context. Transfer rumours,
+            tactical shifts, and match-day intel filtered through a data lens.
+          </div>
+          <div className="platform-card-tags">
+            <span className="platform-card-tag">Transfers</span>
+            <span className="platform-card-tag">Tactical Shifts</span>
+            <span className="platform-card-tag">Match Intel</span>
+            <span className="platform-card-tag">Injury Updates</span>
+          </div>
+        </Link>
+
+        {/* ── Ground Zero ── */}
+        <Link to="/learn" className="platform-card platform-card--ground">
+          <div className="platform-card-icon"
+            style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.12)" }}>
+            🔬
+          </div>
+          <div className="platform-card-title">Ground Zero</div>
+          <div className="platform-card-desc">
+            How the platform thinks. Explore the research lab behind every prediction
+            — methodology deep-dives, model transparency, and the science of forecasting.
+          </div>
+          <div className="platform-card-tags">
+            <span className="platform-card-tag">Methodology</span>
+            <span className="platform-card-tag">Research Lab</span>
+            <span className="platform-card-tag">Transparency</span>
+            <span className="platform-card-tag">Model Audit</span>
+          </div>
+        </Link>
+
+        {/* ── Games ── */}
+        <Link to="/games" className="platform-card platform-card--games">
+          <div className="platform-card-icon"
+            style={{ background: "rgba(251,146,60,0.08)", border: "1px solid rgba(251,146,60,0.12)" }}>
+            🎮
+          </div>
+          <div className="platform-card-title">Games</div>
+          <div className="platform-card-desc">
+            Interactive football experiences and prediction challenges.
+            Test your knowledge, compete with the models, and sharpen your instincts.
+          </div>
+          <div className="platform-card-tags">
+            <span className="platform-card-tag">Prediction Challenge</span>
+            <span className="platform-card-tag">Score Predictor</span>
+            <span className="platform-card-tag">Mini-Games</span>
+            <span className="platform-card-tag">Leaderboard</span>
+          </div>
+        </Link>
       </div>
     </section>
   );
-};
-
-export default PlatformCapabilitiesSection;
+}

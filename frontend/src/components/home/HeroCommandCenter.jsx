@@ -1,125 +1,118 @@
-import React from 'react';
-import { formatPct, formatXg, safeStr, safePct, safeNum } from '../../utils/homeDataMappers';
+// ═══════════════════════════════════════════════════════════
+// HeroCommandCenter — Signature branded intelligence hero
+// Props from mapDashboard:
+//   predictions: { predictions: [{confPct, ...}], league }
+//   modelMetrics: { overallAccuracy, fixturesCount, ... }
+//   modelConfidence: { high, medium, low, avg }
+// ═══════════════════════════════════════════════════════════
+import { Link } from "react-router-dom";
 
-const HeroCommandCenter = ({ predictions = { predictions: [] }, modelMetrics = {}, modelConfidence = {} }) => {
-  const featured = predictions.predictions?.[0] || null;
-  const totalPreds = predictions.predictions?.length || 0;
-
-  const metrics = [
-    { val: `${safeNum(modelMetrics.overallAccuracy, 64)}%`, label: 'Model Accuracy' },
-    { val: safeStr(modelMetrics.fixturesCount, '15,000+'), label: 'Fixtures Analyzed' },
-    { val: `${safeNum(modelConfidence.avg, 62)}%`, label: 'Avg Confidence' },
-    { val: '5', label: 'Leagues Tracked' },
-  ];
+export default function HeroCommandCenter({
+  predictions = { predictions: [], league: "" },
+  modelMetrics = {},
+  modelConfidence = {},
+}) {
+  const preds = predictions.predictions || [];
+  const totalPredictions = preds.length;
+  const avgConf =
+    totalPredictions > 0
+      ? Math.round(preds.reduce((s, p) => s + (p.confPct || 0), 0) / totalPredictions)
+      : modelConfidence.avg || 0;
 
   return (
-    <section className="hero-cc">
-      {/* Background layers */}
-      <div className="hero-cc__bg">
-        <div className="hero-cc__grid-canvas" />
-        <div className="hero-cc__glow hero-cc__glow--blue" />
-        <div className="hero-cc__glow hero-cc__glow--green" />
-        <div className="hero-cc__sweep" />
-        <div className="hero-cc__sweep" style={{ top: '60%', animationDelay: '2s' }} />
+    <div className="hero-cmd">
+      {/* ── Background: field geometry ── */}
+      <div className="hero-field">
+        <svg className="hero-field-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+          <circle cx="600" cy="300" r="120" fill="none" stroke="#38bdf8" strokeWidth="1" />
+          <circle cx="600" cy="300" r="4" fill="#38bdf8" />
+          <line x1="600" y1="0" x2="600" y2="600" stroke="#38bdf8" strokeWidth="1" />
+          <rect x="50" y="30" width="1100" height="540" fill="none" stroke="#38bdf8" strokeWidth="1" rx="2" />
+          <rect x="50" y="150" width="180" height="300" fill="none" stroke="#38bdf8" strokeWidth="0.8" />
+          <rect x="970" y="150" width="180" height="300" fill="none" stroke="#38bdf8" strokeWidth="0.8" />
+          <rect x="50" y="220" width="70" height="160" fill="none" stroke="#38bdf8" strokeWidth="0.6" />
+          <rect x="1080" y="220" width="70" height="160" fill="none" stroke="#38bdf8" strokeWidth="0.6" />
+          <path d="M 230 240 A 60 60 0 0 1 230 360" fill="none" stroke="#38bdf8" strokeWidth="0.6" />
+          <path d="M 970 240 A 60 60 0 0 0 970 360" fill="none" stroke="#38bdf8" strokeWidth="0.6" />
+          <line x1="350" y1="30" x2="350" y2="570" stroke="#38bdf8" strokeWidth="0.3" strokeDasharray="8 12" />
+          <line x1="850" y1="30" x2="850" y2="570" stroke="#38bdf8" strokeWidth="0.3" strokeDasharray="8 12" />
+        </svg>
+        <div className="hero-field-glow hero-field-glow--blue" />
+        <div className="hero-field-glow hero-field-glow--green" />
       </div>
 
-      <div className="hero-cc__content">
-        {/* Left — headline + metrics */}
-        <div className="hero-cc__left">
-          <div className="hero-cc__badge">
-            <span className="hero-cc__badge-dot" />
-            Intelligence Engine Active
-          </div>
+      {/* ── Radar sweep ── */}
+      <div className="hero-radar">
+        <div className="hero-radar-ring hero-radar-ring--1" />
+        <div className="hero-radar-ring hero-radar-ring--2" />
+        <div className="hero-radar-ring hero-radar-ring--3" />
+        <div className="hero-radar-ring hero-radar-ring--4" />
+        <div className="hero-radar-sweep" />
+      </div>
 
-          <h1 className="hero-cc__headline">
-            Football Intelligence,<br />
-            <span>Quantified.</span>
-          </h1>
+      {/* ── Signal nodes ── */}
+      <div className="hero-node hero-node--1" />
+      <div className="hero-node hero-node--2" />
+      <div className="hero-node hero-node--3" />
+      <div className="hero-node hero-node--4" />
+      <div className="hero-node hero-node--5" />
 
-          <p className="hero-cc__sub">
-            Poisson-modelled predictions, Elo power rankings, xG analytics, and FPL
-            intelligence across Europe's top five leagues. Every match, every edge, every signal.
-          </p>
-
-          <div className="hero-cc__metrics">
-            {metrics.map((m, i) => (
-              <div className="hero-cc__metric-card" key={i}>
-                <span className="hero-cc__metric-val">{m.val}</span>
-                <span className="hero-cc__metric-label">{m.label}</span>
-              </div>
-            ))}
-          </div>
+      {/* ── Content ── */}
+      <div className="hero-content">
+        <div className="hero-tag">
+          <span className="hero-tag-dot" />
+          Football Intelligence Platform
         </div>
 
-        {/* Right — featured match cockpit */}
-        {featured ? (
-          <div className="hero-cc__right">
-            <div className="hero-match__header">
-              <span className="hero-match__league">{featured.league || 'Premier League'}</span>
-              <span className="hero-match__kickoff">
-                {featured.kickoff} {featured.time}
-              </span>
-            </div>
+        <h1 className="hero-h1">
+          See the game<br />
+          before it <span>happens</span>.
+        </h1>
 
-            <div className="hero-match__teams">
-              <div className="hero-match__team">
-                {featured.homeLogo && <img src={featured.homeLogo} alt="" />}
-                <span className="hero-match__team-name">{featured.home}</span>
-              </div>
-              <div className="hero-match__vs">
-                <span className="hero-match__score-pred">{featured.score}</span>
-                <span className="hero-match__vs-label">Predicted</span>
-              </div>
-              <div className="hero-match__team">
-                {featured.awayLogo && <img src={featured.awayLogo} alt="" />}
-                <span className="hero-match__team-name">{featured.away}</span>
-              </div>
-            </div>
+        <p className="hero-sub">
+          Predictions, live intelligence, tactical analysis, and fantasy insights
+          — all powered by data you can verify and trust.
+        </p>
 
-            <div className="hero-match__probs">
-              <div className="hero-match__prob-bar">
-                <div className="hero-match__prob-seg" style={{ width: `${featured.homeProb}%`, background: 'var(--hp-blue)' }} />
-                <div className="hero-match__prob-seg" style={{ width: `${featured.draw}%`, background: 'var(--hp-text-muted)', opacity: 0.3 }} />
-                <div className="hero-match__prob-seg" style={{ width: `${featured.awayProb}%`, background: 'var(--hp-red)' }} />
-              </div>
-              <div className="hero-match__prob-labels">
-                <span><strong style={{ color: 'var(--hp-blue)' }}>{formatPct(featured.homeProb)}</strong> Home</span>
-                <span><strong>{formatPct(featured.draw)}</strong> Draw</span>
-                <span><strong style={{ color: 'var(--hp-red)' }}>{formatPct(featured.awayProb)}</strong> Away</span>
-              </div>
-            </div>
+        <div className="hero-actions">
+          <Link to="/predictions/premier-league" className="hero-btn hero-btn--primary">
+            View Predictions
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+          <Link to="/live" className="hero-btn hero-btn--ghost">
+            Live Matches
+          </Link>
+        </div>
 
-            <div className="hero-match__stats">
-              <div className="hero-match__stat">
-                <span className="hero-match__stat-val">{formatXg(featured.xgHome)}</span>
-                <span className="hero-match__stat-label">xG Home</span>
-              </div>
-              <div className="hero-match__stat">
-                <span className="hero-match__stat-val" style={{ color: `var(--hp-${featured.conf === 'high' ? 'green' : featured.conf === 'medium' ? 'yellow' : 'red'})` }}>
-                  {featured.conf?.toUpperCase()}
-                </span>
-                <span className="hero-match__stat-label">Confidence</span>
-              </div>
-              <div className="hero-match__stat">
-                <span className="hero-match__stat-val">{formatXg(featured.xgAway)}</span>
-                <span className="hero-match__stat-label">xG Away</span>
-              </div>
+        <div className="hero-stats">
+          {totalPredictions > 0 && (
+            <div className="hero-stat">
+              <span className="hero-stat-val">{totalPredictions}</span>
+              <span className="hero-stat-lbl">Active Predictions</span>
             </div>
-
-            <div className="hero-match__insight">
-              <strong>Model Signal:</strong> {featured.homeProb > featured.awayProb
-                ? `${featured.home} favoured at ${formatPct(featured.homeProb)} with a predicted ${featured.score} scoreline.`
-                : `${featured.away} favoured at ${formatPct(featured.awayProb)} with a predicted ${featured.score} scoreline.`}
+          )}
+          {avgConf > 0 && (
+            <div className="hero-stat">
+              <span className="hero-stat-val">{avgConf}%</span>
+              <span className="hero-stat-lbl">Avg Confidence</span>
             </div>
-          </div>
-        ) : (
-          <div className="hero-cc__right" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-            <span style={{ color: 'var(--hp-text-muted)', fontSize: 13 }}>Match data loading...</span>
-          </div>
-        )}
+          )}
+          {modelMetrics.overallAccuracy > 0 && (
+            <div className="hero-stat">
+              <span className="hero-stat-val">{modelMetrics.overallAccuracy}%</span>
+              <span className="hero-stat-lbl">Model Accuracy</span>
+            </div>
+          )}
+          {modelMetrics.fixturesCount && (
+            <div className="hero-stat">
+              <span className="hero-stat-val">{modelMetrics.fixturesCount}</span>
+              <span className="hero-stat-lbl">Fixtures Analyzed</span>
+            </div>
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
-};
-
-export default HeroCommandCenter;
+}

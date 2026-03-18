@@ -1,157 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import { mapDashboard } from '../utils/homeDataMappers';
-import '../styles/homepage.css';
+// ═══════════════════════════════════════════════════════════
+// HomePage.jsx — StatinSite Intelligence Command Center
+// Uses mapDashboard from homeDataMappers.js for all data
+// ═══════════════════════════════════════════════════════════
+import { useState, useEffect } from "react";
+import "../styles/homepage.css";
+import { mapDashboard } from "../utils/homeDataMappers";
 
-// Section components
-import HeroCommandCenter from '../components/home/HeroCommandCenter';
-import LiveRibbon from '../components/home/LiveRibbon';
-import FeaturedMatchPanel from '../components/home/FeaturedMatchPanel';
-import TopPredictionsSection from '../components/home/TopPredictionsSection';
-import EdgeBoardSection from '../components/home/EdgeBoardSection';
-import TacticalInsightsSection from '../components/home/TacticalInsightsSection';
-import CompetitionCoverageSection from '../components/home/CompetitionCoverageSection';
-import FPLSpotlightSection from '../components/home/FPLSpotlightSection';
-import TrendingPlayersSection from '../components/home/TrendingPlayersSection';
-import PlatformCapabilitiesSection from '../components/home/PlatformCapabilitiesSection';
-import PredictionAccountabilitySection from '../components/home/PredictionAccountabilitySection';
-import HomeSectionHeader from '../components/home/HomeSectionHeader';
+import HeroCommandCenter from "../components/home/HeroCommandCenter";
+import LiveRibbon from "../components/home/LiveRibbon";
+import FeaturedMatchPanel from "../components/home/FeaturedMatchPanel";
+import TopPredictionsSection from "../components/home/TopPredictionsSection";
+import EdgeBoardSection from "../components/home/EdgeBoardSection";
+import CompetitionCoverageSection from "../components/home/CompetitionCoverageSection";
+import FPLSpotlightSection from "../components/home/FPLSpotlightSection";
+import TrendingPlayersSection from "../components/home/TrendingPlayersSection";
+import PlatformCapabilitiesSection from "../components/home/PlatformCapabilitiesSection";
+import PredictionAccountabilitySection from "../components/home/PredictionAccountabilitySection";
 
-const API_BASE = import.meta.env.VITE_API_BASE || '';
+const API = import.meta.env.VITE_API_URL || "";
 
-const HomePage = () => {
+export default function HomePage() {
   const [data, setData] = useState(null);
+  const [liveMatches, setLiveMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
-    const fetchDashboard = async () => {
+    async function fetchDashboard() {
       try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE}/api/home/dashboard`);
-        if (!res.ok) throw new Error(`Dashboard fetch failed: ${res.status}`);
+        const res = await fetch(`${API}/api/home/dashboard`);
+        if (!res.ok) throw new Error("Dashboard fetch failed");
         const raw = await res.json();
-        if (!cancelled) {
-          setData(mapDashboard(raw));
-          setError(null);
-        }
-      } catch (err) {
-        console.error('Homepage data fetch error:', err);
-        if (!cancelled) {
-          // Use fallback mapped data so the page still renders
-          setData(mapDashboard(null));
-          setError(err.message);
-        }
+        if (mounted) setData(mapDashboard(raw));
+      } catch {
+        if (mounted) setData(mapDashboard(null));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (mounted) setLoading(false);
       }
-    };
+    }
+
+    async function fetchLive() {
+      try {
+        const res = await fetch(`${API}/api/matches/upcoming`);
+        if (!res.ok) return;
+        const raw = await res.json();
+        const matches = Array.isArray(raw) ? raw : raw.matches || raw.response || [];
+        if (mounted) setLiveMatches(matches);
+      } catch {
+        // Live ribbon is optional
+      }
+    }
 
     fetchDashboard();
-
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchDashboard, 300000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    fetchLive();
+    const liveInterval = setInterval(fetchLive, 60000);
+    return () => { mounted = false; clearInterval(liveInterval); };
   }, []);
 
-  if (loading && !data) {
+  if (loading) {
     return (
-      <div className="homepage">
-        <div className="hp-loading">
-          <div className="hp-spinner" />
-          <span style={{ color: 'var(--hp-text-dim)', fontSize: 13 }}>Loading intelligence...</span>
+      <div className="hp">
+        <div className="hp-gridlines" />
+        <div className="hp-inner" style={{ paddingTop: 120, textAlign: "center" }}>
+          <div className="hp-skeleton" style={{ width: 200, height: 32, margin: "0 auto 16px" }} />
+          <div className="hp-skeleton" style={{ width: 320, height: 16, margin: "0 auto 12px" }} />
+          <div className="hp-skeleton" style={{ width: 260, height: 16, margin: "0 auto" }} />
         </div>
       </div>
     );
   }
 
-  // Even with errors, render with fallback data
   const d = data || mapDashboard(null);
 
   return (
-    <div className="homepage">
-      {/* 1. Hero Command Center */}
-      <HeroCommandCenter
-        predictions={d.predictions}
-        modelMetrics={d.modelMetrics}
-        modelConfidence={d.modelConfidence}
-      />
+    <div className="hp">
+      <div className="hp-gridlines" />
+      <div className="hp-inner">
 
-      {/* 2. Live Intelligence Ribbon */}
-      <LiveRibbon
-        trendingPlayers={d.trendingPlayers}
-        predictions={d.predictions}
-      />
+        {/* 1 ── Hero Command Center */}
+        <HeroCommandCenter
+          predictions={d.predictions}
+          modelMetrics={d.modelMetrics}
+          modelConfidence={d.modelConfidence}
+        />
 
-      {/* 3. Featured Match Intelligence */}
-      <section className="hp-section" style={{ paddingTop: 40 }}>
-        <div className="hp-container">
-          <HomeSectionHeader
-            title="Featured Matches"
-            subtitle="Next fixtures with full model intelligence"
-            accentColor="var(--hp-blue)"
-          />
-          <FeaturedMatchPanel predictions={d.predictions} />
-        </div>
-      </section>
+        {/* 2 ── Live Ribbon */}
+        <LiveRibbon matches={liveMatches} />
 
-      {/* 4. Top Predictions */}
-      <TopPredictionsSection predictions={d.predictions} />
+        {/* 3 ── Featured Match (top prediction) */}
+        {d.predictions.predictions.length > 0 && (
+          <section className="hp-section">
+            <FeaturedMatchPanel match={d.predictions.predictions[0]} />
+          </section>
+        )}
 
-      {/* 5. Edge Board / High Threat Board */}
-      <EdgeBoardSection
-        edges={d.edges}
-        highScoringMatches={d.highScoringMatches}
-      />
+        {/* 4 ── Top Predictions */}
+        <TopPredictionsSection predictions={d.predictions} />
 
-      {/* 6. Tactical Insights */}
-      <TacticalInsightsSection tacticalInsight={d.tacticalInsight} />
+        {/* 5 ── Edge Board + Tactical Insights */}
+        <EdgeBoardSection
+          edges={d.edges}
+          tacticalInsight={d.tacticalInsight}
+        />
 
-      {/* 7. Competition Coverage */}
-      <CompetitionCoverageSection
-        leagueCoverage={d.leagueCoverage}
-        powerRankings={d.powerRankings}
-      />
+        {/* 6 ── Competition Coverage */}
+        <CompetitionCoverageSection leagueCoverage={d.leagueCoverage} />
 
-      {/* 8. FPL Spotlight */}
-      <FPLSpotlightSection fplSpotlight={d.fplSpotlight} />
+        {/* 7 ── FPL Spotlight */}
+        <FPLSpotlightSection fplSpotlight={d.fplSpotlight} />
 
-      {/* 9. Trending Players */}
-      <TrendingPlayersSection
-        trendingPlayers={d.trendingPlayers}
-        xgLeaders={d.xgLeaders}
-      />
+        {/* 8 ── Trending Players + xG Leaders */}
+        <TrendingPlayersSection
+          trendingPlayers={d.trendingPlayers}
+          xgLeaders={d.xgLeaders}
+        />
 
-      {/* 10. Platform Capabilities */}
-      <PlatformCapabilitiesSection />
+        {/* 9 ── News + Ground Zero + Games */}
+        <PlatformCapabilitiesSection />
 
-      {/* 11. Prediction Accountability */}
-      <PredictionAccountabilitySection
-        modelMetrics={d.modelMetrics}
-        recentResults={d.recentResults}
-      />
-
-      {/* Footer spacer */}
-      <div style={{ height: 80 }} />
-
-      {/* Error toast — subtle, non-blocking */}
-      {error && (
-        <div style={{
-          position: 'fixed', bottom: 20, right: 20,
-          background: 'var(--hp-bg-card)', border: '1px solid var(--hp-border)',
-          borderRadius: 'var(--hp-radius-sm)', padding: '10px 16px',
-          fontSize: 11, color: 'var(--hp-text-muted)', zIndex: 100,
-          maxWidth: 300,
-        }}>
-          Using cached data — live refresh will retry automatically.
-        </div>
-      )}
+        {/* 10 ── Prediction Accountability */}
+        <PredictionAccountabilitySection
+          modelMetrics={d.modelMetrics}
+          recentResults={d.recentResults}
+          modelConfidence={d.modelConfidence}
+        />
+      </div>
     </div>
   );
-};
-
-export default HomePage;
+}

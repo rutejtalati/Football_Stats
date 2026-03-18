@@ -1,49 +1,96 @@
-import React from 'react';
-import { formatPct, formatXg } from '../../utils/homeDataMappers';
-import { ProbBar, ConfBadge } from './HomeMiniCharts';
+// ═══════════════════════════════════════════════════════════
+// FeaturedMatchPanel — Large showcase card for top prediction
+// Receives a single mapPrediction object
+// ═══════════════════════════════════════════════════════════
+import { Link } from "react-router-dom";
+import { formatXg } from "../../utils/homeDataMappers";
 
-const FeaturedMatchPanel = ({ predictions = { predictions: [] } }) => {
-  // Show predictions 1-3 (hero already shows #0)
-  const matches = (predictions.predictions || []).slice(1, 4);
-  if (matches.length === 0) return null;
+export default function FeaturedMatchPanel({ match }) {
+  if (!match) return null;
+
+  const confColor =
+    match.conf === "high" ? "#00e09e" :
+    match.conf === "medium" ? "#f2c94c" : "#5a7a9a";
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(matches.length, 3)}, 1fr)`, gap: 'var(--hp-gap-sm)' }}>
-      {matches.map((m, i) => (
-        <div className="hp-card" key={i} style={{ cursor: 'pointer' }}>
-          <div className="hp-card__header">
-            <span className="hp-card__header-title">{m.league || 'Match'}</span>
-            <ConfBadge level={m.conf} />
+    <Link
+      to={match.fixtureId ? `/match/${match.fixtureId}` : "/predictions/premier-league"}
+      className="featured-match"
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
+      <div className="featured-match-inner">
+        <div className="featured-match-label">Featured Intelligence</div>
+
+        <div className="featured-match-teams">
+          <div className="featured-match-team">
+            {match.homeLogo && (
+              <img src={match.homeLogo} alt={match.home} />
+            )}
+            <div className="featured-match-team-name">{match.home}</div>
           </div>
-          <div style={{ padding: '16px 18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {m.homeLogo && <img src={m.homeLogo} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--hp-text)' }}>{m.home}</span>
+
+          <div className="featured-match-center">
+            <div className="featured-match-vs">VS</div>
+            <div className="featured-match-datetime">
+              {match.kickoff}{match.time ? ` · ${match.time}` : ""}
+            </div>
+            {match.score && match.score !== "—" && (
+              <div style={{
+                fontFamily: "var(--font-mono)", fontSize: 11,
+                color: "#5a7a9a", marginTop: 4,
+              }}>
+                Predicted: {match.score}
               </div>
-              <span style={{ fontFamily: 'var(--hp-mono)', fontSize: 14, fontWeight: 700, color: 'var(--hp-blue)' }}>
-                {formatPct(m.homeProb)}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {m.awayLogo && <img src={m.awayLogo} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--hp-text)' }}>{m.away}</span>
-              </div>
-              <span style={{ fontFamily: 'var(--hp-mono)', fontSize: 14, fontWeight: 700, color: 'var(--hp-red)' }}>
-                {formatPct(m.awayProb)}
-              </span>
-            </div>
-            <ProbBar home={m.homeProb} draw={m.draw} away={m.awayProb} height={5} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, fontSize: 11, color: 'var(--hp-text-muted)' }}>
-              <span>xG: {formatXg(m.xgHome)} - {formatXg(m.xgAway)}</span>
-              <span>Pred: {m.score}</span>
-            </div>
+            )}
+          </div>
+
+          <div className="featured-match-team">
+            {match.awayLogo && (
+              <img src={match.awayLogo} alt={match.away} />
+            )}
+            <div className="featured-match-team-name">{match.away}</div>
           </div>
         </div>
-      ))}
-    </div>
-  );
-};
 
-export default FeaturedMatchPanel;
+        <div className="featured-match-meta">
+          <div className="featured-match-stat">
+            <div className="val">{match.homeProb}%</div>
+            <div className="lbl">Home Win</div>
+          </div>
+          <div className="featured-match-stat">
+            <div className="val">{match.draw}%</div>
+            <div className="lbl">Draw</div>
+          </div>
+          <div className="featured-match-stat">
+            <div className="val">{match.awayProb}%</div>
+            <div className="lbl">Away Win</div>
+          </div>
+          {match.xgHome !== null && (
+            <div className="featured-match-stat">
+              <div className="val">{formatXg(match.xgHome)}</div>
+              <div className="lbl">xG Home</div>
+            </div>
+          )}
+          {match.xgAway !== null && (
+            <div className="featured-match-stat">
+              <div className="val">{formatXg(match.xgAway)}</div>
+              <div className="lbl">xG Away</div>
+            </div>
+          )}
+          <div className="featured-match-stat">
+            <div className="val" style={{ color: confColor }}>
+              {match.confPct}%
+            </div>
+            <div className="lbl">Confidence</div>
+          </div>
+        </div>
+
+        <div className="featured-match-cta">
+          <span className="hero-btn hero-btn--ghost" style={{ fontSize: 12, padding: "8px 20px" }}>
+            Full Analysis →
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}

@@ -1,110 +1,127 @@
-import React from 'react';
-import { safeNum, safePct } from '../../utils/homeDataMappers';
-import HomeSectionHeader from './HomeSectionHeader';
+// ═══════════════════════════════════════════════════════════
+// EdgeBoardSection — Model edges & tactical insights
+// edges: { edges: [{ fixtureId, home, away, modelProb, edge, direction, label, col }] }
+// tacticalInsight: { primary: { stat, label, player, context, col }, all: [...] }
+// ═══════════════════════════════════════════════════════════
+import { Link } from "react-router-dom";
+import HomeSectionHeader from "./HomeSectionHeader";
 
-const EdgeBoardSection = ({ edges = { edges: [] }, highScoringMatches = [] }) => {
+export default function EdgeBoardSection({
+  edges = { edges: [] },
+  tacticalInsight = { primary: {}, all: [] },
+}) {
   const edgeList = edges.edges || [];
+  const insight = tacticalInsight.primary || {};
+  const insightAll = tacticalInsight.all || [];
+
+  if (edgeList.length === 0 && !insight.stat) return null;
 
   return (
     <section className="hp-section">
-      <div className="hp-container">
-        <HomeSectionHeader
-          title="Edge Board"
-          subtitle="Where the model diverges from consensus — value signals and high-threat matches"
-          accentColor="var(--hp-green)"
-        />
+      <HomeSectionHeader
+        icon="🎯"
+        iconBg="rgba(52,211,153,0.1)"
+        title="Intelligence Edge"
+        subtitle="Data-driven signals and tactical advantages"
+        linkTo="/predictions/premier-league"
+        linkLabel="Explore"
+      />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--hp-gap)' }}>
-          {/* Model Edges */}
-          <div className="hp-card hp-card--flat">
-            <div className="hp-card__header">
-              <span className="hp-card__header-title">Model Value Edges</span>
-              <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>{edgeList.length} signals</span>
-            </div>
-            <div className="hp-card__body" style={{ padding: 0 }}>
-              {edgeList.length === 0 ? (
-                <div className="hp-empty">No significant edges detected this week</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--hp-border)' }}>
-                  {edgeList.map((e, i) => (
-                    <div key={i} className="edge-card__body" style={{ background: 'var(--hp-bg-card)' }}>
-                      <div className="edge-card__matchup">
-                        {e.home} <span>vs</span> {e.away}
-                      </div>
-                      <div className="edge-card__signal">
-                        <div className="edge-card__bar-track">
-                          <div
-                            className="edge-card__bar-fill"
-                            style={{ width: `${safePct(e.modelProb)}%`, background: e.col }}
-                          />
-                        </div>
-                        <span className="edge-card__edge-val" style={{ color: e.col }}>
-                          +{safeNum(e.edge, 0)}%
-                        </span>
-                      </div>
-                      <div className="edge-card__meta">
-                        <span>{e.label}</span>
-                        <span>Model: {safePct(e.modelProb)}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      {/* Tactical insight banner */}
+      {insight.stat && insight.stat !== "—" && (
+        <div style={{
+          padding: "16px 20px", borderRadius: 12,
+          background: `rgba(${insight.col === "#f2c94c" ? "242,201,76" : "0,224,158"},0.04)`,
+          border: `1px solid ${insight.col || "#f2c94c"}22`,
+          marginBottom: 20, display: "flex", alignItems: "center", gap: 16,
+        }}>
+          <div style={{
+            fontFamily: "var(--font-mono)", fontSize: 28, fontWeight: 900,
+            color: insight.col || "#f2c94c", lineHeight: 1,
+          }}>
+            {insight.stat}
           </div>
-
-          {/* High Threat Matches */}
-          <div className="hp-card hp-card--flat">
-            <div className="hp-card__header">
-              <span className="hp-card__header-title">High Threat Matches</span>
-              <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>By total xG</span>
+          <div>
+            <div style={{
+              fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 800,
+              color: "#f0f6ff", marginBottom: 2,
+            }}>
+              {insight.player} — {insight.label}
             </div>
-            <div className="hp-card__body" style={{ padding: 0 }}>
-              {highScoringMatches.length === 0 ? (
-                <div className="hp-empty">No high-scoring predictions available</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--hp-border)' }}>
-                  {highScoringMatches.slice(0, 5).map((m, i) => {
-                    const totalXg = safeNum(m.totalXg, 0);
-                    return (
-                      <div key={i} style={{
-                        display: 'grid', gridTemplateColumns: '1fr 80px 60px',
-                        alignItems: 'center', gap: 8, padding: '12px 16px',
-                        background: 'var(--hp-bg-card)',
-                      }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--hp-text)' }}>
-                            {m.home} v {m.away}
-                          </div>
-                          <div style={{ fontSize: 10, color: 'var(--hp-text-muted)', marginTop: 2 }}>
-                            {m.league || 'League'}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontFamily: 'var(--hp-mono)', fontSize: 14, fontWeight: 700, color: 'var(--hp-orange)' }}>
-                            {totalXg.toFixed(2)}
-                          </div>
-                          <div style={{ fontSize: 9, color: 'var(--hp-text-muted)', textTransform: 'uppercase' }}>
-                            Total xG
-                          </div>
-                        </div>
-                        <div style={{
-                          fontFamily: 'var(--hp-mono)', fontSize: 13, fontWeight: 600,
-                          color: 'var(--hp-text-bright)', textAlign: 'center',
-                        }}>
-                          {m.score || '—'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div style={{
+              fontFamily: "var(--font-body)", fontSize: 12,
+              color: "#5a7a9a", lineHeight: 1.5,
+            }}>
+              {insight.context}
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Edge cards */}
+      {edgeList.length > 0 && (
+        <div className="edge-grid">
+          {edgeList.map((e, i) => (
+            <Link
+              key={e.fixtureId || i}
+              to={e.fixtureId ? `/match/${e.fixtureId}` : "/predictions/premier-league"}
+              className="hp-card edge-card"
+            >
+              <div className="edge-card-header">
+                <span className="edge-card-type" style={{
+                  background: `${e.col}18`, color: e.col || "#00e09e",
+                }}>
+                  {e.direction} edge
+                </span>
+                <span className="edge-card-conf">{e.modelProb}% model</span>
+              </div>
+              <div className="edge-card-title">{e.label}</div>
+              <div className="edge-card-desc">
+                +{e.edge}% edge vs market
+              </div>
+              <div className="edge-card-teams">
+                <span>{e.home} vs {e.away}</span>
+              </div>
+
+              <div className="hp-card-reveal">
+                <div style={{
+                  marginTop: 12, paddingTop: 12,
+                  borderTop: "1px solid rgba(255,255,255,0.04)",
+                  fontFamily: "var(--font-mono)", fontSize: 10,
+                  color: e.col || "#00e09e",
+                }}>
+                  View full match intelligence →
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Additional tactical insights row */}
+      {insightAll.length > 1 && (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gap: 12, marginTop: 16,
+        }}>
+          {insightAll.slice(1, 4).map((ins, i) => (
+            <div key={i} className="hp-card" style={{ padding: 16, cursor: "default" }}>
+              <div style={{
+                fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 900,
+                color: ins.col || "#4f9eff", marginBottom: 4,
+              }}>
+                {ins.stat}
+              </div>
+              <div style={{
+                fontFamily: "var(--font-body)", fontSize: 11, color: "#5a7a9a",
+              }}>
+                {ins.player} — {ins.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
-};
-
-export default EdgeBoardSection;
+}

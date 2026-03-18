@@ -1,114 +1,101 @@
-import React from 'react';
-import { safeNum, safeStr } from '../../utils/homeDataMappers';
-import { MiniBar } from './HomeMiniCharts';
-import HomeSectionHeader from './HomeSectionHeader';
+// ═══════════════════════════════════════════════════════════
+// FPLSpotlightSection — Fantasy tools + differential captain picks
+// fplSpotlight: {
+//   captains: [{ playerId, name, team, teamShort, position,
+//     ownership, form, cost, totalPoints, diffScore }],
+//   valuePlayers: [{ playerId, name, team, teamShort, position,
+//     cost, totalPoints, form, valueScore, ownership }]
+// }
+// ═══════════════════════════════════════════════════════════
+import { Link } from "react-router-dom";
+import HomeSectionHeader from "./HomeSectionHeader";
 
-const FPLSpotlightSection = ({ fplSpotlight = { captains: [], valuePlayers: [] } }) => {
+const FPL_TOOLS = [
+  { to: "/best-team",          icon: "⭐", name: "Best XI",            desc: "Optimal FPL starting eleven" },
+  { to: "/squad-builder",      icon: "🏗️", name: "Squad Builder",      desc: "Build your 15-man squad" },
+  { to: "/captaincy",          icon: "©️", name: "Captaincy",          desc: "Captain & vice-captain picks" },
+  { to: "/fixture-difficulty",  icon: "📅", name: "Fixture Difficulty", desc: "FDR heatmap across GWs" },
+  { to: "/transfer-planner",   icon: "🔄", name: "Transfer Planner",   desc: "Plan transfers ahead" },
+  { to: "/differentials",      icon: "💎", name: "Differentials",      desc: "Low-owned high-ceiling picks" },
+];
+
+export default function FPLSpotlightSection({ fplSpotlight = { captains: [], valuePlayers: [] } }) {
   const captains = fplSpotlight.captains || [];
   const valuePlayers = fplSpotlight.valuePlayers || [];
-
-  if (captains.length === 0 && valuePlayers.length === 0) {
-    return (
-      <section className="hp-section">
-        <div className="hp-container">
-          <HomeSectionHeader title="FPL Spotlight" subtitle="Fantasy Premier League intelligence" accentColor="var(--hp-teal)" />
-          <div className="hp-empty">FPL data will populate when the season is active.</div>
-        </div>
-      </section>
-    );
-  }
+  const picks = captains.length > 0 ? captains : valuePlayers;
+  const pickLabel = captains.length > 0 ? "Differential Captains" : "Value Picks";
 
   return (
     <section className="hp-section">
-      <div className="hp-container">
-        <HomeSectionHeader
-          title="FPL Spotlight"
-          subtitle="Differential captain picks, value players, and transfer intelligence"
-          accentColor="var(--hp-teal)"
-        />
+      <HomeSectionHeader
+        icon="⭐"
+        iconBg="rgba(40,217,122,0.1)"
+        title="Fantasy Spotlight"
+        subtitle="FPL tools, captaincy picks, and value insights"
+        linkTo="/best-team"
+        linkLabel="All FPL Tools"
+      />
 
-        <div className="fpl-grid">
-          {/* Differential Captains */}
-          <div className="hp-card hp-card--flat">
-            <div className="hp-card__header">
-              <span className="hp-card__header-title">Differential Captains</span>
-              <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>Low ownership, high upside</span>
-            </div>
-            <div className="fpl-captain-list">
-              {/* Header */}
-              <div className="fpl-captain-row" style={{ background: 'var(--hp-bg-elevated)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--hp-text-muted)' }}>
-                <span style={{ textAlign: 'center' }}>#</span>
-                <span>Player</span>
-                <span style={{ textAlign: 'right' }}>Form</span>
-                <span style={{ textAlign: 'right' }}>Own%</span>
-                <span style={{ textAlign: 'right' }}>Cost</span>
+      {/* Tool cards */}
+      <div className="fpl-grid">
+        {FPL_TOOLS.map((t) => (
+          <Link key={t.to} to={t.to} className="hp-card fpl-tool-card">
+            <div className="fpl-tool-icon">{t.icon}</div>
+            <div className="fpl-tool-name">{t.name}</div>
+            <div className="fpl-tool-desc">{t.desc}</div>
+            <div className="hp-card-reveal">
+              <div style={{ marginTop: 10, fontFamily: "var(--font-mono)", fontSize: 10, color: "#28d97a" }}>
+                Open tool →
               </div>
-              {captains.slice(0, 5).map((c, i) => (
-                <div className="fpl-captain-row" key={i}>
-                  <span className="fpl-captain-row__rank">{i + 1}</span>
-                  <div>
-                    <div className="fpl-captain-row__name">{c.name}</div>
-                    <div className="fpl-captain-row__team">{c.teamShort} / {c.position}</div>
-                  </div>
-                  <span className="fpl-captain-row__val" style={{ color: 'var(--hp-green)' }}>
-                    {safeStr(c.form, '—')}
-                  </span>
-                  <span className="fpl-captain-row__val" style={{ color: 'var(--hp-text-dim)' }}>
-                    {safeStr(c.ownership, '0')}%
-                  </span>
-                  <span className="fpl-captain-row__val">
-                    {safeNum(c.cost, 0).toFixed(1)}
-                  </span>
-                </div>
-              ))}
             </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Player picks */}
+      {picks.length > 0 && (
+        <>
+          <div style={{ marginTop: 28, marginBottom: 12 }}>
+            <span style={{
+              fontFamily: "var(--font-display)", fontSize: 13,
+              fontWeight: 800, color: "#c8d8f0", letterSpacing: "-0.01em",
+            }}>
+              {pickLabel}
+            </span>
           </div>
 
-          {/* Value Players */}
-          <div className="hp-card hp-card--flat">
-            <div className="hp-card__header">
-              <span className="hp-card__header-title">Best Value Players</span>
-              <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>Points per million</span>
-            </div>
-            <div style={{ padding: 0 }}>
-              {valuePlayers.slice(0, 5).map((p, i) => (
-                <div key={i} style={{
-                  display: 'grid', gridTemplateColumns: '1fr 80px 60px',
-                  gap: 12, padding: '12px 16px', alignItems: 'center',
-                  borderBottom: '1px solid var(--hp-border)',
+          <div className="fpl-picks-row">
+            {picks.slice(0, 8).map((p, i) => (
+              <Link
+                key={p.playerId || i}
+                to={captains.length > 0 ? "/differentials" : "/best-team"}
+                className="hp-card fpl-pick"
+              >
+                <div style={{
+                  width: 44, height: 44, borderRadius: "50%",
+                  background: "rgba(40,217,122,0.1)", margin: "0 auto 8px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font-display)", fontSize: 16, color: "#28d97a",
+                  border: "2px solid rgba(40,217,122,0.2)",
                 }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--hp-text)' }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--hp-text-muted)', marginTop: 2 }}>
-                      {p.teamShort} / {p.position} / {safeNum(p.cost, 0).toFixed(1)}m
-                    </div>
-                    <div style={{ marginTop: 6, width: '100%' }}>
-                      <MiniBar value={safeNum(p.valueScore, 0)} max={30} color="var(--hp-teal)" height={3} />
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: 'var(--hp-mono)', fontSize: 16, fontWeight: 700, color: 'var(--hp-teal)' }}>
-                      {safeNum(p.valueScore, 0).toFixed(1)}
-                    </div>
-                    <div style={{ fontSize: 9, color: 'var(--hp-text-muted)', textTransform: 'uppercase' }}>
-                      pts/m
-                    </div>
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--hp-mono)', fontSize: 14, fontWeight: 600,
-                    color: 'var(--hp-text-bright)', textAlign: 'right',
-                  }}>
-                    {safeNum(p.totalPoints, 0)}
-                    <div style={{ fontSize: 9, color: 'var(--hp-text-muted)', fontWeight: 400 }}>PTS</div>
-                  </div>
+                  {(p.name || "?")[0]}
                 </div>
-              ))}
-            </div>
+                <div className="fpl-pick-name">{p.name}</div>
+                <div className="fpl-pick-team">{p.teamShort || p.team}</div>
+                <div className="fpl-pick-stat">
+                  {captains.length > 0
+                    ? `${p.form} form`
+                    : `${p.totalPoints} pts`
+                  }
+                </div>
+                <div className="fpl-pick-stat-lbl">
+                  £{p.cost}m · {p.ownership}% owned
+                </div>
+              </Link>
+            ))}
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </section>
   );
-};
-
-export default FPLSpotlightSection;
+}

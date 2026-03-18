@@ -205,23 +205,21 @@ export const mapPowerRankings = (data) => ({
 });
 
 export const mapModelMetrics = (data) => ({
-  overallAccuracy: data?.overall_accuracy ?? null,
-  logLoss: data?.log_loss ?? null,
-  brierScore: data?.brier_score ?? null,
-  last30Accuracy: data?.last_30_accuracy ?? null,
-  assessed: safeNum(data?.assessed, 0),
+  overallAccuracy: data?.overall_accuracy != null ? safePct(data.overall_accuracy) : null,
+  logLoss: safeNum(data?.log_loss, null),
+  brierScore: safeNum(data?.brier_score, null),
+  last30Accuracy: data?.last_30_accuracy != null ? safePct(data.last_30_accuracy) : null,
   trend: (data?.trend || []).map((t) => ({
     gw: safeStr(t.gw, ''),
     acc: safePct(t.acc, 0),
   })),
-  confidenceBreakdown: (data?.confidence_breakdown || []).map((b) => ({
-    bracket: safeStr(b.bracket, ''),
-    count: safeNum(b.count, 0),
-    correct: safeNum(b.correct, 0),
-    accuracy: b.accuracy ?? null,
+  byMarket: (data?.by_market || []).map((m) => ({
+    label: safeStr(m.l, 'Market'),
+    value: safePct(m.v, 0),
+    col: safeStr(m.col, '#4f9eff'),
   })),
-  outcomeAccuracy: data?.outcome_accuracy || {},
-  fixturesCount: data?.fixtures_count ?? null,
+  fixturesCount: data?.fixtures_count != null ? safeNum(data.fixtures_count, 0) : null,
+  leaguesNote: safeStr(data?.leagues_note, ''),
 });
 
 export const mapDifferentialCaptain = (c) => {
@@ -328,6 +326,89 @@ export const mapLeagueCoverage = (powerRankings, titleRace) => {
   return { leagues };
 };
 
+// ── Performance summary mapper (truthful, no fake fallbacks) ─────
+export const mapPerformanceSummary = (data) => {
+  if (!data || typeof data !== 'object' || data.insufficient) {
+    return {
+      verifiedCount: safeNum(data?.verified_count, 0),
+      pendingCount: safeNum(data?.pending_count, 0),
+      overallAccuracy: null,
+      last30Accuracy: null,
+      averageConfidence: null,
+      brierScore: null,
+      logLoss: null,
+      rollingAccuracy: [],
+      confidenceBands: [],
+      trend: [],
+      outcomeAccuracy: null,
+      insufficient: true,
+      message: safeStr(data?.message, 'Not enough verified predictions yet.'),
+    };
+  }
+  return {
+    verifiedCount: safeNum(data.verified_count, 0),
+    pendingCount: safeNum(data.pending_count, 0),
+    overallAccuracy: data.overall_accuracy != null ? safeNum(data.overall_accuracy) : null,
+    last30Accuracy: data.last_30_accuracy != null ? safeNum(data.last_30_accuracy) : null,
+    averageConfidence: data.average_confidence != null ? safeNum(data.average_confidence) : null,
+    brierScore: data.brier_score != null ? safeNum(data.brier_score) : null,
+    logLoss: data.log_loss != null ? safeNum(data.log_loss) : null,
+    rollingAccuracy: (data.rolling_accuracy || []).map((r) => ({
+      window: safeStr(r.window, ''),
+      accuracy: safeNum(r.accuracy, 0),
+      count: safeNum(r.count, 0),
+    })),
+    confidenceBands: (data.confidence_bands || []).map((b) => ({
+      bracket: safeStr(b.bracket, ''),
+      count: safeNum(b.count, 0),
+      correct: safeNum(b.correct, 0),
+      accuracy: b.accuracy != null ? safeNum(b.accuracy) : null,
+    })),
+    trend: (data.trend || []).map((t) => ({
+      endIndex: safeNum(t.end_index, 0),
+      accuracy: safeNum(t.accuracy, 0),
+    })),
+    outcomeAccuracy: data.outcome_accuracy || null,
+    insufficient: false,
+  };
+};
+
+// ── Accountability summary mapper (truthful, verified-only) ──────
+export const mapAccountabilitySummary = (data) => {
+  if (!data || typeof data !== 'object' || data.insufficient) {
+    return {
+      verifiedCount: safeNum(data?.verified_count, 0),
+      pendingCount: safeNum(data?.pending_count, 0),
+      hitRate: null,
+      highConfidenceHitRate: null,
+      recentVerified: [],
+      insufficient: true,
+    };
+  }
+  return {
+    verifiedCount: safeNum(data.verified_count, 0),
+    pendingCount: safeNum(data.pending_count, 0),
+    hitRate: data.hit_rate != null ? safeNum(data.hit_rate) : null,
+    assessed: safeNum(data.assessed, 0),
+    correct: safeNum(data.correct, 0),
+    highConfidenceHitRate: data.high_confidence_hit_rate != null ? safeNum(data.high_confidence_hit_rate) : null,
+    highConfidenceCount: safeNum(data.high_confidence_count, 0),
+    recentVerified: (data.recent_verified || []).map((r) => ({
+      fixtureId: safe(r.fixture_id, null),
+      home: safeStr(r.home, 'Home'),
+      away: safeStr(r.away, 'Away'),
+      predictedOutcome: safeStr(r.predicted_outcome, '—'),
+      actualOutcome: safeStr(r.actual_outcome, 'Pending'),
+      score: safeStr(r.score, '—'),
+      confidence: safeNum(r.confidence, 0),
+      confidenceLabel: safeStr(r.confidence_label, 'Low'),
+      correct: r.correct,
+      league: safeStr(r.league, ''),
+    })),
+    insufficient: false,
+  };
+};
+
 // ── Master dashboard mapper ──────────────────────────────────────
 export const mapDashboard = (raw) => {
   if (!raw || typeof raw !== 'object') {
@@ -345,12 +426,8 @@ export const mapDashboard = (raw) => {
       highScoringMatches: [],
       defenseTable: [],
       analyticsTerm: {},
-      heroStats: {},
-      accountabilitySummary: {},
-      competitionsSupported: [],
-      featureStatus: [],
-      modelConfidence: { high: 0, medium: 0, low: 0, avg: 0 },
-      leagueCoverage: { leagues: [] },
+      performanceSummary: { insufficient: true, verifiedCount: 0, rollingAccuracy: [], confidenceBands: [], trend: [] },
+      accountabilitySummary: { insufficient: true, verifiedCount: 0, recentVerified: [] },
     };
   }
 
@@ -387,36 +464,7 @@ export const mapDashboard = (raw) => {
       avg: safeNum(raw.model_confidence?.avg_confidence, 0),
     },
     leagueCoverage: mapLeagueCoverage(raw.power_rankings, raw.title_race),
-    // ── New backend-driven blocks ──
-    heroStats: {
-      competitionsCount: safeNum(raw.hero_stats?.competitions_count, 0),
-      fixturesPredicted: raw.hero_stats?.fixtures_predicted ?? null,
-      playersTracked: raw.hero_stats?.players_tracked ?? null,
-      matchAccuracy: raw.hero_stats?.match_accuracy ?? null,
-    },
-    accountabilitySummary: {
-      logged: safeNum(raw.accountability_summary?.logged, 0),
-      verified: safeNum(raw.accountability_summary?.verified, 0),
-      pending: safeNum(raw.accountability_summary?.pending, 0),
-      hitRate: raw.accountability_summary?.hit_rate ?? null,
-      assessed: safeNum(raw.accountability_summary?.assessed, 0),
-      highConfidenceAccuracy: raw.accountability_summary?.high_confidence_accuracy ?? null,
-      mediumConfidenceAccuracy: raw.accountability_summary?.medium_confidence_accuracy ?? null,
-      lowConfidenceAccuracy: raw.accountability_summary?.low_confidence_accuracy ?? null,
-    },
-    competitionsSupported: (raw.competitions_supported || []).map((c) => ({
-      code: safeStr(c.code, ''),
-      name: safeStr(c.name, ''),
-      slug: safeStr(c.slug, ''),
-      country: safeStr(c.country, ''),
-      color: safeStr(c.color, '#4f9eff'),
-    })),
-    featureStatus: (raw.feature_status || []).map((f) => ({
-      key: safeStr(f.key, ''),
-      title: safeStr(f.title, ''),
-      route: safeStr(f.route, ''),
-      status: safeStr(f.status, 'coming_soon'),
-      backendReady: !!f.backend_ready,
-    })),
+    performanceSummary: mapPerformanceSummary(raw.performance_summary),
+    accountabilitySummary: mapAccountabilitySummary(raw.accountability_summary),
   };
 };

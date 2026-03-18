@@ -75,6 +75,7 @@ export default function HomePage() {
   const mc = d.modelConfidence || {};
   const hs = d.heroStats || {};
   const acc = d.accountabilitySummary || {};
+  const ps = d.performanceSummary || {};
   const rr = d.recentResults || { results: [], correct: 0, total: 0 };
 
   // ── Intelligence summary strip — only real computed values ──
@@ -175,9 +176,9 @@ export default function HomePage() {
 
         {/* 11 ── Accountability (backend-driven) */}
         <PredictionAccountabilitySection
-          modelMetrics={mm}
-          recentResults={rr}
+          performanceSummary={ps}
           accountabilitySummary={acc}
+          recentResults={rr}
         />
       </div>
     </div>

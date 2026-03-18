@@ -1,303 +1,195 @@
-// components/PredictionAccountability.jsx
-// Displays model performance stats, confidence brackets, and prediction history.
-// Drop into any page with: <PredictionAccountability />
-// or as a full page wrapped in the page shell.
+// ═══════════════════════════════════════════════════════════
+// PredictionAccountabilitySection — Truthful verification module
+//
+// Uses two backend-computed payloads (no fake fallbacks):
+//   performanceSummary:     rolling accuracy, confidence bands, trend
+//   accountabilitySummary:  verified hit rate, recent verified results
+//   recentResults:          basic recent results (legacy fallback)
+// ═══════════════════════════════════════════════════════════
+import { Link } from "react-router-dom";
+import HomeSectionHeader from "./HomeSectionHeader";
 
-import { useState, useEffect } from "react";
+export default function PredictionAccountabilitySection({
+  performanceSummary = {},
+  accountabilitySummary = {},
+  recentResults = { results: [], correct: 0, total: 0 },
+}) {
+  const ps = performanceSummary;
+  const acc = accountabilitySummary;
+  const recentVerified = acc.recentVerified || [];
+  const legacyResults = recentResults.results || [];
+  const displayResults = recentVerified.length > 0 ? recentVerified : legacyResults;
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
+  const confBands = ps.confidenceBands || [];
+  const rollingAcc = ps.rollingAccuracy || [];
+  const trend = ps.trend || [];
 
-const C = {
-  bg:"#000810", card:"rgba(9,15,28,0.98)", border:"rgba(255,255,255,0.065)",
-  text:"#f0f6ff", muted:"#5a7a9a", dim:"#1a3a5a", soft:"#c8d8f0",
-  blue:"#38bdf8", green:"#34d399", amber:"#f59e0b", red:"#f87171",
-};
+  const hasPerformance = !ps.insufficient && (ps.verifiedCount > 0 || ps.overallAccuracy != null);
+  const hasAccountability = !acc.insufficient && acc.verifiedCount > 0;
+  const hasAnything = hasPerformance || hasAccountability || displayResults.length > 0;
 
-const LEAGUES = [
-  {key:"",label:"All Leagues"},
-  {key:"Premier League",label:"Premier League"},
-  {key:"La Liga",label:"La Liga"},
-  {key:"Serie A",label:"Serie A"},
-  {key:"Bundesliga",label:"Bundesliga"},
-  {key:"Ligue 1",label:"Ligue 1"},
-];
-
-function Sk({h=32,r=8}){
-  return <div style={{height:h,borderRadius:r,background:"linear-gradient(90deg,rgba(255,255,255,0.022) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.022) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.5s ease-in-out infinite",marginBottom:8}}/>;
-}
-
-function AccuracyRing({pct}){
-  const r=36, sw=6, cx=44, cy=44, W=88;
-  const span=2*Math.PI*r, fill=(pct/100)*span;
-  const color = pct>=65?C.green:pct>=50?C.amber:C.red;
-  return(
-    <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw}/>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={sw}
-        strokeDasharray={`${fill} ${span}`} strokeLinecap="round"
-        transform={`rotate(-90 ${cx} ${cy})`}
-        style={{transition:"stroke-dasharray 0.8s cubic-bezier(.22,1,.36,1)",filter:`drop-shadow(0 0 6px ${color}80)`}}/>
-      <text x={cx} y={cy-4} textAnchor="middle" fontSize="16" fontWeight="900"
-        fill={color} fontFamily="'JetBrains Mono',monospace">{pct}%</text>
-      <text x={cx} y={cy+12} textAnchor="middle" fontSize="8" fontWeight="800"
-        fill={C.dim} fontFamily="'Inter',sans-serif" letterSpacing="0.08em">ACCURACY</text>
-    </svg>
-  );
-}
-
-function StatCard({label,value,sub,color=C.blue,icon}){
-  return(
-    <div style={{borderRadius:14,background:C.card,border:`1px solid ${C.border}`,
-      padding:"14px 16px",display:"flex",flexDirection:"column",gap:6}}>
-      <div style={{fontSize:9,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{icon} {label}</div>
-      <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:900,color,lineHeight:1}}>{value??"\u2014"}</div>
-      {sub&&<div style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:C.muted}}>{sub}</div>}
-    </div>
-  );
-}
-
-function ConfidenceBar({bracket,count,correct,accuracy}){
-  const color = accuracy>=65?C.green:accuracy>=50?C.amber:C.red;
-  const pct = Math.min(100,accuracy);
-  return(
-    <div style={{padding:"10px 0",borderBottom:`1px solid rgba(255,255,255,0.04)`}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:C.soft}}>{bracket}</span>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:C.muted}}>{correct}/{count}</span>
-          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:900,color}}>{accuracy}%</span>
-        </div>
-      </div>
-      <div style={{height:4,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
-        <div style={{width:pct+"%",height:"100%",background:color,borderRadius:999,
-          transition:"width 0.7s cubic-bezier(.22,1,.36,1)"}}/>
-      </div>
-    </div>
-  );
-}
-
-function OutcomeRow({label,correct,total,color}){
-  const pct=total>0?Math.round(correct/total*100):0;
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:10}}>
-      <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:C.muted,width:70,flexShrink:0}}>{label}</span>
-      <div style={{flex:1,height:5,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
-        <div style={{width:pct+"%",height:"100%",background:color,borderRadius:999,transition:"width 0.6s cubic-bezier(.22,1,.36,1)"}}/>
-      </div>
-      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color,width:36,textAlign:"right",flexShrink:0}}>{pct}%</span>
-    </div>
-  );
-}
-
-function PredictionRow({p}){
-  const sym   = p.symbol || "⏳";
-  const isOk  = sym === "✓";
-  const isPend= sym === "⏳";
-  const symColor = isPend?C.muted:isOk?C.green:C.red;
-  const bg = isPend?"transparent":isOk?"rgba(52,211,153,0.04)":"rgba(248,113,113,0.04)";
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:12,
-      background:bg,border:`1px solid rgba(255,255,255,0.04)`,marginBottom:5}}>
-      {/* Symbol */}
-      <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",
-        justifyContent:"center",background:`${symColor}12`,border:`1px solid ${symColor}30`,
-        fontSize:11,fontWeight:900,color:symColor}}>{sym}</div>
-      {/* Match */}
-      <div style={{flex:1,minWidth:0}}>
-        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:700,color:C.soft,
-          margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-          {p.home_team} vs {p.away_team}
-        </p>
-        <div style={{display:"flex",gap:6,marginTop:2,flexWrap:"wrap"}}>
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>{p.league}</span>
-          {p.fixture_date&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>· {p.fixture_date.slice(0,10)}</span>}
-        </div>
-      </div>
-      {/* Prediction */}
-      <div style={{textAlign:"right",flexShrink:0}}>
-        <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"flex-end",marginBottom:2}}>
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>Predicted:</span>
-          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",
-            color:C.blue,background:`${C.blue}12`,border:`1px solid ${C.blue}22`,borderRadius:4,
-            padding:"1px 5px"}}>{p.predicted_outcome}</span>
-        </div>
-        {!isPend&&(
-          <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"flex-end"}}>
-            <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>Result:</span>
-            <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",
-              color:symColor,background:`${symColor}12`,border:`1px solid ${symColor}22`,borderRadius:4,
-              padding:"1px 5px"}}>{p.actual_outcome} ({p.score})</span>
-          </div>
-        )}
-        {isPend&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted}}>Awaiting result</span>}
-      </div>
-      {/* Confidence */}
-      <div style={{textAlign:"center",flexShrink:0,minWidth:40}}>
-        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,
-          color:p.confidence>=70?C.green:p.confidence>=50?C.amber:C.red}}>{p.confidence}</div>
-        <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>CONF</div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────
-export default function PredictionAccountability({compact=false}){
-  const[perf,setPerf]=useState(null);
-  const[history,setHistory]=useState([]);
-  const[league,setLeague]=useState("");
-  const[loading,setLoading]=useState(true);
-  const[tab,setTab]=useState("performance");
-
-  useEffect(()=>{
-    setLoading(true);
-    const lp = league?"&league="+encodeURIComponent(league):"";
-    Promise.all([
-      fetch(BACKEND+"/api/predictions/performance?window=50"+lp).then(r=>r.json()).catch(()=>null),
-      fetch(BACKEND+"/api/predictions/history?limit=30"+lp).then(r=>r.json()).catch(()=>null),
-    ]).then(([p,h])=>{
-      setPerf(p);
-      setHistory(h?.history||[]);
-      setLoading(false);
-    });
-  },[league]);
-
-  return(
-    <div style={{fontFamily:"'Sora',sans-serif"}}>
-      <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}"}</style>
-
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",
-        flexWrap:"wrap",gap:12,marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:3,height:36,borderRadius:2,background:`linear-gradient(180deg,${C.blue},transparent)`,flexShrink:0}}/>
-          <div>
-            <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:18,fontWeight:900,color:C.text,
-              margin:0,letterSpacing:"-0.02em"}}>Model Performance</h2>
-            <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:C.dim,margin:"2px 0 0",fontWeight:600}}>
-              Prediction accuracy · Confidence calibration · Historical results
-            </p>
+  if (!hasAnything) {
+    return (
+      <section className="hp-section">
+        <HomeSectionHeader icon="✅" iconBg="rgba(56,189,248,0.1)" title="Accountability"
+          subtitle="Prediction tracking and verification" />
+        <div className="hp-empty">
+          <div className="hp-empty-text">
+            No verified predictions yet. Results are checked automatically after matches finish.
           </div>
         </div>
-        {/* League filter */}
-        <select value={league} onChange={e=>setLeague(e.target.value)}
-          style={{padding:"7px 12px",borderRadius:10,background:"rgba(255,255,255,0.04)",
-            border:"1px solid rgba(255,255,255,0.08)",color:C.muted,fontSize:12,
-            fontFamily:"'Inter',sans-serif",cursor:"pointer",outline:"none"}}>
-          {LEAGUES.map(l=><option key={l.key} value={l.key} style={{background:"#0a1020"}}>{l.label}</option>)}
-        </select>
-      </div>
+      </section>
+    );
+  }
 
-      {/* Tabs */}
-      <div style={{display:"flex",gap:5,marginBottom:20}}>
-        {[{key:"performance",label:"Performance"},{key:"history",label:"Prediction History"}].map(t=>(
-          <button key={t.key} onClick={()=>setTab(t.key)}
-            style={{padding:"7px 14px",borderRadius:20,cursor:"pointer",fontSize:11,fontWeight:800,
-              fontFamily:"'Inter',sans-serif",transition:"all .15s",
-              border:tab===t.key?`1.5px solid ${C.blue}50`:"1.5px solid rgba(255,255,255,0.07)",
-              background:tab===t.key?`${C.blue}12`:"rgba(255,255,255,0.025)",
-              color:tab===t.key?C.blue:C.muted}}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+  const cards = [];
+  if (acc.hitRate != null) {
+    cards.push({ label: "Verified Hit Rate", value: `${acc.hitRate}%`,
+      accent: acc.hitRate >= 60 ? "#00e09e" : acc.hitRate >= 50 ? "#f2c94c" : "#ff4d6d",
+      desc: `${acc.assessed || acc.verifiedCount} verified` });
+  } else if (ps.overallAccuracy != null) {
+    cards.push({ label: "Overall Accuracy", value: `${ps.overallAccuracy}%`, accent: "#00e09e" });
+  }
+  if (acc.highConfidenceHitRate != null && acc.highConfidenceCount > 0) {
+    cards.push({ label: "High Conf. Accuracy", value: `${acc.highConfidenceHitRate}%`,
+      accent: "#4f9eff", desc: `${acc.highConfidenceCount} high-conf picks` });
+  }
+  if (ps.last30Accuracy != null) {
+    cards.push({ label: "Last 30", value: `${ps.last30Accuracy}%`, accent: "#f2c94c" });
+  }
+  if (acc.verifiedCount > 0) {
+    cards.push({ label: "Verified", value: `${acc.verifiedCount}`, accent: "#b388ff",
+      desc: acc.pendingCount > 0 ? `${acc.pendingCount} pending` : null });
+  }
+  if (ps.brierScore != null && ps.brierScore > 0) {
+    cards.push({ label: "Brier Score", value: `${ps.brierScore.toFixed(3)}`, accent: "#2dd4bf",
+      desc: "Lower = better" });
+  }
+  if (ps.averageConfidence != null) {
+    cards.push({ label: "Avg Confidence", value: `${ps.averageConfidence}%`, accent: "#67b1ff" });
+  }
 
-      {/* Loading */}
-      {loading&&<div style={{display:"flex",flexDirection:"column",gap:8}}>{[1,2,3,4].map(i=><Sk key={i} h={48}/>)}</div>}
+  return (
+    <section className="hp-section">
+      <HomeSectionHeader icon="✅" iconBg="rgba(56,189,248,0.1)" title="Accountability"
+        subtitle="Every prediction is tracked and verified against real results"
+        linkTo="/predictions/premier-league" linkLabel="History" />
 
-      {/* Performance tab */}
-      {!loading&&tab==="performance"&&(
-        <div>
-          {!perf||perf.assessed===0?(
-            <div style={{padding:"40px 20px",textAlign:"center",borderRadius:16,
-              background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.05)"}}>
-              <div style={{fontSize:13,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No verified predictions yet</div>
-              <div style={{fontSize:11,color:C.dim,fontFamily:"'Inter',sans-serif",maxWidth:320,margin:"0 auto"}}>
-                Predictions are verified automatically after matches finish. Visit the Predictions page to generate forecasts.
-              </div>
+      {cards.length > 0 && (
+        <div className="acc-grid">
+          {cards.map((c, i) => (
+            <div key={i} className="hp-card acc-card">
+              <div className="acc-card-value" style={{ color: c.accent }}>{c.value}</div>
+              <div className="acc-card-label">{c.label}</div>
+              {c.desc && <div className="acc-card-trend acc-card-trend--neutral">{c.desc}</div>}
             </div>
-          ):(
-            <div>
-              {/* Top stats */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:20}}>
-                <div style={{borderRadius:14,background:C.card,border:`1px solid ${C.border}`,
-                  padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-                  <AccuracyRing pct={perf.accuracy}/>
-                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:C.muted,fontWeight:700,textAlign:"center"}}>
-                    {perf.correct} correct from {perf.assessed} predictions
-                  </div>
-                </div>
-                <StatCard label="Predictions Assessed" value={perf.assessed}
-                  sub={`Last ${perf.window} verified`} color={C.blue} icon="📊"/>
-                <StatCard label="Avg xG Error" value={perf.avg_xg_error??"\u2014"}
-                  sub="Lower is better" color={C.amber} icon="⚽"/>
-                <StatCard label="Correct Outcomes" value={perf.correct}
-                  sub={`${100-perf.accuracy}% incorrect`} color={C.green} icon="✓"/>
-              </div>
-
-              {/* Outcome accuracy */}
-              {perf.outcome_accuracy&&(
-                <div style={{borderRadius:14,background:C.card,border:`1px solid ${C.border}`,padding:"16px",marginBottom:12}}>
-                  <div style={{fontSize:9,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",
-                    fontFamily:"'Inter',sans-serif",marginBottom:12}}>Accuracy by Outcome</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    <OutcomeRow label="Home Win" correct={perf.outcome_accuracy.home||0}
-                      total={perf.outcome_counts?.home||0} color={C.blue}/>
-                    <OutcomeRow label="Draw" correct={perf.outcome_accuracy.draw||0}
-                      total={perf.outcome_counts?.draw||0} color={C.amber}/>
-                    <OutcomeRow label="Away Win" correct={perf.outcome_accuracy.away||0}
-                      total={perf.outcome_counts?.away||0} color={C.green}/>
-                  </div>
-                </div>
-              )}
-
-              {/* Confidence brackets */}
-              {perf.confidence_breakdown?.length>0&&(
-                <div style={{borderRadius:14,background:C.card,border:`1px solid ${C.border}`,padding:"16px"}}>
-                  <div style={{fontSize:9,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",
-                    fontFamily:"'Inter',sans-serif",marginBottom:12}}>Confidence vs Accuracy</div>
-                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:C.muted,marginBottom:12}}>
-                    Well-calibrated models show higher accuracy for higher confidence predictions.
-                  </div>
-                  {perf.confidence_breakdown.map(b=>(
-                    <ConfidenceBar key={b.bracket} bracket={b.bracket}
-                      count={b.count} correct={b.correct} accuracy={b.accuracy}/>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* History tab */}
-      {!loading&&tab==="history"&&(
-        <div>
-          {history.length===0?(
-            <div style={{padding:"40px 20px",textAlign:"center",borderRadius:16,
-              background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.05)"}}>
-              <div style={{fontSize:13,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No predictions logged yet</div>
-              <div style={{fontSize:11,color:C.dim,fontFamily:"'Inter',sans-serif"}}>
-                Predictions are recorded when you visit the Predictions page.
-              </div>
-            </div>
-          ):(
-            <div>
-              <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14}}>
-                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:C.dim,fontWeight:700}}>
-                  {history.length} predictions
-                </span>
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:C.muted}}>
-                  · {history.filter(p=>p.symbol==="✓").length} correct
-                  · {history.filter(p=>p.symbol==="✗").length} incorrect
-                  · {history.filter(p=>p.symbol==="⏳").length} pending
-                </span>
-              </div>
-              {history.map((p,i)=><PredictionRow key={p.fixture_id||i} p={p}/>)}
-            </div>
-          )}
+      {rollingAcc.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 8 }}>
+            Rolling Accuracy
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {rollingAcc.map((r, i) => {
+              const color = r.accuracy >= 65 ? "#00e09e" : r.accuracy >= 50 ? "#f2c94c" : "#ff4d6d";
+              return (
+                <div key={i} className="hp-card" style={{ flex: 1, padding: "14px 16px", cursor: "default", borderTop: `3px solid ${color}` }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 900, color }}>{r.accuracy}%</div>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "#4a6a8a", marginTop: 2 }}>{r.window}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#3a5a7a", marginTop: 2 }}>{r.count} matches</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
-    </div>
+
+      {confBands.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 8 }}>
+            Accuracy by Confidence Band
+          </div>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none" }}>
+            {confBands.map((b, i) => {
+              const color = (b.accuracy ?? 0) >= 65 ? "#00e09e" : (b.accuracy ?? 0) >= 50 ? "#f2c94c" : "#ff4d6d";
+              return (
+                <div key={i} className="hp-card" style={{ flexShrink: 0, padding: "12px 16px", minWidth: 140, borderLeft: `3px solid ${color}`, cursor: "default" }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 900, color }}>{b.accuracy != null ? `${b.accuracy}%` : "—"}</div>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "#4a6a8a", marginTop: 2 }}>{b.bracket}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#3a5a7a", marginTop: 2 }}>{b.correct}/{b.count} correct</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {trend.length > 3 && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 8 }}>
+            Accuracy Trend (10-match rolling)
+          </div>
+          <div style={{ display: "flex", gap: 4, overflowX: "auto", scrollbarWidth: "none", alignItems: "flex-end" }}>
+            {trend.slice(-20).map((t, i) => {
+              const color = t.accuracy >= 70 ? "#00e09e" : t.accuracy >= 50 ? "#f2c94c" : "#ff4d6d";
+              const barH = Math.max(8, (t.accuracy / 100) * 60);
+              return (
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <div style={{ width: 14, height: barH, borderRadius: 3, background: color, opacity: 0.7 + (t.accuracy / 300) }} />
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "#3a5a7a" }}>{t.accuracy}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {displayResults.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "#c8d8f0", marginBottom: 8 }}>
+            Recent Predictions
+          </div>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none" }}>
+            {displayResults.slice(0, 12).map((r, i) => {
+              const ok = r.correct === true;
+              const bad = r.correct === false;
+              const pending = r.correct == null;
+              const bdr = ok ? "rgba(0,224,158,0.2)" : bad ? "rgba(255,77,109,0.2)" : "rgba(255,255,255,0.04)";
+              const home = r.home || "Home";
+              const away = r.away || "Away";
+              const score = r.score || "—";
+              const pred = r.predictedOutcome || r.pred || "—";
+              const conf = r.confidenceLabel || r.conf || "";
+              const fid = r.fixtureId || null;
+              const league = r.league || "";
+
+              return (
+                <Link key={fid || i} to={fid ? `/match/${fid}` : "/predictions/premier-league"}
+                  style={{ flexShrink: 0, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.015)",
+                    border: `1px solid ${bdr}`, textDecoration: "none", display: "flex", alignItems: "center",
+                    gap: 6, minWidth: 170, transition: "all 0.2s" }}>
+                  {ok && <span style={{ color: "#00e09e", fontSize: 13, fontWeight: 900 }}>✓</span>}
+                  {bad && <span style={{ color: "#ff4d6d", fontSize: 13, fontWeight: 900 }}>✗</span>}
+                  {pending && <span style={{ color: "#4a6a8a", fontSize: 12 }}>⏳</span>}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600, color: "#c8d8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {home} {score} {away}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#4a6a8a", marginTop: 1, display: "flex", gap: 4 }}>
+                      <span>Pred: {pred}</span>
+                      {conf && <span>· {conf}</span>}
+                      {league && <span style={{ padding: "0 4px", borderRadius: 3, background: "rgba(255,255,255,0.03)", fontSize: 7 }}>{league}</span>}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

@@ -1,262 +1,111 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { safeNum, safeStr } from '../../utils/homeDataMappers';
+import { MiniBar } from './HomeMiniCharts';
 import HomeSectionHeader from './HomeSectionHeader';
-import { ProgressBar, StatChip, AnimatedNumber } from './HomeMiniCharts';
 
-// Icons
-const ArrowRightIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-);
+const FPLSpotlightSection = ({ fplSpotlight = { captains: [], valuePlayers: [] } }) => {
+  const captains = fplSpotlight.captains || [];
+  const valuePlayers = fplSpotlight.valuePlayers || [];
 
-const CrownIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M2 4l3 12h14l3-12-6 7-4-9-4 9-6-7z" />
-    <path d="M3 20h18" />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const ZapIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-  </svg>
-);
-
-const UsersIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
-
-// Tab configuration
-const TABS = [
-  { id: 'captain', label: 'Captain Picks', icon: <CrownIcon /> },
-  { id: 'differentials', label: 'Differentials', icon: <ZapIcon /> },
-  { id: 'form', label: 'In Form', icon: <StarIcon /> },
-];
-
-// Player card for FPL
-const FPLPlayerCard = ({ player, type }) => {
-  const {
-    name,
-    photo,
-    team_name,
-    team_logo,
-    position,
-    price,
-    points,
-    form,
-    ownership,
-    xgi, // expected goal involvement
-    fixtures_difficulty,
-    captain_score,
-    differential_score
-  } = player;
-  
-  // Position badge color
-  const getPositionColor = (pos) => {
-    switch (pos?.toUpperCase()) {
-      case 'GK': return 'var(--hp-amber)';
-      case 'DEF': return 'var(--hp-blue)';
-      case 'MID': return 'var(--hp-green)';
-      case 'FWD': return 'var(--hp-red)';
-      default: return 'var(--hp-text-muted)';
-    }
-  };
-  
-  return (
-    <div className="hp-fpl-card">
-      <div className="hp-fpl-card__header">
-        <div className="hp-fpl-card__player">
-          {photo ? (
-            <img src={photo} alt="" className="hp-fpl-card__photo" />
-          ) : (
-            <div className="hp-fpl-card__photo-placeholder" />
-          )}
-          <div className="hp-fpl-card__info">
-            <span className="hp-fpl-card__name">{name}</span>
-            <div className="hp-fpl-card__meta">
-              {team_logo && <img src={team_logo} alt="" className="hp-fpl-card__team-logo" />}
-              <span className="hp-fpl-card__team">{team_name}</span>
-            </div>
-          </div>
+  if (captains.length === 0 && valuePlayers.length === 0) {
+    return (
+      <section className="hp-section">
+        <div className="hp-container">
+          <HomeSectionHeader title="FPL Spotlight" subtitle="Fantasy Premier League intelligence" accentColor="var(--hp-teal)" />
+          <div className="hp-empty">FPL data will populate when the season is active.</div>
         </div>
-        <StatChip 
-          label={position || 'MID'} 
-          color={getPositionColor(position)}
-          size="small"
-        />
-      </div>
-      
-      <div className="hp-fpl-card__stats">
-        <div className="hp-fpl-card__stat">
-          <span className="hp-fpl-card__stat-label">Price</span>
-          <span className="hp-fpl-card__stat-value">£{(price || 0).toFixed(1)}m</span>
-        </div>
-        <div className="hp-fpl-card__stat">
-          <span className="hp-fpl-card__stat-label">Form</span>
-          <span className="hp-fpl-card__stat-value hp-fpl-card__stat-value--highlight">
-            {form?.toFixed(1) || '-'}
-          </span>
-        </div>
-        <div className="hp-fpl-card__stat">
-          <span className="hp-fpl-card__stat-label">Points</span>
-          <span className="hp-fpl-card__stat-value">{points || 0}</span>
-        </div>
-        {type === 'differentials' && (
-          <div className="hp-fpl-card__stat">
-            <span className="hp-fpl-card__stat-label">Ownership</span>
-            <span className="hp-fpl-card__stat-value">{ownership?.toFixed(1) || 0}%</span>
-          </div>
-        )}
-      </div>
-      
-      {/* xGI bar */}
-      {xgi !== undefined && (
-        <div className="hp-fpl-card__xgi">
-          <div className="hp-fpl-card__xgi-header">
-            <span>Expected G+A</span>
-            <span className="hp-fpl-card__xgi-value">{xgi?.toFixed(2)}</span>
-          </div>
-          <ProgressBar value={Math.min(xgi / 1.5, 1)} color="var(--hp-green)" />
-        </div>
-      )}
-      
-      {/* Captain/Differential score */}
-      {type === 'captain' && captain_score && (
-        <div className="hp-fpl-card__score">
-          <CrownIcon />
-          <span>Captain Score: {captain_score.toFixed(0)}</span>
-        </div>
-      )}
-      
-      {type === 'differentials' && differential_score && (
-        <div className="hp-fpl-card__score hp-fpl-card__score--differential">
-          <ZapIcon />
-          <span>Differential Value: {differential_score.toFixed(0)}</span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Loading skeleton
-const FPLSkeleton = () => (
-  <div className="hp-fpl-card hp-fpl-card--skeleton">
-    <div className="hp-fpl-card__header">
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-        <div className="hp-shimmer" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
-        <div>
-          <div className="hp-shimmer" style={{ height: '18px', width: '100px', marginBottom: '6px' }} />
-          <div className="hp-shimmer" style={{ height: '14px', width: '70px' }} />
-        </div>
-      </div>
-    </div>
-    <div className="hp-shimmer" style={{ height: '48px', marginTop: '12px' }} />
-    <div className="hp-shimmer" style={{ height: '24px', marginTop: '12px' }} />
-  </div>
-);
-
-const FPLSpotlightSection = ({ 
-  captainPicks = [], 
-  differentials = [], 
-  inFormPlayers = [],
-  loading = false,
-  gameweek = null
-}) => {
-  const [activeTab, setActiveTab] = useState('captain');
-  
-  const getActivePlayers = () => {
-    switch (activeTab) {
-      case 'captain': return captainPicks;
-      case 'differentials': return differentials;
-      case 'form': return inFormPlayers;
-      default: return [];
-    }
-  };
-  
-  const activePlayers = getActivePlayers();
-  const displayPlayers = activePlayers.slice(0, 4);
-  
-  // Check if we have any FPL data
-  const hasData = captainPicks.length > 0 || differentials.length > 0 || inFormPlayers.length > 0;
-  
-  if (!loading && !hasData) {
-    return null;
+      </section>
+    );
   }
-  
+
   return (
-    <section className="hp-fpl hp-section hp-reveal">
+    <section className="hp-section">
       <div className="hp-container">
-        <HomeSectionHeader 
+        <HomeSectionHeader
           title="FPL Spotlight"
-          subtitle={gameweek ? `Gameweek ${gameweek} insights` : 'Fantasy Premier League insights'}
-          accentColor="var(--hp-green)"
-          action="/fpl"
-          actionLabel="Full FPL Hub"
+          subtitle="Differential captain picks, value players, and transfer intelligence"
+          accentColor="var(--hp-teal)"
         />
-        
-        {/* Tabs */}
-        <div className="hp-fpl__tabs">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              className={`hp-fpl__tab ${activeTab === tab.id ? 'hp-fpl__tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-        
-        {/* Content */}
-        <div className="hp-fpl__content">
-          {loading ? (
-            <div className="hp-fpl__grid">
-              <FPLSkeleton />
-              <FPLSkeleton />
-              <FPLSkeleton />
-              <FPLSkeleton />
+
+        <div className="fpl-grid">
+          {/* Differential Captains */}
+          <div className="hp-card hp-card--flat">
+            <div className="hp-card__header">
+              <span className="hp-card__header-title">Differential Captains</span>
+              <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>Low ownership, high upside</span>
             </div>
-          ) : displayPlayers.length > 0 ? (
-            <div className="hp-fpl__grid">
-              {displayPlayers.map((player, idx) => (
-                <FPLPlayerCard 
-                  key={player.player_id || idx} 
-                  player={player}
-                  type={activeTab}
-                />
+            <div className="fpl-captain-list">
+              {/* Header */}
+              <div className="fpl-captain-row" style={{ background: 'var(--hp-bg-elevated)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--hp-text-muted)' }}>
+                <span style={{ textAlign: 'center' }}>#</span>
+                <span>Player</span>
+                <span style={{ textAlign: 'right' }}>Form</span>
+                <span style={{ textAlign: 'right' }}>Own%</span>
+                <span style={{ textAlign: 'right' }}>Cost</span>
+              </div>
+              {captains.slice(0, 5).map((c, i) => (
+                <div className="fpl-captain-row" key={i}>
+                  <span className="fpl-captain-row__rank">{i + 1}</span>
+                  <div>
+                    <div className="fpl-captain-row__name">{c.name}</div>
+                    <div className="fpl-captain-row__team">{c.teamShort} / {c.position}</div>
+                  </div>
+                  <span className="fpl-captain-row__val" style={{ color: 'var(--hp-green)' }}>
+                    {safeStr(c.form, '—')}
+                  </span>
+                  <span className="fpl-captain-row__val" style={{ color: 'var(--hp-text-dim)' }}>
+                    {safeStr(c.ownership, '0')}%
+                  </span>
+                  <span className="fpl-captain-row__val">
+                    {safeNum(c.cost, 0).toFixed(1)}
+                  </span>
+                </div>
               ))}
             </div>
-          ) : (
-            <div className="hp-fpl__empty">
-              <UsersIcon />
-              <p>No {TABS.find(t => t.id === activeTab)?.label.toLowerCase()} data available.</p>
-              <span>Check back closer to the gameweek deadline.</span>
-            </div>
-          )}
-        </div>
-        
-        {activePlayers.length > 4 && (
-          <div className="hp-fpl__more">
-            <Link to="/fpl" className="hp-fpl__more-link">
-              View all {activePlayers.length} players
-              <ArrowRightIcon />
-            </Link>
           </div>
-        )}
+
+          {/* Value Players */}
+          <div className="hp-card hp-card--flat">
+            <div className="hp-card__header">
+              <span className="hp-card__header-title">Best Value Players</span>
+              <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>Points per million</span>
+            </div>
+            <div style={{ padding: 0 }}>
+              {valuePlayers.slice(0, 5).map((p, i) => (
+                <div key={i} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 80px 60px',
+                  gap: 12, padding: '12px 16px', alignItems: 'center',
+                  borderBottom: '1px solid var(--hp-border)',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--hp-text)' }}>{p.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--hp-text-muted)', marginTop: 2 }}>
+                      {p.teamShort} / {p.position} / {safeNum(p.cost, 0).toFixed(1)}m
+                    </div>
+                    <div style={{ marginTop: 6, width: '100%' }}>
+                      <MiniBar value={safeNum(p.valueScore, 0)} max={30} color="var(--hp-teal)" height={3} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--hp-mono)', fontSize: 16, fontWeight: 700, color: 'var(--hp-teal)' }}>
+                      {safeNum(p.valueScore, 0).toFixed(1)}
+                    </div>
+                    <div style={{ fontSize: 9, color: 'var(--hp-text-muted)', textTransform: 'uppercase' }}>
+                      pts/m
+                    </div>
+                  </div>
+                  <div style={{
+                    fontFamily: 'var(--hp-mono)', fontSize: 14, fontWeight: 600,
+                    color: 'var(--hp-text-bright)', textAlign: 'right',
+                  }}>
+                    {safeNum(p.totalPoints, 0)}
+                    <div style={{ fontSize: 9, color: 'var(--hp-text-muted)', fontWeight: 400 }}>PTS</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

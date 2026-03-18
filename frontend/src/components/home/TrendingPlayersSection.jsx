@@ -1,246 +1,138 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { safeNum } from '../../utils/homeDataMappers';
+import { MiniBar } from './HomeMiniCharts';
 import HomeSectionHeader from './HomeSectionHeader';
-import { ProgressBar, StatChip, AnimatedNumber } from './HomeMiniCharts';
 
-// Icons
-const ArrowRightIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-);
+const TrendingPlayersSection = ({ trendingPlayers = { items: [] }, xgLeaders = { leaders: [] } }) => {
+  const trending = trendingPlayers.items || [];
+  const leaders = xgLeaders.leaders || [];
 
-const FootballIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    <path d="M2 12h20" />
-  </svg>
-);
+  if (trending.length === 0 && leaders.length === 0) {
+    return (
+      <section className="hp-section">
+        <div className="hp-container">
+          <HomeSectionHeader title="Trending Players" subtitle="Form and performance leaders" accentColor="var(--hp-pink)" />
+          <div className="hp-empty">Player data loading — updates with each gameweek.</div>
+        </div>
+      </section>
+    );
+  }
 
-const AssistIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-    <line x1="6" y1="1" x2="6" y2="4" />
-    <line x1="10" y1="1" x2="10" y2="4" />
-    <line x1="14" y1="1" x2="14" y2="4" />
-  </svg>
-);
-
-const TrendingIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
-
-// Tab configuration
-const TABS = [
-  { id: 'scorers', label: 'Top Scorers', icon: <FootballIcon />, stat: 'goals' },
-  { id: 'assists', label: 'Top Assists', icon: <AssistIcon />, stat: 'assists' },
-];
-
-// Player card
-const TrendingPlayerCard = ({ player, type, rank, maxValue }) => {
-  const {
-    player_id,
-    name,
-    photo,
-    team_name,
-    team_logo,
-    goals,
-    assists,
-    played,
-    position
-  } = player;
-  
-  const statValue = type === 'scorers' ? goals : assists;
-  const statLabel = type === 'scorers' ? 'Goals' : 'Assists';
-  const perGame = played > 0 ? (statValue / played).toFixed(2) : 0;
-  
   return (
-    <div className="hp-trending-card">
-      <div className="hp-trending-card__rank">
-        <span className={rank <= 3 ? 'hp-trending-card__rank--top' : ''}>
-          {rank}
-        </span>
-      </div>
-      
-      <div className="hp-trending-card__player">
-        {photo ? (
-          <img src={photo} alt="" className="hp-trending-card__photo" />
-        ) : (
-          <div className="hp-trending-card__photo-placeholder" />
-        )}
-        
-        <div className="hp-trending-card__info">
-          <span className="hp-trending-card__name">{name}</span>
-          <div className="hp-trending-card__team">
-            {team_logo && <img src={team_logo} alt="" className="hp-trending-card__team-logo" />}
-            <span>{team_name}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="hp-trending-card__stats">
-        <div className="hp-trending-card__main-stat">
-          <span className="hp-trending-card__stat-value">
-            <AnimatedNumber value={statValue} />
-          </span>
-          <span className="hp-trending-card__stat-label">{statLabel}</span>
-        </div>
-        
-        <div className="hp-trending-card__secondary">
-          <div className="hp-trending-card__mini-stat">
-            <span className="hp-trending-card__mini-label">Apps</span>
-            <span className="hp-trending-card__mini-value">{played}</span>
-          </div>
-          <div className="hp-trending-card__mini-stat">
-            <span className="hp-trending-card__mini-label">Per Game</span>
-            <span className="hp-trending-card__mini-value">{perGame}</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Progress bar relative to max */}
-      <div className="hp-trending-card__bar">
-        <ProgressBar 
-          value={maxValue > 0 ? statValue / maxValue : 0} 
-          color={type === 'scorers' ? 'var(--hp-amber)' : 'var(--hp-blue)'} 
-        />
-      </div>
-    </div>
-  );
-};
-
-// League filter
-const LeagueFilter = ({ leagues, activeLeague, onSelect }) => (
-  <div className="hp-trending__league-filter">
-    {leagues.map(league => (
-      <button
-        key={league.code}
-        className={`hp-trending__league-btn ${activeLeague === league.code ? 'hp-trending__league-btn--active' : ''}`}
-        onClick={() => onSelect(league.code)}
-      >
-        {league.logo && <img src={league.logo} alt="" />}
-        <span>{league.shortName || league.name}</span>
-      </button>
-    ))}
-  </div>
-);
-
-// Loading skeleton
-const TrendingSkeleton = () => (
-  <div className="hp-trending-card hp-trending-card--skeleton">
-    <div className="hp-shimmer" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-    <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
-      <div className="hp-shimmer" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
-      <div style={{ flex: 1 }}>
-        <div className="hp-shimmer" style={{ height: '18px', width: '60%', marginBottom: '6px' }} />
-        <div className="hp-shimmer" style={{ height: '14px', width: '40%' }} />
-      </div>
-    </div>
-    <div className="hp-shimmer" style={{ width: '60px', height: '40px' }} />
-  </div>
-);
-
-const DEFAULT_LEAGUES = [
-  { code: 'epl', name: 'Premier League', shortName: 'EPL', logo: 'https://media.api-sports.io/football/leagues/39.png' },
-  { code: 'laliga', name: 'La Liga', shortName: 'La Liga', logo: 'https://media.api-sports.io/football/leagues/140.png' },
-  { code: 'seriea', name: 'Serie A', shortName: 'Serie A', logo: 'https://media.api-sports.io/football/leagues/135.png' },
-  { code: 'bundesliga', name: 'Bundesliga', shortName: 'Bundesliga', logo: 'https://media.api-sports.io/football/leagues/78.png' },
-  { code: 'ligue1', name: 'Ligue 1', shortName: 'Ligue 1', logo: 'https://media.api-sports.io/football/leagues/61.png' },
-];
-
-const TrendingPlayersSection = ({ 
-  scorers = {}, 
-  assists = {},
-  leagues = DEFAULT_LEAGUES,
-  loading = false 
-}) => {
-  const [activeTab, setActiveTab] = useState('scorers');
-  const [activeLeague, setActiveLeague] = useState('epl');
-  
-  // Get players for current tab and league
-  const getPlayers = () => {
-    const data = activeTab === 'scorers' ? scorers : assists;
-    return data[activeLeague] || [];
-  };
-  
-  const players = getPlayers();
-  const displayPlayers = players.slice(0, 5);
-  const maxValue = displayPlayers.length > 0 
-    ? Math.max(...displayPlayers.map(p => activeTab === 'scorers' ? p.goals : p.assists))
-    : 1;
-  
-  return (
-    <section className="hp-trending hp-section hp-reveal">
+    <section className="hp-section">
       <div className="hp-container">
-        <HomeSectionHeader 
+        <HomeSectionHeader
           title="Trending Players"
-          subtitle="League leaders in goals and assists"
-          accentColor="var(--hp-amber)"
+          subtitle="Form leaders, top scorers, and rising performers across tracked leagues"
+          accentColor="var(--hp-pink)"
         />
-        
-        {/* Tabs */}
-        <div className="hp-trending__tabs">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              className={`hp-trending__tab ${activeTab === tab.id ? 'hp-trending__tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-        
-        {/* League filter */}
-        <LeagueFilter 
-          leagues={leagues}
-          activeLeague={activeLeague}
-          onSelect={setActiveLeague}
-        />
-        
-        {/* Content */}
-        <div className="hp-trending__content">
-          {loading ? (
-            <div className="hp-trending__list">
-              <TrendingSkeleton />
-              <TrendingSkeleton />
-              <TrendingSkeleton />
-              <TrendingSkeleton />
-              <TrendingSkeleton />
+
+        {/* Trending form cards */}
+        {trending.length > 0 && (
+          <div className="trending-grid" style={{ marginBottom: leaders.length > 0 ? 'var(--hp-gap)' : 0 }}>
+            {trending.slice(0, 8).map((p, i) => {
+              const numValue = parseFloat(p.value) || 0;
+              const maxVal = p.type === 'form' ? 10 : 250;
+              return (
+                <div className="hp-card" key={i}>
+                  <div className="trending-card__body">
+                    <div className="trending-card__header">
+                      <span className="trending-card__name">{p.label}</span>
+                      <span className="trending-card__type" style={{
+                        background: `${p.col}18`,
+                        color: p.col,
+                      }}>
+                        {p.type}
+                      </span>
+                    </div>
+                    <div className="trending-card__sub">{p.sub}</div>
+                    <div className="trending-card__value-row">
+                      <span className="trending-card__value" style={{ color: p.col }}>{p.value}</span>
+                      <span className="trending-card__value-label">
+                        {p.type === 'form' ? 'rating' : 'pts'}
+                      </span>
+                    </div>
+                    <div className="trending-card__bar-track">
+                      <div
+                        className="trending-card__bar-fill"
+                        style={{ width: `${Math.min(100, (numValue / maxVal) * 100)}%`, background: p.col }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* xG Leaders table */}
+        {leaders.length > 0 && (
+          <div className="hp-card hp-card--flat">
+            <div className="hp-card__header">
+              <span className="hp-card__header-title">Goals + Assists Leaders — {xgLeaders.league || 'Premier League'}</span>
             </div>
-          ) : displayPlayers.length > 0 ? (
-            <div className="hp-trending__list">
-              {displayPlayers.map((player, idx) => (
-                <TrendingPlayerCard 
-                  key={player.player_id || idx}
-                  player={player}
-                  type={activeTab}
-                  rank={idx + 1}
-                  maxValue={maxValue}
-                />
+            <div style={{ padding: 0 }}>
+              {/* Header */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '36px 28px 1fr 50px 50px 50px 60px',
+                gap: 8, padding: '8px 16px',
+                fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em',
+                color: 'var(--hp-text-muted)', borderBottom: '1px solid var(--hp-border)',
+              }}>
+                <span>#</span>
+                <span></span>
+                <span>Player</span>
+                <span style={{ textAlign: 'right' }}>G</span>
+                <span style={{ textAlign: 'right' }}>A</span>
+                <span style={{ textAlign: 'right' }}>G+A</span>
+                <span style={{ textAlign: 'right' }}>/90</span>
+              </div>
+              {leaders.slice(0, 8).map((l, i) => (
+                <div key={i} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '36px 28px 1fr 50px 50px 50px 60px',
+                  gap: 8, padding: '10px 16px', alignItems: 'center',
+                  borderBottom: '1px solid var(--hp-border)',
+                  background: i === 0 ? 'rgba(244, 114, 182, 0.03)' : 'transparent',
+                }}>
+                  <span style={{
+                    fontFamily: 'var(--hp-mono)', fontSize: 12, fontWeight: 700,
+                    color: i < 3 ? 'var(--hp-pink)' : 'var(--hp-text-muted)',
+                  }}>
+                    {i + 1}
+                  </span>
+                  <span>
+                    {l.photo ? (
+                      <img src={l.photo} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--hp-bg-card-alt)' }} />
+                    )}
+                  </span>
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--hp-text)' }}>{l.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      {l.teamLogo && <img src={l.teamLogo} alt="" style={{ width: 12, height: 12, objectFit: 'contain' }} />}
+                      <span style={{ fontSize: 10, color: 'var(--hp-text-muted)' }}>{l.team}</span>
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: 'var(--hp-mono)', fontSize: 13, fontWeight: 700, color: 'var(--hp-text-bright)', textAlign: 'right' }}>
+                    {safeNum(l.goals, 0)}
+                  </span>
+                  <span style={{ fontFamily: 'var(--hp-mono)', fontSize: 13, fontWeight: 600, color: 'var(--hp-text-dim)', textAlign: 'right' }}>
+                    {safeNum(l.assists, 0)}
+                  </span>
+                  <span style={{ fontFamily: 'var(--hp-mono)', fontSize: 13, fontWeight: 700, color: 'var(--hp-pink)', textAlign: 'right' }}>
+                    {safeNum(l.gPlusA, 0)}
+                  </span>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontFamily: 'var(--hp-mono)', fontSize: 12, color: 'var(--hp-text-dim)' }}>
+                      {safeNum(l.per90, 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
-          ) : (
-            <div className="hp-trending__empty">
-              <TrendingIcon />
-              <p>No player data available for this league.</p>
-            </div>
-          )}
-        </div>
-        
-        {players.length > 5 && (
-          <div className="hp-trending__more">
-            <Link to={`/league/${activeLeague}/stats`} className="hp-trending__more-link">
-              View full leaderboard
-              <ArrowRightIcon />
-            </Link>
           </div>
         )}
       </div>

@@ -1,170 +1,123 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import HomeSectionHeader from './HomeSectionHeader';
-import { PLATFORM_CAPABILITIES } from '../../utils/homeDataMappers';
 
-// SVG Icons for each capability (replacing emoji)
-const IconLive = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
-  </svg>
-);
+const CAPABILITIES = [
+  {
+    title: 'Match Predictions',
+    desc: 'Dixon-Coles Poisson model with Elo adjustments. Probabilities, scorelines, and confidence ratings for every fixture across five leagues.',
+    stat: '15,000+',
+    statLabel: 'fixtures modelled',
+    color: 'var(--hp-blue)',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <path d="M11 1L14 7.5L21 8.5L16 13.5L17 20.5L11 17L5 20.5L6 13.5L1 8.5L8 7.5L11 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Live Intelligence',
+    desc: 'Real-time match momentum, win probability shifts, and tactical pattern detection. Updated every 60 seconds during live play.',
+    stat: '60s',
+    statLabel: 'refresh cycle',
+    color: 'var(--hp-green)',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="9" stroke="currentColor" strokeWidth="1.5" />
+        <polyline points="11,5 11,11 15,14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    title: 'FPL Engine',
+    desc: 'Captain picks, differential signals, best XI optimization, fixture difficulty ratings, and points-per-million value analysis.',
+    stat: '600+',
+    statLabel: 'players tracked',
+    color: 'var(--hp-teal)',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="3" y="3" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" strokeWidth="1" />
+        <line x1="9" y1="3" x2="9" y2="19" stroke="currentColor" strokeWidth="1" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Lineup Predictor',
+    desc: 'Predicted starting XIs using exponential decay weighting, injury data, and formation detection from recent official lineups.',
+    stat: '94%',
+    statLabel: 'max confidence',
+    color: 'var(--hp-yellow)',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="6" r="3" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M4 19C4 15.134 7.134 12 11 12C14.866 12 18 15.134 18 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Shot Maps & xG',
+    desc: 'Zonal shot placement, expected goals per shot, and conversion efficiency analysis. Visual pitch-mapped data for every tracked fixture.',
+    stat: '9',
+    statLabel: 'shot zones',
+    color: 'var(--hp-orange)',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="9" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="11" cy="11" r="5" stroke="currentColor" strokeWidth="1" />
+        <circle cx="11" cy="11" r="1.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Season Simulation',
+    desc: 'Monte Carlo engine running 50,000 season simulations. Title probability, top-four odds, and relegation risk per team.',
+    stat: '50K',
+    statLabel: 'simulations',
+    color: 'var(--hp-red)',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <polyline points="2,18 7,10 12,14 20,4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points="15,4 20,4 20,9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+];
 
-const IconPredictions = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
-  </svg>
-);
-
-const IconPlayers = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
-const IconFPL = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const IconSimulation = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="2" y="2" width="20" height="20" rx="5" />
-    <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-    <circle cx="16" cy="8" r="1.5" fill="currentColor" />
-    <circle cx="8" cy="16" r="1.5" fill="currentColor" />
-    <circle cx="16" cy="16" r="1.5" fill="currentColor" />
-    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-  </svg>
-);
-
-const IconLineups = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <line x1="7" y1="8" x2="17" y2="8" />
-    <line x1="7" y1="12" x2="17" y2="12" />
-    <line x1="7" y1="16" x2="12" y2="16" />
-  </svg>
-);
-
-const IconShotmap = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="6" />
-    <circle cx="12" cy="12" r="2" />
-    <line x1="12" y1="2" x2="12" y2="4" />
-    <line x1="12" y1="20" x2="12" y2="22" />
-    <line x1="2" y1="12" x2="4" y2="12" />
-    <line x1="20" y1="12" x2="22" y2="12" />
-  </svg>
-);
-
-const IconAccountability = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
-);
-
-// Map capability IDs to icons
-const ICON_MAP = {
-  live: IconLive,
-  predictions: IconPredictions,
-  players: IconPlayers,
-  fpl: IconFPL,
-  simulation: IconSimulation,
-  lineups: IconLineups,
-  shotmap: IconShotmap,
-  accountability: IconAccountability,
-};
-
-// Arrow icon for links
-const ArrowRightIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-);
-
-// Single capability card
-const CapabilityCard = ({ capability, index }) => {
-  const { id, title, description, color, link } = capability;
-  const IconComponent = ICON_MAP[id] || IconPredictions;
-  
+const PlatformCapabilitiesSection = () => {
   return (
-    <Link 
-      to={link} 
-      className="hp-capability-card"
-      style={{ 
-        '--cap-color': color,
-        '--cap-delay': `${index * 60}ms`
-      }}
-    >
-      <div className="hp-capability-card__icon">
-        <IconComponent />
-      </div>
-      
-      <div className="hp-capability-card__content">
-        <h3 className="hp-capability-card__title">{title}</h3>
-        <p className="hp-capability-card__description">{description}</p>
-      </div>
-      
-      <div className="hp-capability-card__action">
-        <span>Explore</span>
-        <ArrowRightIcon />
-      </div>
-      
-      {/* Hover glow effect */}
-      <div className="hp-capability-card__glow" />
-    </Link>
-  );
-};
-
-// Loading skeleton
-const CapabilitySkeleton = () => (
-  <div className="hp-capability-card hp-capability-card--skeleton">
-    <div className="hp-shimmer" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
-    <div style={{ flex: 1 }}>
-      <div className="hp-shimmer" style={{ height: '18px', width: '120px', marginBottom: '8px' }} />
-      <div className="hp-shimmer" style={{ height: '14px', width: '100%' }} />
-    </div>
-  </div>
-);
-
-const PlatformCapabilitiesSection = ({ loading = false }) => {
-  const capabilities = PLATFORM_CAPABILITIES;
-  
-  return (
-    <section className="hp-capabilities hp-section hp-reveal">
+    <section className="hp-section">
       <div className="hp-container">
-        <HomeSectionHeader 
+        <HomeSectionHeader
           title="Platform Capabilities"
-          subtitle="Comprehensive football intelligence tools"
-          accentColor="var(--hp-purple)"
+          subtitle="A complete football intelligence operating system"
+          accentColor="var(--hp-orange)"
         />
-        
-        <div className="hp-capabilities__grid">
-          {loading ? (
-            <>
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-              <CapabilitySkeleton />
-            </>
-          ) : (
-            capabilities.map((cap, idx) => (
-              <CapabilityCard key={cap.id} capability={cap} index={idx} />
-            ))
-          )}
+
+        <div className="platform-grid">
+          {CAPABILITIES.map((cap, i) => (
+            <div className="hp-card platform-card" key={i} style={{ cursor: 'pointer' }}>
+              <div className="platform-card__body">
+                <div className="platform-card__top">
+                  <div className="platform-card__icon" style={{
+                    background: `${cap.color}12`,
+                    color: cap.color,
+                  }}>
+                    {cap.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div className="platform-card__title">{cap.title}</div>
+                  </div>
+                </div>
+                <div className="platform-card__desc">{cap.desc}</div>
+                <div className="platform-card__stat">
+                  <span className="platform-card__stat-val" style={{ color: cap.color }}>
+                    {cap.stat}
+                  </span>
+                  <span className="platform-card__stat-label">{cap.statLabel}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

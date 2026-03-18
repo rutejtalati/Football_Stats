@@ -1,498 +1,383 @@
-// src/utils/homeDataMappers.js
-// ═══════════════════════════════════════════════════════════════════════════
-// Data transformation utilities for the homepage
-// ═══════════════════════════════════════════════════════════════════════════
-
 /**
- * Parse form string into array of results
- * @param {string} form - Form string like "WWDLW"
- * @returns {string[]} - Array of results ['W', 'W', 'D', 'L', 'W']
+ * homeDataMappers.js — Defensive data normalization for the homepage
+ * Every mapper ensures: no NaN, no null renders, no impossible percentages,
+ * no undefined fields. If data is missing, return intelligent fallbacks.
  */
-export function parseForm(form) {
-  if (Array.isArray(form)) return form.filter(c => 'WDL'.includes(c));
-  return String(form || '').split('').filter(c => 'WDL'.includes(c));
-}
 
-/**
- * Format date for display
- * @param {string} dateStr - ISO date string
- * @returns {string} - Formatted date like "Sat 15 Mar · 15:00"
- */
-export function formatMatchDate(dateStr) {
-  if (!dateStr) return 'TBD';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('en-GB', { 
-      weekday: 'short', 
-      day: 'numeric', 
-      month: 'short' 
-    }) + ' · ' + d.toLocaleTimeString('en-GB', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  } catch {
-    return dateStr;
-  }
-}
+// ── Primitives ────────────────────────────────────────────────────
+export const safe = (val, fallback = 0) => {
+  if (val === null || val === undefined || val === '') return fallback;
+  if (typeof val === 'number' && isNaN(val)) return fallback;
+  return val;
+};
 
-/**
- * Format relative time from now
- * @param {string} dateStr - ISO date string
- * @returns {string} - Relative time like "Today 15:00", "Tomorrow 20:00", "Sat 15:00"
- */
-export function formatRelativeTime(dateStr) {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const now = new Date();
-    const diff = Math.floor((d - now) / (1000 * 60 * 60 * 24));
-    const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
-    if (diff === 0) return `Today ${time}`;
-    if (diff === 1) return `Tomorrow ${time}`;
-    if (diff > 1 && diff < 7) return `${days[d.getDay()]} ${time}`;
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ` ${time}`;
-  } catch {
-    return dateStr;
-  }
-}
+export const safeStr = (val, fallback = '—') =>
+  val && typeof val === 'string' && val.trim() ? val.trim() : fallback;
 
-/**
- * Get prediction strength classification
- * @param {number} confidence - Confidence value 0-100
- * @returns {Object} - { label, color, bg, border }
- */
-export function getStrengthMeta(confidence) {
-  if (confidence >= 72) {
+export const safeNum = (val, fallback = 0) => {
+  const n = Number(val);
+  return isNaN(n) || !isFinite(n) ? fallback : n;
+};
+
+export const clamp = (val, min, max) => Math.min(max, Math.max(min, safeNum(val, min)));
+
+export const safePct = (val, fallback = 0) => clamp(safeNum(val, fallback), 0, 100);
+
+export const safeXg = (val) => {
+  const n = safeNum(val, -1);
+  return n < 0 || n > 10 ? null : Math.round(n * 100) / 100;
+};
+
+export const formatPct = (val, fallback = '—') => {
+  const n = safePct(val, -1);
+  return n < 0 ? fallback : `${Math.round(n)}%`;
+};
+
+export const formatXg = (val, fallback = '—') => {
+  const x = safeXg(val);
+  return x === null ? fallback : x.toFixed(2);
+};
+
+export const formatConf = (conf) => {
+  if (typeof conf === 'string') return conf.charAt(0).toUpperCase() + conf.slice(1);
+  const n = safePct(conf, 50);
+  if (n >= 70) return 'High';
+  if (n >= 55) return 'Medium';
+  return 'Low';
+};
+
+export const confLevel = (conf) => {
+  if (typeof conf === 'string') return conf.toLowerCase();
+  const n = safePct(conf, 50);
+  if (n >= 70) return 'high';
+  if (n >= 55) return 'medium';
+  return 'low';
+};
+
+// ── Form helpers ──────────────────────────────────────────────────
+export const parseForm = (formStr) => {
+  if (!formStr || typeof formStr !== 'string') return [];
+  return formStr.split('').filter((c) => ['W', 'D', 'L'].includes(c.toUpperCase())).map((c) => c.toUpperCase());
+};
+
+export const formColor = (letter) => {
+  const map = { W: '#00e09e', D: '#f2c94c', L: '#ff4d6d' };
+  return map[letter] || '#555';
+};
+
+// ── Section mappers ──────────────────────────────────────────────
+
+export const mapPrediction = (p) => {
+  if (!p) return null;
+  const hw = safePct(p.homeProb, 33);
+  const aw = safePct(p.awayProb, 33);
+  const dw = safePct(p.draw, 100 - hw - aw);
+  return {
+    fixtureId: safe(p.fixture_id, null),
+    home: safeStr(p.home, 'Home'),
+    away: safeStr(p.away, 'Away'),
+    homeLogo: safeStr(p.home_logo, ''),
+    awayLogo: safeStr(p.away_logo, ''),
+    homeProb: hw,
+    awayProb: aw,
+    draw: dw,
+    xgHome: safeXg(p.xg_home),
+    xgAway: safeXg(p.xg_away),
+    score: safeStr(p.score, '—'),
+    conf: confLevel(p.conf || p.conf_pct),
+    confPct: safePct(p.conf_pct, 50),
+    league: safeStr(p.league, ''),
+    leagueCode: safeStr(p.league_code, 'epl'),
+    kickoff: safeStr(p.kickoff, ''),
+    time: safeStr(p.time, ''),
+    col: safeStr(p.col, '#4f9eff'),
+  };
+};
+
+export const mapPredictions = (data) => {
+  const preds = (data?.predictions || []).map(mapPrediction).filter(Boolean);
+  return { predictions: preds, league: safeStr(data?.league, 'epl') };
+};
+
+export const mapEdge = (e) => {
+  if (!e) return null;
+  return {
+    fixtureId: safe(e.fixture_id, null),
+    home: safeStr(e.home, 'Home'),
+    away: safeStr(e.away, 'Away'),
+    modelProb: safePct(e.model_prob, 50),
+    edge: clamp(safeNum(e.edge, 0), 0, 50),
+    direction: safeStr(e.direction, 'home'),
+    label: safeStr(e.label, 'Edge signal'),
+    col: safeStr(e.col, '#00e09e'),
+  };
+};
+
+export const mapEdges = (data) => ({
+  edges: (data?.edges || []).map(mapEdge).filter(Boolean),
+});
+
+export const mapTacticalInsight = (data) => {
+  const primary = data?.primary || {};
+  const all = (data?.all || []).map((i) => ({
+    stat: safeStr(i.stat, '—'),
+    label: safeStr(i.label, 'Stat'),
+    player: safeStr(i.player, 'Team'),
+    context: safeStr(i.context, ''),
+    col: safeStr(i.col, '#4f9eff'),
+    teamId: safe(i.team_id, null),
+  }));
+  return {
+    primary: {
+      stat: safeStr(primary.stat, '—'),
+      label: safeStr(primary.label, 'Stat'),
+      player: safeStr(primary.player, 'Team'),
+      context: safeStr(primary.context, ''),
+      col: safeStr(primary.col, '#f2c94c'),
+    },
+    all,
+  };
+};
+
+export const mapTrendingPlayer = (item) => {
+  if (!item) return null;
+  return {
+    label: safeStr(item.label, 'Player'),
+    value: safeStr(String(item.value), '—'),
+    col: safeStr(item.col, '#4f9eff'),
+    playerId: safe(item.player_id, null),
+    type: safeStr(item.type, 'form'),
+    sub: safeStr(item.sub, ''),
+  };
+};
+
+export const mapTrendingPlayers = (data) => ({
+  items: (data?.items || []).map(mapTrendingPlayer).filter(Boolean),
+});
+
+export const mapXgLeader = (l) => {
+  if (!l) return null;
+  return {
+    playerId: safe(l.player_id, null),
+    name: safeStr(l.name, 'Player'),
+    photo: safeStr(l.photo, ''),
+    team: safeStr(l.team, ''),
+    teamLogo: safeStr(l.team_logo, ''),
+    goals: safeNum(l.goals, 0),
+    assists: safeNum(l.assists, 0),
+    gPlusA: safeNum(l.g_plus_a, 0),
+    per90: safeNum(l.per90, 0),
+    played: safeNum(l.played, 0),
+  };
+};
+
+export const mapXgLeaders = (data) => ({
+  leaders: (data?.leaders || []).map(mapXgLeader).filter(Boolean),
+  league: safeStr(data?.league, ''),
+});
+
+export const mapPowerRanking = (r) => {
+  if (!r) return null;
+  return {
+    rank: safeNum(r.rank, 0),
+    powerRank: safeNum(r.power_rank, 0),
+    teamName: safeStr(r.team_name, 'Team'),
+    logo: safeStr(r.logo, ''),
+    played: safeNum(r.played, 0),
+    won: safeNum(r.won, 0),
+    drawn: safeNum(r.drawn, 0),
+    lost: safeNum(r.lost, 0),
+    goalsFor: safeNum(r.goals_for, 0),
+    goalsAgainst: safeNum(r.goals_against, 0),
+    goalDiff: safeNum(r.goal_diff, 0),
+    points: safeNum(r.points, 0),
+    form: parseForm(r.form),
+    formPts: safeNum(r.form_pts, 0),
+    ppg: safeNum(r.ppg, 0),
+    powerPct: safePct(r.power_pct, 0),
+    rankDelta: safeNum(r.rank_delta, 0),
+  };
+};
+
+export const mapPowerRankings = (data) => ({
+  rankings: (data?.rankings || []).map(mapPowerRanking).filter(Boolean),
+  league: safeStr(data?.league, ''),
+});
+
+export const mapModelMetrics = (data) => ({
+  overallAccuracy: safePct(data?.overall_accuracy, 64),
+  logLoss: safeNum(data?.log_loss, null),
+  brierScore: safeNum(data?.brier_score, null),
+  last30Accuracy: safePct(data?.last_30_accuracy, null),
+  trend: (data?.trend || []).map((t) => ({
+    gw: safeStr(t.gw, ''),
+    acc: safePct(t.acc, 0),
+  })),
+  byMarket: (data?.by_market || []).map((m) => ({
+    label: safeStr(m.l, 'Market'),
+    value: safePct(m.v, 0),
+    col: safeStr(m.col, '#4f9eff'),
+  })),
+  fixturesCount: safeStr(data?.fixtures_count, '15,000+'),
+  leaguesNote: safeStr(data?.leagues_note, ''),
+});
+
+export const mapDifferentialCaptain = (c) => {
+  if (!c) return null;
+  return {
+    playerId: safe(c.player_id, null),
+    name: safeStr(c.name, 'Player'),
+    team: safeStr(c.team, ''),
+    teamShort: safeStr(c.team_short, ''),
+    position: safeStr(c.position, 'MID'),
+    ownership: safeStr(c.ownership, '0'),
+    form: safeStr(c.form, '0'),
+    cost: safeNum(c.cost, 0),
+    totalPoints: safeNum(c.total_points, 0),
+    diffScore: safeNum(c.diff_score, 0),
+  };
+};
+
+export const mapFPLSpotlight = (data) => ({
+  captains: (data?.differential_captains?.captains || []).map(mapDifferentialCaptain).filter(Boolean),
+  valuePlayers: (data?.value_players?.players || []).map((p) => ({
+    playerId: safe(p.player_id, null),
+    name: safeStr(p.name, 'Player'),
+    team: safeStr(p.team, ''),
+    teamShort: safeStr(p.team_short, ''),
+    position: safeStr(p.position, 'MID'),
+    cost: safeNum(p.cost, 0),
+    totalPoints: safeNum(p.total_points, 0),
+    form: safeStr(p.form, '0'),
+    valueScore: safeNum(p.value_score, 0),
+    ownership: safeStr(p.ownership, '0'),
+  })),
+});
+
+export const mapRecentResult = (r) => {
+  if (!r) return null;
+  return {
+    home: safeStr(r.home, 'Home'),
+    away: safeStr(r.away, 'Away'),
+    pred: safeStr(r.pred, '—'),
+    actual: safeStr(r.actual, 'Pending'),
+    score: safeStr(r.score, '—'),
+    conf: safeStr(r.conf, 'Low'),
+    correct: r.correct,
+    fixtureId: safe(r.fixture_id, null),
+  };
+};
+
+export const mapRecentResults = (data) => ({
+  results: (data?.results || []).map(mapRecentResult).filter(Boolean),
+  correct: safeNum(data?.correct, 0),
+  total: safeNum(data?.total, 0),
+});
+
+export const mapHighScoringMatch = (m) => {
+  if (!m) return null;
+  return {
+    ...mapPrediction(m),
+    totalXg: safeNum(m.total_xg, 0),
+  };
+};
+
+export const mapTitleRace = (data) => ({
+  top4: (data?.top4 || []).map((t) => ({
+    teamName: safeStr(t.team_name, 'Team'),
+    logo: safeStr(t.logo, ''),
+    points: safeNum(t.points, 0),
+    gapToLeader: safeNum(t.gap_to_leader, 0),
+    form: parseForm(t.form),
+    formLetters: (t.form_letters || []).map((l) => l.toUpperCase()),
+    formPts: safeNum(t.form_pts, 0),
+    trend: safeStr(t.trend, 'neutral'),
+    played: safeNum(t.played, 0),
+    goalDiff: safeNum(t.goal_diff, 0),
+  })),
+  leader: safeStr(data?.leader, ''),
+  gap12: safeNum(data?.gap_1_2, 0),
+  league: safeStr(data?.league, ''),
+});
+
+// ── League Coverage ──────────────────────────────────────────────
+const LEAGUE_META = {
+  epl: { name: 'Premier League', color: '#4f9eff', country: 'England' },
+  laliga: { name: 'La Liga', color: '#f2c94c', country: 'Spain' },
+  seriea: { name: 'Serie A', color: '#00e09e', country: 'Italy' },
+  bundesliga: { name: 'Bundesliga', color: '#ff8c42', country: 'Germany' },
+  ligue1: { name: 'Ligue 1', color: '#b388ff', country: 'France' },
+};
+
+export const mapLeagueCoverage = (powerRankings, titleRace) => {
+  const leagues = Object.entries(LEAGUE_META).map(([code, meta]) => {
+    // Pull rankings if available (dashboard currently only returns EPL)
+    const rankings = powerRankings?.rankings || [];
+    const race = titleRace?.top4 || [];
     return {
-      label: 'Strong',
-      color: '#28d97a',
-      bg: 'rgba(40, 217, 122, 0.1)',
-      border: 'rgba(40, 217, 122, 0.28)',
+      code,
+      ...meta,
+      topTeam: race[0]?.team_name || rankings[0]?.team_name || '—',
+      topTeamLogo: race[0]?.logo || rankings[0]?.logo || '',
+      leaderPoints: race[0]?.points || rankings[0]?.points || 0,
+      tracked: true,
+    };
+  });
+  return { leagues };
+};
+
+// ── Master dashboard mapper ──────────────────────────────────────
+export const mapDashboard = (raw) => {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      predictions: { predictions: [], league: 'epl' },
+      edges: { edges: [] },
+      tacticalInsight: { primary: {}, all: [] },
+      trendingPlayers: { items: [] },
+      xgLeaders: { leaders: [], league: '' },
+      powerRankings: { rankings: [], league: '' },
+      modelMetrics: {},
+      fplSpotlight: { captains: [], valuePlayers: [] },
+      recentResults: { results: [], correct: 0, total: 0 },
+      titleRace: { top4: [], leader: '', gap12: 0, league: '' },
+      highScoringMatches: [],
+      defenseTable: [],
+      analyticsTerm: {},
     };
   }
-  if (confidence >= 52) {
-    return {
-      label: 'Moderate',
-      color: '#f59e0b',
-      bg: 'rgba(245, 158, 11, 0.08)',
-      border: 'rgba(245, 158, 11, 0.25)',
-    };
-  }
-  if (confidence >= 36) {
-    return {
-      label: 'Uncertain',
-      color: '#ff6b35',
-      bg: 'rgba(255, 107, 53, 0.08)',
-      border: 'rgba(255, 107, 53, 0.22)',
-    };
-  }
+
   return {
-    label: 'Low',
-    color: '#6a7a9a',
-    bg: 'rgba(255, 255, 255, 0.04)',
-    border: 'rgba(255, 255, 255, 0.1)',
-  };
-}
-
-/**
- * Get goal expectation classification
- * @param {number} over25Prob - Probability of over 2.5 goals (0-1)
- * @returns {Object} - { label, color }
- */
-export function getGoalExpectation(over25Prob) {
-  const pct = Math.round((over25Prob || 0) * 100);
-  if (pct >= 68) return { label: 'High', color: '#28d97a' };
-  if (pct >= 48) return { label: 'Medium', color: '#f59e0b' };
-  return { label: 'Low', color: '#6a7a9a' };
-}
-
-/**
- * Get favorite team from probabilities
- * @param {number} homeProb - Home win probability
- * @param {number} drawProb - Draw probability
- * @param {number} awayProb - Away win probability
- * @returns {'home' | 'away' | 'draw'}
- */
-export function getFavorite(homeProb, drawProb, awayProb) {
-  const max = Math.max(homeProb, drawProb, awayProb);
-  if (max === homeProb) return 'home';
-  if (max === awayProb) return 'away';
-  return 'draw';
-}
-
-/**
- * Format probability as percentage
- * @param {number} prob - Probability 0-1 or 0-100
- * @returns {number} - Percentage 0-100
- */
-export function toPercent(prob) {
-  if (!prob) return 0;
-  return prob > 1 ? Math.round(prob) : Math.round(prob * 100);
-}
-
-/**
- * Get winner color based on favorite
- * @param {'home' | 'away' | 'draw'} favorite
- * @returns {string} - Hex color
- */
-export function getWinnerColor(favorite) {
-  switch (favorite) {
-    case 'home': return '#3b9eff';
-    case 'away': return '#f87171';
-    default: return '#6b7280';
-  }
-}
-
-/**
- * Map API prediction to display format
- * @param {Object} pred - Raw prediction from API
- * @returns {Object} - Formatted prediction
- */
-export function mapPrediction(pred) {
-  if (!pred) return null;
-  
-  const homeProb = (pred.p_home_win || pred.home_win || 0) / 100;
-  const drawProb = (pred.p_draw || pred.draw || 0) / 100;
-  const awayProb = (pred.p_away_win || pred.away_win || 0) / 100;
-  const confidence = pred.confidence || 50;
-  const favorite = getFavorite(homeProb * 100, drawProb * 100, awayProb * 100);
-  
-  return {
-    fixture_id: pred.fixture_id,
-    home_team: pred.home_team,
-    away_team: pred.away_team,
-    home_logo: pred.home_logo,
-    away_logo: pred.away_logo,
-    date: pred.fixture_date || pred.date,
-    time: pred.fixture_time || pred.time,
-    most_likely_score: pred.most_likely_score || '? - ?',
-    home_prob: homeProb,
-    draw_prob: drawProb,
-    away_prob: awayProb,
-    confidence,
-    favorite,
-    strength: getStrengthMeta(confidence),
-    xg_home: pred.xg_home || 0,
-    xg_away: pred.xg_away || 0,
-    over25: pred.over25 || pred.over_25 || 0,
-    btts: pred.btts || 0,
-    home_form: parseForm(pred.home_form),
-    away_form: parseForm(pred.away_form),
-    venue: pred.venue,
-  };
-}
-
-/**
- * Map live match from API
- * @param {Object} match - Raw match from API
- * @returns {Object} - Formatted live match
- */
-export function mapLiveMatch(match) {
-  if (!match) return null;
-  
-  const status = match.status || match.fixture?.status?.short;
-  const isLive = ['1H', '2H', 'HT', 'ET', 'BT', 'P'].includes(status);
-  const minute = match.minute || match.fixture?.status?.elapsed;
-  
-  return {
-    fixture_id: match.fixture_id || match.fixture?.id,
-    home_team: match.home_team || match.teams?.home?.name,
-    away_team: match.away_team || match.teams?.away?.name,
-    home_logo: match.home_logo || match.teams?.home?.logo,
-    away_logo: match.away_logo || match.teams?.away?.logo,
-    home_score: match.home_score ?? match.goals?.home ?? 0,
-    away_score: match.away_score ?? match.goals?.away ?? 0,
-    status,
-    minute,
-    isLive,
-    kickoff: match.kickoff || match.fixture?.date,
-    league: match.league || match.league_name,
-  };
-}
-
-/**
- * Map player for trending display
- * @param {Object} player - Raw player data
- * @param {number} rank - Rank position
- * @returns {Object} - Formatted player
- */
-export function mapTrendingPlayer(player, rank) {
-  return {
-    id: player.player_id || player.id,
-    name: player.name || player.player?.name,
-    photo: player.photo || player.player?.photo,
-    team: player.team_name || player.team?.name,
-    team_logo: player.team_logo || player.team?.logo,
-    goals: player.goals || 0,
-    assists: player.assists || 0,
-    played: player.played || player.appearances || 0,
-    rank,
-  };
-}
-
-/**
- * Map FPL player for display
- * @param {Object} player - Raw FPL player data
- * @returns {Object} - Formatted FPL player
- */
-export function mapFPLPlayer(player) {
-  return {
-    id: player.id,
-    name: player.web_name || player.name,
-    full_name: `${player.first_name || ''} ${player.second_name || ''}`.trim(),
-    photo: player.photo,
-    team: player.team_name || player.team,
-    position: player.element_type_name || player.position,
-    price: (player.now_cost || player.price || 0) / 10,
-    total_points: player.total_points || 0,
-    form: player.form || '0.0',
-    selected_by: player.selected_by_percent || '0.0',
-    expected_points: player.ep_next || player.expected_points || 0,
-    ownership: parseFloat(player.selected_by_percent || 0),
-  };
-}
-
-/**
- * Map accountability data for display
- * @param {Object} perf - Raw performance data
- * @returns {Object} - Formatted accountability stats
- */
-export function mapAccountability(perf) {
-  if (!perf) return null;
-  
-  return {
-    accuracy: perf.accuracy || 0,
-    correct: perf.correct || 0,
-    assessed: perf.assessed || 0,
-    pending: perf.pending || 0,
-    avg_xg_error: perf.avg_xg_error,
-    outcome_accuracy: {
-      home: perf.outcome_accuracy?.home || 0,
-      draw: perf.outcome_accuracy?.draw || 0,
-      away: perf.outcome_accuracy?.away || 0,
+    predictions: mapPredictions(raw.top_predictions),
+    edges: mapEdges(raw.model_edges),
+    tacticalInsight: mapTacticalInsight(raw.tactical_insight),
+    trendingPlayers: mapTrendingPlayers(raw.trending_players),
+    xgLeaders: mapXgLeaders(raw.xg_leaders),
+    powerRankings: mapPowerRankings(raw.power_rankings),
+    modelMetrics: mapModelMetrics(raw.model_metrics),
+    fplSpotlight: mapFPLSpotlight(raw),
+    recentResults: mapRecentResults(raw.recent_results),
+    titleRace: mapTitleRace(raw.title_race),
+    highScoringMatches: (raw.high_scoring_matches?.matches || []).map(mapHighScoringMatch).filter(Boolean),
+    defenseTable: (raw.defense_table?.table || []).map((t) => ({
+      teamName: safeStr(t.team_name, 'Team'),
+      logo: safeStr(t.logo, ''),
+      goalsAgainst: safeNum(t.goals_against, 0),
+      gaPg: safeNum(t.ga_pg, 0),
+      played: safeNum(t.played, 0),
+      form: parseForm(t.form),
+    })),
+    analyticsTerm: {
+      term: safeStr(raw.analytics_term?.term, ''),
+      short: safeStr(raw.analytics_term?.short, ''),
+      definition: safeStr(raw.analytics_term?.definition, ''),
+      col: safeStr(raw.analytics_term?.col, '#4f9eff'),
     },
-    outcome_counts: {
-      home: perf.outcome_counts?.home || 0,
-      draw: perf.outcome_counts?.draw || 0,
-      away: perf.outcome_counts?.away || 0,
+    modelConfidence: {
+      high: safeNum(raw.model_confidence?.high, 0),
+      medium: safeNum(raw.model_confidence?.medium, 0),
+      low: safeNum(raw.model_confidence?.low, 0),
+      avg: safeNum(raw.model_confidence?.avg_confidence, 0),
     },
-    confidence_breakdown: perf.confidence_breakdown || [],
+    leagueCoverage: mapLeagueCoverage(raw.power_rankings, raw.title_race),
   };
-}
-
-/**
- * Get edge matches (strongest prediction edges)
- * @param {Object[]} predictions - Array of predictions
- * @param {number} limit - Max number to return
- * @returns {Object[]} - Top edge matches
- */
-export function getEdgeMatches(predictions, limit = 3) {
-  return [...predictions]
-    .filter(p => p.confidence >= 60)
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, limit)
-    .map(p => ({
-      ...mapPrediction(p),
-      edge_type: 'strong_edge',
-    }));
-}
-
-/**
- * Get high threat matches (high expected goals)
- * @param {Object[]} predictions - Array of predictions
- * @param {number} limit - Max number to return
- * @returns {Object[]} - High goal expectation matches
- */
-export function getHighThreatMatches(predictions, limit = 3) {
-  return [...predictions]
-    .filter(p => (p.over25 || p.over_25 || 0) >= 65)
-    .sort((a, b) => (b.over25 || b.over_25 || 0) - (a.over25 || a.over_25 || 0))
-    .slice(0, limit)
-    .map(p => ({
-      ...mapPrediction(p),
-      edge_type: 'high_threat',
-    }));
-}
-
-/**
- * Get watchlist matches (close/uncertain predictions)
- * @param {Object[]} predictions - Array of predictions
- * @param {number} limit - Max number to return
- * @returns {Object[]} - Watchlist matches
- */
-export function getWatchlistMatches(predictions, limit = 3) {
-  return [...predictions]
-    .filter(p => {
-      const homeP = p.p_home_win || p.home_win || 0;
-      const awayP = p.p_away_win || p.away_win || 0;
-      return Math.abs(homeP - awayP) <= 15;
-    })
-    .slice(0, limit)
-    .map(p => ({
-      ...mapPrediction(p),
-      edge_type: 'watchlist',
-    }));
-}
-
-/**
- * Competition data with static info
- */
-export const COMPETITIONS = [
-  { 
-    code: 'epl', 
-    name: 'Premier League', 
-    country: 'England',
-    logo: 'https://media.api-sports.io/football/leagues/39.png',
-    teams: 20,
-  },
-  { 
-    code: 'laliga', 
-    name: 'La Liga', 
-    country: 'Spain',
-    logo: 'https://media.api-sports.io/football/leagues/140.png',
-    teams: 20,
-  },
-  { 
-    code: 'seriea', 
-    name: 'Serie A', 
-    country: 'Italy',
-    logo: 'https://media.api-sports.io/football/leagues/135.png',
-    teams: 20,
-  },
-  { 
-    code: 'bundesliga', 
-    name: 'Bundesliga', 
-    country: 'Germany',
-    logo: 'https://media.api-sports.io/football/leagues/78.png',
-    teams: 18,
-  },
-  { 
-    code: 'ligue1', 
-    name: 'Ligue 1', 
-    country: 'France',
-    logo: 'https://media.api-sports.io/football/leagues/61.png',
-    teams: 18,
-  },
-  { 
-    code: 'ucl', 
-    name: 'Champions League', 
-    country: 'Europe',
-    logo: 'https://media.api-sports.io/football/leagues/2.png',
-    teams: 36,
-  },
-];
-
-/**
- * Platform capability data
- */
-export const PLATFORM_CAPABILITIES = [
-  {
-    id: 'live',
-    title: 'Live Intelligence',
-    description: 'Real-time match data, live scores, and in-play analytics across all major competitions.',
-    icon: '📡',
-    color: 'rgba(248, 113, 113, 0.15)',
-    link: '/live',
-  },
-  {
-    id: 'predictions',
-    title: 'Match Predictions',
-    description: 'Data-driven forecasts with probability distributions, expected scores, and confidence metrics.',
-    icon: '📊',
-    color: 'rgba(59, 158, 255, 0.15)',
-    link: '/predictions/premier-league',
-  },
-  {
-    id: 'players',
-    title: 'Player Analytics',
-    description: 'Comprehensive player profiles, performance metrics, radar charts, and trend analysis.',
-    icon: '👤',
-    color: 'rgba(167, 139, 250, 0.15)',
-    link: '/player',
-  },
-  {
-    id: 'fpl',
-    title: 'FPL Tools',
-    description: 'Optimal captain picks, squad builder, transfer planner, and differential recommendations.',
-    icon: '⭐',
-    color: 'rgba(40, 217, 122, 0.15)',
-    link: '/best-team',
-  },
-  {
-    id: 'simulation',
-    title: 'Simulations',
-    description: 'Monte Carlo match simulations, season projections, and scenario modeling.',
-    icon: '🎲',
-    color: 'rgba(245, 158, 11, 0.15)',
-    link: '/predictions/premier-league',
-  },
-  {
-    id: 'lineups',
-    title: 'Lineup Intelligence',
-    description: 'Predicted formations, player availability, and tactical lineup analysis.',
-    icon: '📋',
-    color: 'rgba(56, 189, 248, 0.15)',
-    link: '/live',
-  },
-  {
-    id: 'shotmap',
-    title: 'Shot Maps',
-    description: 'Visual shot location data, xG analysis, and match shooting patterns.',
-    icon: '🎯',
-    color: 'rgba(244, 114, 182, 0.15)',
-    link: '/live',
-  },
-  {
-    id: 'accountability',
-    title: 'Performance Tracking',
-    description: 'Transparent prediction tracking, accuracy metrics, and verified outcomes.',
-    icon: '✓',
-    color: 'rgba(52, 211, 153, 0.15)',
-    link: '/accountability',
-  },
-];
-
-/**
- * Generate tactical insight data (placeholder)
- * @returns {Object[]} - Tactical insights
- */
-export function generateTacticalInsights() {
-  return [
-    {
-      id: 1,
-      title: 'High Press Dominance',
-      summary: 'Teams pressing in the final third are winning possession duels at a 68% rate this gameweek.',
-      type: 'formation',
-      league: 'Premier League',
-      teams: ['Liverpool', 'Arsenal'],
-    },
-    {
-      id: 2,
-      title: 'Set Piece Efficiency',
-      summary: 'Corner conversion rates have increased 23% across top 5 leagues compared to last season.',
-      type: 'setpiece',
-      league: 'All Leagues',
-      teams: ['Chelsea', 'Newcastle'],
-    },
-    {
-      id: 3,
-      title: 'Counter-Attack Trends',
-      summary: 'Fast transitions are producing 0.31 xG per attack, highest rate in 3 seasons.',
-      type: 'transition',
-      league: 'La Liga',
-      teams: ['Real Madrid', 'Barcelona'],
-    },
-    {
-      id: 4,
-      title: 'Wing Play Analysis',
-      summary: 'Crosses from deep positions showing 40% higher completion rate than byline deliveries.',
-      type: 'attack',
-      league: 'Serie A',
-      teams: ['Inter', 'Napoli'],
-    },
-  ];
-}
+};

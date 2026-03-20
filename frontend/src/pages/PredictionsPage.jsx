@@ -13,16 +13,16 @@ import {
    Accent: #6366F1 (indigo) for highlights / selected states
 ---------------------------------------------------------- */
 const UNIFIED = {
-  bg:"#04060f",
+  bg:"#000",
   grad:"radial-gradient(ellipse 80% 50% at 10% 0%,rgba(37,99,235,0.18) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 90% 100%,rgba(16,185,129,0.12) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 50% 50%,rgba(99,102,241,0.06) 0%,transparent 70%)",
   accent:"#60a5fa",
   accent2:"#f87171",
-  mid:"rgba(255,255,255,0.55)",
-  panel:"rgba(9,15,28,0.98)",
+  mid:"rgba(255,255,255,0.96)",
+  panel:"rgba(0,0,0,0.98)",
   border:"rgba(255,255,255,0.065)",
   borderHi:"rgba(96,165,250,0.35)",
-  text:"rgba(255,255,255,0.92)",
-  muted:"rgba(90,122,154,0.9)",
+  text:"#fff",
+  muted:"rgba(180,195,215,0.9)",
   faint:"rgba(255,255,255,0.025)",
   homeCol:"#E2E8F0",
   awayCol:"#34d399",
@@ -131,9 +131,9 @@ const LeagueFlag=({code,size=18})=>{const h=Math.round(size*.72);if(code==="epl"
 const FormPip=({r,T})=>{
   const s={
     W:{bg:`${T.accent}28`,c:T.accent,b:`${T.accent}60`,shadow:`0 0 8px ${T.accent}40`},
-    D:{bg:"rgba(255,255,255,0.08)",c:"rgba(255,255,255,0.5)",b:"rgba(255,255,255,0.15)",shadow:"none"},
+    D:{bg:"rgba(255,255,255,0.08)",c:"rgba(255,255,255,0.82)",b:"rgba(255,255,255,0.15)",shadow:"none"},
     L:{bg:`${T.accent2}20`,c:T.accent2,b:`${T.accent2}50`,shadow:`0 0 8px ${T.accent2}30`},
-  }[r]||{bg:"rgba(255,255,255,0.06)",c:"rgba(255,255,255,0.3)",b:"rgba(255,255,255,0.10)",shadow:"none"};
+  }[r]||{bg:"rgba(255,255,255,0.06)",c:"#fff",b:"rgba(255,255,255,0.10)",shadow:"none"};
   return(
     <span style={{
       display:"inline-flex",alignItems:"center",justifyContent:"center",
@@ -163,7 +163,7 @@ const MiniDonut=({value,max=3,color,size=56,label})=>{
           </text>
         </svg>
       </div>
-      <span style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.28)",letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+      <span style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.6)",letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
     </div>
   );
 };
@@ -193,9 +193,9 @@ const VersusBar=({label,hv,av,T,fmtFn})=>{
   return(
     <div style={{display:"flex",flexDirection:"column",gap:5}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:13,fontWeight:700,color:hNull?"rgba(255,255,255,0.18)":T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hNull?"":fmt(h)}</span>
-        <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-        <span style={{fontSize:13,fontWeight:700,color:aNull?"rgba(255,255,255,0.18)":T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{aNull?"":fmt(a)}</span>
+        <span style={{fontSize:13,fontWeight:700,color:hNull?"rgba(255,255,255,0.82)":T.homeCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hNull?"":fmt(h)}</span>
+        <span style={{fontSize:9,fontWeight:600,color:"#fff",letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+        <span style={{fontSize:13,fontWeight:700,color:aNull?"rgba(255,255,255,0.82)":T.awayCol,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{aNull?"":fmt(a)}</span>
       </div>
       <div style={{display:"flex",height:5,borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.05)"}}>
         {noData
@@ -212,17 +212,17 @@ const VersusBar=({label,hv,av,T,fmtFn})=>{
 
 /* --- iOS Score Grid --------------------------------------- */
 const ScoreGrid=({topScores,T})=>{
-  if(!topScores?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12}}>No score data</div>;
+  if(!topScores?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.96)",fontSize:12}}>No score data</div>;
   const G=5,pm={};let mx=0;
   topScores.forEach(({score,prob})=>{const[hg,ag]=score.split("-").map(Number);if(hg<G&&ag<G){pm[`${hg}-${ag}`]=prob;if(prob>mx)mx=prob;}});
   return(
     <div>
-      <div style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.12em",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>SCORE MATRIX  Home ? Away ?</div>
+      <div style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.6)",letterSpacing:"0.12em",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>SCORE MATRIX  Home ? Away ?</div>
       <div style={{display:"grid",gridTemplateColumns:"20px repeat(5,1fr)",gap:4}}>
         <div/>
-        {[0,1,2,3,4].map(ag=><div key={ag} style={{textAlign:"center",fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{ag}</div>)}
+        {[0,1,2,3,4].map(ag=><div key={ag} style={{textAlign:"center",fontSize:9,fontWeight:600,color:"#fff",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{ag}</div>)}
         {[0,1,2,3,4].map(hg=>[
-          <div key={"r"+hg} style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hg}</div>,
+          <div key={"r"+hg} style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:"#fff",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{hg}</div>,
           ...[0,1,2,3,4].map(ag=>{
             const p=pm[`${hg}-${ag}`]||0,pct=Math.round(p*100),isTop=p===mx&&mx>0;
             const alpha=mx>0?Math.min(p/mx,1):0;
@@ -231,7 +231,7 @@ const ScoreGrid=({topScores,T})=>{
                 aspectRatio:"1",minHeight:30,display:"flex",alignItems:"center",justifyContent:"center",
                 borderRadius:8,fontSize:9,fontWeight:700,
                 background:isTop?`${T.accent}28`:`rgba(255,255,255,${(alpha*.15+.03).toFixed(2)})`,
-                color:isTop?T.accent:"rgba(255,255,255,0.55)",
+                color:isTop?T.accent:"rgba(255,255,255,0.96)",
                 fontFamily:"'SF Mono','JetBrains Mono',monospace",
                 border:isTop?`1px solid ${T.accent}50`:"1px solid rgba(255,255,255,0.05)",
                 boxShadow:isTop?`0 0 10px ${T.accent}30`:"none",
@@ -249,7 +249,7 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
   const[data,setData]=useState(null);const[loading,setLoading]=useState(true);
   useEffect(()=>{if(!homeId||!awayId){setLoading(false);return;}getH2H(homeId,awayId,8).then(d=>{setData(d);setLoading(false);}).catch(()=>setLoading(false));},[homeId,awayId]);
   if(loading)return<div style={{height:100,borderRadius:14,background:"rgba(255,255,255,0.03)",animation:"pulse 1.5s ease infinite"}}/>;
-  if(!data?.results?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12}}>No H2H data available</div>;
+  if(!data?.results?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.96)",fontSize:12}}>No H2H data available</div>;
   const res=data.results;let hw=0,dw=0,aw=0;
   res.forEach(r=>{const isHome=r.home_team===homeTeam;if(r.home_goals>r.away_goals){if(isHome)hw++;else aw++;}else if(r.home_goals===r.away_goals)dw++;else{if(isHome)aw++;else hw++;}});
   const tot=hw+dw+aw||1;
@@ -257,10 +257,10 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* Summary pills */}
       <div style={{display:"flex",gap:8}}>
-        {[{label:(homeTeam||"").split(" ").slice(-1)[0],val:hw,col:T.homeCol},{label:"Draw",val:dw,col:"rgba(255,255,255,0.4)"},{label:(awayTeam||"").split(" ").slice(-1)[0],val:aw,col:T.awayCol}].map(({label,val,col})=>(
+        {[{label:(homeTeam||"").split(" ").slice(-1)[0],val:hw,col:T.homeCol},{label:"Draw",val:dw,col:"rgba(255,255,255,0.94)"},{label:(awayTeam||"").split(" ").slice(-1)[0],val:aw,col:T.awayCol}].map(({label,val,col})=>(
           <div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"12px 8px",borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
             <span style={{fontSize:26,fontWeight:800,color:col,fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{val}</span>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Inter',sans-serif"}}>{label.slice(0,8)}</span>
+            <span style={{fontSize:9,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{label.slice(0,8)}</span>
             <span style={{fontSize:10,fontWeight:700,color:col,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{Math.round(val/tot*100)}%</span>
           </div>
         ))}
@@ -275,9 +275,9 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
       <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:200,overflowY:"auto"}}>
         {res.slice(0,6).map((r,i)=>(
           <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.05)"}}>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",minWidth:70,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{r.date}</span>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.6)",minWidth:70,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{r.date}</span>
             <span style={{flex:1,fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.home_team}</span>
-            <span style={{padding:"3px 10px",borderRadius:8,background:"rgba(255,255,255,0.06)",fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",minWidth:44,textAlign:"center",border:"1px solid rgba(255,255,255,0.08)"}}>{r.home_goals}–{r.away_goals}</span>
+            <span style={{padding:"3px 10px",borderRadius:8,background:"rgba(255,255,255,0.06)",fontSize:12,fontWeight:800,color:"#fff",fontFamily:"'SF Mono','JetBrains Mono',monospace",minWidth:44,textAlign:"center",border:"1px solid rgba(255,255,255,0.08)"}}>{r.home_goals}–{r.away_goals}</span>
             <span style={{flex:1,fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.away_team}</span>
           </div>
         ))}
@@ -290,7 +290,7 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
 const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
   const[odds,setOdds]=useState(null);
   useEffect(()=>{if(fixtureId)getFixtureOdds(fixtureId).then(setOdds).catch(()=>{});},[fixtureId]);
-  if(!odds?.bookmakers?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><div style={{width:12,height:12,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.15)",borderTopColor:T.accent,animation:"spin 0.8s linear infinite"}}/> Loading odds</div>;
+  if(!odds?.bookmakers?.length)return<div style={{padding:20,textAlign:"center",color:"rgba(255,255,255,0.96)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><div style={{width:12,height:12,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.15)",borderTopColor:T.accent,animation:"spin 0.8s linear infinite"}}/> Loading odds</div>;
   const bk=odds.bookmakers[0],mw=bk.bets?.["Match Winner"]||{};
   const imp=odd=>odd?Math.round(1/parseFloat(odd)*100):0;
   const outcomes=[
@@ -305,10 +305,10 @@ const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
           const implied=imp(odd),diff=implied?model-implied:0,hasEdge=Math.abs(diff)>=3;
           return(
             <div key={label} style={{flex:1,display:"flex",flexDirection:"column",gap:6,alignItems:"center",padding:"14px 8px",borderRadius:16,background:hasEdge&&diff>0?`${T.accent}0c`:"rgba(255,255,255,0.04)",border:`1px solid ${hasEdge&&diff>0?T.accent+"30":"rgba(255,255,255,0.07)"}`,transition:"all 0.2s"}}>
-              <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.35)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-              <span style={{fontSize:26,fontWeight:700,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{odd||""}</span>
+              <span style={{fontSize:9,fontWeight:600,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+              <span style={{fontSize:26,fontWeight:700,color:"#fff",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{odd||""}</span>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                <span style={{fontSize:9,color:"rgba(255,255,255,0.25)"}}>Implied {implied}%</span>
+                <span style={{fontSize:9,color:"rgba(255,255,255,0.6)"}}>Implied {implied}%</span>
                 <span style={{fontSize:10,fontWeight:700,color:T.accent}}>Model {model}%</span>
               </div>
               {hasEdge&&<span style={{fontSize:10,fontWeight:800,color:diff>0?T.accent:T.accent2,background:`${diff>0?T.accent:T.accent2}18`,padding:"3px 9px",borderRadius:999,border:`1px solid ${diff>0?T.accent:T.accent2}35`}}>{diff>0?"+":""}{diff}% edge</span>}
@@ -316,7 +316,7 @@ const OddsWidget=({fixtureId,pHome,pDraw,pAway,homeTeam,awayTeam,T})=>{
           );
         })}
       </div>
-      <div style={{fontSize:9,color:"rgba(255,255,255,0.2)",textAlign:"center",fontFamily:"'Inter',sans-serif"}}>{bk.name}</div>
+      <div style={{fontSize:9,color:"rgba(255,255,255,0.96)",textAlign:"center",fontFamily:"'Inter',sans-serif"}}>{bk.name}</div>
     </div>
   );
 };
@@ -374,7 +374,7 @@ function BracketTie({ tie, isLast, accent, roundIdx }) {
   const homeWin = tie.home_prob > tie.away_prob;
   const diff = Math.abs(tie.home_prob - tie.away_prob);
   const confidence = diff > 20 ? "Clear" : diff > 10 ? "Likely" : "50/50";
-  const confColor = diff > 20 ? "#34d399" : diff > 10 ? "#f59e0b" : "rgba(255,255,255,0.4)";
+  const confColor = diff > 20 ? "#34d399" : diff > 10 ? "#f59e0b" : "rgba(255,255,255,0.94)";
 
   return (
     <div
@@ -383,7 +383,7 @@ function BracketTie({ tie, isLast, accent, roundIdx }) {
       style={{
         borderRadius:12,
         border:`1px solid ${hov?accent+"50":"rgba(255,255,255,0.07)"}`,
-        background: hov ? `${accent}0a` : "rgba(9,15,28,0.98)",
+        background: hov ? `${accent}0a` : "rgba(0,0,0,0.98)",
         overflow:"hidden",
         transition:"all 0.18s ease",
         boxShadow: hov ? `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${accent}18` : "0 2px 8px rgba(0,0,0,0.3)",
@@ -403,12 +403,12 @@ function BracketTie({ tie, isLast, accent, roundIdx }) {
           {tie.winner===tie.home && <div style={{width:4,height:4,borderRadius:"50%",background:accent,flexShrink:0,boxShadow:`0 0 6px ${accent}`}}/>}
           <span style={{
             fontSize:11,fontWeight:tie.winner===tie.home?800:600,
-            color:tie.winner===tie.home?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.55)",
+            color:tie.winner===tie.home?"#fff":"rgba(255,255,255,0.96)",
             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
           }}>{tie.home}</span>
         </div>
         <span style={{
-          fontSize:10,fontWeight:700,color:homeWin?accent:"rgba(255,255,255,0.3)",
+          fontSize:10,fontWeight:700,color:homeWin?accent:"#fff",
           fontFamily:"'JetBrains Mono',monospace",flexShrink:0,marginLeft:6,
         }}>{tie.home_prob}%</span>
       </div>
@@ -422,12 +422,12 @@ function BracketTie({ tie, isLast, accent, roundIdx }) {
           {tie.winner===tie.away && <div style={{width:4,height:4,borderRadius:"50%",background:accent,flexShrink:0,boxShadow:`0 0 6px ${accent}`}}/>}
           <span style={{
             fontSize:11,fontWeight:tie.winner===tie.away?800:600,
-            color:tie.winner===tie.away?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.55)",
+            color:tie.winner===tie.away?"#fff":"rgba(255,255,255,0.96)",
             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
           }}>{tie.away}</span>
         </div>
         <span style={{
-          fontSize:10,fontWeight:700,color:!homeWin?accent:"rgba(255,255,255,0.3)",
+          fontSize:10,fontWeight:700,color:!homeWin?accent:"#fff",
           fontFamily:"'JetBrains Mono',monospace",flexShrink:0,marginLeft:6,
         }}>{tie.away_prob}%</span>
       </div>
@@ -469,10 +469,10 @@ function KnockoutBracketTab({league, T}) {
               KNOCKOUT BRACKET
             </span>
           </div>
-          <div style={{fontSize:20,fontWeight:900,color:"rgba(255,255,255,0.9)",fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>
+          <div style={{fontSize:20,fontWeight:900,color:"#fff",fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>
             {LEAGUE_LABELS[league] || league.toUpperCase()}
           </div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",marginTop:2}}>
+          <div style={{fontSize:11,color:"#fff",marginTop:2}}>
             Model win probabilities · Poisson + ELO
           </div>
         </div>
@@ -482,7 +482,7 @@ function KnockoutBracketTab({league, T}) {
               padding:"4px 10px",borderRadius:999,
               background:i===0?"rgba(255,255,255,0.04)":i===rounds.length-1?`${accent}20`:"rgba(255,255,255,0.02)",
               border:`1px solid ${i===rounds.length-1?accent+"40":"rgba(255,255,255,0.07)"}`,
-              fontSize:9,fontWeight:800,color:i===rounds.length-1?accent:"rgba(255,255,255,0.35)",
+              fontSize:9,fontWeight:800,color:i===rounds.length-1?accent:"#fff",
               letterSpacing:"0.06em",
             }}>{r}</div>
           ))}
@@ -505,7 +505,7 @@ function KnockoutBracketTab({league, T}) {
                 paddingBottom:8,borderBottom:`1px solid ${accent}25`,
               }}>
                 {round.name}
-                <span style={{marginLeft:6,fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)"}}>
+                <span style={{marginLeft:6,fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.96)"}}>
                   {round.ties.length} ties
                 </span>
               </div>
@@ -581,7 +581,7 @@ function KnockoutBracketTab({league, T}) {
                       <div style={{flex:tie.away_prob,background:"rgba(255,255,255,0.1)"}}/>
                     </div>
                     <div style={{padding:"10px 14px",textAlign:"center"}}>
-                      <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.3)",marginBottom:3}}>Predicted Winner</div>
+                      <div style={{fontSize:9,fontWeight:700,color:"#fff",marginBottom:3}}>Predicted Winner</div>
                       <div style={{fontSize:14,fontWeight:900,color:"#f59e0b",fontFamily:"'Sora',sans-serif"}}>
                         {tie.home_prob > tie.away_prob ? tie.home : tie.away}
                       </div>
@@ -599,7 +599,7 @@ function KnockoutBracketTab({league, T}) {
         <div style={{
           padding:"12px 16px",borderRadius:12,
           background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",
-          fontSize:10,color:"rgba(255,255,255,0.3)",lineHeight:1.7,
+          fontSize:10,color:"#fff",lineHeight:1.7,
         }}>
           <span style={{color:accent,fontWeight:700}}>New format: </span>
           36-team league phase · Top 8 advance directly to R16 · Places 9–24 enter knockout play-offs ·
@@ -608,14 +608,14 @@ function KnockoutBracketTab({league, T}) {
       )}
 
       <div style={{
-        display:"flex",gap:16,flexWrap:"wrap",fontSize:9,color:"rgba(255,255,255,0.25)",
+        display:"flex",gap:16,flexWrap:"wrap",fontSize:9,color:"rgba(255,255,255,0.6)",
         padding:"10px 14px",borderRadius:10,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)",
       }}>
         {[
           {c:accent,l:"Win probability"},
           {c:"#34d399",l:"Clear favourite"},
           {c:"#f59e0b",l:"Likely"},
-          {c:"rgba(255,255,255,0.4)",l:"50/50"},
+          {c:"rgba(255,255,255,0.94)",l:"50/50"},
         ].map(({c,l})=>(
           <div key={l} style={{display:"flex",alignItems:"center",gap:5}}>
             <div style={{width:8,height:8,borderRadius:"50%",background:c}}/>
@@ -656,8 +656,8 @@ function RingGauge({value, size=64, color, label, sublabel}) {
             fontFamily="'JetBrains Mono',monospace">{value}%</text>
         </svg>
       </div>
-      {label && <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"0.07em",textAlign:"center"}}>{label}</span>}
-      {sublabel && <span style={{fontSize:8,color:"rgba(255,255,255,0.18)"}}>{sublabel}</span>}
+      {label && <span style={{fontSize:9,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.07em",textAlign:"center"}}>{label}</span>}
+      {sublabel && <span style={{fontSize:8,color:"rgba(255,255,255,0.82)"}}>{sublabel}</span>}
     </div>
   );
 }
@@ -705,7 +705,7 @@ function KPITile({label, value, delta, color, icon, sublabel, spark}) {
   return (
     <div style={{
       padding:"14px 16px",borderRadius:14,
-      background:"rgba(9,15,28,0.98)",
+      background:"rgba(0,0,0,0.98)",
       border:"1px solid rgba(255,255,255,0.07)",
       display:"flex",flexDirection:"column",gap:8,
       position:"relative",overflow:"hidden",
@@ -735,8 +735,8 @@ function KPITile({label, value, delta, color, icon, sublabel, spark}) {
       {/* Value */}
       <div>
         <div style={{fontSize:24,fontWeight:900,color,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{value}</div>
-        <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:3}}>{label}</div>
-        {sublabel&&<div style={{fontSize:9,color:"rgba(255,255,255,0.2)",marginTop:1}}>{sublabel}</div>}
+        <div style={{fontSize:9,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:3}}>{label}</div>
+        {sublabel&&<div style={{fontSize:9,color:"rgba(255,255,255,0.96)",marginTop:1}}>{sublabel}</div>}
       </div>
       {spark&&<SparkLine values={spark} color={color}/>}
     </div>
@@ -773,7 +773,7 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
   const {topScore} = buildProbs(xgH||1.2, xgA||1.0);
 
   // Outcome colour for left border
-  const outCol = fav==="home"?"#3b82f6":fav==="away"?"#ef4444":"#6b7280";
+  const outCol = fav==="home"?"#60a5fa":fav==="away"?"#f87171":"#9ca3af";
 
   const LogoBadge = ({src,size=34})=>(
     <div style={{width:size,height:size,borderRadius:10,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
@@ -801,7 +801,7 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
         onMouseLeave={()=>setHov(false)}
         style={{
           borderRadius:14,overflow:"hidden",
-          background:hov?"rgba(13,20,38,0.99)":"rgba(9,14,28,0.97)",
+          background:hov?"rgba(13,20,38,0.99)":"rgba(0,0,0,0.97)",
           border:`1px solid ${isSelected?outCol+"60":hov?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.06)"}`,
           borderLeft:`3px solid ${outCol}`,
           boxShadow:hov?"0 8px 32px rgba(0,0,0,0.5)":"0 2px 12px rgba(0,0,0,0.3)",
@@ -817,15 +817,15 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
           <div style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,minWidth:0}}>
             <LogoBadge src={match.home_logo}/>
             <div style={{minWidth:0,flex:1}}>
-              <div style={{fontSize:13,fontWeight:fav==="home"?700:500,color:fav==="home"?"#f0f6ff":"rgba(255,255,255,0.75)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              <div style={{fontSize:13,fontWeight:fav==="home"?700:500,color:fav==="home"?"#f0f6ff":"rgba(255,255,255,0.94)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                 {match.home_team}
-                {fav==="home"&&<span style={{marginLeft:6,fontSize:8,fontWeight:700,color:"#3b82f6",background:"rgba(59,130,246,0.15)",border:"1px solid rgba(59,130,246,0.3)",padding:"1px 5px",borderRadius:999}}>FAV</span>}
+                {fav==="home"&&<span style={{marginLeft:6,fontSize:8,fontWeight:700,color:"#3b82f6",background:"rgba(59,130,246,0.15)",border:"1px solid rgba(59,130,246,0.3)",padding:"2px 6px",borderRadius:999,textShadow:"none"}}>FAV</span>}
               </div>
               <FormPips form={hForm}/>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:18,fontWeight:700,color:"#3b82f6",fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{hPct}%</div>
-              {xgH>0&&<div style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginTop:2}}>xG {xgH.toFixed(1)}</div>}
+              <div style={{fontSize:18,fontWeight:700,color:"#60a5fa",fontFamily:"'JetBrains Mono',monospace",lineHeight:1,textShadow:"0 0 12px rgba(96,165,250,0.6)"}}>{hPct}%</div>
+              {xgH>0&&<div style={{fontSize:9,color:"#fff",marginTop:2}}>xG {xgH.toFixed(1)}</div>}
             </div>
           </div>
 
@@ -834,19 +834,19 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
 
           {/* CENTRE SCORE + BAR */}
           <div style={{padding:"10px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:130}}>
-            <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.5)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.05em"}}>{topScore}</div>
+            <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.82)",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.05em"}}>{topScore}</div>
             {/* Three-segment bar */}
             <div style={{display:"flex",height:6,borderRadius:999,overflow:"hidden",gap:1.5,width:"100%"}}>
               <div style={{flex:hPct,background:"#3b82f6",borderRadius:"999px 0 0 999px",minWidth:8}}/>
-              <div style={{flex:dPct,background:"rgba(255,255,255,0.2)",minWidth:4}}/>
+              <div style={{flex:dPct,background:"rgba(255,255,255,0.96)",minWidth:4}}/>
               <div style={{flex:aPct,background:T.awayCol||"#34d399",borderRadius:"0 999px 999px 0",minWidth:8}}/>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",width:"100%",fontSize:9,color:"rgba(255,255,255,0.3)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",width:"100%",fontSize:9,color:"#fff"}}>
               <span style={{color:"#3b82f6"}}>{hPct}%</span>
               <span>D {dPct}%</span>
               <span style={{color:T.awayCol||"#34d399"}}>{aPct}%</span>
             </div>
-            <div style={{fontSize:9,color:"rgba(255,255,255,0.22)"}}>{day} {time}</div>
+            <div style={{fontSize:9,color:"rgba(255,255,255,0.96)"}}>{day} {time}</div>
           </div>
 
           {/* CENTRE DIVIDER */}
@@ -856,11 +856,11 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
           <div style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,minWidth:0,justifyContent:"flex-end"}}>
             <div style={{textAlign:"left",flexShrink:0}}>
               <div style={{fontSize:18,fontWeight:700,color:T.awayCol||"#34d399",fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{aPct}%</div>
-              {xgA>0&&<div style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginTop:2}}>xG {xgA.toFixed(1)}</div>}
+              {xgA>0&&<div style={{fontSize:9,color:"#fff",marginTop:2}}>xG {xgA.toFixed(1)}</div>}
             </div>
             <div style={{minWidth:0,flex:1,textAlign:"right"}}>
-              <div style={{fontSize:13,fontWeight:fav==="away"?700:500,color:fav==="away"?"#f0f6ff":"rgba(255,255,255,0.75)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                {fav==="away"&&<span style={{marginRight:6,fontSize:8,fontWeight:700,color:T.awayCol||"#34d399",background:"rgba(52,211,153,0.12)",border:`1px solid ${T.awayCol||"#34d399"}40`,padding:"1px 5px",borderRadius:999}}>FAV</span>}
+              <div style={{fontSize:13,fontWeight:fav==="away"?700:500,color:fav==="away"?"#f0f6ff":"rgba(255,255,255,0.94)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {fav==="away"&&<span style={{marginRight:6,fontSize:8,fontWeight:700,color:T.awayCol||"#34d399",background:"rgba(52,211,153,0.12)",border:`1px solid ${T.awayCol||"#34d399"}40`,padding:"2px 6px",borderRadius:999,textShadow:"none"}}>FAV</span>}
                 {match.away_team}
               </div>
               <div style={{display:"flex",gap:3,marginTop:4,justifyContent:"flex-end"}}>
@@ -883,9 +883,9 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
               transition:"background 0.15s",
             }}
           >
-            <span style={{fontSize:9,fontWeight:600,color:open?T.accent:"rgba(255,255,255,0.3)",letterSpacing:"0.04em",whiteSpace:"nowrap"}}>{open?"Hide":"See why"}</span>
+            <span style={{fontSize:9,fontWeight:600,color:open?T.accent:"#fff",letterSpacing:"0.04em",whiteSpace:"nowrap"}}>{open?"Hide":"See why"}</span>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0)"}}>
-              <path d="M2 3.5l3 3 3-3" stroke={open?T.accent:"rgba(255,255,255,0.3)"} strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M2 3.5l3 3 3-3" stroke={open?T.accent:"#fff"} strokeWidth="1.6" strokeLinecap="round"/>
             </svg>
           </button>
         </div>
@@ -899,7 +899,7 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
                 <button key={id} onClick={()=>setTab2(id)} style={{
                   padding:"8px 14px",fontSize:10,fontWeight:700,cursor:"pointer",
                   background:"none",border:"none",letterSpacing:"0.04em",
-                  color:tab2===id?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)",
+                  color:tab2===id?"#fff":"#fff",
                   borderBottom:`2px solid ${tab2===id?T.accent:"transparent"}`,
                   whiteSpace:"nowrap",transition:"all 0.15s",
                 }}>{lbl}</button>
@@ -913,7 +913,7 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
                 <div>
                   {/* Reasoning insight */}
                   {(xgH>0||xgA>0)&&(
-                    <div style={{background:"rgba(59,130,246,0.07)",borderLeft:"2px solid #3b82f6",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:14,fontSize:12,color:"rgba(255,255,255,0.5)",lineHeight:1.5}}>
+                    <div style={{background:"rgba(96,165,250,0.08)",borderLeft:"3px solid #60a5fa",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:14,fontSize:12,color:"rgba(255,255,255,0.82)",lineHeight:1.5}}>
                       {fav==="home"
                         ? `${match.home_team?.split(" ").slice(-1)[0]} favoured — xG edge ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Model gives ${hPct}% win probability.`
                         : fav==="away"
@@ -934,11 +934,11 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
                       ].map(({label,val,pct,col,form},i)=>(
                         <div key={i}>
                           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:10,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
+                            <span style={{fontSize:10,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
                             {val&&<span style={{fontSize:14,fontWeight:700,color:col,fontFamily:"'JetBrains Mono',monospace"}}>{val}</span>}
                           </div>
                           {pct!=null&&<div style={{height:4,borderRadius:999,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:999}}/></div>}
-                          {form&&<div style={{display:"flex",gap:3}}>{form.map((r,i)=><div key={i} style={{width:18,height:18,borderRadius:5,background:`${fc(r)}18`,border:`1px solid ${fc(r)}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:fc(r)}}>{r}</div>)}</div>}
+                          {form&&<div style={{display:"flex",gap:3}}>{form.map((r,i)=><div key={i} style={{width:20,height:20,borderRadius:5,background:`${fc(r)}18`,border:`1px solid ${fc(r)}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:fc(r)}}>{r}</div>)}</div>}
                         </div>
                       ))}
                     </div>
@@ -955,10 +955,10 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
                         <div key={i}>
                           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                             {val&&<span style={{fontSize:14,fontWeight:700,color:col,fontFamily:"'JetBrains Mono',monospace"}}>{val}</span>}
-                            <span style={{fontSize:10,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
+                            <span style={{fontSize:10,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
                           </div>
                           {pct!=null&&<div style={{height:4,borderRadius:999,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:999,marginLeft:"auto"}}/></div>}
-                          {form&&<div style={{display:"flex",gap:3,justifyContent:"flex-end"}}>{form.map((r,i)=><div key={i} style={{width:18,height:18,borderRadius:5,background:`${fc(r)}18`,border:`1px solid ${fc(r)}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:fc(r)}}>{r}</div>)}</div>}
+                          {form&&<div style={{display:"flex",gap:3,justifyContent:"flex-end"}}>{form.map((r,i)=><div key={i} style={{width:20,height:20,borderRadius:5,background:`${fc(r)}18`,border:`1px solid ${fc(r)}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:fc(r)}}>{r}</div>)}</div>}
                         </div>
                       ))}
                     </div>
@@ -980,19 +980,19 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
                     {label:"Both Teams to Score",val:btts,col:"#34d399",hot:btts>=55},
                     {label:"Over 2.5 Goals",val:o25,col:T.accent,hot:o25>=60},
                     {label:"Home Win",val:hPct,col:"#3b82f6",hot:hPct>=60},
-                    {label:"Draw",val:dPct,col:"rgba(255,255,255,0.5)",hot:dPct>=32},
+                    {label:"Draw",val:dPct,col:"rgba(255,255,255,0.82)",hot:dPct>=32},
                     {label:"Away Win",val:aPct,col:T.awayCol||"#34d399",hot:aPct>=60},
                   ].map(({label,val,col,hot})=>(
                     <div key={label} style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",flex:1}}>{label}</span>
+                      <span style={{fontSize:11,color:"rgba(255,255,255,0.94)",flex:1}}>{label}</span>
                       <div style={{flex:2,height:5,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
                         <div style={{height:"100%",width:`${val}%`,background:col,borderRadius:999,opacity:hot?1:0.5}}/>
                       </div>
-                      <span style={{fontSize:12,fontWeight:700,color:hot?col:"rgba(255,255,255,0.4)",fontFamily:"'JetBrains Mono',monospace",minWidth:36,textAlign:"right"}}>{val}%</span>
-                      {hot&&<span style={{fontSize:9,fontWeight:700,color:col,background:`${col}18`,border:`1px solid ${col}35`,padding:"1px 6px",borderRadius:999}}>HOT</span>}
+                      <span style={{fontSize:12,fontWeight:700,color:hot?col:"rgba(255,255,255,0.94)",fontFamily:"'JetBrains Mono',monospace",minWidth:36,textAlign:"right"}}>{val}%</span>
+                      {hot&&<span style={{fontSize:9,fontWeight:800,color:"#000",background:col,border:`1px solid ${col}`,padding:"2px 7px",borderRadius:999,letterSpacing:"0.05em"}}>HOT</span>}
                     </div>
                   ))}
-                  {conf>0&&<div style={{marginTop:4,padding:"8px 12px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",fontSize:11,color:"rgba(255,255,255,0.3)"}}>Model confidence: <span style={{color:conf>=65?"#34d399":conf>=45?"#f59e0b":"rgba(255,255,255,0.4)",fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{conf}%</span></div>}
+                  {conf>0&&<div style={{marginTop:4,padding:"8px 12px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",fontSize:11,color:"#fff"}}>Model confidence: <span style={{color:conf>=65?"#34d399":conf>=45?"#f59e0b":"rgba(255,255,255,0.94)",fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{conf}%</span></div>}
                 </div>
               )}
 
@@ -1013,7 +1013,7 @@ function SidebarMatchRow({match,T,navigate,showEdge,showXg}){
   const [hov,setHov]=useState(false);
   const hp=match.p_home_win||0,ap=match.p_away_win||0;
   const conf=Math.round(match.confidence||0);
-  const confC=conf>=72?"#34d399":conf>=52?"#f59e0b":"rgba(255,255,255,0.3)";
+  const confC=conf>=72?"#34d399":conf>=52?"#f59e0b":"#fff";
   return(
     <div
       onClick={()=>navigate(`/match/${match.fixture_id}`)}
@@ -1027,7 +1027,7 @@ function SidebarMatchRow({match,T,navigate,showEdge,showXg}){
       }}
     >
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-        <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.7)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
           {match.home_team?.split(" ").pop()} vs {match.away_team?.split(" ").pop()}
         </span>
         {showEdge&&match.model_edge!=null&&(
@@ -1046,7 +1046,7 @@ function SidebarMatchRow({match,T,navigate,showEdge,showXg}){
       </div>
       <div style={{display:"flex",height:3,borderRadius:999,overflow:"hidden",background:"rgba(255,255,255,0.05)"}}>
         <div style={{flex:Math.round(hp*100),background:"#60a5fa",opacity:.75}}/>
-        <div style={{flex:Math.round((match.p_draw||0)*100),background:"rgba(255,255,255,0.2)"}}/>
+        <div style={{flex:Math.round((match.p_draw||0)*100),background:"rgba(255,255,255,0.96)"}}/>
         <div style={{flex:Math.round(ap*100),background:T.awayCol||"#34d399",opacity:.75}}/>
       </div>
     </div>
@@ -1054,7 +1054,7 @@ function SidebarMatchRow({match,T,navigate,showEdge,showXg}){
 }
 
 // ─── Confidence colour helper ─────────────────────────────────────
-function confColor(c){return c>=72?"#34d399":c>=52?"#f59e0b":c>=36?"#fb923c":"rgba(255,255,255,0.3)";}
+function confColor(c){return c>=72?"#34d399":c>=52?"#f59e0b":c>=36?"#fb923c":"#fff";}
 
 // ─── NEW: PredictionRow — horizontal probability bar system ──────────────────
 //
@@ -1077,8 +1077,8 @@ function ProbTooltip({ label, value, sub, color, visible }) {
       pointerEvents:"none", whiteSpace:"nowrap",
     }}>
       <div style={{fontSize:11,fontWeight:800,color,marginBottom:3}}>{label}</div>
-      <div style={{fontSize:16,fontWeight:900,color:"rgba(255,255,255,0.9)",fontFamily:"'JetBrains Mono',monospace"}}>{value}</div>
-      {sub && <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:2}}>{sub}</div>}
+      <div style={{fontSize:16,fontWeight:900,color:"#fff",fontFamily:"'JetBrains Mono',monospace"}}>{value}</div>
+      {sub && <div style={{fontSize:10,color:"#fff",marginTop:2}}>{sub}</div>}
       <div style={{position:"absolute",bottom:-5,left:"50%",transform:"translateX(-50%)",
         width:8,height:8,background:"rgba(5,8,16,0.98)",border:`1px solid ${color}40`,
         borderTop:"none",borderLeft:"none",transform:"translateX(-50%) rotate(45deg)"}}/>
@@ -1110,10 +1110,10 @@ const ScenarioSimulator=({match,T})=>{
 
   if(!match)return(
     <div style={{...cardStyle,padding:32,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:240,gap:14}}>
-      <div style={{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"rgba(255,255,255,0.2)"}}>—</div>
+      <div style={{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"rgba(255,255,255,0.96)"}}>—</div>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.5)",fontFamily:"'Inter',sans-serif",lineHeight:1.6}}>Select a match card</div>
-        <div style={{fontSize:11,color:"rgba(255,255,255,0.2)",fontFamily:"'Inter',sans-serif",marginTop:4}}>to load the scenario simulator</div>
+        <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.82)",fontFamily:"'Inter',sans-serif",lineHeight:1.6}}>Select a match card</div>
+        <div style={{fontSize:11,color:"rgba(255,255,255,0.96)",fontFamily:"'Inter',sans-serif",marginTop:4}}>to load the scenario simulator</div>
       </div>
     </div>
   );
@@ -1127,16 +1127,16 @@ const ScenarioSimulator=({match,T})=>{
           <span style={{fontSize:9,fontWeight:700,color:T.accent,letterSpacing:"0.12em",fontFamily:"'Inter',sans-serif"}}>SCENARIO SIMULATOR</span>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.75)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:"'Inter',sans-serif"}}>
-            {match.home_team} <span style={{color:"rgba(255,255,255,0.2)",fontWeight:400}}>vs</span> {match.away_team}
+          <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.94)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:"'Inter',sans-serif"}}>
+            {match.home_team} <span style={{color:"rgba(255,255,255,0.96)",fontWeight:400}}>vs</span> {match.away_team}
           </div>
-          {isModified&&<button onClick={()=>applyPreset(0)} style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,padding:"3px 9px",cursor:"pointer",flexShrink:0,marginLeft:8,fontFamily:"'Inter',sans-serif"}}>Reset</button>}
+          {isModified&&<button onClick={()=>applyPreset(0)} style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.94)",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,padding:"3px 9px",cursor:"pointer",flexShrink:0,marginLeft:8,fontFamily:"'Inter',sans-serif"}}>Reset</button>}
         </div>
       </div>
 
       {/* Presets */}
       <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",marginBottom:8,fontFamily:"'Inter',sans-serif"}}>QUICK SCENARIOS</div>
+        <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.96)",letterSpacing:"0.12em",marginBottom:8,fontFamily:"'Inter',sans-serif"}}>QUICK SCENARIOS</div>
         <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
           {PRESETS.map((p,i)=>(
             <button key={i} onClick={()=>applyPreset(i)} style={{
@@ -1144,7 +1144,7 @@ const ScenarioSimulator=({match,T})=>{
               cursor:"pointer",transition:"all 0.15s",fontFamily:"'Inter',sans-serif",
               background:activePreset===i?`${T.accent}18`:"rgba(255,255,255,0.04)",
               border:`1px solid ${activePreset===i?T.accent+"40":"rgba(255,255,255,0.08)"}`,
-              color:activePreset===i?T.accent:"rgba(255,255,255,0.4)",
+              color:activePreset===i?T.accent:"rgba(255,255,255,0.94)",
             }}>
               <span style={{fontSize:11}}>{p.icon}</span>{p.label}
             </button>
@@ -1154,14 +1154,14 @@ const ScenarioSimulator=({match,T})=>{
 
       {/* Sliders */}
       <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",gap:10}}>
-        <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",fontFamily:"'Inter',sans-serif"}}>FINE TUNE</div>
+        <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.96)",letterSpacing:"0.12em",fontFamily:"'Inter',sans-serif"}}>FINE TUNE</div>
         {[{label:"Home Attack",k:"homeAtk"},{label:"Away Attack",k:"awayAtk"},{label:"Home Defense",k:"homeDef"},{label:"Away Defense",k:"awayDef"},{label:"Tempo",k:"tempo"}].map(({label,k})=>{
           const val=mods[k];
-          const col=val===0?"rgba(255,255,255,0.25)":val>0?T.accent:T.accent2;
+          const col=val===0?"rgba(255,255,255,0.6)":val>0?T.accent:T.accent2;
           return(
             <div key={k} style={{display:"flex",flexDirection:"column",gap:4}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"rgba(255,255,255,0.45)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.78)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
                 <span style={{fontSize:11,fontWeight:700,fontFamily:"'SF Mono','JetBrains Mono',monospace",color:col}}>{val>0?"+":""}{val}%</span>
               </div>
               <input type="range" min={-25} max={25} value={val}
@@ -1175,17 +1175,17 @@ const ScenarioSimulator=({match,T})=>{
       {/* Comparison */}
       {official&&scenario&&(
         <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-          <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.2)",letterSpacing:"0.12em",marginBottom:10,fontFamily:"'Inter',sans-serif"}}>OFFICIAL vs SCENARIO</div>
+          <div style={{fontSize:8,fontWeight:600,color:"rgba(255,255,255,0.96)",letterSpacing:"0.12em",marginBottom:10,fontFamily:"'Inter',sans-serif"}}>OFFICIAL vs SCENARIO</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            {[{label:"Official",data:official,col:"rgba(255,255,255,0.3)"},{label:"Scenario",data:scenario,col:T.accent}].map(({label,data,col})=>(
+            {[{label:"Official",data:official,col:"#fff"},{label:"Scenario",data:scenario,col:T.accent}].map(({label,data,col})=>(
               <div key={label} style={{padding:"10px 12px",borderRadius:14,background:label==="Scenario"?`${T.accent}0a`:"rgba(255,255,255,0.03)",border:`1px solid ${label==="Scenario"?T.accent+"28":"rgba(255,255,255,0.06)"}`}}>
                 <div style={{fontSize:8,fontWeight:700,color:col,letterSpacing:"0.1em",marginBottom:7,fontFamily:"'Inter',sans-serif"}}>{label.toUpperCase()}</div>
-                <div style={{fontSize:24,fontWeight:700,color:"rgba(255,255,255,0.9)",fontFamily:"'SF Mono','JetBrains Mono',monospace",textAlign:"center",marginBottom:6}}>{data.topScore}</div>
+                <div style={{fontSize:24,fontWeight:700,color:"#fff",fontFamily:"'SF Mono','JetBrains Mono',monospace",textAlign:"center",marginBottom:6}}>{data.topScore}</div>
                 <div style={{display:"flex",height:4,borderRadius:999,overflow:"hidden",marginBottom:6,background:"rgba(255,255,255,0.05)"}}>
-                  <div style={{flex:data.pH,background:T.homeCol,opacity:.8}}/><div style={{flex:data.pD,background:"rgba(255,255,255,0.2)"}}/><div style={{flex:data.pA,background:T.awayCol,opacity:.8}}/>
+                  <div style={{flex:data.pH,background:T.homeCol,opacity:.8}}/><div style={{flex:data.pD,background:"rgba(255,255,255,0.96)"}}/><div style={{flex:data.pA,background:T.awayCol,opacity:.8}}/>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between"}}>
-                  {[{v:Math.round(data.pH*100),c:T.homeCol},{v:Math.round(data.pD*100),c:"rgba(255,255,255,0.3)"},{v:Math.round(data.pA*100),c:T.awayCol}].map(({v,c},i)=>(
+                  {[{v:Math.round(data.pH*100),c:T.homeCol},{v:Math.round(data.pD*100),c:"#fff"},{v:Math.round(data.pA*100),c:T.awayCol}].map(({v,c},i)=>(
                     <span key={i} style={{fontSize:11,fontWeight:700,color:c,fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v}%</span>
                   ))}
                 </div>
@@ -1201,7 +1201,7 @@ const ScenarioSimulator=({match,T})=>{
           )}
         </div>
       )}
-      <div style={{padding:"10px 14px",fontSize:9,color:"rgba(255,255,255,0.2)",lineHeight:1.6,fontFamily:"'Inter',sans-serif"}}>Adjusts xG assumptions only. Official predictions unchanged.</div>
+      <div style={{padding:"10px 14px",fontSize:9,color:"rgba(255,255,255,0.96)",lineHeight:1.6,fontFamily:"'Inter',sans-serif"}}>Adjusts xG assumptions only. Official predictions unchanged.</div>
     </div>
   );
 };
@@ -1212,14 +1212,14 @@ const ScenarioSimulator=({match,T})=>{
 const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
   const[sortCol,setSortCol]=useState("rank");const[dir,setDir]=useState(1);
   const total=rows.length||20;
-  const ZONE_COL={cl:T.accent,el:T.mid||T.accent,ecl:"rgba(255,255,255,0.35)",rel:T.accent2};
+  const ZONE_COL={cl:T.accent,el:T.mid||T.accent,ecl:"#fff",rel:T.accent2};
   function getZone(pos){if(pos<=4)return"cl";if(pos===5)return"el";if(pos===6)return"ecl";if(pos>=total-2)return"rel";return null;}
   const sorted=useMemo(()=>{if(loading)return[];return[...rows].sort((a,b)=>{let va=a[sortCol],vb=b[sortCol];if(va==null)va=sortCol==="rank"?999:0;if(vb==null)vb=sortCol==="rank"?999:0;if(typeof va==="string"){va=va.toLowerCase();vb=vb.toLowerCase();}return va<vb?-dir:va>vb?dir:0;});},[rows,sortCol,dir,loading]);
   const toggle=col=>{if(sortCol===col)setDir(d=>-d);else{setSortCol(col);setDir(col==="rank"?1:-1);}};
 
   const colStyle=(col,align)=>({
     padding:"11px 12px",fontSize:9,fontWeight:600,letterSpacing:"0.1em",
-    color:sortCol===col?T.accent:"rgba(255,255,255,0.25)",
+    color:sortCol===col?T.accent:"rgba(255,255,255,0.6)",
     borderBottom:"1px solid rgba(255,255,255,0.07)",
     background:"rgba(12,14,18,0.75)",
     textAlign:align||"center",cursor:"pointer",userSelect:"none",
@@ -1283,7 +1283,7 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
                             ? <div style={{width:3,height:18,borderRadius:999,background:zoneColor,boxShadow:`0 0 6px ${zoneColor}60`,flexShrink:0}}/>
                             : <div style={{width:3,height:18,flexShrink:0}}/>
                           }
-                          <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.45)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{pos}</span>
+                          <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.78)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{pos}</span>
                         </div>
                       </td>
 
@@ -1302,19 +1302,19 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
 
                       {/* Stats */}
                       {[row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against].map((v,j)=>(
-                        <td key={j} style={{padding:"11px 12px",textAlign:"center",fontSize:12,color:"rgba(255,255,255,0.4)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v??"-"}</td>
+                        <td key={j} style={{padding:"11px 12px",textAlign:"center",fontSize:12,color:"rgba(255,255,255,0.94)",fontFamily:"'SF Mono','JetBrains Mono',monospace"}}>{v??"-"}</td>
                       ))}
 
                       {/* GD */}
                       <td style={{padding:"11px 12px",textAlign:"center",fontSize:12,fontWeight:700,fontFamily:"'SF Mono','JetBrains Mono',monospace",
-                        color:(row.goal_diff||0)>0?T.accent:(row.goal_diff||0)<0?T.accent2:"rgba(255,255,255,0.35)"}}>
+                        color:(row.goal_diff||0)>0?T.accent:(row.goal_diff||0)<0?T.accent2:"#fff"}}>
                         {(row.goal_diff||0)>0?"+":""}{row.goal_diff??"-"}
                       </td>
 
                       {/* Points */}
                       <td style={{padding:"11px 12px",textAlign:"center"}}>
                         <span style={{
-                          fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.92)",
+                          fontSize:13,fontWeight:800,color:"#fff",
                           fontFamily:"'SF Mono','JetBrains Mono',monospace",
                           background:"rgba(255,255,255,0.06)",
                           border:"1px solid rgba(255,255,255,0.1)",
@@ -1329,10 +1329,10 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
       </div>
       {/* Legend */}
       <div style={{display:"flex",gap:16,padding:"12px 16px",borderTop:"1px solid rgba(255,255,255,0.07)",flexWrap:"wrap",background:"rgba(0,0,0,0.3)"}}>
-        {[{c:T.accent,l:"Champions League"},{c:T.mid||T.accent,l:"Europa League"},{c:"rgba(255,255,255,0.35)",l:"Conference"},{c:T.accent2,l:"Relegation"}].map(({c,l})=>(
+        {[{c:T.accent,l:"Champions League"},{c:T.mid||T.accent,l:"Europa League"},{c:"#fff",l:"Conference"},{c:T.accent2,l:"Relegation"}].map(({c,l})=>(
           <div key={l} style={{display:"flex",alignItems:"center",gap:6}}>
             <div style={{width:3,height:14,borderRadius:999,background:c,boxShadow:`0 0 4px ${c}50`}}/>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Inter',sans-serif"}}>{l}</span>
+            <span style={{fontSize:9,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{l}</span>
           </div>
         ))}
       </div>
@@ -1361,7 +1361,7 @@ const ScorersWidget=({league,T})=>{
   const statKey=tab==="goals"?"goals":"assists";
   const maxVal=Math.max(...data.map(p=>p[statKey]||0),1);
 
-  const medalColor=i=>i===0?"#FFD60A":i===1?"rgba(255,255,255,0.6)":i===2?"#CD7F32":"rgba(255,255,255,0.2)";
+  const medalColor=i=>i===0?"#FFD60A":i===1?"rgba(255,255,255,0.6)":i===2?"#CD7F32":"rgba(255,255,255,0.96)";
 
   return(
     <div style={{
@@ -1376,7 +1376,7 @@ const ScorersWidget=({league,T})=>{
           <button key={k} onClick={()=>setTab(k)} style={{
             flex:1,padding:"14px 12px",fontSize:12,fontWeight:600,cursor:"pointer",
             background:"none",border:"none",fontFamily:"'Inter',sans-serif",
-            color:tab===k?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)",
+            color:tab===k?"#fff":"#fff",
             borderBottom:`2px solid ${tab===k?T.accent:"transparent"}`,
             transition:"all 0.15s",letterSpacing:"0.02em",
           }}>{l}</button>
@@ -1433,7 +1433,7 @@ const ScorersWidget=({league,T})=>{
                   <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,0.05)",marginBottom:4,overflow:"hidden"}}>
                     <div style={{width:`${(p[statKey]||0)/maxVal*100}%`,height:"100%",borderRadius:999,background:`linear-gradient(90deg,${T.accent}88,${T.accent})`,transition:"width 0.5s cubic-bezier(.22,1,.36,1)"}}/>
                   </div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>{p.team_name}  {p.played||0} apps</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",fontFamily:"'Inter',sans-serif"}}>{p.team_name}  {p.played||0} apps</div>
                 </div>
 
                 {/* Stat number */}
@@ -1444,7 +1444,7 @@ const ScorersWidget=({league,T})=>{
                   display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                   flexShrink:0,
                 }}>
-                  <span style={{fontSize:17,fontWeight:800,color:i===0?T.accent:"rgba(255,255,255,0.7)",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{p[statKey]||0}</span>
+                  <span style={{fontSize:17,fontWeight:800,color:i===0?T.accent:"#fff",fontFamily:"'SF Mono','JetBrains Mono',monospace",lineHeight:1}}>{p[statKey]||0}</span>
                 </div>
               </div>
             ))
@@ -1606,12 +1606,12 @@ const ChancePill = ({ value, color, label }) => {
         background:`${color}${Math.round(alpha*255).toString(16).padStart(2,"0")}`,
         border:`1px solid ${color}${v>5?"44":"1a"}`,
         fontSize:12,fontWeight:900,
-        color:v>0?color:"rgba(255,255,255,0.2)",
+        color:v>0?color:"rgba(255,255,255,0.96)",
         fontFamily:"'JetBrains Mono',monospace",
         minWidth:46,textAlign:"center"}}>
         {v > 0 ? `${v}%` : ""}
       </div>
-      <span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
+      <span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.6)",letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
     </div>
   );
 };
@@ -1699,7 +1699,7 @@ const PointsProjection = ({ data, cfg, T }) => {
                 {/* Current pts bar */}
                 <div style={{position:"absolute",left:0,top:0,height:"100%",
                   width:`${Math.min((curr/110)*100,100)}%`,
-                  background:"rgba(255,255,255,0.2)",borderRadius:3}}/>
+                  background:"rgba(255,255,255,0.96)",borderRadius:3}}/>
                 {/* Projected pts extension */}
                 <div style={{position:"absolute",left:`${Math.min((curr/110)*100,100)}%`,top:0,height:"100%",
                   width:`${Math.min((delta/110)*100,100)}%`,
@@ -1722,7 +1722,7 @@ const PointsProjection = ({ data, cfg, T }) => {
       </div>
       <div style={{marginTop:12,fontSize:9,color:T.muted,display:"flex",gap:16}}>
         <div style={{display:"flex",alignItems:"center",gap:5}}>
-          <div style={{width:12,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+          <div style={{width:12,height:4,borderRadius:2,background:"rgba(255,255,255,0.96)"}}/>
           <span>Current pts</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:5}}>
@@ -1861,7 +1861,7 @@ const WhatIfPanel = ({ standings, league, T, onResult }) => {
           style={{padding:"8px 18px",borderRadius:8,fontSize:11,fontWeight:800,cursor:"pointer",
             background:selectedTeam?"rgba(99,102,241,0.15)":"rgba(255,255,255,0.04)",
             border:`1px solid ${selectedTeam?"#6366f140":"rgba(255,255,255,0.08)"}`,
-            color:selectedTeam?"#6366f1":"rgba(255,255,255,0.3)"}}>
+            color:selectedTeam?"#6366f1":"#fff"}}>
           {running ? "Simulating" : "Run Simulation"}
         </button>
         {selectedTeam && (
@@ -2000,7 +2000,7 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
       padding:"7px 14px",borderRadius:8,fontSize:11,fontWeight:800,cursor:"pointer",
       background:activeView===id?"rgba(99,102,241,0.15)":"rgba(255,255,255,0.04)",
       border:`1px solid ${activeView===id?"#6366f140":"rgba(255,255,255,0.08)"}`,
-      color:activeView===id?"#6366f1":"rgba(255,255,255,0.45)",transition:"all .15s"}}>
+      color:activeView===id?"#6366f1":"rgba(255,255,255,0.78)",transition:"all .15s"}}>
       <span>{icon}</span>{label}
     </button>
   );
@@ -2328,7 +2328,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const avgXgA=matches.length?(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length).toFixed(2):"0.00";
 
   return(
-    <div className="sn-page-wrap" style={{background:"#020817",position:"relative",fontFamily:"'Inter',sans-serif"}}>
+    <div className="sn-page-wrap" style={{background:"#000",position:"relative",fontFamily:"'Inter',sans-serif"}}>
 
       {/* -- Ambient gradient background */}
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0}}>
@@ -2354,13 +2354,13 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
                 <LeagueFlag code={league} size={22}/>
                 <h1 style={{
-                  fontSize:30,fontWeight:700,color:"rgba(255,255,255,0.95)",
+                  fontSize:30,fontWeight:700,color:"#fff",
                   margin:0,letterSpacing:"-0.03em",
                   fontFamily:"'Inter',sans-serif",
                 }}>{T.label}</h1>
               </div>
               <p style={{
-                fontSize:11,color:"rgba(255,255,255,0.2)",margin:0,
+                fontSize:11,color:"rgba(255,255,255,0.96)",margin:0,
                 fontFamily:"'SF Mono','JetBrains Mono',monospace",
                 letterSpacing:"0.06em",
               }}>ELO · DIXON-COLES · REAL xG · PRO DATA</p>
@@ -2378,7 +2378,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               const groupTabs = LEAGUE_TABS.filter(t=>t.group===group);
               return groupTabs.length===0 ? null : (
                 <div key={group} style={{display:"flex",alignItems:"center",gap:4,flexWrap:"nowrap"}}>
-                  <span style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.22)",letterSpacing:"0.1em",textTransform:"uppercase",flexShrink:0,paddingRight:6,borderRight:"1px solid rgba(255,255,255,0.1)",marginRight:4}}>{label}</span>
+                  <span style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.96)",letterSpacing:"0.1em",textTransform:"uppercase",flexShrink:0,paddingRight:6,borderRight:"1px solid rgba(255,255,255,0.1)",marginRight:4}}>{label}</span>
                   {groupTabs.map(({code,slug,label:tabLabel})=>{
                     const active=league===code;
                     const col=COMP_COLORS[code]||"#FF6B35";
@@ -2388,7 +2388,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                         padding:"7px 14px",borderRadius:999,fontSize:12,fontWeight:700,
                         textDecoration:"none",whiteSpace:"nowrap",letterSpacing:"0.01em",
                         border:`1.5px solid ${active?col+"70":"rgba(255,255,255,0.1)"}`,
-                        color:active?"#fff":"rgba(255,255,255,0.45)",
+                        color:active?"#fff":"rgba(255,255,255,0.78)",
                         background:active?`linear-gradient(135deg,${col}28,${col}14)`:"rgba(255,255,255,0.04)",
                         transition:"all 0.18s",
                         boxShadow:active?`0 0 18px ${col}35,inset 0 1px 0 rgba(255,255,255,0.1)`:"none",
@@ -2435,7 +2435,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               cursor:"pointer",border:"none",whiteSpace:"nowrap",
               fontFamily:"'Inter',sans-serif",letterSpacing:"0.01em",
               borderRadius:10,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",
-              color:tab===key?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.35)",
+              color:tab===key?"#fff":"#fff",
               background:tab===key?"rgba(255,255,255,0.1)":"transparent",
               boxShadow:tab===key?"0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)":"none",
             }}>
@@ -2443,7 +2443,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               {badge!=null&&(
                 <span style={{
                   background:tab===key?`${T.accent}28`:"rgba(255,255,255,0.07)",
-                  color:tab===key?T.accent:"rgba(255,255,255,0.3)",
+                  color:tab===key?T.accent:"#fff",
                   borderRadius:999,padding:"1px 7px",fontSize:9,
                   fontFamily:"'SF Mono','JetBrains Mono',monospace",fontWeight:700,
                 }}>{badge}</span>
@@ -2491,10 +2491,10 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                 {!predLoad&&matches.length>0&&(
                   <div style={{
                     padding:"10px 14px",borderRadius:12,
-                    background:"rgba(9,15,28,0.98)",border:"1px solid rgba(255,255,255,0.07)",
+                    background:"rgba(0,0,0,0.98)",border:"1px solid rgba(255,255,255,0.07)",
                     display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",
                   }}>
-                    <span style={{fontSize:9,fontWeight:900,color:"rgba(255,255,255,0.2)",letterSpacing:"0.1em",textTransform:"uppercase",flexShrink:0}}>Filter</span>
+                    <span style={{fontSize:9,fontWeight:900,color:"rgba(255,255,255,0.96)",letterSpacing:"0.1em",textTransform:"uppercase",flexShrink:0}}>Filter</span>
                     <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1}}>
                       {[
                         {key:"all",   label:"All"},
@@ -2509,7 +2509,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                           letterSpacing:"0.04em",
                           border:`1px solid ${predFilter===key?T.accent+"55":"rgba(255,255,255,0.08)"}`,
                           background:predFilter===key?`${T.accent}18`:"rgba(255,255,255,0.03)",
-                          color:predFilter===key?T.accent:"rgba(255,255,255,0.35)",
+                          color:predFilter===key?T.accent:"#fff",
                           transition:"all 0.13s",
                         }}>{label}</button>
                       ))}
@@ -2519,12 +2519,12 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                         <button key={s} onClick={()=>setSort(s)} style={{
                           padding:"4px 9px",borderRadius:6,fontSize:9,fontWeight:700,cursor:"pointer",
                           background:sort===s?"rgba(255,255,255,0.1)":"transparent",
-                          border:"none",color:sort===s?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.25)",
+                          border:"none",color:sort===s?"rgba(255,255,255,0.96)":"rgba(255,255,255,0.6)",
                           transition:"all 0.13s",
                         }}>{l}</button>
                       ))}
                     </div>
-                    <span style={{fontSize:9,color:"rgba(255,255,255,0.18)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{filtered.length}</span>
+                    <span style={{fontSize:9,color:"rgba(255,255,255,0.82)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{filtered.length}</span>
                   </div>
                 )}
 
@@ -2536,7 +2536,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                     gap:0,padding:"5px 14px",
                   }}>
                     {["Home","Probability","Away","Markets",""].map((h,i)=>(
-                      <div key={i} style={{fontSize:8,fontWeight:900,color:"rgba(255,255,255,0.18)",letterSpacing:"0.1em",textTransform:"uppercase",textAlign:i===3?"left":i===4?"center":i===1?"center":i===2?"right":"left"}}>{h}</div>
+                      <div key={i} style={{fontSize:8,fontWeight:900,color:"rgba(255,255,255,0.82)",letterSpacing:"0.1em",textTransform:"uppercase",textAlign:i===3?"left":i===4?"center":i===1?"center":i===2?"right":"left"}}>{h}</div>
                     ))}
                   </div>
                 )}
@@ -2556,7 +2556,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                 )}
 
                 {!predLoad&&!predErr&&filtered.length===0&&(
-                  <div style={{padding:48,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:13}}>
+                  <div style={{padding:48,textAlign:"center",color:"rgba(255,255,255,0.96)",fontSize:13}}>
                     <div style={{width:40,height:40,borderRadius:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",margin:"0 auto 12px"}}/>
                     No fixtures match this filter.
                   </div>
@@ -2588,8 +2588,8 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                 {!predLoad&&matches.length>0&&(
                   <>
                     {/* Top confidence */}
-                    <div style={{background:"rgba(9,15,28,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 15px",overflow:"hidden"}}>
-                      <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,0.2)",textTransform:"uppercase",marginBottom:10}}>
+                    <div style={{background:"rgba(0,0,0,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 15px",overflow:"hidden"}}>
+                      <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,0.96)",textTransform:"uppercase",marginBottom:10}}>
                         Top Confidence
                       </div>
                       <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -2601,8 +2601,8 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
                     {/* Model edges */}
                     {matches.some(m=>m.model_edge!=null)&&(
-                      <div style={{background:"rgba(9,15,28,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 15px"}}>
-                        <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,0.2)",textTransform:"uppercase",marginBottom:10}}>Best Edges</div>
+                      <div style={{background:"rgba(0,0,0,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 15px"}}>
+                        <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,0.96)",textTransform:"uppercase",marginBottom:10}}>Best Edges</div>
                         <div style={{display:"flex",flexDirection:"column",gap:6}}>
                           {[...matches].filter(m=>m.model_edge!=null).sort((a,b)=>Math.abs(b.model_edge)-Math.abs(a.model_edge)).slice(0,3).map((m,i)=>(
                             <SidebarMatchRow key={i} match={m} T={T} navigate={navigate} showEdge/>
@@ -2612,8 +2612,8 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                     )}
 
                     {/* Goal heavy */}
-                    <div style={{background:"rgba(9,15,28,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 15px"}}>
-                      <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,0.2)",textTransform:"uppercase",marginBottom:10}}>Goal Heavy</div>
+                    <div style={{background:"rgba(0,0,0,0.98)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 15px"}}>
+                      <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,0.96)",textTransform:"uppercase",marginBottom:10}}>Goal Heavy</div>
                       <div style={{display:"flex",flexDirection:"column",gap:6}}>
                         {[...matches].sort((a,b)=>((parseFloat(b.xg_home)||0)+(parseFloat(b.xg_away)||0))-((parseFloat(a.xg_home)||0)+(parseFloat(a.xg_away)||0))).slice(0,3).map((m,i)=>(
                           <SidebarMatchRow key={i} match={m} T={T} navigate={navigate} showXg/>
@@ -2656,7 +2656,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         {tab==="knockout"&&(
           <div>
             {!BRACKET_ROUNDS[league]&&(
-              <div style={{padding:40,textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:13}}>
+              <div style={{padding:40,textAlign:"center",color:"rgba(255,255,255,0.96)",fontSize:13}}>
                 Knockout bracket not available for {T.label}.
               </div>
             )}

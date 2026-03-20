@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
 const C = {
-  bg:"#000810",card:"rgba(9,15,28,0.98)",border:"rgba(255,255,255,0.065)",
-  text:"#f0f6ff",muted:"#5a7a9a",dim:"#1a3a5a",soft:"#c8d8f0",
+  bg:"#000",card:"rgba(0,0,0,0.98)",border:"rgba(255,255,255,0.065)",
+  text:"#f0f6ff",muted:"rgba(200,215,230,0.85)",dim:"#1a3a5a",soft:"#c8d8f0",
   blue:"#38bdf8",green:"#34d399",amber:"#f59e0b",red:"#f87171",
   purple:"#a78bfa",orange:"#fb923c",
 };

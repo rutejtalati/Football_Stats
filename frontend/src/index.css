@@ -15,17 +15,17 @@
 ══════════════════════════════════════════════════════════ */
 :root {
   /* ── Core palette ── */
-  --bg:           #000810;
-  --bg-card:      rgba(9, 15, 28, 0.98);
+  --bg:           #000;
+  --bg-card:      rgba(8, 8, 12, 0.98);
   --bg-glass:     rgba(255, 255, 255, 0.025);
   --bg-hover:     rgba(255, 255, 255, 0.045);
 
   /* ── Text ── */
-  --text:         #f0f6ff;
+  --text:         #ffffff;
   --text-muted:   #5a7a9a;
   --text-dim:     #1a3a5a;
   --text-mid:     #2a4a6a;
-  --text-soft:    #c8d8f0;
+  --text-soft:    #e8e8e8;
 
   /* ── Border ── */
   --border:       rgba(255, 255, 255, 0.065);
@@ -66,9 +66,9 @@
   /* ── Spacing ── */
   --page-px: 20px;
   --page-max: 1280px;
-  --nav-h:      48px;   /* fixed navbar height */
+  --nav-h:      56px;   /* fixed navbar height */
   --ticker-h:   36px;   /* fixed live ticker height */
-  --bar-total:  84px;   /* --nav-h + --ticker-h — use this for page offsets */
+  --bar-total:  92px;   /* --nav-h + --ticker-h — use this for page offsets */
 
   /* ── Transition ── */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -98,7 +98,7 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: #000;
   color: var(--text);
   font-family: var(--font-body);
   font-size: 14px;
@@ -110,8 +110,8 @@ body {
 
   /* Subtle pitch-grid background texture — same as homepage */
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    linear-gradient(rgba(251, 191, 36, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(251, 191, 36, 0.025) 1px, transparent 1px);
   background-size: 80px 80px;
   background-attachment: fixed;
 }
@@ -125,7 +125,7 @@ body::before {
   transform: translateX(-50%);
   width: 900px;
   height: 400px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.07) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1030,7 +1030,7 @@ button, input, select, textarea {
 
 .pp-shell {
   min-height: 100vh;
-  background: var(--bg);
+  background: #000;
   padding-top: var(--bar-total);
   padding-bottom: 60px;
 }
@@ -1058,7 +1058,7 @@ button, input, select, textarea {
 ══════════════════════════════════════════════════════════ */
 
 .pi-shell {
-  background: var(--bg);
+  background: #000;
   min-height: 100vh;
   background-image:
     linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
@@ -1205,7 +1205,7 @@ button, input, select, textarea {
 
 .ni-shell {
   min-height: 100vh;
-  background: var(--bg);
+  background: #000;
   padding-top: var(--bar-total);
   padding-bottom: 80px;
   background-image:
@@ -1523,7 +1523,7 @@ button, input, select, textarea {
 
 /* ─── Root ───────────────────────────────────────────────────── */
 .hp4-root {
-  background: var(--bg);
+  background: #000;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -1539,7 +1539,7 @@ button, input, select, textarea {
   justify-content: center;
   overflow: hidden;
   padding: 100px 24px 100px;
-  background: var(--bg);
+  background: #000;
 }
 
 /* Mesh blobs */
@@ -2782,7 +2782,7 @@ button, input, select, textarea {
   justify-content: center;
   overflow: hidden;
   padding: var(--bar-total) 0 40px;
-  background: var(--bg);
+  background: #000;
 }
 .hp6-hero-layout {
   position: relative; z-index: 2;

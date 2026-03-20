@@ -308,7 +308,7 @@ function FeaturedCard({article,onClick}){
     </div>
     <div style={{position:"relative",zIndex:1}}>
       <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:28,fontWeight:900,color:"#f0f6ff",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 10px"}}>{article.title}</h2>
-      <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"#5a7a9a",lineHeight:1.6,margin:"0 0 20px",maxWidth:580}}>{article.standfirst||article.summary}</p>
+      <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"rgba(200,215,230,0.85)",lineHeight:1.6,margin:"0 0 20px",maxWidth:580}}>{article.standfirst||article.summary}</p>
       <div style={{display:"flex",alignItems:"center",gap:18}}>
         <span style={{fontSize:12,fontWeight:800,color:accent}}>Read full analysis →</span>
         <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#1a3a5a",fontWeight:700}}>{timeAgo(article.published_at)}</span>
@@ -385,13 +385,13 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
             {!isExt&&paras.length>0&&(
               <div style={{display:"flex",flexDirection:"column",gap:18,marginBottom:32}}>
                 {paras.map((p,i)=>(
-                  <p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"#5a7a9a",margin:0,fontWeight:i===paras.length-1?600:400,...(i===paras.length-1?{borderTop:"1px solid rgba(255,255,255,0.05)",paddingTop:18}:{})}}>{p}</p>
+                  <p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"rgba(200,215,230,0.85)",margin:0,fontWeight:i===paras.length-1?600:400,...(i===paras.length-1?{borderTop:"1px solid rgba(255,255,255,0.05)",paddingTop:18}:{})}}>{p}</p>
                 ))}
               </div>)}
             {isExt&&(<div style={{display:"flex",flexDirection:"column",gap:18,marginBottom:32}}>
               {paras.length>0
-                ?paras.map((p,i)=><p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"#5a7a9a",margin:0}}>{p}</p>)
-                :<p style={{fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.75,color:"#5a7a9a",margin:0}}>{article.standfirst||article.summary}</p>}
+                ?paras.map((p,i)=><p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"rgba(200,215,230,0.85)",margin:0}}>{p}</p>)
+                :<p style={{fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.75,color:"rgba(200,215,230,0.85)",margin:0}}>{article.standfirst||article.summary}</p>}
               {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#000",fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
             </div>)}
             {ms&&(<div style={{marginTop:32,padding:"18px 20px",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid "+accent+"14"}}>
@@ -623,7 +623,7 @@ export default function NewsTrackerPage(){
   const LF=[{key:"all",label:"All Leagues",color:"#64748b"},{key:"epl",label:"Premier League",color:"#38bdf8"},{key:"laliga",label:"La Liga",color:"#f59e0b"},{key:"seriea",label:"Serie A",color:"#34d399"},{key:"bundesliga",label:"Bundesliga",color:"#fb923c"},{key:"ligue1",label:"Ligue 1",color:"#a78bfa"}];
   const SF=[{key:"matchday",label:"Matchday"},{key:"latest",label:"Latest"},{key:"trending",label:"Trending"}];
 
-  return(<div style={{minHeight:"100vh",background:"#000810",fontFamily:"'Sora',sans-serif",position:"relative"}}>
+  return(<div style={{minHeight:"100vh",background:"#000",fontFamily:"'Sora',sans-serif",position:"relative"}}>
     <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,opacity:0.016,
       backgroundImage:"linear-gradient(rgba(255,255,255,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.6) 1px,transparent 1px)",
       backgroundSize:"80px 80px"}}/>

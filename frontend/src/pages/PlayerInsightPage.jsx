@@ -1,576 +1,455 @@
-// pages/PlayerInsightPage.jsx
-// Deep player profile — FPL data + projections — MOBILE RESPONSIVE
+// pages/PlayerProfile.jsx — StatinSite Stats Hub v2
+import { useState, useEffect, useRef, useCallback } from "react";
 
-import { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getFplBootstrap, getFplPredictorTable } from "../api/api";
-import { ExpectedPointsChart } from "../components/ExpectedPointsChart";
+const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
-/* ── Responsive hook ── */
-function useIsMobile(bp = 768) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
-}
-
-/* ── FPL kit/color maps ── */
-const SHIRT_IDS = {
-  ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,IPS:40,
-  LEI:13,LIV:14,MCI:43,MUN:1,NEW:4,NFO:17,SOU:20,TOT:6,WHU:21,WOL:39,
-};
-const TEAM_COLORS = {
-  ARS:"#EF0107",AVL:"#95BFE5",BOU:"#DA291C",BRE:"#E30613",BHA:"#0057B8",
-  CHE:"#034694",CRY:"#1B458F",EVE:"#003399",FUL:"#CCCCCC",IPS:"#3A64A3",
-  LEI:"#0053A0",LIV:"#C8102E",MCI:"#6CABDD",MUN:"#DA291C",NEW:"#241F20",
-  NFO:"#DD0000",SOU:"#D71920",TOT:"#132257",WHU:"#7A263A",WOL:"#FDB913",
-};
-const GK_COLORS = {
-  ARS:"#f5c518",AVL:"#00bfa5",BOU:"#1a237e",BRE:"#ffd600",BHA:"#fff176",
-  CHE:"#66bb6a",CRY:"#ce93d8",EVE:"#fff9c4",FUL:"#1565c0",IPS:"#ff8a65",
-  LEI:"#80deea",LIV:"#a5d6a7",MCI:"#f48fb1",MUN:"#ffe0b2",NEW:"#ffcc02",
-  NFO:"#b0bec5",SOU:"#90caf9",TOT:"#ef9a9a",WHU:"#e6ee9c",WOL:"#b39ddb",
-};
-const DIFF_LABEL = ["","Easy","Easy","Med","Hard","Very Hard"];
-const DIFF_COLOR = {
-  1:"#1a6e38",2:"#1a6e38",3:"#7a5c14",4:"#7a1c1c",5:"#4a0808"
+const C = {
+  bg:"#000",card:"rgba(0,0,0,0.98)",border:"rgba(255,255,255,0.065)",
+  text:"#f0f6ff",muted:"rgba(200,215,230,0.85)",dim:"#1a3a5a",soft:"#c8d8f0",
+  blue:"#38bdf8",green:"#34d399",amber:"#f59e0b",red:"#f87171",
+  purple:"#a78bfa",orange:"#fb923c",
 };
 
-function getUpcomingGameweek(bootstrap) {
-  const events = Array.isArray(bootstrap?.events) ? bootstrap.events : [];
-  const next = events.find(e => !e.finished && e.is_next);
-  if (next?.id) return next.id;
-  const curr = events.find(e => !e.finished && e.is_current);
-  if (curr?.id) return curr.id;
-  return events.find(e => !e.finished)?.id || 29;
-}
+const LEAGUES=[
+  {key:"all",label:"All Leagues",color:C.muted},
+  {key:"epl",label:"Premier League",color:C.blue},
+  {key:"laliga",label:"La Liga",color:C.amber},
+  {key:"seriea",label:"Serie A",color:C.green},
+  {key:"bundesliga",label:"Bundesliga",color:C.orange},
+  {key:"ligue1",label:"Ligue 1",color:C.purple},
+];
+const LC={epl:C.blue,laliga:C.amber,seriea:C.green,bundesliga:C.orange,ligue1:C.purple};
+const LA={epl:"EPL",laliga:"LAL",seriea:"SA",bundesliga:"BUN",ligue1:"L1"};
+const PC=p=>{const l=(p||"").toLowerCase();if(l.includes("goal"))return C.amber;if(l.includes("defend"))return C.green;if(l.includes("mid"))return C.blue;if(l.includes("attack")||l.includes("forward"))return C.red;return C.muted;};
 
-function normalizePlayer(row) {
-  if (!row) return null;
-  const rawPts   = Number(row.pts_gw_1  ?? 0);
-  const rawMerit = Number(row.merit     ?? 0);
-  const rawForm  = Number(row.form      ?? 0);
-  const ppg      = Number(row.points_so_far ?? 0) / Math.max(Number(row.played ?? 1), 1);
-  const projected_points = rawPts > 0 ? rawPts : rawMerit > 0 ? rawMerit : rawForm > 0 ? rawForm : ppg;
-  return {
-    ...row,
-    id: row.id ?? row.player_id,
-    player_id: row.player_id ?? row.id,
-    name: row.name ?? row.player ?? "-",
-    projected_points,
-    cost: Number(row.cost ?? 0),
-    team: row.team ?? "-",
-    position: row.position ?? "-",
-    next_opp: row.next_opp ?? "-",
-    appearance_prob: Number(row.appearance_prob ?? row.prob_appear ?? 0.92),
-    form: rawForm,
-    selected_by_pct: Number(row.selected_by_pct ?? 0),
-    pts_gw_1: rawPts,
-    pts_gw_2: Number(row.pts_gw_2 ?? 0),
-    pts_gw_3: Number(row.pts_gw_3 ?? 0),
-    pts_gw_4: Number(row.pts_gw_4 ?? 0),
-    pts_gw_5: Number(row.pts_gw_5 ?? 0),
-    fixture_difficulty: Number(row.fixture_difficulty ?? 3),
-    value_rest_season: Number(row.value_rest_season ?? 0),
-    merit: rawMerit,
-  };
-}
+const PLAYER_TABS=[
+  {key:"scorers",  label:"Top Scorers",  icon:"⚽",color:C.red,    ep:"/api/players/top-scorers",      sk:"goals",          sl:"Goals",   sc:C.red},
+  {key:"assists",  label:"Top Assists",  icon:"🅰",color:C.green,  ep:"/api/players/top-assisters",    sk:"assists",        sl:"Assists", sc:C.green},
+  {key:"contrib",  label:"G+A",          icon:"📊",color:C.blue,   ep:"/api/players/top-contributors", sk:"goal_contributions",sl:"G+A",  sc:C.blue},
+  {key:"rated",    label:"Best Rated",   icon:"⭐",color:C.amber,  ep:"/api/players/top-rated",        sk:"rating",         sl:"Rating",  sc:C.amber},
+  {key:"shots",    label:"Most Shots",   icon:"🎯",color:C.purple, ep:"/api/players/most-shots",       sk:"shots_total",    sl:"Shots",   sc:C.purple},
+  {key:"tackles",  label:"Top Tacklers", icon:"🛡",color:C.orange, ep:"/api/players/top-tacklers",     sk:"tackles_total",  sl:"Tackles", sc:C.orange},
+];
+const TEAM_TABS=[
+  {key:"tgoals",   label:"Most Goals",   icon:"⚽",color:C.red,   ep:"/api/players/teams/most-goals",         sk:"goals_for",     sl:"Goals",  sc:C.red},
+  {key:"tdefence", label:"Best Defence", icon:"🧱",color:C.green, ep:"/api/players/teams/best-defence",       sk:"goals_against",  sl:"GA",     sc:C.green},
+  {key:"tcs",      label:"Clean Sheets", icon:"🧤",color:C.blue,  ep:"/api/players/teams/most-clean-sheets",  sk:"clean_sheets",   sl:"CS",     sc:C.blue},
+  {key:"tform",    label:"Best Form",    icon:"📈",color:C.amber, ep:"/api/players/teams/form",               sk:"points",         sl:"Pts",    sc:C.amber},
+];
 
-/* ─── Sub-components ─── */
+function useReveal(){const ref=useRef(null);const[v,sv]=useState(false);useEffect(()=>{if(!ref.current)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){sv(true);io.disconnect();}},{threshold:0.04});io.observe(ref.current);return()=>io.disconnect();},[]);return[ref,v];}
+function Sk({h=52,r=10}){return <div style={{height:h,borderRadius:r,background:"linear-gradient(90deg,rgba(255,255,255,0.022) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.022) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.5s ease-in-out infinite",marginBottom:6}}/>;}
+function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,borderRadius:999,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,borderRadius:999,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
+function Form({f}){if(!f)return null;return <div style={{display:"flex",gap:2}}>{f.split("").slice(-5).map((c,i)=><span key={i} style={{width:13,height:13,borderRadius:3,fontSize:7,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",background:c==="W"?"rgba(52,211,153,0.22)":c==="D"?"rgba(245,158,11,0.18)":"rgba(248,113,113,0.18)",color:c==="W"?C.green:c==="D"?C.amber:C.red}}>{c}</span>)}</div>;}
+function Lbadge({slug,color}){if(!slug||slug==="all")return null;return <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:color||C.muted,background:(color||C.muted)+"10",border:"1px solid "+(color||C.muted)+"25",borderRadius:4,padding:"1px 5px",flexShrink:0}}>{LA[slug]||slug.toUpperCase()}</span>;}
 
-function Skel({ h=20, w="100%", r=8 }) {
-  return <div style={{ height:h, width:w, borderRadius:r, background:"rgba(255,255,255,0.06)", animation:"piSkeletonPulse 1.4s ease-in-out infinite" }}/>;
-}
+// ── Rank medal ────────────────────────────────────────────────
+function Rnk({n}){const mc=["#f2c94c","#94a3b8","#fb923c"];const c=n<=3?mc[n-1]:C.dim;return <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:c,width:20,textAlign:"right",flexShrink:0}}>{n}</span>;}
 
-function StatRow({ label, value, color, bar, barValue, max }) {
-  const numeric = barValue !== undefined ? Number(barValue) : parseFloat(value) || 0;
-  const barPct  = bar && max ? Math.min((numeric/max)*100, 100) : 0;
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:3, padding:"8px 14px", borderRadius:10,
-      background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em", textTransform:"uppercase" }}>{label}</span>
-        <span style={{ fontSize:14, fontWeight:900, color:color||"#c8d8f0", fontFamily:"DM Mono, monospace" }}>{value}</span>
+// ── Player row ─────────────────────────────────────────────────
+function PRow({p,rank,sk,sl,sc,max,onClick}){
+  const[hov,sh]=useState(false);const[ref,vis]=useReveal();
+  const ac=PC(p.position);const lc=LC[p.league_slug]||C.muted;const val=p[sk];
+  return(
+    <div ref={ref} onClick={()=>onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
+      style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:12,cursor:"pointer",
+        background:hov?"rgba(12,20,40,0.99)":C.card,
+        border:hov?"1px solid "+ac+"40":"1px solid "+C.border,
+        transform:hov?"translateY(-1px)":vis?"translateY(0)":"translateY(8px)",
+        opacity:vis?1:0,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",marginBottom:5}}>
+      <Rnk n={rank}/>
+      <div style={{width:34,height:34,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"1.5px solid "+ac+"28",background:ac+"0e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,color:ac}}>
+        {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
       </div>
-      {bar && (
-        <div style={{ height:3, background:"rgba(255,255,255,0.08)", borderRadius:999, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${barPct}%`, background:color||"#67b1ff",
-            borderRadius:999, transition:"width 0.8s cubic-bezier(0.22,1,0.36,1)", transitionDelay:"0.2s" }}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:2}}>
+          <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:ac,background:ac+"0e",border:"1px solid "+ac+"20",borderRadius:4,padding:"1px 4px",flexShrink:0}}>{p.position||"—"}</span>
+          <Lbadge slug={p.league_slug} color={lc}/>
         </div>
-      )}
-    </div>
-  );
-}
-
-function Sparkline5({ vals, w=120, h=34 }) {
-  const nums = vals.map(Number);
-  const max  = Math.max(...nums, 1);
-  const pad  = 4;
-  const pts  = nums.map((v,i) => {
-    const x = pad + (i/(nums.length-1))*(w-pad*2);
-    const y = h - pad - ((v/max)*(h-pad*2));
-    return `${x},${y}`;
-  }).join(" ");
-  const fillPts = `${pts} ${w-pad},${h} ${pad},${h}`;
-  return (
-    <svg width={w} height={h} style={{ overflow:"visible", display:"block", maxWidth:"100%" }}>
-      <defs>
-        <linearGradient id="piSparkGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#3b9eff"/><stop offset="100%" stopColor="#9ff1b4"/>
-        </linearGradient>
-        <linearGradient id="piSparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(59,158,255,0.3)"/><stop offset="100%" stopColor="rgba(59,158,255,0)"/>
-        </linearGradient>
-      </defs>
-      <polygon points={fillPts} fill="url(#piSparkFill)" stroke="none"/>
-      <polyline points={pts} fill="none" stroke="url(#piSparkGrad)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>
-      {nums.map((v,i) => {
-        const x = pad+(i/(nums.length-1))*(w-pad*2);
-        const y = h-pad-((v/max)*(h-pad*2));
-        return <circle key={i} cx={x} cy={y} r="3"
-          fill={i===nums.length-1?"#9ff1b4":"#67b1ff"} stroke="rgba(0,0,0,0.6)" strokeWidth="1.2"/>;
-      })}
-    </svg>
-  );
-}
-
-function ScoreGauge({ label, value, max=10, color="#67b1ff", size=100 }) {
-  const angle = (value/max) * 180;
-  const r = 42;
-  const cx = 50, cy = 50;
-  const toXY = (deg) => {
-    const rad = (deg - 180) * Math.PI / 180;
-    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-  };
-  const [x1,y1] = toXY(0);
-  const [x2,y2] = toXY(angle);
-  const largeArc = angle > 180 ? 1 : 0;
-  return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-      <svg viewBox="0 0 100 60" width={size} height={size*0.6} style={{ minWidth:60 }}>
-        <path d={`M ${cx-r},${cy} A ${r},${r} 0 0,1 ${cx+r},${cy}`}
-          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="7" strokeLinecap="round"/>
-        {angle > 0 && (
-          <path d={`M ${x1},${y1} A ${r},${r} 0 ${largeArc},1 ${x2},${y2}`}
-            fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"/>
-        )}
-        <text x={cx} y={cy-2} textAnchor="middle" fill={color} fontSize="16" fontWeight="900"
-          fontFamily="DM Mono, monospace">{value.toFixed(1)}</text>
-      </svg>
-      <span style={{ fontSize:8, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   MAIN PAGE
-   ═══════════════════════════════════════════════════ */
-export default function PlayerInsightPage() {
-  const { id }     = useParams();
-  const navigate   = useNavigate();
-  const isMobile   = useIsMobile();
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [gw, setGw] = useState(29);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const bootstrap = await getFplBootstrap();
-        const nextGw    = getUpcomingGameweek(bootstrap);
-        if (cancelled) return;
-        setGw(nextGw);
-        const tableData = await getFplPredictorTable({
-          start_gw: nextGw, max_cost: 15.5, min_prob: 0, team: "ALL", position: "ALL",
-        });
-        if (cancelled) return;
-        setPlayers((tableData.rows||[]).map(normalizePlayer).filter(Boolean));
-        setLoading(false);
-      } catch(err) {
-        console.error(err);
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled=true; };
-  }, []);
-
-  const player = useMemo(() => {
-    if (!players.length) return null;
-    return players.find(p => String(p.player_id||p.id) === String(id)) || null;
-  }, [players, id]);
-
-  const similars = useMemo(() => {
-    if (!player || !players.length) return [];
-    return players
-      .filter(p => p.position===player.position && (p.player_id||p.id) !== (player.player_id||player.id))
-      .sort((a,b) => Number(b.projected_points||0)-Number(a.projected_points||0))
-      .slice(0,5);
-  }, [player, players]);
-
-  const pts         = Number(player?.projected_points||0);
-  const form        = Number(player?.form||0);
-  const prob        = Math.round((player?.appearance_prob||0)*100);
-  const own         = Number(player?.selected_by_pct||0);
-  const cost        = Number(player?.cost||0);
-  const valueIndex  = cost > 0 ? pts/cost : 0;
-  const diff        = Number(player?.fixture_difficulty||3);
-  const fwdPts      = [1,2,3,4,5].map(i => Number(player?.[`pts_gw_${i}`]||0));
-  const isGK        = player?.position === "GK";
-  const shirtId     = SHIRT_IDS[player?.team];
-  const shirtUrl    = shirtId ? `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${shirtId}${isGK?"_1":""}-66.png` : null;
-  const photoUrl    = player?.code ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${player.code}.png` : null;
-  const teamColor   = isGK ? (GK_COLORS[player?.team]||"#ffd600") : (TEAM_COLORS[player?.team]||"#4f8cff");
-  const captainScore= pts * (prob/100) * (diff <= 2 ? 1.2 : diff >= 4 ? 0.8 : 1.0);
-  const probColor   = prob>=90?"#9ff1b4":prob>=70?"#f2c94c":"#ff6b6b";
-  const ptsColor    = pts>=9?"#9ff1b4":pts>=6?"#67b1ff":"#c8d8f0";
-
-  if (loading) return (
-    <div className="pi-shell">
-      <style>{`@keyframes piSkeletonPulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-      <div className="pi-content" style={{ padding: isMobile ? "12px" : "24px" }}>
-        <div style={{ display:"flex", gap:10, marginBottom:16, flexDirection: isMobile ? "column" : "row" }}>
-          <Skel h={isMobile?120:180} w={isMobile?"100%":180} r={20}/>
-          <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8 }}>
-            <Skel h={36} w={isMobile?"100%":280} r={10}/>
-            <Skel h={20} w={180} r={8}/>
-            <Skel h={80} w="100%" r={14}/>
-          </div>
+        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+        <div style={{display:"flex",gap:4,alignItems:"center",marginTop:1}}>
+          {p.team_logo&&<img src={p.team_logo} alt="" style={{width:10,height:10,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+          <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.team}</span>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap:10 }}>
-          {[1,2,3,4,5,6].map(i=><Skel key={i} h={80} r={12}/>)}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:7,minWidth:100,flexShrink:0}}>
+        <Bar v={val||0} max={max} color={sc}/>
+        <div style={{textAlign:"right",minWidth:32}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
+          <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{sl}</div>
         </div>
       </div>
     </div>
   );
+}
 
-  if (!player) return (
-    <div className="pi-shell">
-      <div className="pi-content" style={{ padding: isMobile ? "12px" : "24px" }}>
-        <button className="pi-back-btn" onClick={() => navigate(-1)}>← Back</button>
-        <div style={{ color:"#ff5d5d", fontSize:18, fontWeight:800, marginTop:24 }}>
-          Player not found (id: {id})
+// ── Team row ───────────────────────────────────────────────────
+function TRow({t,rank,sk,sl,sc,max,onClick}){
+  const[hov,sh]=useState(false);const[ref,vis]=useReveal();
+  const lc=LC[t.league_slug]||C.muted;const val=t[sk];
+  return(
+    <div ref={ref} onClick={()=>onClick(t)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
+      style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:12,cursor:"pointer",
+        background:hov?"rgba(12,20,40,0.99)":C.card,
+        border:hov?"1px solid "+lc+"35":"1px solid "+C.border,
+        transform:hov?"translateY(-1px)":vis?"translateY(0)":"translateY(8px)",
+        opacity:vis?1:0,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",marginBottom:5}}>
+      <Rnk n={rank}/>
+      <div style={{width:26,height:26,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {t.team_logo?<img src={t.team_logo} alt="" style={{width:24,height:24,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>:<div style={{width:22,height:22,borderRadius:5,background:lc+"14"}}/>}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:2}}>
+          <Lbadge slug={t.league_slug} color={lc}/>
+          <Form f={t.form}/>
+        </div>
+        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.team}</p>
+        <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>{t.played}PL · {t.wins}W {t.draws}D {t.losses}L</span>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:7,minWidth:100,flexShrink:0}}>
+        <Bar v={val||0} max={max} color={sc}/>
+        <div style={{textAlign:"right",minWidth:32}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
+          <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{sl}</div>
         </div>
       </div>
     </div>
   );
+}
 
-  const gaugeSize = isMobile ? 76 : 100;
-
-  return (
-    <div className="pi-shell">
-      <style>{`
-        @keyframes piSkeletonPulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        .pi-shell { background:#000; min-height:100vh; }
-        .pi-content { max-width:900px; margin:0 auto; padding:${isMobile?"12px":"24px 24px 40px"}; }
-        .pi-back-btn {
-          background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
-          borderRadius:8px; color:#4a7a9a; cursor:pointer; padding:7px 14px;
-          fontSize:12px; fontWeight:800; marginBottom:16px; fontFamily:inherit;
-          transition:all 0.15s;
-        }
-        .pi-back-btn:hover { background:rgba(255,255,255,0.09); color:#c8d8f0; }
-        .pi-section-label {
-          fontSize:9px; fontWeight:900; color:#1a3a5a; letterSpacing:0.14em;
-          textTransform:uppercase; marginBottom:8px; marginTop:20px;
-          paddingLeft:2px; borderLeft:2px solid rgba(103,177,255,0.3); paddingLeft:8px;
-        }
-        .pi-stats-grid {
-          display:grid;
-          grid-template-columns:${isMobile?"1fr 1fr":"1fr 1fr 1fr 1fr"};
-          gap:8px;
-        }
-        .pi-similar-row {
-          display:flex; align-items:center; gap:10; padding:10px 14px;
-          borderRadius:10px; border:1px solid rgba(255,255,255,0.05);
-          background:rgba(255,255,255,0.02); transition:all 0.13s ease;
-        }
-        .pi-similar-row:hover { background:rgba(103,177,255,0.07); border-color:rgba(103,177,255,0.2); transform:translateX(3px); }
-        .pi-similar-rank { fontSize:10px; fontWeight:800; minWidth:18px; }
-        .pi-spark-card {
-          background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
-          borderRadius:14px; padding:${isMobile?"12px":"16px 18px"};
-          overflow:hidden;
-        }
-        .pi-captaincy-card {
-          display:flex; flex-direction:${isMobile?"column":"row"};
-          gap:0; background:rgba(255,255,255,0.03);
-          border:1px solid rgba(255,255,255,0.07); borderRadius:14px; overflow:hidden;
-        }
-        .pi-captaincy-score-col {
-          padding:${isMobile?"14px":"20px"};
-          border-right:${isMobile?"none":"1px solid rgba(255,255,255,0.06)"};
-          border-bottom:${isMobile?"1px solid rgba(255,255,255,0.06)":"none"};
-          min-width:${isMobile?"auto":"140px"}; flex-shrink:0;
-        }
-        .pi-captaincy-factors {
-          flex:1; padding:${isMobile?"12px":"16px"}; display:flex; flex-direction:column; gap:6px; justify-content:center;
-        }
-        .pi-risk-card {
-          background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
-          borderRadius:14px; padding:${isMobile?"12px":"16px 18px"};
-        }
-        .pi-similar-list { display:flex; flex-direction:column; gap:6px; }
-        .pi-meta-chip {
-          fontSize:10px; fontWeight:800; padding:2px 8px; borderRadius:6px;
-          background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#8ab8e0;
-        }
-        .pi-meta-chip-gold { background:rgba(242,201,76,0.1); border-color:rgba(242,201,76,0.3); color:#f2c94c; }
-        .pi-diff-pill {
-          fontSize:9px; fontWeight:800; padding:2px 7px; borderRadius:999;
-          marginLeft:8px; letterSpacing:0.05em;
-        }
-      `}</style>
-
-      <div className="pi-content">
-        {/* BACK */}
-        <button className="pi-back-btn" onClick={() => navigate(-1)}>← Back</button>
-
-        {/* ══ HERO ══ */}
-        <div style={{
-          display:"flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: isMobile ? 14 : 20,
-          padding: isMobile ? "14px" : "20px 24px",
-          borderRadius:16,
-          background:"rgba(255,255,255,0.03)",
-          border:`1px solid ${teamColor}33`,
-          marginBottom:4,
-          position:"relative", overflow:"hidden",
-        }}>
-          {/* Background team color glow */}
-          <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 0% 50%, ${teamColor}12, transparent 60%)`, pointerEvents:"none" }}/>
-
-          {/* Kit + Photo row on mobile */}
-          <div style={{
-            display:"flex",
-            flexDirection: isMobile ? "row" : "column",
-            alignItems: isMobile ? "flex-end" : "center",
-            gap: isMobile ? 10 : 6,
-            flexShrink:0, position:"relative", zIndex:1,
-          }}>
-            {shirtUrl && (
-              <img src={shirtUrl} alt={player.team}
-                style={{ width: isMobile ? 64 : 90, height: isMobile ? 64 : 90, objectFit:"contain",
-                  filter:"drop-shadow(0 6px 20px rgba(0,0,0,0.7))" }}
-                onError={e=>{ e.currentTarget.style.display="none"; }}
-              />
-            )}
-            {photoUrl && (
-              <div style={{
-                width: isMobile ? 52 : 72, height: isMobile ? 64 : 90,
-                borderRadius:10, overflow:"hidden",
-                border:"2px solid rgba(255,255,255,0.12)",
-                background:"rgba(0,0,0,0.3)", flexShrink:0,
-              }}>
-                <img src={photoUrl} alt={player.name}
-                  style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top center" }}
-                  onError={e=>{ e.currentTarget.parentElement.style.display="none"; }}
-                />
-              </div>
-            )}
+// ── Player detail panel ────────────────────────────────────────
+function PDetail({p,onClose}){
+  const ac=PC(p.position);const lc=LC[p.league_slug]||C.muted;const m=p.minutes||1;
+  const bars=[{l:"Goals",v:p.goals||0,max:35,c:C.red},{l:"Assists",v:p.assists||0,max:25,c:C.green},{l:"Shots",v:p.shots_total||0,max:200,c:C.blue},{l:"On Target",v:p.shots_on||0,max:100,c:C.blue},{l:"Key Passes",v:p.passes_key||0,max:100,c:C.amber},{l:"Dribbles",v:p.dribbles_success||0,max:100,c:C.purple},{l:"Tackles",v:p.tackles_total||0,max:150,c:C.green}];
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",padding:16,pointerEvents:"none"}}>
+      <div style={{width:330,maxHeight:"calc(100vh - 32px)",overflowY:"auto",pointerEvents:"auto",borderRadius:20,background:"rgba(4,9,20,0.99)",border:"1px solid "+ac+"28",boxShadow:"0 0 40px "+ac+"14,0 32px 80px rgba(0,0,0,0.85)",animation:"slideIn 0.22s cubic-bezier(.22,1,.36,1)",scrollbarWidth:"thin",scrollbarColor:ac+"18 transparent"}}>
+        <div style={{height:2,background:"linear-gradient(90deg,"+ac+",transparent)"}}/>
+        <div style={{padding:"15px 15px 0",display:"flex",gap:10,alignItems:"flex-start"}}>
+          <div style={{width:52,height:52,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid "+ac+"35",background:ac+"0e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:900,color:ac}}>
+            {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
           </div>
-
-          {/* Name + meta */}
-          <div style={{ flex:1, minWidth:0, position:"relative", zIndex:1 }}>
-            <div style={{ fontSize: isMobile ? 20 : 26, fontWeight:900, color:"#f0f6ff",
-              letterSpacing:"-0.02em", lineHeight:1.1, marginBottom:8 }}>
-              {player.name}
+          <div style={{flex:1,minWidth:0}}>
+            <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px",lineHeight:1.2}}>{p.name}</h2>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{fontSize:7,fontWeight:900,textTransform:"uppercase",color:ac,background:ac+"10",border:"1px solid "+ac+"22",borderRadius:4,padding:"2px 5px"}}>{p.position}</span>
+              <Lbadge slug={p.league_slug} color={lc}/>
+              <span style={{fontSize:9,color:C.muted}}>{p.nationality}</span>
+              {p.age&&<span style={{fontSize:9,color:C.dim}}>Age {p.age}</span>}
             </div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:10 }}>
-              <span className="pi-meta-chip" style={{ background:teamColor+"33", borderColor:teamColor+"66", color:"#e8f0ff" }}>
-                {player.team}
-              </span>
-              <span className="pi-meta-chip">{player.position}</span>
-              <span className="pi-meta-chip pi-meta-chip-gold">£{cost.toFixed(1)}m</span>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:6, marginBottom:8 }}>
-              <span style={{ color:"#4a6a8a", fontSize:11, fontWeight:700 }}>Next:</span>
-              <span style={{ color:"#c8d8f0", fontSize:13, fontWeight:800 }}>{player.next_opp}</span>
-              <span className="pi-diff-pill" style={{ background:DIFF_COLOR[diff]||"#7a5c14", color:"#fff" }}>
-                {DIFF_LABEL[diff]||"Med"}
-              </span>
-              <span style={{ color:"#2a4a6a", fontSize:10, marginLeft:2 }}>GW{gw}</span>
-            </div>
-            <div style={{ fontSize: isMobile ? 28 : 36, fontWeight:900, color:ptsColor,
-              fontFamily:"DM Mono, monospace", lineHeight:1 }}>
-              {pts.toFixed(1)} <span style={{ fontSize:14, color:"#3a5a7a", fontWeight:700 }}>pts</span>
+            <div style={{display:"flex",gap:4,alignItems:"center",marginTop:4}}>
+              {p.team_logo&&<img src={p.team_logo} alt="" style={{width:13,height:13,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+              <span style={{fontSize:10,fontWeight:700,color:C.muted}}>{p.team}</span>
             </div>
           </div>
-
-          {/* Gauges */}
-          <div style={{
-            display:"flex",
-            flexDirection: isMobile ? "row" : "column",
-            gap: isMobile ? 10 : 12,
-            alignItems:"center",
-            justifyContent: isMobile ? "space-around" : "center",
-            flexShrink:0,
-            position:"relative", zIndex:1,
-            paddingTop: isMobile ? 0 : 4,
-          }}>
-            <ScoreGauge label="Proj Pts"       value={pts}          max={14} color={ptsColor}  size={gaugeSize}/>
-            <ScoreGauge label="Captain"        value={captainScore} max={14} color="#f2c94c"   size={gaugeSize}/>
-            <ScoreGauge label="Form"           value={form}         max={10} color="#67b1ff"   size={gaugeSize}/>
-          </div>
+          <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color=C.text;}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color=C.muted;}}>✕</button>
         </div>
-
-        {/* ══ STATS GRID ══ */}
-        <div className="pi-section-label">Key Stats</div>
-        <div className="pi-stats-grid">
-          <StatRow label="Projected GW Pts"  value={pts.toFixed(1)+" pts"}    color={ptsColor}   bar={true} barValue={pts} max={14} />
-          <StatRow label="Form (last 5 GWs)" value={form.toFixed(1)}          color="#67b1ff"    bar={true} barValue={form} max={10} />
-          <StatRow label="Appearance Prob"   value={prob+"%"}                  color={probColor}  bar={true} barValue={prob} max={100} />
-          <StatRow label="Ownership"         value={own.toFixed(1)+"%"}        color={own>30?"#f2c94c":own>10?"#67b1ff":"#9ff1b4"} />
-          <StatRow label="Value Index"       value={(valueIndex).toFixed(2)}   color="#9ff1b4" />
-          <StatRow label="Cost"              value={"£"+cost.toFixed(1)+"m"}   color="#c8d8f0" />
-          <StatRow label="Merit Score"       value={Number(player.merit||0).toFixed(2)} color="#c8d8f0" />
-          <StatRow label="Fixture Diff"      value={DIFF_LABEL[diff]||"Med"}   color={diff<=2?"#9ff1b4":diff>=4?"#ff6b6b":"#f2c94c"} />
-        </div>
-
-        {/* ══ 5-GW SPARKLINE ══ */}
-        <div className="pi-section-label">5-Gameweek Projection</div>
-        <div className="pi-spark-card">
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
-            flexWrap:"wrap", gap:10, marginBottom:12 }}>
-            <div>
-              <div style={{ fontSize:11, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em", textTransform:"uppercase" }}>
-                GW Pts Forecast
-              </div>
-              <div style={{ fontSize:9, color:"#1a3a5a", marginTop:2 }}>
-                Based on fixture difficulty + form + projected model
-              </div>
+        <div style={{padding:"11px 15px",display:"flex",gap:5,flexWrap:"wrap"}}>
+          {[{l:"Goals",v:p.goals,c:C.red},{l:"Assists",v:p.assists,c:C.green},{l:"Apps",v:p.appearances,c:C.blue},{l:"Mins",v:p.minutes,c:C.muted},p.rating&&{l:"Rating",v:Number(p.rating).toFixed(1),c:C.amber}].filter(Boolean).map(s=>(
+            <div key={s.l} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"7px 9px",borderRadius:9,background:"rgba(255,255,255,0.022)",border:"1px solid "+s.c+"18",minWidth:50}}>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:s.c,lineHeight:1}}>{s.v??0}</span>
+              <span style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>{s.l}</span>
             </div>
-            <div style={{ display:"flex", gap:isMobile?4:6, flexWrap:"wrap" }}>
-              {fwdPts.map((v,i) => (
-                <div key={i} style={{ textAlign:"center", minWidth:isMobile?22:28 }}>
-                  <div style={{ fontSize:isMobile?10:11, fontWeight:900,
-                    color:v>=9?"#9ff1b4":v>=6?"#67b1ff":"#c8d8f0",
-                    fontFamily:"DM Mono, monospace" }}>{v.toFixed(1)}</div>
-                  <div style={{ fontSize:8, color:"#2a4a6a", fontWeight:700 }}>GW+{i+1}</div>
-                </div>
+          ))}
+        </div>
+        <div style={{padding:"0 15px 12px"}}>
+          <div style={{fontSize:7,fontWeight:900,color:ac,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Season Statistics</div>
+          {bars.map(r=>(
+            <div key={r.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}>
+              <span style={{fontSize:10,color:C.muted,width:76,flexShrink:0,textAlign:"right"}}>{r.l}</span>
+              <Bar v={r.v} max={r.max} color={r.c}/>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:r.c,width:22,textAlign:"right",fontWeight:700,flexShrink:0}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+        {p.minutes>90&&(
+          <div style={{margin:"0 15px 12px",padding:"11px 13px",borderRadius:11,background:"rgba(255,255,255,0.018)",border:"1px solid "+ac+"14"}}>
+            <div style={{fontSize:7,fontWeight:900,color:ac,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9}}>Per 90 Minutes</div>
+            <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+              {[{l:"Goals",v:(p.goals_per90||0).toFixed(2)},{l:"Assists",v:(p.assists_per90||0).toFixed(2)},{l:"Shots",v:(p.shots_per90||0).toFixed(2)}].map(s=>(
+                <div key={s.l}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:ac}}>{s.v}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.l}</div></div>
               ))}
             </div>
           </div>
-          <div style={{ overflowX:"auto" }}>
-            <Sparkline5 vals={fwdPts} w={isMobile?280:380} h={isMobile?44:60} />
-          </div>
+        )}
+        <div style={{margin:"0 15px 15px",display:"flex",gap:7}}>
+          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(245,158,11,0.07)",border:"1px solid rgba(245,158,11,0.18)",textAlign:"center"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:900,color:C.amber}}>{p.yellow_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Yellow</div></div>
+          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(248,113,113,0.07)",border:"1px solid rgba(248,113,113,0.18)",textAlign:"center"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:900,color:C.red}}>{p.red_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Red</div></div>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* ══ CAPTAINCY ══ */}
-        <div className="pi-section-label">Captaincy Analysis</div>
-        <div className="pi-captaincy-card">
-          <div className="pi-captaincy-score-col">
-            <div style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.1em", textTransform:"uppercase" }}>Captain Score</div>
-            <div style={{ fontSize: isMobile ? 28 : 36, fontWeight:900, color:"#f2c94c", fontFamily:"DM Mono, monospace", lineHeight:1 }}>
-              {captainScore.toFixed(1)}
+// ── Team detail panel ──────────────────────────────────────────
+function TDetail({t,onClose}){
+  const lc=LC[t.league_slug]||C.muted;
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",padding:16,pointerEvents:"none"}}>
+      <div style={{width:300,maxHeight:"calc(100vh - 32px)",overflowY:"auto",pointerEvents:"auto",borderRadius:20,background:"rgba(4,9,20,0.99)",border:"1px solid "+lc+"28",boxShadow:"0 0 40px "+lc+"14,0 32px 80px rgba(0,0,0,0.85)",animation:"slideIn 0.22s cubic-bezier(.22,1,.36,1)"}}>
+        <div style={{height:2,background:"linear-gradient(90deg,"+lc+",transparent)"}}/>
+        <div style={{padding:"15px"}}>
+          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:13}}>
+            {t.team_logo&&<img src={t.team_logo} alt="" style={{width:40,height:40,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+            <div style={{flex:1,minWidth:0}}>
+              <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px"}}>{t.team}</h2>
+              <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                <Lbadge slug={t.league_slug} color={lc}/>
+                <span style={{fontSize:9,color:C.dim}}>#{t.rank}</span>
+                <Form f={t.form}/>
+              </div>
             </div>
-            <div style={{ fontSize:9, color:"#1a3a5a", marginTop:4 }}>Pts × Availability × Fixture</div>
+            <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";}}>✕</button>
           </div>
-          <div className="pi-captaincy-factors">
-            {[
-              { lbl:"Projected Pts",    val:pts.toFixed(1),     color:ptsColor   },
-              { lbl:"Appearance Prob",  val:prob+"%",           color:probColor  },
-              { lbl:"Fixture",          val:DIFF_LABEL[diff]||"Med", color:diff<=2?"#9ff1b4":diff>=4?"#ff6b6b":"#f2c94c" },
-              { lbl:"Ownership",        val:own.toFixed(1)+"%", color:own>30?"#f2c94c":"#9ff1b4" },
-            ].map(({lbl,val,color}) => (
-              <div key={lbl} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                padding:"6px 10px", borderRadius:8, background:"rgba(255,255,255,0.03)" }}>
-                <span style={{ fontSize:10, fontWeight:700, color:"#3a5a7a" }}>{lbl}</span>
-                <span style={{ fontSize:13, fontWeight:900, color, fontFamily:"DM Mono, monospace" }}>{val}</span>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:13}}>
+            {[{l:"W",v:t.wins,c:C.green},{l:"D",v:t.draws,c:C.amber},{l:"L",v:t.losses,c:C.red},{l:"PTS",v:t.points,c:C.blue}].map(s=>(
+              <div key={s.l} style={{textAlign:"center",padding:"7px 4px",borderRadius:9,background:"rgba(255,255,255,0.022)",border:"1px solid "+s.c+"18"}}>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:s.c}}>{s.v}</div>
+                <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>{s.l}</div>
               </div>
             ))}
           </div>
+          {[{l:"Goals Scored",v:t.goals_for,max:100,c:C.red},{l:"Goals Against",v:t.goals_against,max:80,c:C.muted},{l:"Clean Sheets",v:t.clean_sheets,max:20,c:C.green},{l:"Goals/Game",v:t.goals_per_game,max:4,c:C.amber},{l:"Conceded/Game",v:t.conceded_per_game,max:3,c:C.orange},{l:"Win Rate",v:t.win_rate,max:100,c:C.blue}].map(s=>(
+            <div key={s.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}>
+              <span style={{fontSize:9,color:C.muted,width:90,flexShrink:0,textAlign:"right"}}>{s.l}</span>
+              <Bar v={parseFloat(s.v)||0} max={s.max} color={s.c}/>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:s.c,width:30,textAlign:"right",fontWeight:700,flexShrink:0}}>{typeof s.v==="number"?s.v.toFixed?s.v.toFixed(1):s.v:s.v||0}</span>
+            </div>
+          ))}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* ══ RISK ══ */}
-        <div className="pi-section-label">Risk & Availability</div>
-        <div className="pi-risk-card">
-          <div style={{ display:"flex", alignItems:"center", gap:isMobile?10:16, flexWrap:"wrap" }}>
-            <div style={{ flex:1, minWidth:140 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-                <span style={{ fontSize:10, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>APPEARANCE PROBABILITY</span>
-                <span style={{ fontSize:16, fontWeight:900, color:probColor, fontFamily:"DM Mono, monospace" }}>{prob}%</span>
-              </div>
-              <div style={{ height:8, background:"rgba(255,255,255,0.06)", borderRadius:999, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${prob}%`, background:probColor, borderRadius:999,
-                  transition:"width 0.8s cubic-bezier(0.22,1,0.36,1)", transitionDelay:"0.3s" }}/>
+// ── Section header ─────────────────────────────────────────────
+function SHead({title,color,count,loading}){
+  return(
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+      <div style={{width:3,height:28,borderRadius:2,background:"linear-gradient(180deg,"+color+",transparent)",flexShrink:0}}/>
+      <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:0,flex:1,letterSpacing:"-0.02em"}}>{title}</h2>
+      {loading&&<span style={{fontSize:9,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Loading…</span>}
+      {!loading&&count!=null&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:C.dim,fontWeight:700}}>{count}</span>}
+    </div>
+  );
+}
+
+// ── MAIN ──────────────────────────────────────────────────────
+export default function PlayerProfilePage(){
+  const[league,setLeague]=useState("all");
+  const[pTab,setPTab]=useState("scorers");
+  const[tTab,setTTab]=useState("tgoals");
+  const[cache,setCache]=useState({});
+  const cacheRef=useRef({});
+  const[loading,setLoading]=useState({});
+  const[sel,setSel]=useState(null);
+  const[selType,setSelType]=useState(null);
+  const[search,setSearch]=useState("");
+  const[srRes,setSrRes]=useState([]);
+  const[srLoading,setSrLoading]=useState(false);
+  const[srOpen,setSrOpen]=useState(false);
+  const debRef=useRef(null);
+  const searchRef=useRef(null);
+
+  // Fetch helper
+  const fetchTab=useCallback(async(ep,key)=>{
+    if(cacheRef.current[key]!==undefined)return;
+    setLoading(l=>({...l,[key]:true}));
+    try{
+      const params=new URLSearchParams({limit:"20"});
+      if(league&&league!=="all") params.set("league",league);
+      const res=await fetch(B+ep+"?"+params.toString());
+      if(!res.ok)throw new Error("HTTP "+res.status);
+      const raw=await res.json();
+      const val=Array.isArray(raw)?raw:(raw.teams||raw.players||[]);
+      cacheRef.current[key]=val;
+      setCache(c=>({...c,[key]:val}));
+    }catch(e){console.error(ep,e);setCache(c=>({...c,[key]:[]}));}
+    setLoading(l=>({...l,[key]:false}));
+  },[league]);
+
+  const pCurrent=PLAYER_TABS.find(t=>t.key===pTab)||PLAYER_TABS[0];
+  const tCurrent=TEAM_TABS.find(t=>t.key===tTab)||TEAM_TABS[0];
+  const pKey=pCurrent.key+":"+league;
+  const tKey=tCurrent.key+":"+league;
+
+  useEffect(()=>{fetchTab(pCurrent.ep,pKey);},[pTab,league]);
+  useEffect(()=>{fetchTab(tCurrent.ep,tKey);},[tTab,league]);
+  // Preload defaults on mount
+  useEffect(()=>{
+    fetchTab(PLAYER_TABS[0].ep,PLAYER_TABS[0].key+":all");
+    fetchTab(TEAM_TABS[0].ep,TEAM_TABS[0].key+":all");
+  },[]);
+
+  const pRows=cache[pKey]||[];const tRows=cache[tKey]||[];
+  const pLoading=loading[pKey];const tLoading=loading[tKey];
+  const pMax=pRows.length?Math.max(...pRows.map(r=>parseFloat(r[pCurrent.sk])||0),1):1;
+  const tMax=tRows.length?Math.max(...tRows.map(r=>parseFloat(r[tCurrent.sk])||0),1):1;
+
+  // Search
+  useEffect(()=>{
+    clearTimeout(debRef.current);
+    if(!search.trim()){setSrRes([]);setSrOpen(false);return;}
+    setSrLoading(true);setSrOpen(true);
+    debRef.current=setTimeout(async()=>{
+      try{
+        const r=await fetch(B+"/api/players/search?q="+encodeURIComponent(search)+"&limit=20");
+        const d=await r.json();
+        setSrRes(Array.isArray(d)?d:[]);
+      }catch{setSrRes([]);}
+      setSrLoading(false);
+    },350);
+  },[search]);
+
+  useEffect(()=>{
+    const fn=e=>{if(searchRef.current&&!searchRef.current.contains(e.target)){setSrOpen(false);}};
+    document.addEventListener("mousedown",fn);return()=>document.removeEventListener("mousedown",fn);
+  },[]);
+
+  const openPlayer=p=>{setSel(p);setSelType("player");setSrOpen(false);setSearch("");};
+  const openTeam=t=>{setSel(t);setSelType("team");setSrOpen(false);setSearch("");};
+
+  // League filter invalidates cache
+  const onLeague=lg=>{setLeague(lg);cacheRef.current={};setCache({});};
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Sora',sans-serif",
+      backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
+      backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
+      <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
+
+      {sel&&selType==="player"&&<PDetail p={sel} onClose={()=>setSel(null)}/>}
+      {sel&&selType==="team"&&<TDetail t={sel} onClose={()=>setSel(null)}/>}
+
+      <div style={{maxWidth:1240,margin:"0 auto",padding:"0 20px 80px"}}>
+
+        {/* ── Header ── */}
+        <div style={{padding:"26px 0 18px",borderBottom:"1px solid rgba(255,255,255,0.045)",marginBottom:20}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:4,height:46,borderRadius:2,background:"linear-gradient(180deg,#38bdf8,#34d399)",flexShrink:0}}/>
+              <div>
+                <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:26,fontWeight:900,color:C.text,margin:0,letterSpacing:"-0.03em"}}>Stats Hub</h1>
+                <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:C.dim,margin:"3px 0 0",fontWeight:600}}>Goals · Assists · Clean sheets · Team form across all 5 European leagues</p>
               </div>
             </div>
-            <div style={{ padding:"10px 18px", borderRadius:12,
-              background: prob>=85 ? "rgba(40,217,122,0.1)" : prob>=70 ? "rgba(242,201,76,0.1)" : "rgba(255,80,80,0.1)",
-              border:`1px solid ${probColor}44`, textAlign:"center", flexShrink:0 }}>
-              <div style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>RISK LEVEL</div>
-              <div style={{ fontSize:14, fontWeight:900, color:probColor, marginTop:2 }}>
-                {prob>=85?"LOW":prob>=70?"MEDIUM":"HIGH"}
-              </div>
+            {/* Search */}
+            <div ref={searchRef} style={{position:"relative",width:"min(300px,100%)"}}>
+              <svg style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input value={search} onChange={e=>setSearch(e.target.value)}
+                placeholder="Search players or teams…"
+                style={{width:"100%",padding:"9px 32px 9px 30px",borderRadius:11,boxSizing:"border-box",
+                  background:"rgba(255,255,255,0.045)",border:"1px solid rgba(255,255,255,0.09)",
+                  color:C.text,fontFamily:"'Inter',sans-serif",fontSize:12,outline:"none",transition:"border .15s"}}
+                onFocus={e=>{e.target.style.borderColor=C.blue+"55";setSrOpen(!!search);}}
+                onBlur={e=>e.target.style.borderColor="rgba(255,255,255,0.09)"}/>
+              {search&&<button onClick={()=>{setSearch("");setSrRes([]);setSrOpen(false);}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",padding:0}}>✕</button>}
+              {/* Search dropdown */}
+              {srOpen&&(
+                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,borderRadius:14,background:"rgba(4,9,20,0.99)",border:"1px solid rgba(255,255,255,0.1)",boxShadow:"0 24px 60px rgba(0,0,0,0.75)",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
+                  <div style={{padding:"8px 12px 4px",fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Search Results</div>
+                  {srLoading&&[1,2,3].map(i=><div key={i} style={{padding:"8px 12px"}}><Sk h={38} r={8}/></div>)}
+                  {!srLoading&&srRes.length===0&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:C.dim,padding:"12px",margin:0}}>No results for "{search}"</p>}
+                  {!srLoading&&srRes.map(p=>(
+                    <div key={p.id} onClick={()=>openPlayer(p)}
+                      style={{display:"flex",gap:10,alignItems:"center",padding:"9px 12px",cursor:"pointer",transition:"background .12s",borderTop:"1px solid rgba(255,255,255,0.04)"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:PC(p.position)+"10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:PC(p.position),fontWeight:900}}>
+                        {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:700,color:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+                        <p style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted,margin:0}}>{p.team} · {p.position} · {p.league}</p>
+                      </div>
+                      <div style={{display:"flex",gap:8,flexShrink:0}}>
+                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:C.red}}>{p.goals}G</span>
+                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:C.green}}>{p.assists}A</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ══ SIMILAR PLAYERS ══ */}
-        {similars.length > 0 && (
-          <>
-            <div className="pi-section-label">Similar {player.position}s to Consider</div>
-            <div className="pi-similar-list">
-              {similars.map((p,i) => {
-                const pPts = Number(p.projected_points||0);
-                const pColor = pPts>=9?"#9ff1b4":pPts>=6?"#67b1ff":"#c8d8f0";
-                const betterThanCurrent = pPts > pts;
-                return (
-                  <div key={p.player_id||p.id}
-                    className="pi-similar-row"
-                    onClick={() => navigate(`/player/${p.player_id||p.id}`)}>
-                    <span className="pi-similar-rank" style={{ color:"#2a4a6a" }}>#{i+1}</span>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, minWidth:0 }}>
-                      {SHIRT_IDS[p.team] && (
-                        <img
-                          src={`https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${SHIRT_IDS[p.team]}-66.png`}
-                          alt={p.team} width={24} height={24}
-                          style={{ objectFit:"contain", filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.5))", flexShrink:0 }}
-                          onError={e=>{e.currentTarget.style.display="none";}}
-                        />
-                      )}
-                      <div style={{ minWidth:0 }}>
-                        <div style={{ fontSize:13, fontWeight:800, color:"#c8d8f0",
-                          whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</div>
-                        <div style={{ fontSize:10, color:"#2a4a6a", fontWeight:700 }}>{p.team} · £{Number(p.cost||0).toFixed(1)}m</div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign:"right", flexShrink:0 }}>
-                      <div style={{ fontSize:16, fontWeight:900, color:pColor, fontFamily:"DM Mono, monospace" }}>
-                        {pPts.toFixed(1)}
-                      </div>
-                      <div style={{ fontSize:8, fontWeight:800, color:betterThanCurrent?"#9ff1b4":"#2a4a6a", letterSpacing:"0.06em" }}>
-                        {betterThanCurrent ? `+${(pPts-pts).toFixed(1)}` : "pts"}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* ── League chips ── */}
+        <div style={{display:"flex",gap:6,marginBottom:22,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
+          {LEAGUES.map(l=>(
+            <button key={l.key} onClick={()=>onLeague(l.key)}
+              style={{padding:"7px 14px",borderRadius:20,
+                border:league===l.key?"1.5px solid "+l.color+"55":"1.5px solid rgba(255,255,255,0.07)",
+                background:league===l.key?l.color+"12":"rgba(255,255,255,0.025)",
+                color:league===l.key?l.color:C.muted,fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,
+                cursor:"pointer",transition:"all .16s",flexShrink:0,whiteSpace:"nowrap",
+                boxShadow:league===l.key?"0 0 14px "+l.color+"18":"none"}}>
+              {league===l.key&&<span style={{width:5,height:5,borderRadius:"50%",background:l.color,display:"inline-block",marginRight:5,verticalAlign:"middle"}}/>}
+              {l.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Two-column grid ── */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
+
+          {/* LEFT — Player rankings */}
+          <div>
+            {/* Tab row */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Inter',sans-serif"}}>Player Rankings</div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                {PLAYER_TABS.map(t=>(
+                  <button key={t.key} onClick={()=>setPTab(t.key)}
+                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
+                      border:pTab===t.key?"1.5px solid "+t.color+"50":"1.5px solid rgba(255,255,255,0.07)",
+                      background:pTab===t.key?t.color+"12":"rgba(255,255,255,0.022)",
+                      color:pTab===t.key?t.color:C.muted,
+                      boxShadow:pTab===t.key?"0 0 12px "+t.color+"18":"none"}}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </>
-        )}
+            <SHead title={pCurrent.label} color={pCurrent.color} count={!pLoading?pRows.length:null} loading={pLoading}/>
+            {pLoading&&[1,2,3,4,5,6,7].map(i=><Sk key={i}/>)}
+            {!pLoading&&pRows.length===0&&(
+              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
+                <div style={{fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No data loaded yet</div>
+                <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Check that the backend is running at {B}</div>
+              </div>
+            )}
+            {!pLoading&&pRows.map((p,i)=><PRow key={p.id||i} p={p} rank={i+1} sk={pCurrent.sk} sl={pCurrent.sl} sc={pCurrent.sc} max={pMax} onClick={openPlayer}/>)}
+          </div>
 
-        {/* ══ EXPECTED POINTS CHART ══ */}
-        {(player.player_id || player.id) && (
-          <>
-            <div className="pi-section-label">Expected Points Breakdown</div>
-            <ExpectedPointsChart
-              playerId={player.player_id || player.id}
-              color="#4f9eff"
-            />
-          </>
-        )}
+          {/* RIGHT — Team rankings */}
+          <div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Inter',sans-serif"}}>Team Rankings</div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                {TEAM_TABS.map(t=>(
+                  <button key={t.key} onClick={()=>setTTab(t.key)}
+                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
+                      border:tTab===t.key?"1.5px solid "+t.color+"50":"1.5px solid rgba(255,255,255,0.07)",
+                      background:tTab===t.key?t.color+"12":"rgba(255,255,255,0.022)",
+                      color:tTab===t.key?t.color:C.muted,
+                      boxShadow:tTab===t.key?"0 0 12px "+t.color+"18":"none"}}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <SHead title={tCurrent.label} color={tCurrent.color} count={!tLoading?tRows.length:null} loading={tLoading}/>
+            {tLoading&&[1,2,3,4,5,6,7].map(i=><Sk key={i}/>)}
+            {!tLoading&&tRows.length===0&&(
+              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
+                <div style={{fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No team data loaded</div>
+                <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Standings load from API-Football. Check backend.</div>
+              </div>
+            )}
+            {!tLoading&&tRows.map((t,i)=><TRow key={t.team_id||i} t={t} rank={i+1} sk={tCurrent.sk} sl={tCurrent.sl} sc={tCurrent.sc} max={tMax} onClick={openTeam}/>)}
+          </div>
 
-        <div style={{ textAlign:"center", color:"#1a3a5a", fontSize:10, fontWeight:700,
-          padding:"20px 0 10px", letterSpacing:"0.06em",
-          borderTop:"1px solid rgba(255,255,255,0.05)", marginTop:24 }}>
-          Data sourced from FPL API · Projections are model estimates · GW{gw}
         </div>
       </div>
     </div>

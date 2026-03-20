@@ -51,7 +51,7 @@ function SectionLabel({ children }) {
   return (
     <div style={{
       fontSize: 9, fontWeight: 900, letterSpacing: "0.12em",
-      color: "rgba(255,255,255,0.22)", textTransform: "uppercase",
+      color: "rgba(255,255,255,0.96)", textTransform: "uppercase",
       marginBottom: 14,
     }}>
       {children}
@@ -59,7 +59,7 @@ function SectionLabel({ children }) {
   );
 }
 
-function Pill({ children, color = "rgba(255,255,255,0.07)", textColor = "rgba(255,255,255,0.5)" }) {
+function Pill({ children, color = "rgba(255,255,255,0.07)", textColor = "rgba(255,255,255,0.82)" }) {
   return (
     <span style={{
       fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
@@ -102,7 +102,7 @@ function EventIcon({ type, detail }) {
     return <span style={{ fontSize: 9, color: "#4ade80", fontWeight: 900 }}>SUB</span>;
   if (t === "var")
     return <span style={{ fontSize: 9, color: "#a78bfa", fontWeight: 900 }}>VAR</span>;
-  return <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>–</span>;
+  return <span style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>–</span>;
 }
 
 function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef4444" }) {
@@ -115,7 +115,7 @@ function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef444
     <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40 }}>{home ?? "–"}</span>
-        <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
+        <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.6)", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
         <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40, textAlign:"right" }}>{away ?? "–"}</span>
       </div>
       <div style={{ display:"flex", height:4, borderRadius:3, overflow:"hidden", background:"rgba(255,255,255,0.06)" }}>
@@ -133,16 +133,16 @@ function PitchSvg() {
       {[...Array(8)].map((_,i) => (
         <rect key={i} x={i*42.5} y="0" width="21.25" height="220" fill="rgba(255,255,255,0.018)" />
       ))}
-      <rect x="8" y="8" width="324" height="204" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <line x1="170" y1="8" x2="170" y2="212" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <circle cx="170" cy="110" r="34" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <circle cx="170" cy="110" r="2" fill="rgba(255,255,255,0.35)" />
-      <rect x="8"   y="62" width="54" height="96" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <rect x="8"   y="86" width="22" height="48" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <circle cx="62"  cy="110" r="1.5" fill="rgba(255,255,255,0.35)" />
-      <rect x="278" y="62" width="54" height="96" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <rect x="310" y="86" width="22" height="48" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-      <circle cx="278" cy="110" r="1.5" fill="rgba(255,255,255,0.35)" />
+      <rect x="8" y="8" width="324" height="204" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <line x1="170" y1="8" x2="170" y2="212" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <circle cx="170" cy="110" r="34" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <circle cx="170" cy="110" r="2" fill="#fff" />
+      <rect x="8"   y="62" width="54" height="96" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <rect x="8"   y="86" width="22" height="48" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <circle cx="62"  cy="110" r="1.5" fill="#fff" />
+      <rect x="278" y="62" width="54" height="96" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <rect x="310" y="86" width="22" height="48" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="1.5" />
+      <circle cx="278" cy="110" r="1.5" fill="#fff" />
     </svg>
   );
 }
@@ -167,7 +167,7 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
         {fixture?.league?.logo && (
           <img src={fixture.league.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }} />
         )}
-        <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.3)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+        <span style={{ fontSize:10, fontWeight:700, color:"#fff", letterSpacing:"0.1em", textTransform:"uppercase" }}>
           {fixture?.league?.name}{fixture?.league?.round ? ` · ${fixture.league.round}` : ""}
         </span>
       </div>
@@ -184,14 +184,14 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
           {kickoff ? (
             <>
-              <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"0.06em" }}>KICK OFF</span>
+              <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.6)", letterSpacing:"0.06em" }}>KICK OFF</span>
               <span style={{ fontSize:18, fontWeight:900, color:"#f0f6ff", letterSpacing:"-0.01em" }}>{kickoff}</span>
             </>
           ) : (
-            <span style={{ fontSize:16, fontWeight:700, color:"rgba(255,255,255,0.2)" }}>VS</span>
+            <span style={{ fontSize:16, fontWeight:700, color:"rgba(255,255,255,0.96)" }}>VS</span>
           )}
           {fixture?.venue?.name && (
-            <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", textAlign:"center", maxWidth:160 }}>
+            <span style={{ fontSize:10, color:"rgba(255,255,255,0.96)", textAlign:"center", maxWidth:160 }}>
               {fixture.venue.name}{fixture?.venue?.city ? `, ${fixture.venue.city}` : ""}
             </span>
           )}
@@ -224,7 +224,7 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
       borderRadius:12, flex:1, minWidth:80,
     }}>
       <span style={{ fontSize:18, fontWeight:900, color: highlight ? "#60a5fa" : "#f0f6ff", fontFamily:"'JetBrains Mono',monospace" }}>{value}</span>
-      <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
+      <span style={{ fontSize:9, fontWeight:700, color:"#fff", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
     </div>
   );
 
@@ -236,12 +236,12 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
       <div style={{ marginBottom:14 }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, fontSize:11, fontWeight:800 }}>
           <span style={{ color:"#60a5fa" }}>{homeTeam?.name?.split(" ").pop()} {p_home_win}%</span>
-          <span style={{ color:"rgba(255,255,255,0.35)" }}>Draw {p_draw}%</span>
+          <span style={{ color:"#fff" }}>Draw {p_draw}%</span>
           <span style={{ color:"#f87171" }}>{awayTeam?.name?.split(" ").pop()} {p_away_win}%</span>
         </div>
         <div style={{ display:"flex", height:8, borderRadius:999, overflow:"hidden", gap:2 }}>
           <div style={{ width:`${p_home_win}%`, background:"linear-gradient(90deg,#3b82f688,#3b82f6)", boxShadow: p_home_win > p_away_win ? "0 0 10px #3b82f699" : "none", borderRadius:"999px 0 0 999px", transition:"width 0.8s ease" }} />
-          <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.18)" }} />
+          <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.82)" }} />
           <div style={{ width:`${p_away_win}%`, background:"linear-gradient(90deg,#ef444488,#ef4444)", boxShadow: p_away_win > p_home_win ? "0 0 10px #ef444499" : "none", borderRadius:"0 999px 999px 0", transition:"width 0.8s ease" }} />
         </div>
       </div>
@@ -257,7 +257,7 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
       {/* Top scorelines */}
       {top_scorelines?.length > 0 && (
         <div style={{ marginTop:14 }}>
-          <div style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,0.2)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>
+          <div style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,0.96)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>
             Likely Scorelines
           </div>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
@@ -269,7 +269,7 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
                 fontSize:11, fontWeight:800, color:"#e2e8f0",
                 fontFamily:"'JetBrains Mono',monospace",
               }}>
-                {s.score} <span style={{ color:"rgba(255,255,255,0.3)", fontSize:9 }}>{s.probability}%</span>
+                {s.score} <span style={{ color:"#fff", fontSize:9 }}>{s.probability}%</span>
               </div>
             ))}
           </div>
@@ -285,7 +285,7 @@ function FormRow({ label, form }) {
   const color = r => r === "W" ? "#34d399" : r === "L" ? "#f87171" : "#94a3b8";
   return (
     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-      <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.3)", width:80 }}>{label}</span>
+      <span style={{ fontSize:10, fontWeight:700, color:"#fff", width:80 }}>{label}</span>
       <div style={{ display:"flex", gap:4 }}>
         {results.map((r,i) => (
           <div key={i} style={{
@@ -344,8 +344,8 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
           background: type.toLowerCase().includes("suspend") ? "#fbbf24" : "#f87171",
           flexShrink:0,
         }} />
-        <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.7)", flex:1 }}>{player.name || "Unknown"}</span>
-        <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontWeight:600 }}>{type}</span>
+        <span style={{ fontSize:12, fontWeight:600, color:"#fff", flex:1 }}>{player.name || "Unknown"}</span>
+        <span style={{ fontSize:10, color:"#fff", fontWeight:600 }}>{type}</span>
       </div>
     );
   };
@@ -356,14 +356,14 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
         {[{ team:homeTeam, list:homeInj },{ team:awayTeam, list:awayInj }].map(({ team, list }) => (
           <div key={team?.id}>
-            <div style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.3)", marginBottom:8 }}>
+            <div style={{ fontSize:10, fontWeight:800, color:"#fff", marginBottom:8 }}>
               {team?.name}
               <span style={{ marginLeft:6, fontSize:9, color:"#f87171", fontWeight:700 }}>
                 {list.length > 0 ? `${list.length} doubt${list.length > 1 ? "s" : ""}` : ""}
               </span>
             </div>
             {list.length === 0
-              ? <span style={{ fontSize:11, color:"rgba(255,255,255,0.2)" }}>No known issues</span>
+              ? <span style={{ fontSize:11, color:"rgba(255,255,255,0.96)" }}>No known issues</span>
               : list.slice(0,6).map((inj,i) => <InjRow key={i} inj={inj} />)
             }
           </div>
@@ -389,7 +389,7 @@ function PredictedLineupsPanel({ predictedHome, predictedAway, homeTeam, awayTea
         <div style={{
           width:28, height:28, borderRadius:"50%",
           background:color,
-          border:`2px solid ${conf > 75 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"}`,
+          border:`2px solid ${conf > 75 ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.15)"}`,
           display:"flex", alignItems:"center", justifyContent:"center",
           fontSize:9, fontWeight:900, color:"#fff",
           boxShadow: hov ? `0 0 12px ${color}` : "none",
@@ -401,14 +401,14 @@ function PredictedLineupsPanel({ predictedHome, predictedAway, homeTeam, awayTea
           {player.name?.split(" ").pop()}
         </span>
         {conf && (
-          <span style={{ fontSize:7, color: conf > 80 ? "#34d399" : conf > 60 ? "#fbbf24" : "rgba(255,255,255,0.3)", fontWeight:700 }}>
+          <span style={{ fontSize:7, color: conf > 80 ? "#34d399" : conf > 60 ? "#fbbf24" : "#fff", fontWeight:700 }}>
             {conf}%
           </span>
         )}
         {hov && (
           <div style={{ position:"absolute", bottom:"105%", left:"50%", transform:"translateX(-50%)", background:"#0d1b2a", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"6px 10px", zIndex:20, whiteSpace:"nowrap", marginBottom:6 }}>
             <div style={{ fontSize:11, fontWeight:800, color:"#f0f6ff" }}>{player.name}</div>
-            <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>{player.pos} · {conf}% confidence</div>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.94)" }}>{player.pos} · {conf}% confidence</div>
           </div>
         )}
       </div>
@@ -430,7 +430,7 @@ function PredictedLineupsPanel({ predictedHome, predictedAway, homeTeam, awayTea
     });
     return (
       <div style={{ display:"flex", flexDirection:"column", gap:8, alignItems:"center", width:"100%" }}>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontWeight:700, marginBottom:4 }}>
+        <div style={{ fontSize:10, color:"#fff", fontWeight:700, marginBottom:4 }}>
           {formation}
           {prediction.predicted && (
             <span style={{ marginLeft:6, fontSize:8, color:"#fbbf24", fontWeight:800 }}>PREDICTED</span>
@@ -508,7 +508,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
       {/* Competition + status */}
       <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:20 }}>
         {fixture?.league?.logo && <img src={fixture.league.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }} />}
-        <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.3)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+        <span style={{ fontSize:10, fontWeight:700, color:"#fff", letterSpacing:"0.1em", textTransform:"uppercase" }}>
           {fixture?.league?.name}{fixture?.league?.round ? ` · ${fixture.league.round}` : ""}
         </span>
         {isLive && (
@@ -520,7 +520,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           </span>
         )}
         {isFT && (
-          <span style={{ fontSize:9, fontWeight:900, color:"rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.05)", borderRadius:999, padding:"2px 9px", letterSpacing:"0.1em" }}>
+          <span style={{ fontSize:9, fontWeight:900, color:"#fff", background:"rgba(255,255,255,0.05)", borderRadius:999, padding:"2px 9px", letterSpacing:"0.1em" }}>
             FULL TIME
           </span>
         )}
@@ -542,25 +542,25 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: homeWin ? "#60a5fa" : awayWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
+              color: homeWin ? "#60a5fa" : awayWin ? "#fff" : "#f0f6ff",
               fontFamily:"'JetBrains Mono',monospace",
               textShadow: homeWin ? "0 0 30px rgba(96,165,250,0.4)" : "none",
             }}>{hGoals}</span>
-            <span style={{ fontSize:26, fontWeight:300, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>–</span>
+            <span style={{ fontSize:26, fontWeight:300, color:"rgba(255,255,255,0.82)", lineHeight:1 }}>–</span>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: awayWin ? "#f87171" : homeWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
+              color: awayWin ? "#f87171" : homeWin ? "#fff" : "#f0f6ff",
               fontFamily:"'JetBrains Mono',monospace",
               textShadow: awayWin ? "0 0 30px rgba(248,113,113,0.4)" : "none",
             }}>{aGoals}</span>
           </div>
           {score?.halftime && isFT && (
-            <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", fontFamily:"'JetBrains Mono',monospace" }}>
+            <span style={{ fontSize:10, color:"rgba(255,255,255,0.96)", fontFamily:"'JetBrains Mono',monospace" }}>
               HT {score.halftime.home}–{score.halftime.away}
             </span>
           )}
           {fixture?.venue?.name && (
-            <span style={{ fontSize:10, color:"rgba(255,255,255,0.18)", marginTop:2 }}>
+            <span style={{ fontSize:10, color:"rgba(255,255,255,0.82)", marginTop:2 }}>
               {fixture.venue.name}
             </span>
           )}
@@ -584,7 +584,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           ].filter(s => s.h || s.a).map(({ label, h, a }) => (
             <div key={label} style={{ display:"flex", alignItems:"center", gap:8 }}>
               <span style={{ fontSize:12, fontWeight:800, color:"#60a5fa", fontFamily:"'JetBrains Mono',monospace" }}>{h ?? "–"}</span>
-              <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.22)", letterSpacing:"0.08em", textTransform:"uppercase" }}>{label}</span>
+              <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.96)", letterSpacing:"0.08em", textTransform:"uppercase" }}>{label}</span>
               <span style={{ fontSize:12, fontWeight:800, color:"#f87171", fontFamily:"'JetBrains Mono',monospace" }}>{a ?? "–"}</span>
             </div>
           ))}
@@ -660,7 +660,7 @@ function MomentumGraph({ momentumData, events }) {
 
       <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
         {["0'","15'","30'","45'","60'","75'","90'"].map(l => (
-          <span key={l} style={{ fontSize:8, color:"rgba(255,255,255,0.18)" }}>{l}</span>
+          <span key={l} style={{ fontSize:8, color:"rgba(255,255,255,0.82)" }}>{l}</span>
         ))}
       </div>
     </div>
@@ -687,15 +687,15 @@ function Timeline({ events, homeTeam, awayTeam }) {
                 <div style={{ display:"flex", alignItems:"center", gap:8, justifyContent:"flex-end" }}>
                   <div style={{ textAlign:"right" }}>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0" }}>{ev.player?.name}</div>
-                    {ev.assist?.name && <div style={{ fontSize:10, color:"rgba(255,255,255,0.28)" }}>assist: {ev.assist.name}</div>}
-                    {ev.detail && <div style={{ fontSize:9, color:"rgba(255,255,255,0.2)", fontStyle:"italic" }}>{ev.detail}</div>}
+                    {ev.assist?.name && <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)" }}>assist: {ev.assist.name}</div>}
+                    {ev.detail && <div style={{ fontSize:9, color:"rgba(255,255,255,0.96)", fontStyle:"italic" }}>{ev.detail}</div>}
                   </div>
                   <EventIcon type={ev.type} detail={ev.detail} />
                 </div>
               ) : <div />}
 
               <div style={{ textAlign:"center" }}>
-                <span style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace", background:"rgba(255,255,255,0.06)", borderRadius:4, padding:"2px 6px" }}>
+                <span style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.94)", fontFamily:"'JetBrains Mono',monospace", background:"rgba(255,255,255,0.06)", borderRadius:4, padding:"2px 6px" }}>
                   {min}
                 </span>
               </div>
@@ -705,8 +705,8 @@ function Timeline({ events, homeTeam, awayTeam }) {
                   <EventIcon type={ev.type} detail={ev.detail} />
                   <div>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0" }}>{ev.player?.name}</div>
-                    {ev.assist?.name && <div style={{ fontSize:10, color:"rgba(255,255,255,0.28)" }}>assist: {ev.assist.name}</div>}
-                    {ev.detail && <div style={{ fontSize:9, color:"rgba(255,255,255,0.2)", fontStyle:"italic" }}>{ev.detail}</div>}
+                    {ev.assist?.name && <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)" }}>assist: {ev.assist.name}</div>}
+                    {ev.detail && <div style={{ fontSize:9, color:"rgba(255,255,255,0.96)", fontStyle:"italic" }}>{ev.detail}</div>}
                   </div>
                 </div>
               ) : <div />}
@@ -783,7 +783,7 @@ function LineupsPanel({ lineups, homeTeam, awayTeam }) {
         {hov && (
           <div style={{ position:"absolute", bottom:"105%", left:"50%", transform:"translateX(-50%)", background:"#0d1b2a", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"6px 10px", zIndex:20, whiteSpace:"nowrap", marginBottom:6 }}>
             <div style={{ fontSize:11, fontWeight:800, color:"#f0f6ff" }}>{player?.player?.name}</div>
-            <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>#{player?.player?.number} · {player?.player?.pos}</div>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.94)" }}>#{player?.player?.number} · {player?.player?.pos}</div>
           </div>
         )}
       </div>
@@ -816,8 +816,8 @@ function LineupsPanel({ lineups, homeTeam, awayTeam }) {
     <div style={{ padding:"20px 24px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
       <SectionLabel>Lineups</SectionLabel>
       <div style={{ display:"flex", gap:12, marginBottom:10 }}>
-        {home && <div style={{ flex:1, textAlign:"center" }}><span style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontWeight:700 }}>{home.formation}</span></div>}
-        {away && <div style={{ flex:1, textAlign:"center" }}><span style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontWeight:700 }}>{away.formation}</span></div>}
+        {home && <div style={{ flex:1, textAlign:"center" }}><span style={{ fontSize:10, color:"#fff", fontWeight:700 }}>{home.formation}</span></div>}
+        {away && <div style={{ flex:1, textAlign:"center" }}><span style={{ fontSize:10, color:"#fff", fontWeight:700 }}>{away.formation}</span></div>}
       </div>
       <div style={{ position:"relative", width:"100%", paddingBottom:"64.7%", borderRadius:12, overflow:"hidden" }}>
         <PitchSvg />
@@ -834,11 +834,11 @@ function LineupsPanel({ lineups, homeTeam, awayTeam }) {
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:16 }}>
           {[home, away].map((lu, side) => lu && (
             <div key={side}>
-              <div style={{ fontSize:8, fontWeight:800, color:"rgba(255,255,255,0.2)", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>Substitutes</div>
+              <div style={{ fontSize:8, fontWeight:800, color:"rgba(255,255,255,0.96)", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>Substitutes</div>
               {lu.substitutes?.slice(0,7).map((p,i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 0", borderBottom:"1px solid rgba(255,255,255,0.025)" }}>
-                  <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.22)", width:18, fontFamily:"'JetBrains Mono',monospace" }}>{p?.player?.number}</span>
-                  <span style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)" }}>{p?.player?.name}</span>
+                  <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.96)", width:18, fontFamily:"'JetBrains Mono',monospace" }}>{p?.player?.number}</span>
+                  <span style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.82)" }}>{p?.player?.name}</span>
                 </div>
               ))}
             </div>
@@ -866,7 +866,7 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
             { label: homeTeam?.name, data: home?.summary, color:"#60a5fa" },
             { label: awayTeam?.name, data: away?.summary, color:"#f87171" },
           ].map(({ label, data, color }) => data && (
-            <div key={label} style={{ display:"flex", gap:12, fontSize:10, color:"rgba(255,255,255,0.4)" }}>
+            <div key={label} style={{ display:"flex", gap:12, fontSize:10, color:"rgba(255,255,255,0.94)" }}>
               <span style={{ fontWeight:800, color }}>{label?.split(" ").pop()}</span>
               <span>{data.total} shots</span>
               <span style={{ color: "#34d399" }}>xG {data.total_xg}</span>
@@ -886,7 +886,7 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
                   left:`${s.x}%`, top:`${s.y}%`,
                   width: isGoal ? 10 : 7, height: isGoal ? 10 : 7,
                   borderRadius:"50%",
-                  background: isGoal ? (isHome ? "#60a5fa" : "#f87171") : "rgba(255,255,255,0.22)",
+                  background: isGoal ? (isHome ? "#60a5fa" : "#f87171") : "rgba(255,255,255,0.96)",
                   border: isGoal ? "2px solid rgba(255,255,255,0.8)" : "1px solid rgba(255,255,255,0.2)",
                   transform:"translate(-50%,-50%)",
                   boxShadow: isGoal ? "0 0 8px currentColor" : "none",
@@ -900,9 +900,9 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
           {[
             { color:"#60a5fa", label:"Goal (Home)", border:true },
             { color:"#f87171", label:"Goal (Away)", border:true },
-            { color:"rgba(255,255,255,0.22)", label:"Shot", border:false },
+            { color:"rgba(255,255,255,0.96)", label:"Shot", border:false },
           ].map(({ color, label, border }) => (
-            <span key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, color:"rgba(255,255,255,0.35)" }}>
+            <span key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, color:"#fff" }}>
               <span style={{ width:8, height:8, borderRadius:"50%", background:color, border: border ? "1.5px solid rgba(255,255,255,0.6)" : "1px solid rgba(255,255,255,0.2)" }} />
               {label}
             </span>
@@ -924,12 +924,12 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
           const isHome = g.team?.id === homeTeam?.id;
           return (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0", borderBottom:"1px solid rgba(255,255,255,0.03)" }}>
-              <span style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.35)", width:30, fontFamily:"'JetBrains Mono',monospace" }}>
+              <span style={{ fontSize:10, fontWeight:800, color:"#fff", width:30, fontFamily:"'JetBrains Mono',monospace" }}>
                 {fmtMin(g.time?.elapsed, g.time?.extra)}
               </span>
               <span style={{ width:8, height:8, borderRadius:"50%", background: isHome ? "#60a5fa" : "#f87171", flexShrink:0 }} />
               <span style={{ fontSize:12, fontWeight:700, color:"#e2e8f0", flex:1 }}>{g.player?.name}</span>
-              <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)" }}>{isHome ? homeTeam?.name : awayTeam?.name}</span>
+              <span style={{ fontSize:10, color:"#fff" }}>{isHome ? homeTeam?.name : awayTeam?.name}</span>
             </div>
           );
         })}
@@ -975,12 +975,12 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
           <thead>
             <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
-              <th style={{ padding:"6px 8px", textAlign:"left", fontSize:9, fontWeight:800, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase" }}>Player</th>
+              <th style={{ padding:"6px 8px", textAlign:"left", fontSize:9, fontWeight:800, color:"rgba(255,255,255,0.6)", letterSpacing:"0.08em", textTransform:"uppercase" }}>Player</th>
               {cols.map(c => (
                 <th key={c.key} onClick={() => setSort(c.key)} style={{
                   padding:"6px 8px", textAlign:"center", fontSize:9, fontWeight:800,
                   letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer",
-                  color: sort === c.key ? "#60a5fa" : "rgba(255,255,255,0.25)",
+                  color: sort === c.key ? "#60a5fa" : "rgba(255,255,255,0.6)",
                 }}>
                   {c.label}
                 </th>
@@ -1156,14 +1156,14 @@ export default function LiveMatchPage() {
       <div style={{ padding:"14px 20px 0", display:"flex", alignItems:"center", gap:8 }}>
         <button
           onClick={() => navigate(-1)}
-          style={{ background:"none", border:"none", color:"rgba(255,255,255,0.28)", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:"0.04em", padding:0, display:"flex", alignItems:"center", gap:5 }}
+          style={{ background:"none", border:"none", color:"rgba(255,255,255,0.6)", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:"0.04em", padding:0, display:"flex", alignItems:"center", gap:5 }}
         >
           ← Live Centre
         </button>
       </div>
 
       {loading && (
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:280, color:"rgba(255,255,255,0.25)", fontSize:13 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:280, color:"rgba(255,255,255,0.6)", fontSize:13 }}>
           <div style={{ textAlign:"center" }}>
             <div style={{ width:28, height:28, borderRadius:"50%", border:"2px solid rgba(96,165,250,0.15)", borderTopColor:"#60a5fa", margin:"0 auto 14px", animation:"livePulse 0.8s linear infinite" }} />
             Loading match…
@@ -1201,7 +1201,7 @@ export default function LiveMatchPage() {
               <button key={t} className="lm-tab" onClick={() => setTab(t)} style={{
                 padding:"12px 14px", fontSize:11, fontWeight:800,
                 letterSpacing:"0.04em", textTransform:"uppercase",
-                color: tab === t ? "#60a5fa" : "rgba(255,255,255,0.28)",
+                color: tab === t ? "#60a5fa" : "rgba(255,255,255,0.6)",
                 borderBottom: tab === t ? "2px solid #60a5fa" : "2px solid transparent",
                 marginBottom:-1, whiteSpace:"nowrap",
               }}>{t}</button>
@@ -1258,7 +1258,7 @@ export default function LiveMatchPage() {
 
             {/* Empty state */}
             {!stats.length && !events.length && !lineups.length && !winProb && (
-              <div style={{ padding:48, textAlign:"center", color:"rgba(255,255,255,0.18)", fontSize:13 }}>
+              <div style={{ padding:48, textAlign:"center", color:"rgba(255,255,255,0.82)", fontSize:13 }}>
                 No detailed match data available for this fixture.
                 <br /><br />
                 <button onClick={() => navigate(-1)} style={{ color:"#60a5fa", fontWeight:700, background:"none", border:"none", cursor:"pointer", fontSize:13 }}>

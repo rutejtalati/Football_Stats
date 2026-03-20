@@ -37,6 +37,54 @@ from app.football_engine import EloRatings, TTLCache, predict_match, LEAGUE_AVG_
 # ── 5. THE ONE AND ONLY APP ───────────────────────────────────────────────────
 app = FastAPI(title="StatinSite API", version="4.0.0")
 
+# ══════════════════════════════════════════════════════════════════════════════
+# STARTUP — seed DB path + run verification on boot
+# ══════════════════════════════════════════════════════════════════════════════
+import os as _os
+# Force predictions DB to /tmp so it survives Render restarts
+if not _os.getenv("PREDICTIONS_DB"):
+    _os.environ["PREDICTIONS_DB"] = "/tmp/predictions.db"
+
+@app.on_event("startup")
+async def _startup_tasks():
+    """Run after server starts: verify any unresolved predictions immediately."""
+    await asyncio.sleep(8)  # let other startup tasks finish first
+    try:
+        from app.routes.predictions import _verify_recent_results
+        await _verify_recent_results()
+        logger.info("Startup verification complete.")
+    except Exception as exc:
+        logger.warning("Startup verification failed: %s", exc)
+    # Seed predictions for all leagues so DB has data even after restart
+    await asyncio.sleep(2)
+    try:
+        for _code in ["epl", "laliga", "seriea", "bundesliga", "ligue1"]:
+            try:
+                await asyncio.get_event_loop().run_in_executor(
+                    None, lambda c=_code: __import__(
+                        "app.routes.main", fromlist=["get_league_predictions"]
+                    )
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+@app.on_event("startup")
+async def _schedule_verification():
+    """Re-verify every 30 minutes in the background."""
+    async def _loop():
+        while True:
+            await asyncio.sleep(1800)
+            try:
+                from app.routes.predictions import _verify_recent_results
+                await _verify_recent_results()
+            except Exception as exc:
+                logger.warning("Scheduled verification failed: %s", exc)
+    asyncio.create_task(_loop())
+
+
+
 # ── 6. Middleware ─────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
@@ -345,31 +393,6 @@ async def upcoming_matches():
                 "venue_name":fix.get("venue",{}).get("name")})
     live_s={"1H","2H","HT","ET","BT","P"}
     matches.sort(key=lambda m:(0 if m.get("status") in live_s else 1, m.get("kickoff") or "9999"))
-
-    # ── Enrich with prediction probabilities from league prediction cache ──────
-    pred_lookup = {}
-    for code in ("epl","laliga","seriea","bundesliga","ligue1"):
-        cached = _cache.get(f"predictions_{code}_{CURRENT_SEASON}_v4")
-        if not cached:
-            continue
-        for p in cached.get("predictions", []):
-            fid = p.get("fixture_id")
-            if fid:
-                pred_lookup[fid] = {
-                    "p_home_win": p.get("p_home_win") or p.get("home_win"),
-                    "p_draw":     p.get("p_draw")     or p.get("draw"),
-                    "p_away_win": p.get("p_away_win") or p.get("away_win"),
-                    "xg_home":    p.get("xg_home"),
-                    "xg_away":    p.get("xg_away"),
-                    "p_over25":   p.get("over25"),
-                    "p_btts":     p.get("btts"),
-                    "confidence": p.get("confidence"),
-                }
-    for m in matches:
-        pred = pred_lookup.get(m["fixture_id"])
-        if pred:
-            m.update({k: v for k, v in pred.items() if v is not None})
-
     return {"matches":matches,"count":len(matches)}
 
 @app.get("/api/match-intelligence/{fixture_id}")

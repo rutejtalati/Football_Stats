@@ -62,9 +62,17 @@ LEAGUE_IDS: Dict[str, int] = {
 
 # Resolve DB path: env var → sibling of this file → /tmp fallback
 _DB_ENV  = os.getenv("PREDICTIONS_DB", "")
-_DB_PATH = pathlib.Path(_DB_ENV) if _DB_ENV else (
-    pathlib.Path(__file__).parent / "predictions.db"
-)
+if not _DB_ENV:
+    # Try app dir first; fall back to /tmp (survives Render restarts better)
+    _app_path = pathlib.Path(__file__).parent / "predictions.db"
+    try:
+        _app_path.parent.mkdir(parents=True, exist_ok=True)
+        _app_path.touch(exist_ok=True)
+        _DB_PATH = _app_path
+    except OSError:
+        _DB_PATH = pathlib.Path("/tmp/predictions.db")
+else:
+    _DB_PATH = pathlib.Path(_DB_ENV)
 
 # Module-level SQLite connection (check_same_thread=False) guarded by a lock.
 # A single connection is safe here because FastAPI runs in one process and

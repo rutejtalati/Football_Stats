@@ -1047,31 +1047,99 @@ export default function HomePage() {
       </div>
 
       {/* ── WHAT IS THIS ── */}
-      <section style={{maxWidth:900,margin:"0 auto",padding:"0 20px 64px"}}>
-        <div style={{padding:"32px 36px",borderRadius:24,background:"rgba(255,255,255,0.02)",
-          border:`1px solid ${C.line}`,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,right:0,width:300,height:200,
-            background:"radial-gradient(circle at 100% 0%,rgba(79,158,255,0.07),transparent 70%)",pointerEvents:"none"}}/>
-          <h2 style={{fontSize:22,fontWeight:900,color:"#f4f8ff",margin:"0 0 16px",
-            fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>Built for football fans who love numbers</h2>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:20,fontFamily:"'Inter',sans-serif"}}>
+     <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 64px" }}>
+        <div style={{
+          borderRadius: 24,
+          background: "rgba(255,255,255,0.02)",
+          border: `1px solid ${C.line}`,
+          position: "relative", overflow: "hidden",
+        }}>
+          {/* Top gradient accent bar */}
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: 2,
+            background: `linear-gradient(90deg, ${C.blue}, ${C.green}, ${C.gold}, ${C.purple})`,
+            opacity: 0.6,
+          }} />
+ 
+          {/* Background corner glow */}
+          <div style={{
+            position: "absolute", top: 0, right: 0, width: 300, height: 200,
+            background: `radial-gradient(circle at 100% 0%, rgba(79,158,255,0.08), transparent 70%)`,
+            pointerEvents: "none",
+          }} />
+ 
+          {/* Header */}
+          <div style={{ padding: "28px 36px 20px" }}>
+            <h2 style={{
+              fontSize: 22, fontWeight: 900, color: "#f4f8ff",
+              margin: "0 0 4px", fontFamily: "'Sora', sans-serif",
+              letterSpacing: "-0.02em",
+            }}>
+              Built for football fans who love numbers
+            </h2>
+            <p style={{
+              fontSize: 12, color: C.muted, margin: 0,
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              Pick a question. We've got the answer.
+            </p>
+          </div>
+ 
+          {/* Divider */}
+          <div style={{ height: 1, background: C.line, margin: "0 36px" }} />
+ 
+          {/* 2×2 grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            fontFamily: "'Inter', sans-serif",
+          }}>
             {[
-              ["Planning FPL transfers?",C.blue,"Get data driven squad recommendations with FDR, form ratings and projected points for the next 6 gameweeks."],
-              ["Want smarter predictions?",C.gold,"Model generated win probabilities and expected scorelines for every fixture across 9 competitions."],
-              ["Is Saturday worth watching?",C.green,"Predicted scorelines, expected goal totals and match style indicators tell you whether it will be a thriller or bore draw."],
-              ["Just love football stats?",C.purple,"Deep player profiles, scoring patterns, passing accuracy and head to head records across Europe's top leagues."],
-            ].map(([title,col,body],i)=>(
-              <div key={i} style={{display:"flex",flexDirection:"column",gap:5}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.text,display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0,boxShadow:`0 0 6px ${col}`}}/>
-                  {title}
+              ["Planning FPL transfers?", C.blue, "Get data driven squad recommendations with FDR, form ratings and projected points for the next 6 gameweeks.", "⭐"],
+              ["Want smarter predictions?", C.gold, "Model generated win probabilities and expected scorelines for every fixture across 9 competitions.", "📊"],
+              ["Is Saturday worth watching?", C.green, "Predicted scorelines, expected goal totals and match style indicators tell you whether it will be a thriller or bore draw.", "🔴"],
+              ["Just love football stats?", C.purple, "Deep player profiles, scoring patterns, passing accuracy and head to head records across Europe's top leagues.", "📈"],
+            ].map(([title, col, body, icon], i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "22px 32px",
+                  borderRight: !isMobile && i % 2 === 0 ? `1px solid ${C.line}` : "none",
+                  borderBottom: i < 2 ? `1px solid ${C.line}` : "none",
+                  display: "flex", flexDirection: "column", gap: 8,
+                  transition: "background 200ms",
+                  cursor: "default",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = `${col}06`}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {/* Coloured accent dot */}
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                    background: `${col}15`, border: `1px solid ${col}35`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 14,
+                  }}>
+                    {icon}
+                  </div>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: C.text,
+                  }}>
+                    {title}
+                  </span>
                 </div>
-                <p style={{margin:0,fontSize:12,color:C.muted,lineHeight:1.65}}>{body}</p>
+                <p style={{
+                  margin: 0, fontSize: 12, color: C.muted,
+                  lineHeight: 1.7, paddingLeft: 38,
+                }}>{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+ 
+ 
 
       {/* ── FEATURE CARDS ── */}
       <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}}>
@@ -1092,26 +1160,86 @@ export default function HomePage() {
       <RecentResults results={results} correct={resCorrect} total={resTotal}/>
 
       {/* ── LEAGUES STRIP (9 competitions) ── */}
-      <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 80px"}}>
-        <div style={{padding:"26px 32px",borderRadius:20,background:"rgba(255,255,255,0.02)",
-          border:`1px solid ${C.line}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:20}}>
-          <div>
-            <p style={{margin:"0 0 4px",fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",letterSpacing:"0.1em",textTransform:"uppercase"}}>Covering {LEAGUES.length} competitions</p>
-            <h3 style={{margin:0,fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Pick your league</h3>
+       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 80px" }}>
+        <div style={{
+          padding: "28px 32px 32px",
+          borderRadius: 20,
+          background: "rgba(255,255,255,0.02)",
+          border: `1px solid ${C.line}`,
+          position: "relative", overflow: "hidden",
+        }}>
+          {/* Background glow */}
+          <div style={{
+            position: "absolute", bottom: -60, right: -60,
+            width: 300, height: 300, borderRadius: "50%",
+            background: `radial-gradient(circle, rgba(79,158,255,0.06), transparent 70%)`,
+            pointerEvents: "none",
+          }} />
+ 
+          {/* Header row */}
+          <div style={{ marginBottom: 20 }}>
+            <p style={{
+              margin: "0 0 4px", fontSize: 10, color: C.muted,
+              fontFamily: "'Inter', sans-serif",
+              letterSpacing: "0.12em", textTransform: "uppercase",
+            }}>
+              Covering {LEAGUES.length} competitions
+            </p>
+            <h3 style={{
+              margin: 0, fontSize: 20, fontWeight: 900,
+              color: C.text, fontFamily: "'Sora', sans-serif",
+              letterSpacing: "-0.02em",
+            }}>
+              Pick your league
+            </h3>
           </div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            {LEAGUES.map(({to,name,col,flag})=>(
-              <Link key={to} to={to} className="hp-btn" style={{display:"flex",alignItems:"center",gap:8,
-                padding:"10px 18px",borderRadius:12,background:col+"12",border:`1.5px solid ${col}35`,
-                color:col,fontSize:13,fontWeight:700,textDecoration:"none",fontFamily:"'Inter',sans-serif"}}>
-                <span style={{display:"flex",alignItems:"center",borderRadius:2,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.4)"}}>{flag}</span>
+ 
+          {/* League buttons */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {LEAGUES.map(({ to, name, col, flag }) => (
+              <Link
+                key={to}
+                to={to}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 18px", borderRadius: 12,
+                  background: `${col}10`,
+                  border: `1.5px solid ${col}30`,
+                  color: col,
+                  fontSize: 13, fontWeight: 700,
+                  textDecoration: "none",
+                  fontFamily: "'Inter', sans-serif",
+                  transition: "all 180ms cubic-bezier(0.22,1,0.36,1)",
+                  position: "relative", overflow: "hidden",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = `${col}20`;
+                  e.currentTarget.style.borderColor = `${col}60`;
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = `0 8px 20px ${col}25`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = `${col}10`;
+                  e.currentTarget.style.borderColor = `${col}30`;
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <span style={{
+                  display: "flex", alignItems: "center",
+                  borderRadius: 3, overflow: "hidden",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                  flexShrink: 0,
+                }}>
+                  {flag}
+                </span>
                 {name}
               </Link>
             ))}
           </div>
         </div>
       </section>
-
+ 
       {/* ── HOW IT WORKS (points to Ground Zero) ── */}
       <section style={{maxWidth:900,margin:"0 auto",padding:"0 20px 80px"}}>
         <div style={{padding:"28px 36px",borderRadius:20,background:"rgba(255,255,255,0.02)",

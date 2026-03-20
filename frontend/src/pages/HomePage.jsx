@@ -972,13 +972,10 @@ export default function HomePage() {
   const resCorrect = (d?.recentResults?.correct) || 0;
   const resTotal = (d?.recentResults?.total) || 0;
   const mc = d?.modelConfidence || {};
-  const hs = raw?.hero_stats || {};
-
-  // ── Stat tile values (backend-driven, fallback to 0 = hidden) ──
-  const compsCount = hs.competitions_count || LEAGUES.length;
-  const fixturesPred = hs.fixtures_predicted || 0;
-  const verifiedAcc = hs.verified_accuracy || overallAcc || 0;
-
+ const hs = d?.heroStats || {};
+const compsCount = hs.competitionsCount || LEAGUES.length;
+const fixturesPred = hs.fixturesPredicted || 0;
+const verifiedAcc = hs.verifiedAccuracy || 0;
   return (
     <div style={{minHeight:"100vh",background:"transparent",overflow:"hidden"}}>
       <style>{HOME_CSS}</style>

@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
 const C = {
-  bg:"#000",card:"rgba(0,0,0,0.98)",border:"rgba(255,255,255,0.065)",
-  text:"#f0f6ff",muted:"rgba(200,215,230,0.85)",dim:"#1a3a5a",soft:"#c8d8f0",
-  blue:"#38bdf8",green:"#34d399",amber:"#f59e0b",red:"#f87171",
-  purple:"#a78bfa",orange:"#fb923c",
+  bg:"#000",card:"rgba(6,6,10,0.98)",border:"rgba(255,255,255,0.09)",
+  text:"#ffffff",muted:"rgba(220,230,245,0.9)",dim:"rgba(255,255,255,0.3)",soft:"#e8eeff",
+  blue:"#38bdf8",green:"#00ff9d",amber:"#ffd60a",red:"#ff4560",
+  purple:"#c084fc",orange:"#ff7c2a",teal:"#00e5ff",pink:"#ff3ea5",
 };
 
 const LEAGUES=[
@@ -234,6 +234,75 @@ function SHead({title,color,count,loading}){
   );
 }
 
+
+// ── League Donut (Viz 3) ──────────────────────────────────────────
+const LEAGUE_COLORS_BRIGHT={epl:"#38bdf8",laliga:"#ffd60a",seriea:"#00ff9d",bundesliga:"#ff7c2a",ligue1:"#c084fc",all:C.muted};
+function LeagueDonut({rows,sk,color,label}){
+  if(!rows||rows.length===0)return null;
+  const byLeague={};
+  rows.forEach(r=>{const lg=r.league_slug||r.league||"other";const v=parseFloat(r[sk])||0;byLeague[lg]=(byLeague[lg]||0)+v;});
+  const entries=Object.entries(byLeague).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const total=entries.reduce((s,[,v])=>s+v,0)||1;
+  const CIRC=2*Math.PI*34;
+  let offset=0;
+  const arcs=entries.map(([lg,v])=>{
+    const pct=v/total;const dash=pct*CIRC;
+    const arc={lg,v,pct,dash,offset,col:LEAGUE_COLORS_BRIGHT[lg]||"#666"};
+    offset+=dash;return arc;
+  });
+  return(
+    <div style={{display:"flex",alignItems:"center",gap:14,padding:"10px 12px",borderRadius:12,background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.08)",marginBottom:14}}>
+      <svg width="72" height="72" viewBox="0 0 72 72" style={{flexShrink:0}}>
+        <circle cx="36" cy="36" r="34" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="7"/>
+        {arcs.map((a,i)=>(
+          <circle key={i} cx="36" cy="36" r="34" fill="none" stroke={a.col} strokeWidth="7"
+            strokeDasharray={`${a.dash} ${CIRC-a.dash}`}
+            strokeDashoffset={-a.offset+(CIRC/4)}
+            transform="rotate(-90 36 36)" strokeLinecap="butt"/>
+        ))}
+        <text x="36" y="33" textAnchor="middle" fontSize="11" fontWeight="900" fill="#fff" fontFamily="monospace">{Math.round(total)}</text>
+        <text x="36" y="44" textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.4)" fontFamily="sans-serif">{label}</text>
+      </svg>
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
+        {arcs.map((a,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:7,height:7,borderRadius:2,background:a.col,flexShrink:0}}/>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:"0.06em",width:30,flexShrink:0}}>{(a.lg||"?").slice(0,3).toUpperCase()}</span>
+            <div style={{flex:1,height:3,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
+              <div style={{height:"100%",width:Math.round(a.pct*100)+"%",background:a.col,borderRadius:999}}/>
+            </div>
+            <span style={{fontSize:9,fontWeight:700,color:a.col,fontFamily:"monospace",minWidth:22,textAlign:"right"}}>{Math.round(a.v)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Stat tiles row (Viz 4) ────────────────────────────────────────
+function StatTiles({pRows,tRows,pCurrent,tCurrent}){
+  const pTop=pRows[0];const tTop=tRows[0];
+  const tiles=[
+    pTop&&{label:pCurrent.sl+" leader",val:parseFloat(pTop[pCurrent.sk])?.toFixed(pCurrent.sl==="Rating"?1:0)||"—",name:pTop.name?.split(" ").pop()||"",col:pCurrent.color,sub:pTop.team||""},
+    tTop&&{label:"Top team · "+tCurrent.sl,val:parseFloat(tTop[tCurrent.sk])?.toFixed(0)||"—",name:tTop.team?.split(" ").pop()||"",col:tCurrent.color,sub:""},
+    pRows.length>0&&{label:"Players tracked",val:pRows.length,name:"across leagues",col:C.blue,sub:""},
+    tRows.length>0&&{label:"Teams ranked",val:tRows.length,name:"in selection",col:C.teal,sub:""},
+  ].filter(Boolean);
+  if(tiles.length===0)return null;
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
+      {tiles.map((t,i)=>(
+        <div key={i} style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"11px 13px",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:t.col}}/>
+          <div style={{fontSize:20,fontWeight:900,color:t.col,fontFamily:"'JetBrains Mono',monospace",lineHeight:1,textShadow:`0 0 20px ${t.col}80`}}>{t.val}</div>
+          <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:3}}>{t.label}</div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:2}}>{t.name}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── MAIN ──────────────────────────────────────────────────────
 export default function PlayerProfilePage(){
   const[league,setLeague]=useState("all");
@@ -378,17 +447,21 @@ export default function PlayerProfilePage(){
         <div style={{display:"flex",gap:6,marginBottom:22,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
           {LEAGUES.map(l=>(
             <button key={l.key} onClick={()=>onLeague(l.key)}
-              style={{padding:"7px 14px",borderRadius:20,
-                border:league===l.key?"1.5px solid "+l.color+"55":"1.5px solid rgba(255,255,255,0.07)",
-                background:league===l.key?l.color+"12":"rgba(255,255,255,0.025)",
-                color:league===l.key?l.color:C.muted,fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,
+              style={{padding:"7px 16px",borderRadius:8,
+                border:league===l.key?`2px solid ${l.color}`:"1px solid rgba(255,255,255,0.1)",
+                background:league===l.key?l.color:"transparent",
+                color:league===l.key?"#000":"rgba(255,255,255,0.55)",
+                fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,
                 cursor:"pointer",transition:"all .16s",flexShrink:0,whiteSpace:"nowrap",
-                boxShadow:league===l.key?"0 0 14px "+l.color+"18":"none"}}>
-              {league===l.key&&<span style={{width:5,height:5,borderRadius:"50%",background:l.color,display:"inline-block",marginRight:5,verticalAlign:"middle"}}/>}
+                boxShadow:league===l.key?`0 0 20px ${l.color}60`:"none",
+                letterSpacing:"0.02em"}}>
               {l.label}
             </button>
           ))}
         </div>
+
+        {/* ── Stat tiles (Viz 4) ── */}
+        {(!pLoading&&!tLoading)&&<StatTiles pRows={pRows} tRows={tRows} pCurrent={pCurrent} tCurrent={tCurrent}/>}
 
         {/* ── Two-column grid ── */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
@@ -398,14 +471,12 @@ export default function PlayerProfilePage(){
             {/* Tab row */}
             <div style={{marginBottom:14}}>
               <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Inter',sans-serif"}}>Player Rankings</div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:0,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
                 {PLAYER_TABS.map(t=>(
                   <button key={t.key} onClick={()=>setPTab(t.key)}
-                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
-                      border:pTab===t.key?"1.5px solid "+t.color+"50":"1.5px solid rgba(255,255,255,0.07)",
-                      background:pTab===t.key?t.color+"12":"rgba(255,255,255,0.022)",
-                      color:pTab===t.key?t.color:C.muted,
-                      boxShadow:pTab===t.key?"0 0 12px "+t.color+"18":"none"}}>
+                    style={{padding:"7px 12px",fontSize:11,fontWeight:700,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,whiteSpace:"nowrap",
+                      background:"none",border:"none",borderBottom:pTab===t.key?`2px solid ${t.color}`:"2px solid transparent",marginBottom:"-1px",
+                      color:pTab===t.key?t.color:"rgba(255,255,255,0.4)"}}>
                     {t.label}
                   </button>
                 ))}
@@ -419,6 +490,7 @@ export default function PlayerProfilePage(){
                 <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Check that the backend is running at {B}</div>
               </div>
             )}
+            {!pLoading&&pRows.length>0&&league==="all"&&<LeagueDonut rows={pRows} sk={pCurrent.sk} color={pCurrent.color} label={pCurrent.sl}/>}
             {!pLoading&&pRows.map((p,i)=><PRow key={p.id||i} p={p} rank={i+1} sk={pCurrent.sk} sl={pCurrent.sl} sc={pCurrent.sc} max={pMax} onClick={openPlayer}/>)}
           </div>
 
@@ -426,14 +498,12 @@ export default function PlayerProfilePage(){
           <div>
             <div style={{marginBottom:14}}>
               <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Inter',sans-serif"}}>Team Rankings</div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:0,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
                 {TEAM_TABS.map(t=>(
                   <button key={t.key} onClick={()=>setTTab(t.key)}
-                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
-                      border:tTab===t.key?"1.5px solid "+t.color+"50":"1.5px solid rgba(255,255,255,0.07)",
-                      background:tTab===t.key?t.color+"12":"rgba(255,255,255,0.022)",
-                      color:tTab===t.key?t.color:C.muted,
-                      boxShadow:tTab===t.key?"0 0 12px "+t.color+"18":"none"}}>
+                    style={{padding:"7px 12px",fontSize:11,fontWeight:700,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,whiteSpace:"nowrap",
+                      background:"none",border:"none",borderBottom:tTab===t.key?`2px solid ${t.color}`:"2px solid transparent",marginBottom:"-1px",
+                      color:tTab===t.key?t.color:"rgba(255,255,255,0.4)"}}>
                     {t.label}
                   </button>
                 ))}
@@ -447,6 +517,7 @@ export default function PlayerProfilePage(){
                 <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Standings load from API-Football. Check backend.</div>
               </div>
             )}
+            {!tLoading&&tRows.length>0&&league==="all"&&<LeagueDonut rows={tRows} sk={tCurrent.sk} color={tCurrent.color} label={tCurrent.sl}/>}
             {!tLoading&&tRows.map((t,i)=><TRow key={t.team_id||i} t={t} rank={i+1} sk={tCurrent.sk} sl={tCurrent.sl} sc={tCurrent.sc} max={tMax} onClick={openTeam}/>)}
           </div>
 

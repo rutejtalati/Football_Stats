@@ -52,9 +52,9 @@ async def _startup_tasks():
     try:
         from app.routes.predictions import _verify_recent_results
         await _verify_recent_results()
-        logger.info("Startup verification complete.")
+        print("Startup verification complete.")
     except Exception as exc:
-        logger.warning("Startup verification failed: %s", exc)
+        print(f"Startup verification failed: {exc}")
     # Seed predictions for all leagues so DB has data even after restart
     await asyncio.sleep(2)
     try:
@@ -80,7 +80,7 @@ async def _schedule_verification():
                 from app.routes.predictions import _verify_recent_results
                 await _verify_recent_results()
             except Exception as exc:
-                logger.warning("Scheduled verification failed: %s", exc)
+                print(f"Scheduled verification failed: {exc}")
     asyncio.create_task(_loop())
 
 

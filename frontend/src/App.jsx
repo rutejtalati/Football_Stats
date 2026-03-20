@@ -10,14 +10,19 @@ import LivePage from "./pages/LivePage";
 import PredictionsPage from "./pages/PredictionsPage";
 import SeasonSimulator from "./pages/SeasonSimulator";
 import SquadBuilderPage from "./pages/SquadBuilderPage";
-import PlayerInsightPage from "./pages/PlayerInsightPage";
-import PlayerBrowsePage from "./pages/PlayerBrowsePage"; // FPL-only, kept for /player/fpl
+import PlayerBrowsePage from "./pages/PlayerBrowsePage";
 import PlayerInsightPage from "./pages/PlayerInsightPage";
 import TeamPage from "./pages/TeamPage";
 import MiniGamesPage from "./pages/MiniGamesPage";
 import NewsTrackerPage from "./pages/NewsTrackerPage";
 import MatchIntelligencePage from "./pages/MatchIntelligencePage";
 import TransferPlannerPage from "./pages/TransferPlannerPage";
+import BestTeamPage from "./pages/BestTeamPage";
+import FplTablePage from "./pages/FplTablePage";
+import GameweekInsightsPage from "./pages/GameweekInsightsPage";
+import CaptaincyPage from "./pages/CaptaincyPage";
+import DifferentialFinderPage from "./pages/DifferentialFinderPage";
+import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 
 /* ── Stub for pages not yet built ── */
 const ComingSoon = ({ name }) => (
@@ -87,17 +92,16 @@ export default function App() {
 
             {/* FPL Tools */}
             <Route path="/squad-builder"      element={<SquadBuilderPage />} />
-            <Route path="/best-team"          element={<ComingSoon name="Best XI" />} />
-            <Route path="/gameweek-insights"  element={<ComingSoon name="GW Insights" />} />
-            <Route path="/fpl-table"          element={<ComingSoon name="FPL Table" />} />
-            <Route path="/captaincy"          element={<ComingSoon name="Captaincy" />} />
-            <Route path="/fixture-difficulty" element={<ComingSoon name="Fixture Difficulty" />} />
+            <Route path="/best-team"          element={<BestTeamPage />} />
+            <Route path="/gameweek-insights"  element={<GameweekInsightsPage />} />
+            <Route path="/fpl-table"          element={<FplTablePage />} />
+            <Route path="/captaincy"          element={<CaptaincyPage />} />
+            <Route path="/fixture-difficulty" element={<FixtureDifficultyHeatmap />} />
             <Route path="/transfer-planner"   element={<TransferPlannerPage />} />
-            <Route path="/differentials"      element={<ComingSoon name="Differentials" />} />
+            <Route path="/differentials"      element={<DifferentialFinderPage />} />
 
             {/* Players */}
-            <Route path="/player"     element={<PlayerInsightPage />} />
-            <Route path="/player/fpl"   element={<PlayerBrowsePage />} />
+            <Route path="/player"     element={<PlayerBrowsePage />} />
             <Route path="/player/:id" element={<PlayerInsightPage />} />
             <Route path="/players"    element={<ComingSoon name="Player Profiles" />} />
 

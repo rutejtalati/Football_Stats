@@ -101,7 +101,7 @@ export default function App() {
             <Route path="/differentials"      element={<DifferentialFinderPage />} />
 
             {/* Players */}
-            <Route path="/player"     element={<PlayerBrowsePage />} />
+            <Route path="/player"     element={<PlayerInsightPage />} />
             <Route path="/player/:id" element={<PlayerInsightPage />} />
             <Route path="/players"    element={<ComingSoon name="Player Profiles" />} />
 

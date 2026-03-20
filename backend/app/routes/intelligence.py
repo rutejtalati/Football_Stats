@@ -67,10 +67,9 @@ RSS_SOURCES: List[Tuple[str, str, str]] = [
     ("The Guardian",         "https://www.theguardian.com/football/rss",               "analysis"),
     # Transfers
     ("Sky Transfers",        "https://www.skysports.com/rss/12726",                    "transfer"),
-    ("Football Italia",      "https://www.football-italia.net/rss.xml",                "transfer"),
     ("Marca",                "https://www.marca.com/rss/futbol/internacional/fichajes.xml","transfer"),
+    ("Sports Illustrated",   "https://www.si.com/rss/si_soccer.rss",                   "news"),
     # Fan media
-    ("Arseblog",             "https://arseblog.com/feed/",                             "fan"),
     ("This Is Anfield",      "https://www.thisisanfield.com/feed/",                    "fan"),
     ("The Busby Babe",       "https://thebusbybabe.sbnation.com/rss/index.xml",        "fan"),
     ("Bitter & Blue",        "https://bitterandblue.sbnation.com/rss/index.xml",       "fan"),

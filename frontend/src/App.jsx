@@ -10,7 +10,8 @@ import LivePage from "./pages/LivePage";
 import PredictionsPage from "./pages/PredictionsPage";
 import SeasonSimulator from "./pages/SeasonSimulator";
 import SquadBuilderPage from "./pages/SquadBuilderPage";
-import PlayerBrowsePage from "./pages/PlayerBrowsePage";
+import PlayerInsightPage from "./pages/PlayerInsightPage";
+import PlayerBrowsePage from "./pages/PlayerBrowsePage"; // FPL-only, kept for /player/fpl
 import PlayerInsightPage from "./pages/PlayerInsightPage";
 import TeamPage from "./pages/TeamPage";
 import MiniGamesPage from "./pages/MiniGamesPage";
@@ -95,7 +96,8 @@ export default function App() {
             <Route path="/differentials"      element={<ComingSoon name="Differentials" />} />
 
             {/* Players */}
-            <Route path="/player"     element={<PlayerBrowsePage />} />
+            <Route path="/player"     element={<PlayerInsightPage />} />
+            <Route path="/player/fpl"   element={<PlayerBrowsePage />} />
             <Route path="/player/:id" element={<PlayerInsightPage />} />
             <Route path="/players"    element={<ComingSoon name="Player Profiles" />} />
 

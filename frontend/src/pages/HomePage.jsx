@@ -82,51 +82,92 @@ function useCountUp(target, duration=1800, delay=0) {
 }
 
 /* ─── Dynamic stat tile ─────────────────────────────────── */
-function StatTile({ value, suffix="", label, color, delay=0, icon, trend }) {
+function StatTile({ value, suffix = "", label, color, delay = 0, icon, trend }) {
   const [v, ref] = useCountUp(value, 1600, delay);
   const [hov, setHov] = useState(false);
+ 
   return (
-    <div ref={ref}
+    <div
+      ref={ref}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        display:"flex", flexDirection:"column", gap:8,
-        padding:"20px 22px", borderRadius:16,
-        background: hov ? `linear-gradient(135deg,rgba(12,18,30,0.98),${color}12)` : "rgba(255,255,255,0.025)",
-        border:`1px solid ${hov ? color+"55" : "rgba(255,255,255,0.07)"}`,
-        flex:1, minWidth:0, position:"relative", overflow:"hidden",
-        transition:"all 220ms cubic-bezier(0.22,1,0.36,1)",
-        transform: hov ? "translateY(-3px)" : "translateY(0)",
-        boxShadow: hov ? `0 12px 32px ${color}22` : "none",
-        cursor:"default",
-      }}>
-      <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",
-        background:color,opacity:hov?.12:.04,filter:"blur(24px)",transition:"opacity 220ms",pointerEvents:"none"}}/>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:18,lineHeight:1}}>{icon}</span>
+        display: "flex", flexDirection: "column", gap: 10,
+        padding: "22px 24px", borderRadius: 18,
+        background: hov
+          ? `linear-gradient(135deg, rgba(12,18,30,0.98), ${color}18)`
+          : "rgba(255,255,255,0.025)",
+        border: `1px solid ${hov ? color + "66" : "rgba(255,255,255,0.07)"}`,
+        flex: 1, minWidth: 0, position: "relative", overflow: "hidden",
+        transition: "all 260ms cubic-bezier(0.22,1,0.36,1)",
+        transform: hov ? "translateY(-5px)" : "translateY(0)",
+        boxShadow: hov ? `0 16px 40px ${color}20, 0 0 0 1px ${color}22` : "none",
+        cursor: "default",
+      }}
+    >
+      {/* Corner glow blob */}
+      <div style={{
+        position: "absolute", top: -30, right: -30, width: 100, height: 100,
+        borderRadius: "50%", background: color,
+        opacity: hov ? 0.15 : 0.05,
+        filter: "blur(30px)",
+        transition: "opacity 260ms",
+        pointerEvents: "none",
+      }} />
+ 
+      {/* Bottom accent line */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 2,
+        background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+        opacity: hov ? 0.7 : 0,
+        transition: "opacity 260ms",
+      }} />
+ 
+      {/* Icon + trend row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
         {trend && (
-          <span style={{fontSize:9,fontWeight:800,color:C.green,background:`${C.green}14`,
-            border:`1px solid ${C.green}30`,padding:"2px 7px",borderRadius:999,letterSpacing:"0.06em"}}>
+          <span style={{
+            fontSize: 9, fontWeight: 800, color: C.green,
+            background: `${C.green}14`, border: `1px solid ${C.green}35`,
+            padding: "2px 8px", borderRadius: 999, letterSpacing: "0.06em",
+          }}>
             {trend}
           </span>
         )}
       </div>
-      <div style={{display:"flex",alignItems:"baseline",gap:2}}>
+ 
+      {/* Big number */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
         <span style={{
-          fontSize:36, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-          color, lineHeight:1, letterSpacing:"-0.03em",
-          textShadow:hov?`0 0 28px ${color}88`:`0 0 14px ${color}44`,
-          transition:"text-shadow 220ms",
-        }}>{v.toLocaleString()}</span>
-        <span style={{fontSize:16,fontWeight:700,color,opacity:.8}}>{suffix}</span>
+          fontSize: 40, fontWeight: 900,
+          fontFamily: "'JetBrains Mono', monospace",
+          color, lineHeight: 1, letterSpacing: "-0.04em",
+          textShadow: hov ? `0 0 32px ${color}99` : `0 0 16px ${color}44`,
+          transition: "text-shadow 260ms",
+        }}>
+          {v.toLocaleString()}
+        </span>
+        <span style={{ fontSize: 18, fontWeight: 700, color, opacity: 0.8 }}>{suffix}</span>
       </div>
-      <span style={{fontSize:9,fontWeight:800,color:C.muted,
-        letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>
+ 
+      {/* Label */}
+      <span style={{
+        fontSize: 9, fontWeight: 900, color: C.muted,
+        letterSpacing: "0.14em", textTransform: "uppercase",
+        fontFamily: "'Inter', sans-serif",
+      }}>
         {label}
       </span>
-      <div style={{height:2,borderRadius:1,background:"rgba(255,255,255,0.05)"}}>
-        <div style={{height:"100%",width:hov?"100%":"40%",background:color,borderRadius:1,
-          transition:"width 600ms cubic-bezier(0.22,1,0.36,1)",opacity:.7}}/>
+ 
+      {/* Progress bar */}
+      <div style={{ height: 2, borderRadius: 1, background: "rgba(255,255,255,0.05)" }}>
+        <div style={{
+          height: "100%", borderRadius: 1, background: color, opacity: 0.8,
+          width: hov ? "100%" : "40%",
+          boxShadow: hov ? `0 0 8px ${color}` : "none",
+          transition: "width 700ms cubic-bezier(0.22,1,0.36,1), box-shadow 260ms",
+        }} />
       </div>
     </div>
   );
@@ -399,58 +440,148 @@ function FeatureCard({ to, color, title, subtitle, description, graphic: Graphic
 /* ─── Prediction strip (backend-driven) ─────────────────── */
 function PredictionStrip({ predictions = [] }) {
   if (predictions.length === 0) return null;
+ 
   return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:7,height:7,borderRadius:"50%",background:C.green,
-            boxShadow:`0 0 8px ${C.green}`,animation:"livePulse 2s ease infinite"}}/>
-          <span style={{fontSize:12,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif",
-            letterSpacing:"0.06em"}}>TOP PREDICTIONS</span>
+    <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 52px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: C.green, boxShadow: `0 0 8px ${C.green}`,
+            animation: "livePulse 2s ease infinite",
+          }} />
+          <span style={{
+            fontSize: 12, fontWeight: 900, color: C.text,
+            fontFamily: "'Sora', sans-serif", letterSpacing: "0.07em",
+          }}>
+            TOP PREDICTIONS
+          </span>
         </div>
-        <Link to="/predictions/premier-league" style={{fontSize:11,fontWeight:700,color:C.blue,
-          textDecoration:"none",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:5}}>
+        <Link to="/predictions/premier-league" style={{
+          fontSize: 11, fontWeight: 700, color: C.blue,
+          textDecoration: "none", fontFamily: "'Inter', sans-serif",
+          display: "flex", alignItems: "center", gap: 5,
+          opacity: 0.85, transition: "opacity 150ms",
+        }}
+          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "0.85"}
+        >
           All fixtures
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke={C.blue} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6h8M7 3l3 3-3 3" stroke={C.blue} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </Link>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
-        {predictions.slice(0,4).map((p, i) => {
-          const confCol = p.conf==="high"?C.green:p.conf==="medium"?C.gold:C.orange;
-          const confLabel = (p.conf||"").charAt(0).toUpperCase()+(p.conf||"").slice(1);
+ 
+      {/* Cards grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+        {predictions.slice(0, 4).map((p, i) => {
+          const confCol = p.conf === "high" ? C.green : p.conf === "medium" ? C.gold : C.orange;
+          const confLabel = (p.conf || "").charAt(0).toUpperCase() + (p.conf || "").slice(1);
+          const accentCol = p.col || C.blue;
+ 
           return (
-            <Link key={p.fixtureId||i} to={p.fixtureId?`/match/${p.fixtureId}`:"/predictions/premier-league"}
-              style={{textDecoration:"none",display:"block"}} className="hp-card">
+            <Link
+              key={p.fixtureId || i}
+              to={p.fixtureId ? `/match/${p.fixtureId}` : "/predictions/premier-league"}
+              style={{ textDecoration: "none", display: "block" }}
+              className="hp-card"
+            >
               <div style={{
-                background:"rgba(255,255,255,0.025)",border:`1px solid ${C.line}`,borderRadius:14,
-                padding:"14px 16px",position:"relative",overflow:"hidden",
-              }}>
-                <div style={{position:"absolute",top:0,left:0,right:0,height:2,
-                  background:`linear-gradient(90deg,transparent,${p.col||C.blue}66,transparent)`}}/>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <span style={{fontSize:13,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>{p.home}</span>
-                  <span style={{fontSize:10,fontWeight:700,color:C.muted,background:"rgba(255,255,255,0.05)",
-                    padding:"2px 7px",borderRadius:999,border:`1px solid ${C.line}`}}>vs</span>
-                  <span style={{fontSize:13,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>{p.away}</span>
+                background: "rgba(255,255,255,0.025)",
+                border: `1px solid rgba(255,255,255,0.07)`,
+                borderRadius: 16,
+                padding: "16px 18px",
+                position: "relative",
+                overflow: "hidden",
+                transition: "border-color 220ms, box-shadow 220ms",
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = accentCol + "44";
+                  e.currentTarget.style.boxShadow = `0 8px 32px ${accentCol}18`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                {/* Top accent stripe */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, height: 2,
+                  background: `linear-gradient(90deg, transparent, ${accentCol}88, transparent)`,
+                }} />
+ 
+                {/* Team names */}
+                <div style={{
+                  display: "flex", justifyContent: "space-between",
+                  alignItems: "center", marginBottom: 12, gap: 8,
+                }}>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: C.text,
+                    fontFamily: "'Sora', sans-serif", flex: 1,
+                  }}>{p.home}</span>
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, color: C.muted,
+                    background: "rgba(255,255,255,0.05)", padding: "2px 8px",
+                    borderRadius: 999, border: `1px solid ${C.line}`,
+                    letterSpacing: "0.06em", flexShrink: 0,
+                  }}>VS</span>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: C.text,
+                    fontFamily: "'Sora', sans-serif", flex: 1, textAlign: "right",
+                  }}>{p.away}</span>
                 </div>
-                <div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",marginBottom:8,gap:1}}>
-                  <div style={{flex:p.homeProb,background:C.blue,opacity:.8}}/>
-                  <div style={{flex:p.draw,background:C.gold,opacity:.7}}/>
-                  <div style={{flex:p.awayProb,background:C.red,opacity:.8}}/>
+ 
+                {/* Win prob bar — taller + glowing */}
+                <div style={{
+                  display: "flex", height: 8, borderRadius: 999,
+                  overflow: "hidden", marginBottom: 10, gap: 2,
+                }}>
+                  <div style={{
+                    flex: p.homeProb,
+                    background: `linear-gradient(90deg, ${C.blue}cc, ${C.blue})`,
+                    boxShadow: `0 0 8px ${C.blue}66`,
+                    borderRadius: "999px 0 0 999px",
+                  }} />
+                  <div style={{
+                    flex: p.draw,
+                    background: C.gold,
+                    opacity: 0.7,
+                  }} />
+                  <div style={{
+                    flex: p.awayProb,
+                    background: `linear-gradient(90deg, ${C.red}, ${C.red}cc)`,
+                    boxShadow: `0 0 8px ${C.red}66`,
+                    borderRadius: "0 999px 999px 0",
+                  }} />
                 </div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{display:"flex",gap:10}}>
-                    {[[p.homeProb+"%",C.blue,"H"],[p.draw+"%",C.gold,"D"],[p.awayProb+"%",C.red,"A"]].map(([v,c,l])=>(
-                      <div key={l} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                        <span style={{fontSize:12,fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
-                        <span style={{fontSize:8,color:C.muted}}>{l}</span>
+ 
+                {/* Percentages + predicted score */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    {[[p.homeProb + "%", C.blue, "H"], [p.draw + "%", C.gold, "D"], [p.awayProb + "%", C.red, "A"]].map(([v, c, l]) => (
+                      <div key={l} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <span style={{
+                          fontSize: 13, fontWeight: 900, color: c,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          textShadow: `0 0 10px ${c}55`,
+                        }}>{v}</span>
+                        <span style={{ fontSize: 8, color: C.muted, letterSpacing: "0.06em" }}>{l}</span>
                       </div>
                     ))}
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-                    <span style={{fontSize:14,fontWeight:900,color:p.col||C.blue,fontFamily:"'JetBrains Mono',monospace"}}>{p.score||"—"}</span>
-                    <span style={{fontSize:8,fontWeight:800,color:confCol,background:`${confCol}14`,
-                      border:`1px solid ${confCol}30`,padding:"1px 6px",borderRadius:999}}>{confLabel} conf.</span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <span style={{
+                      fontSize: 16, fontWeight: 900, color: accentCol,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      textShadow: `0 0 14px ${accentCol}66`,
+                    }}>{p.score || "—"}</span>
+                    <span style={{
+                      fontSize: 8, fontWeight: 800, color: confCol,
+                      background: `${confCol}14`, border: `1px solid ${confCol}35`,
+                      padding: "2px 7px", borderRadius: 999, letterSpacing: "0.06em",
+                    }}>{confLabel} conf.</span>
                   </div>
                 </div>
               </div>
@@ -461,7 +592,6 @@ function PredictionStrip({ predictions = [] }) {
     </section>
   );
 }
-
 /* ─── Model performance (backend-driven) ────────────────── */
 function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
   const [visible, setVisible] = useState(false);
@@ -541,89 +671,184 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
 function StatOfMoment({ insight }) {
   if (!insight || !insight.stat || insight.stat === "—") return null;
   const s = insight;
+  const col = s.col || C.gold;
+ 
   return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 52px"}}>
+    <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 52px" }}>
       <div style={{
-        background:`linear-gradient(135deg,rgba(12,18,30,0.98),${s.col||C.gold}0d)`,
-        border:`1px solid ${s.col||C.gold}30`,borderRadius:20,padding:"24px 32px",
-        display:"flex",gap:28,alignItems:"center",flexWrap:"wrap",position:"relative",overflow:"hidden",
-      }}>
-        <div style={{position:"absolute",top:0,right:0,width:300,height:200,
-          background:`radial-gradient(circle at 100% 0%,${s.col||C.gold}14,transparent 70%)`,pointerEvents:"none"}}/>
-        <div style={{display:"flex",flexDirection:"column",gap:2}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:s.col||C.gold,boxShadow:`0 0 8px ${s.col||C.gold}`,
-              animation:"livePulse 2.5s ease infinite"}}/>
-            <span style={{fontSize:9,fontWeight:900,color:s.col||C.gold,letterSpacing:"0.15em"}}>STAT SPOTLIGHT</span>
-          </div>
-          <div style={{display:"flex",alignItems:"baseline",gap:10}}>
-            <span style={{fontSize:56,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-              color:s.col||C.gold,lineHeight:1,textShadow:`0 0 28px ${s.col||C.gold}66`}}>{s.stat}</span>
+        background: `linear-gradient(135deg, rgba(12,18,30,0.98), ${col}0e)`,
+        border: `1px solid ${col}33`,
+        borderRadius: 20, padding: "28px 36px",
+        display: "flex", gap: 32, alignItems: "center", flexWrap: "wrap",
+        position: "relative", overflow: "hidden",
+        transition: "box-shadow 300ms",
+      }}
+        onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 60px ${col}18`}
+        onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+      >
+        {/* Background glow */}
+        <div style={{
+          position: "absolute", top: 0, right: 0, width: 350, height: 250,
+          background: `radial-gradient(circle at 100% 0%, ${col}18, transparent 70%)`,
+          pointerEvents: "none",
+        }} />
+ 
+        {/* Animated dot + label */}
+        <div style={{ position: "absolute", top: 20, left: 36, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: col, boxShadow: `0 0 8px ${col}`,
+            animation: "livePulse 2.5s ease infinite",
+          }} />
+          <span style={{
+            fontSize: 9, fontWeight: 900, color: col,
+            letterSpacing: "0.18em", textTransform: "uppercase",
+          }}>STAT SPOTLIGHT</span>
+        </div>
+ 
+        {/* Big number */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 20 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+            <span style={{
+              fontSize: 64, fontWeight: 900,
+              fontFamily: "'JetBrains Mono', monospace",
+              color: col, lineHeight: 1,
+              textShadow: `0 0 32px ${col}77`,
+            }}>{s.stat}</span>
             <div>
-              <div style={{fontSize:16,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>{s.label}</div>
-              <div style={{fontSize:11,color:s.col||C.gold,fontWeight:700}}>{s.player}</div>
+              <div style={{
+                fontSize: 18, fontWeight: 800, color: C.text,
+                fontFamily: "'Sora', sans-serif", letterSpacing: "-0.01em",
+              }}>{s.label}</div>
+              <div style={{ fontSize: 12, color: col, fontWeight: 700, marginTop: 3 }}>{s.player}</div>
             </div>
           </div>
         </div>
-        <div style={{flex:1,minWidth:200}}>
-          <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:0,fontFamily:"'Inter',sans-serif"}}>{s.context}</p>
+ 
+        {/* Context text */}
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <p style={{
+            fontSize: 14, color: C.muted, lineHeight: 1.72,
+            margin: 0, fontFamily: "'Inter', sans-serif",
+          }}>{s.context}</p>
         </div>
       </div>
     </section>
   );
 }
-
 /* ─── Recent results (backend-driven) ────────────────────── */
 function RecentResults({ results = [], correct = 0, total = 0 }) {
   if (results.length === 0) return null;
+ 
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+ 
   return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}}>
-      <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+    <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 64px" }}>
+      <div style={{
+        background: "rgba(255,255,255,0.02)",
+        border: `1px solid ${C.line}`,
+        borderRadius: 20, padding: "24px 28px",
+      }}>
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between", marginBottom: 20,
+        }}>
           <div>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>ACCOUNTABILITY</div>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Recent Predictions</div>
+            <div style={{
+              fontSize: 9, fontWeight: 900, color: C.muted,
+              letterSpacing: "0.14em", marginBottom: 5,
+            }}>ACCOUNTABILITY</div>
+            <div style={{
+              fontSize: 18, fontWeight: 900, color: C.text,
+              fontFamily: "'Sora', sans-serif",
+            }}>Recent Predictions</div>
           </div>
+ 
           {total > 0 && (
-            <div style={{padding:"6px 14px",borderRadius:999,background:`${C.green}12`,
-              border:`1px solid ${C.green}30`,fontSize:12,fontWeight:800,color:C.green,
-              fontFamily:"'JetBrains Mono',monospace"}}>
-              {correct}/{total} correct
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Mini circular-ish accuracy indicator */}
+              <div style={{ textAlign: "right" }}>
+                <div style={{
+                  fontSize: 28, fontWeight: 900, lineHeight: 1,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange,
+                  textShadow: `0 0 18px ${pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange}55`,
+                }}>{pct}%</div>
+                <div style={{ fontSize: 9, color: C.muted, letterSpacing: "0.08em", marginTop: 2 }}>
+                  {correct}/{total} correct
+                </div>
+              </div>
             </div>
           )}
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {results.map((r,i)=>{
+ 
+        {/* Result rows */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {results.map((r, i) => {
             const ok = r.correct === true;
             const bad = r.correct === false;
-            const pending = r.correct == null;
             const borderCol = ok ? C.green : bad ? C.red : C.muted;
+            const icon = ok ? "✓" : bad ? "✗" : "·";
+ 
             return (
-              <Link key={r.fixtureId||i}
+              <Link
+                key={r.fixtureId || i}
                 to={r.fixtureId ? `/match/${r.fixtureId}` : "/predictions/premier-league"}
-                style={{textDecoration:"none",display:"block"}}>
-                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",
-                  borderRadius:10,background:`${borderCol}08`,
-                  border:`1px solid ${borderCol}18`,transition:"all 180ms"}}>
-                  <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                    background:`${borderCol}20`,display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:12,border:`1px solid ${borderCol}40`,color:ok?C.green:bad?C.red:C.muted}}>
-                    {ok?"✓":bad?"✗":"·"}
+                style={{ textDecoration: "none", display: "block" }}
+              >
+                <div
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    padding: "11px 16px", borderRadius: 12,
+                    background: `${borderCol}07`,
+                    border: `1px solid ${borderCol}20`,
+                    transition: "all 180ms",
+                    position: "relative", overflow: "hidden",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = `${borderCol}12`;
+                    e.currentTarget.style.borderColor = `${borderCol}35`;
+                    e.currentTarget.style.transform = "translateX(4px)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = `${borderCol}07`;
+                    e.currentTarget.style.borderColor = `${borderCol}20`;
+                    e.currentTarget.style.transform = "translateX(0)";
+                  }}
+                >
+                  {/* Left glow accent */}
+                  <div style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+                    background: borderCol, opacity: ok ? 0.9 : bad ? 0.7 : 0.3,
+                    borderRadius: "3px 0 0 3px",
+                  }} />
+ 
+                  {/* Icon badge */}
+                  <div style={{
+                    width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+                    background: `${borderCol}20`, border: `1.5px solid ${borderCol}50`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: ok || bad ? 13 : 18, fontWeight: 900, color: borderCol,
+                  }}>
+                    {icon}
                   </div>
-                  <div style={{flex:1,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    <span style={{fontSize:12,fontWeight:700,color:C.text,minWidth:120}}>
+ 
+                  {/* Match info */}
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <span style={{
+                      fontSize: 13, fontWeight: 700, color: C.text, minWidth: 130,
+                    }}>
                       {r.home} vs {r.away}
                     </span>
-                    <span style={{fontSize:10,color:C.muted}}>Predicted: <b style={{color:C.text}}>{r.pred}</b></span>
+                    <span style={{ fontSize: 11, color: C.muted }}>
+                      Predicted: <b style={{ color: C.text, fontFamily: "'JetBrains Mono', monospace" }}>{r.pred}</b>
+                    </span>
                     {r.actual && r.actual !== "Pending" && (
-                      <span style={{fontSize:10,color:C.muted}}>Result: <b style={{color:C.text}}>{r.actual}</b></span>
+                      <span style={{ fontSize: 11, color: C.muted }}>
+                        Result: <b style={{ color: C.text, fontFamily: "'JetBrains Mono', monospace" }}>{r.actual}</b>
+                      </span>
                     )}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-                    <span style={{fontSize:13,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-                      color:ok?C.green:bad?C.red:C.muted}}>{r.score}</span>
-                    <span style={{fontSize:8,fontWeight:800,color:C.muted,background:"rgba(255,255,255,0.05)",
-                      padding:"2px 7px",borderRadius:999,border:`1px solid ${C.line}`}}>{r.conf}</span>
                   </div>
                 </div>
               </Link>
@@ -634,7 +859,7 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
     </section>
   );
 }
-
+ 
 /* ─── Feature cards data ─────────────────────────────────── */
 const FEATURES = [
   { to:"/predictions/premier-league", color:C.blue,   title:"Match Predictions",    subtitle:"This week's fixtures →",  description:"Win probabilities, expected scorelines, and model confidence across 9 competitions.", graphic:PitchGraphic,    badge:"LIVE" },
@@ -690,12 +915,51 @@ export default function HomePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <div style={{fontSize:13,color:C.muted,fontFamily:"'Inter',sans-serif"}}>Loading intelligence...</div>
+  return (
+    <div style={{ minHeight: "100vh", background: "#060a14", padding: "80px 20px 0" }}>
+      <style>{`
+        @keyframes shimmerSlide {
+          0%   { background-position: -800px 0; }
+          100% { background-position:  800px 0; }
+        }
+        .sk { 
+          background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+          background-size: 800px 100%;
+          animation: shimmerSlide 1.5s infinite linear;
+          border-radius: 12px;
+        }
+      `}</style>
+ 
+      {/* Hero skeleton */}
+      <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", marginBottom: 48 }}>
+        <div className="sk" style={{ height: 28, width: 220, margin: "0 auto 24px", borderRadius: 999 }} />
+        <div className="sk" style={{ height: 72, width: "90%", margin: "0 auto 12px" }} />
+        <div className="sk" style={{ height: 72, width: "60%", margin: "0 auto 24px" }} />
+        <div className="sk" style={{ height: 18, width: "80%", margin: "0 auto 8px" }} />
+        <div className="sk" style={{ height: 18, width: "65%", margin: "0 auto 36px" }} />
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          {[140, 130, 120, 110].map((w, i) => (
+            <div key={i} className="sk" style={{ height: 44, width: w, borderRadius: 12, animationDelay: `${i * 0.1}s` }} />
+          ))}
+        </div>
       </div>
-    );
-  }
+ 
+      {/* Stat tiles skeleton */}
+      <div style={{ maxWidth: 1100, margin: "0 auto 48px", display: "flex", gap: 12 }}>
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="sk" style={{ flex: 1, height: 100, borderRadius: 16, animationDelay: `${i * 0.08}s` }} />
+        ))}
+      </div>
+ 
+      {/* Cards skeleton */}
+      <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 14 }}>
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <div key={i} className="sk" style={{ height: 200, borderRadius: 16, animationDelay: `${i * 0.06}s` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
   // ── Extract data from mapDashboard output ──
   const predictions = (d?.predictions?.predictions) || [];

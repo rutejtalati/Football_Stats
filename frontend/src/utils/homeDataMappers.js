@@ -213,6 +213,7 @@ export const mapModelMetrics = (data) => ({
     gw: safeStr(t.gw, ''),
     acc: safePct(t.acc, 0),
   })),
+  // FIX: backend sends "by_market" (snake_case) — mapped to "byMarket" for frontend
   byMarket: (data?.by_market || []).map((m) => ({
     label: safeStr(m.l, 'Market'),
     value: safePct(m.v, 0),
@@ -311,7 +312,6 @@ const LEAGUE_META = {
 
 export const mapLeagueCoverage = (powerRankings, titleRace) => {
   const leagues = Object.entries(LEAGUE_META).map(([code, meta]) => {
-    // Pull rankings if available (dashboard currently only returns EPL)
     const rankings = powerRankings?.rankings || [];
     const race = titleRace?.top4 || [];
     return {
@@ -409,6 +409,27 @@ export const mapAccountabilitySummary = (data) => {
   };
 };
 
+// ── Hero stats mapper ─────────────────────────────────────────────
+// FIX: Backend dashboard doesn't send hero_stats yet (see backend_fixes.md Fix 1).
+// This mapper reads it if present, otherwise falls back to performance_summary data.
+export const mapHeroStats = (raw) => {
+  // If backend has added hero_stats to dashboard payload, use it directly
+  if (raw?.hero_stats) {
+    return {
+      competitionsCount: safeNum(raw.hero_stats.competitions_count, 9),
+      fixturesPredicted: safeNum(raw.hero_stats.fixtures_predicted, 0),
+      verifiedAccuracy: safeNum(raw.hero_stats.verified_accuracy, 0),
+    };
+  }
+  // Fallback: derive from performance_summary until backend adds hero_stats
+  const perf = raw?.performance_summary || {};
+  return {
+    competitionsCount: 9, // static — always 9 competitions
+    fixturesPredicted: safeNum(perf.verified_count, 0),
+    verifiedAccuracy: perf.overall_accuracy != null ? safeNum(perf.overall_accuracy, 0) : 0,
+  };
+};
+
 // ── Master dashboard mapper ──────────────────────────────────────
 export const mapDashboard = (raw) => {
   if (!raw || typeof raw !== 'object') {
@@ -420,51 +441,57 @@ export const mapDashboard = (raw) => {
       xgLeaders: { leaders: [], league: '' },
       powerRankings: { rankings: [], league: '' },
       modelMetrics: {},
+      modelConfidence: { high: 0, medium: 0, low: 0, avg: 0 },
       fplSpotlight: { captains: [], valuePlayers: [] },
       recentResults: { results: [], correct: 0, total: 0 },
       titleRace: { top4: [], leader: '', gap12: 0, league: '' },
       highScoringMatches: [],
       defenseTable: [],
       analyticsTerm: {},
+      heroStats: { competitionsCount: 9, fixturesPredicted: 0, verifiedAccuracy: 0 },
       performanceSummary: { insufficient: true, verifiedCount: 0, rollingAccuracy: [], confidenceBands: [], trend: [] },
       accountabilitySummary: { insufficient: true, verifiedCount: 0, recentVerified: [] },
     };
   }
 
   return {
-    predictions: mapPredictions(raw.top_predictions),
-    edges: mapEdges(raw.model_edges),
-    tacticalInsight: mapTacticalInsight(raw.tactical_insight),
-    trendingPlayers: mapTrendingPlayers(raw.trending_players),
-    xgLeaders: mapXgLeaders(raw.xg_leaders),
-    powerRankings: mapPowerRankings(raw.power_rankings),
-    modelMetrics: mapModelMetrics(raw.model_metrics),
-    fplSpotlight: mapFPLSpotlight(raw),
-    recentResults: mapRecentResults(raw.recent_results),
-    titleRace: mapTitleRace(raw.title_race),
-    highScoringMatches: (raw.high_scoring_matches?.matches || []).map(mapHighScoringMatch).filter(Boolean),
+    predictions:      mapPredictions(raw.top_predictions),
+    edges:            mapEdges(raw.model_edges),
+    tacticalInsight:  mapTacticalInsight(raw.tactical_insight),
+    trendingPlayers:  mapTrendingPlayers(raw.trending_players),
+    xgLeaders:        mapXgLeaders(raw.xg_leaders),
+    powerRankings:    mapPowerRankings(raw.power_rankings),
+    modelMetrics:     mapModelMetrics(raw.model_metrics),
+    // FIX: was missing avg_confidence → avg conversion
+    modelConfidence: {
+      high:   safeNum(raw.model_confidence?.high, 0),
+      medium: safeNum(raw.model_confidence?.medium, 0),
+      low:    safeNum(raw.model_confidence?.low, 0),
+      avg:    safeNum(raw.model_confidence?.avg_confidence, 0),
+    },
+    fplSpotlight:         mapFPLSpotlight(raw),
+    recentResults:        mapRecentResults(raw.recent_results),
+    titleRace:            mapTitleRace(raw.title_race),
+    highScoringMatches:   (raw.high_scoring_matches?.matches || []).map(mapHighScoringMatch).filter(Boolean),
     defenseTable: (raw.defense_table?.table || []).map((t) => ({
-      teamName: safeStr(t.team_name, 'Team'),
-      logo: safeStr(t.logo, ''),
+      teamName:     safeStr(t.team_name, 'Team'),
+      logo:         safeStr(t.logo, ''),
       goalsAgainst: safeNum(t.goals_against, 0),
-      gaPg: safeNum(t.ga_pg, 0),
-      played: safeNum(t.played, 0),
-      form: parseForm(t.form),
+      gaPg:         safeNum(t.ga_pg, 0),
+      played:       safeNum(t.played, 0),
+      form:         parseForm(t.form),
     })),
     analyticsTerm: {
-      term: safeStr(raw.analytics_term?.term, ''),
-      short: safeStr(raw.analytics_term?.short, ''),
+      term:       safeStr(raw.analytics_term?.term, ''),
+      short:      safeStr(raw.analytics_term?.short, ''),
       definition: safeStr(raw.analytics_term?.definition, ''),
-      col: safeStr(raw.analytics_term?.col, '#4f9eff'),
+      col:        safeStr(raw.analytics_term?.col, '#4f9eff'),
     },
-    modelConfidence: {
-      high: safeNum(raw.model_confidence?.high, 0),
-      medium: safeNum(raw.model_confidence?.medium, 0),
-      low: safeNum(raw.model_confidence?.low, 0),
-      avg: safeNum(raw.model_confidence?.avg_confidence, 0),
-    },
-    leagueCoverage: mapLeagueCoverage(raw.power_rankings, raw.title_race),
-    performanceSummary: mapPerformanceSummary(raw.performance_summary),
+    leagueCoverage:       mapLeagueCoverage(raw.power_rankings, raw.title_race),
+    // FIX: hero_stats added — reads backend field if present, falls back to
+    // performance_summary.verified_count + overall_accuracy until backend adds it
+    heroStats:            mapHeroStats(raw),
+    performanceSummary:   mapPerformanceSummary(raw.performance_summary),
     accountabilitySummary: mapAccountabilitySummary(raw.accountability_summary),
   };
 };

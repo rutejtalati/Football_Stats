@@ -1338,6 +1338,11 @@ async def dashboard():
         "analytics_term":       _safe_result(results[16], {}),
         "performance_summary":  _safe_result(results[17], {}),
         "accountability_summary": _safe_result(results[18], {}),
+        "hero_stats": {
+            "competitions_count": 9,
+            "fixtures_predicted": _safe_result(results[17], {}).get("verified_count") or 0,
+            "verified_accuracy":  _safe_result(results[17], {}).get("overall_accuracy") or 0,
+        },
         "generated_at":         datetime.now(timezone.utc).isoformat(),
     }
 

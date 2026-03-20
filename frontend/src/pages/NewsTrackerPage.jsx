@@ -63,6 +63,24 @@ const FBP = {
   insight:  { bg:"#010a04", accent:"#34d399" },
   news:     { bg:"#030608", accent:"#64748b" },
 };
+
+// Source brand colours — used when no image is available
+const SOURCE_BRANDS = {
+  "bbc sport":       { bg:"#bb1919", fg:"#fff",    abbr:"BBC"  },
+  "sky sports":      { bg:"#0070c0", fg:"#fff",    abbr:"SKY"  },
+  "sky sports football":{ bg:"#0070c0", fg:"#fff", abbr:"SKY"  },
+  "the guardian":    { bg:"#005689", fg:"#fff",    abbr:"GRD"  },
+  "espn fc":         { bg:"#d00",    fg:"#fff",    abbr:"ESPN" },
+  "sports illustrated":{ bg:"#c8102e",fg:"#fff",   abbr:"SI"   },
+  "goal.com":        { bg:"#1a1a1a", fg:"#ffd700", abbr:"GOAL" },
+  "marca":           { bg:"#003580", fg:"#fff",    abbr:"MCA"  },
+  "statinsite":      { bg:"#0a1628", fg:"#38bdf8", abbr:"SSI"  },
+  "statinsite intelligence engine":{ bg:"#0a1628", fg:"#38bdf8", abbr:"SSI" },
+};
+function getSourceBrand(source=""){
+  const k=(source||"").toLowerCase().trim();
+  return SOURCE_BRANDS[k]||null;
+}
 function getFB(t){ const k=t==="match_preview"?"preview":(t==="model_insight"||t==="title_race")?"insight":(TM[t]?.fb||"news"); return FBP[k]||FBP.news; }
 function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>" +lines+ "</svg>")}")`; }
 function fbBg(fb){
@@ -77,26 +95,49 @@ function fbBg(fb){
 
 function useReveal(){ const ref=useRef(null); const[vis,setVis]=useState(false); useEffect(()=>{ if(!ref.current)return; const io=new IntersectionObserver(([e])=>{ if(e.isIntersecting){setVis(true);io.disconnect();} },{threshold:0.06}); io.observe(ref.current); return()=>io.disconnect(); },[]); return[ref,vis]; }
 
-function CardImage({src,type,style={},zoom=false}){
+function CardImage({src,type,style={},zoom=false,source=""}){
   const[loaded,setLoaded]=useState(false);
   const[failed,setFailed]=useState(false);
   const fb=getFB(type);
-  if(!src||failed) return(
-    <div style={{position:"relative",overflow:"hidden",...style,background:fb.bg}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover"}}/>
-      <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+fb.accent+"40,transparent)"}}/>
-    </div>);
+  const brand=getSourceBrand(source);
+
+  if(!src||failed){
+    // Source-branded placeholder — looks intentional
+    const bg=brand?brand.bg:fb.bg;
+    const accent=brand?brand.fg:fb.accent;
+    const abbr=brand?brand.abbr:null;
+    return(
+      <div style={{position:"relative",overflow:"hidden",...style,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {/* Subtle pattern */}
+        <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover",opacity:brand?0.15:1}}/>
+        {/* Source wordmark */}
+        {abbr&&(
+          <span style={{
+            position:"relative",zIndex:1,
+            fontSize:Math.min(parseInt(style.height||style.minHeight||60)/2.2, 28),
+            fontWeight:900,fontFamily:"'Sora',sans-serif",
+            color:accent,opacity:0.22,letterSpacing:"-0.04em",
+            userSelect:"none",
+          }}>{abbr}</span>
+        )}
+        {/* Bottom accent */}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:2.5,background:accent,opacity:0.7}}/>
+        {/* Top-left dot */}
+        <div style={{position:"absolute",top:7,left:7,width:5,height:5,borderRadius:"50%",background:accent,opacity:0.55}}/>
+      </div>
+    );
+  }
   return(
     <div style={{position:"relative",overflow:"hidden",...style}}>
-      {!loaded&&<div style={{position:"absolute",inset:0,background:fb.bg}}/>}
+      {!loaded&&<div style={{position:"absolute",inset:0,background:fb.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {brand&&<span style={{fontSize:18,fontWeight:900,fontFamily:"'Sora',sans-serif",color:brand.fg,opacity:0.2,letterSpacing:"-0.04em"}}>{brand.abbr}</span>}
+      </div>}
       <img src={src} alt="" loading="lazy" onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}
         style={{width:"100%",height:"100%",objectFit:"cover",display:"block",
           transform:zoom?"scale(1.06)":"scale(1)",opacity:loaded?1:0,
           transition:"transform 0.35s cubic-bezier(.22,1,.36,1),opacity 0.3s ease"}}/>
       {loaded&&<>
-        <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.15) 0%,transparent 35%,rgba(4,8,20,0.6) 100%)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 35%,rgba(4,8,20,0.55) 100%)",pointerEvents:"none"}}/>
       </>}
     </div>);
 }
@@ -226,7 +267,7 @@ function InsightCard({article,featured=false,onClick}){
       opacity:vis?1:0,transition:"all 0.28s cubic-bezier(.22,1,.36,1)",display:"flex",flexDirection:"column"}}>
     <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,"+accent+"06,transparent)",pointerEvents:"none"}}/>
     <div style={{height:2,background:"linear-gradient(90deg,"+accent+",transparent)",flexShrink:0}}/>
-    {article.image&&<div style={{height:featured?110:82,flexShrink:0}}><CardImage src={article.image} type={article.type} style={{height:"100%",width:"100%"}} zoom={hov}/></div>}
+    {article.image&&<div style={{height:featured?110:82,flexShrink:0}}><CardImage src={article.image} type={article.type} source={article.source||""} style={{height:"100%",width:"100%"}} zoom={hov}/></div>}
     <div style={{padding:featured?"18px 20px":"14px 16px",position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:10}}>
         <CatBadge type={article.type} league={article.league} small/>
@@ -264,7 +305,7 @@ function EditorialNewsCard({article,onClick}){
       opacity:vis?1:0,transition:"all 0.24s cubic-bezier(.22,1,.36,1)",minHeight:90}}>
     <div style={{width:2,flexShrink:0,background:"linear-gradient(180deg,"+tm.color+"60,"+tm.color+"10)"}}/>
     <div style={{width:112,minWidth:112,flexShrink:0}}>
-      <CardImage src={article.image} type={article.type} style={{width:"100%",height:"100%",minHeight:90}} zoom={hov}/>
+      <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%",minHeight:90}} zoom={hov}/>
     </div>
     <div style={{flex:1,padding:"11px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,overflow:"hidden"}}>

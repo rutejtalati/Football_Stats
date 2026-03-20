@@ -63,24 +63,6 @@ const FBP = {
   insight:  { bg:"#010a04", accent:"#34d399" },
   news:     { bg:"#030608", accent:"#64748b" },
 };
-
-// Source brand colours — used when no image is available
-const SOURCE_BRANDS = {
-  "bbc sport":       { bg:"#bb1919", fg:"#fff",    abbr:"BBC"  },
-  "sky sports":      { bg:"#0070c0", fg:"#fff",    abbr:"SKY"  },
-  "sky sports football":{ bg:"#0070c0", fg:"#fff", abbr:"SKY"  },
-  "the guardian":    { bg:"#005689", fg:"#fff",    abbr:"GRD"  },
-  "espn fc":         { bg:"#d00",    fg:"#fff",    abbr:"ESPN" },
-  "sports illustrated":{ bg:"#c8102e",fg:"#fff",   abbr:"SI"   },
-  "goal.com":        { bg:"#1a1a1a", fg:"#ffd700", abbr:"GOAL" },
-  "marca":           { bg:"#003580", fg:"#fff",    abbr:"MCA"  },
-  "statinsite":      { bg:"#0a1628", fg:"#38bdf8", abbr:"SSI"  },
-  "statinsite intelligence engine":{ bg:"#0a1628", fg:"#38bdf8", abbr:"SSI" },
-};
-function getSourceBrand(source=""){
-  const k=(source||"").toLowerCase().trim();
-  return SOURCE_BRANDS[k]||null;
-}
 function getFB(t){ const k=t==="match_preview"?"preview":(t==="model_insight"||t==="title_race")?"insight":(TM[t]?.fb||"news"); return FBP[k]||FBP.news; }
 function fbSvg(fb,lines){ return `url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='220'><rect width='400' height='220' fill='"+fb.bg+"'/>" +lines+ "</svg>")}")`; }
 function fbBg(fb){
@@ -95,49 +77,26 @@ function fbBg(fb){
 
 function useReveal(){ const ref=useRef(null); const[vis,setVis]=useState(false); useEffect(()=>{ if(!ref.current)return; const io=new IntersectionObserver(([e])=>{ if(e.isIntersecting){setVis(true);io.disconnect();} },{threshold:0.06}); io.observe(ref.current); return()=>io.disconnect(); },[]); return[ref,vis]; }
 
-function CardImage({src,type,style={},zoom=false,source=""}){
+function CardImage({src,type,style={},zoom=false}){
   const[loaded,setLoaded]=useState(false);
   const[failed,setFailed]=useState(false);
   const fb=getFB(type);
-  const brand=getSourceBrand(source);
-
-  if(!src||failed){
-    // Source-branded placeholder — looks intentional
-    const bg=brand?brand.bg:fb.bg;
-    const accent=brand?brand.fg:fb.accent;
-    const abbr=brand?brand.abbr:null;
-    return(
-      <div style={{position:"relative",overflow:"hidden",...style,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-        {/* Subtle pattern */}
-        <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover",opacity:brand?0.15:1}}/>
-        {/* Source wordmark */}
-        {abbr&&(
-          <span style={{
-            position:"relative",zIndex:1,
-            fontSize:Math.min(parseInt(style.height||style.minHeight||60)/2.2, 28),
-            fontWeight:900,fontFamily:"'Sora',sans-serif",
-            color:accent,opacity:0.22,letterSpacing:"-0.04em",
-            userSelect:"none",
-          }}>{abbr}</span>
-        )}
-        {/* Bottom accent */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:2.5,background:accent,opacity:0.7}}/>
-        {/* Top-left dot */}
-        <div style={{position:"absolute",top:7,left:7,width:5,height:5,borderRadius:"50%",background:accent,opacity:0.55}}/>
-      </div>
-    );
-  }
+  if(!src||failed) return(
+    <div style={{position:"relative",overflow:"hidden",...style,background:fb.bg}}>
+      <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px"}}/>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+fb.accent+"40,transparent)"}}/>
+    </div>);
   return(
     <div style={{position:"relative",overflow:"hidden",...style}}>
-      {!loaded&&<div style={{position:"absolute",inset:0,background:fb.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-        {brand&&<span style={{fontSize:18,fontWeight:900,fontFamily:"'Sora',sans-serif",color:brand.fg,opacity:0.2,letterSpacing:"-0.04em"}}>{brand.abbr}</span>}
-      </div>}
+      {!loaded&&<div style={{position:"absolute",inset:0,background:fb.bg}}/>}
       <img src={src} alt="" loading="lazy" onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}
         style={{width:"100%",height:"100%",objectFit:"cover",display:"block",
           transform:zoom?"scale(1.06)":"scale(1)",opacity:loaded?1:0,
           transition:"transform 0.35s cubic-bezier(.22,1,.36,1),opacity 0.3s ease"}}/>
       {loaded&&<>
-        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 35%,rgba(4,8,20,0.55) 100%)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.15) 0%,transparent 35%,rgba(4,8,20,0.6) 100%)",pointerEvents:"none"}}/>
       </>}
     </div>);
 }
@@ -196,31 +155,73 @@ function CatBadge({type,league,small}){
   </div>);
 }
 
-function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165}){
+function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,ap=0,leagueColor="#38bdf8"}){
   const[hc1,hc2]=tc(homeTeam); const[ac1,ac2]=tc(awayTeam);
-  const dots="radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px)";
-  return(<div style={{position:"relative",height,overflow:"hidden",flexShrink:0}}>
-    <div style={{position:"absolute",left:0,top:0,width:"54%",height:"100%",background:"linear-gradient(140deg,"+hc1+"cc,"+hc2+"99)",clipPath:"polygon(0 0,60% 0,44% 100%,0 100%)"}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:dots,backgroundSize:"14px 14px",opacity:0.55}}/>
-    </div>
-    <div style={{position:"absolute",right:0,top:0,width:"54%",height:"100%",background:"linear-gradient(220deg,"+ac1+"cc,"+ac2+"99)",clipPath:"polygon(56% 0,100% 0,100% 100%,40% 100%)"}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:dots,backgroundSize:"14px 14px",opacity:0.55}}/>
-    </div>
-    <div style={{position:"absolute",inset:0,background:"rgba(4,8,18,0.48)"}}/>
-    <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px"}}/>
-    {[{team:homeTeam,logo:homeLogo,c1:hc1,c2:hc2,pos:"18%"},{team:awayTeam,logo:awayLogo,c1:ac1,c2:ac2,pos:"82%"}].map(({team,logo,c1,c2,pos})=>(
-      <div key={team} style={{position:"absolute",left:pos,top:"50%",transform:"translate(-50%,-50%)",display:"flex",flexDirection:"column",alignItems:"center",gap:7}}>
-        {logo
-          ?<img src={logo} alt={team} style={{width:56,height:56,objectFit:"contain",filter:"drop-shadow(0 3px 12px rgba(0,0,0,0.85))"}} onError={e=>e.currentTarget.style.opacity="0"}/>
-          :<div style={{width:50,height:50,borderRadius:"50%",background:"linear-gradient(135deg,"+c1+","+c2+")",boxShadow:"0 3px 14px rgba(0,0,0,0.6)"}}/>}
-        <span style={{fontFamily:"'Sora',sans-serif",fontSize:10,fontWeight:900,color:"#fff",textShadow:"0 1px 6px rgba(0,0,0,0.9)",textAlign:"center",maxWidth:74,lineHeight:1.2}}>{team}</span>
+  const hPct=Math.round(hp*100); const dPct=Math.round(dp*100); const aPct=Math.round(ap*100);
+  const hasPct=hPct+dPct+aPct>0;
+  const pitchLines=encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='170'>"
+    +"<rect x='30' y='12' width='340' height='146' fill='none' stroke='white' stroke-width='1' opacity='.13'/>"
+    +"<line x1='200' y1='12' x2='200' y2='158' stroke='white' stroke-width='1' opacity='.13'/>"
+    +"<circle cx='200' cy='85' r='34' fill='none' stroke='white' stroke-width='1' opacity='.13'/>"
+    +"<rect x='30' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/>"
+    +"<rect x='318' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/>"
+    +"</svg>"
+  );
+  return(
+    <div style={{position:"relative",height,overflow:"hidden",flexShrink:0,background:"#000"}}>
+      {/* Team colour wedges */}
+      <div style={{position:"absolute",left:0,top:0,width:"54%",height:"100%",background:"linear-gradient(140deg,"+hc1+"cc,"+hc2+"88)",clipPath:"polygon(0 0,65% 0,48% 100%,0 100%)"}}/>
+      <div style={{position:"absolute",right:0,top:0,width:"54%",height:"100%",background:"linear-gradient(220deg,"+ac1+"cc,"+ac2+"88)",clipPath:"polygon(52% 0,100% 0,100% 100%,35% 100%)"}}/>
+      {/* Pitch overlay */}
+      <div style={{position:"absolute",inset:0,backgroundImage:"url("data:image/svg+xml,"+pitchLines+"")",backgroundSize:"100% 100%"}}/>
+      {/* Dark overlay */}
+      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.42)"}}/>
+      {/* HUD corner brackets */}
+      {[{t:6,l:6,bt:"top",bl:"left"},{t:6,r:6,bt:"top",bl:"right"},{b:2,l:6,bt:"bottom",bl:"left"},{b:2,r:6,bt:"bottom",bl:"right"}].map((c,i)=>(
+        <div key={i} style={{position:"absolute",width:10,height:10,zIndex:6,
+          top:c.t,bottom:c.b,left:c.l,right:c.r,
+          borderTop:c.bt==="top"?"1.5px solid "+leagueColor+"99":undefined,
+          borderBottom:c.bt==="bottom"?"1.5px solid "+leagueColor+"44":undefined,
+          borderLeft:c.bl==="left"?"1.5px solid "+leagueColor+(c.bt==="top"?"99":"44"):undefined,
+          borderRight:c.bl==="right"?"1.5px solid "+leagueColor+(c.bt==="top"?"99":"44"):undefined,
+        }}/>
+      ))}
+      {/* Scanline */}
+      <div style={{position:"absolute",top:0,bottom:0,width:"35%",background:"linear-gradient(90deg,transparent,"+leagueColor+"09,transparent)",animation:"scanH 5s ease-in-out infinite",zIndex:3}}/>
+      {/* Teams */}
+      {[{team:homeTeam,logo:homeLogo,c1:hc1,c2:hc2,pos:"17%"},{team:awayTeam,logo:awayLogo,c1:ac1,c2:ac2,pos:"83%"}].map(({team,logo,c1,c2,pos})=>(
+        <div key={team} style={{position:"absolute",left:pos,top:"50%",transform:"translate(-50%,-50%)",display:"flex",flexDirection:"column",alignItems:"center",gap:6,zIndex:4}}>
+          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,.7)"}}>
+            {logo
+              ?<img src={logo} alt={team} style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentNode.style.background="linear-gradient(135deg,"+c1+","+c2+")";}}/>
+              :<div style={{fontSize:11,fontWeight:900,color:"#fff",fontFamily:"'Sora',sans-serif"}}>{(team||"?").slice(0,3).toUpperCase()}</div>}
+          </div>
+          <span style={{fontFamily:"'Sora',sans-serif",fontSize:10,fontWeight:900,color:"#fff",textShadow:"0 1px 8px rgba(0,0,0,.95)",textAlign:"center",maxWidth:72,lineHeight:1.2}}>{team}</span>
+        </div>
+      ))}
+      {/* VS badge */}
+      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:"rgba(0,0,0,0.92)",border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
+        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,fontWeight:900,color:"rgba(255,255,255,.6)",letterSpacing:"0.05em"}}>VS</span>
       </div>
-    ))}
-    <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:40,height:40,borderRadius:"50%",background:"rgba(4,8,18,0.95)",border:"1.5px solid rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 22px rgba(0,0,0,0.8)",zIndex:5}}>
-      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,fontWeight:900,color:"rgba(255,255,255,0.6)",letterSpacing:"0.04em"}}>VS</span>
+      {/* Probability strip fused to base */}
+      {hasPct&&(
+        <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:6}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 10px 2px",zIndex:7,position:"relative"}}>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,fontWeight:900,color:hPct>aPct?"#60a5fa":"rgba(255,255,255,.4)"}}>{hPct}%</span>
+            <span style={{fontSize:9,color:"rgba(255,255,255,.3)",fontWeight:700}}>{dPct}%</span>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,fontWeight:900,color:aPct>hPct?"#f87171":"rgba(255,255,255,.4)"}}>{aPct}%</span>
+          </div>
+          <div style={{display:"flex",height:5}}>
+            <div style={{flex:hPct||1,background:"linear-gradient(90deg,#1d4ed8,#3b82f6)"}}/>
+            <div style={{flex:dPct||1,background:"rgba(255,255,255,.1)"}}/>
+            <div style={{flex:aPct||1,background:"linear-gradient(90deg,#dc2626,#ef4444)"}}/>
+          </div>
+        </div>
+      )}
+      {!hasPct&&<div style={{position:"absolute",bottom:0,left:0,right:0,height:48,background:"linear-gradient(to top,rgba(0,0,0,1),transparent)"}}/>}
     </div>
-    <div style={{position:"absolute",bottom:0,left:0,right:0,height:52,background:"linear-gradient(to top,rgba(8,14,26,1),transparent)"}}/>
-  </div>);
+  );
 }
 
 function MatchPreviewCard({article,featured=false,onClick}){
@@ -229,67 +230,198 @@ function MatchPreviewCard({article,featured=false,onClick}){
   const homeTeam=article.home_team||article.meta?.home_team||"Home";
   const awayTeam=article.away_team||article.meta?.away_team||"Away";
   const kickoff=article.meta?.kickoff||article.published_at;
+  const hp=article.home_win_prob||(article.meta?.home_win??0)/100;
+  const dp=article.draw_prob||(article.meta?.draw??0)/100;
+  const ap=article.away_win_prob||(article.meta?.away_win??0)/100;
+  const xgH=article.meta?.xg_home;const xgA=article.meta?.xg_away;
+  const score=article.meta?.most_likely_score;
+  const btts=article.meta?.p_btts;const over=article.meta?.p_over25;
   return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{borderRadius:20,overflow:"hidden",cursor:"pointer",
-      background:"linear-gradient(165deg,rgba(9,15,28,0.99),rgba(5,9,18,0.99))",
-      border:hov?"1px solid "+league.color+"50":"1px solid rgba(255,255,255,0.062)",
-      boxShadow:hov?"0 0 32px "+league.color+"14,0 22px 52px rgba(0,0,0,0.55)":"0 8px 28px rgba(0,0,0,0.35)",
+    style={{borderRadius:16,overflow:"hidden",cursor:"pointer",background:"#000",
+      border:hov?"1px solid "+league.color+"55":"1px solid rgba(255,255,255,0.09)",
+      boxShadow:hov?"0 0 36px "+league.color+"18,0 24px 56px rgba(0,0,0,.65)":"0 8px 28px rgba(0,0,0,0.45)",
       transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
       opacity:vis?1:0,transition:"all 0.28s cubic-bezier(.22,1,.36,1)",display:"flex",flexDirection:"column"}}>
     <HeroVSBanner homeTeam={homeTeam} awayTeam={awayTeam}
       homeLogo={article.home_logo||article.meta?.home_logo}
       awayLogo={article.away_logo||article.meta?.away_logo}
-      height={featured?185:162}/>
-    <div style={{padding:featured?"16px 20px 20px":"13px 16px 16px"}}>
-      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:9}}>
+      height={featured?190:160}
+      hp={hp} dp={dp} ap={ap} leagueColor={league.color}/>
+    <div style={{padding:"11px 14px 13px",background:"#000"}}>
+      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        {kickoff&&<span style={{marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#1a3a5a",fontWeight:700}}>{fmtKO(kickoff)||timeAgo(kickoff)}</span>}
+        {kickoff&&<span style={{marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,0.3)",fontWeight:700}}>{fmtKO(kickoff)||timeAgo(kickoff)}</span>}
       </div>
-      <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:featured?17:15,fontWeight:900,color:"#f0f6ff",lineHeight:1.25,letterSpacing:"-0.01em",margin:"0 0 7px"}}>{homeTeam} vs {awayTeam}</h3>
-      <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#3a5a7a",lineHeight:1.55,margin:"0 0 12px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
+      {/* xG + markets row */}
+      {(xgH||xgA||score||btts||over)&&(
+        <div style={{display:"flex",gap:0,marginBottom:9,background:"rgba(255,255,255,0.025)",borderRadius:8,overflow:"hidden",border:"1px solid rgba(255,255,255,0.07)"}}>
+          {xgH&&<div style={{flex:1,padding:"6px 10px",borderRight:"1px solid rgba(255,255,255,0.06)"}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:"#60a5fa",lineHeight:1}}>{Number(xgH).toFixed(2)}</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(255,255,255,0.3)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>xG</div>
+          </div>}
+          {score&&<div style={{flex:1.2,padding:"6px 10px",borderRight:"1px solid rgba(255,255,255,0.06)",textAlign:"center"}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:"#fff",lineHeight:1}}>{score}</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(255,255,255,0.3)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>Projected</div>
+          </div>}
+          {xgA&&<div style={{flex:1,padding:"6px 10px",borderRight:btts||over?"1px solid rgba(255,255,255,0.06)":undefined}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:"#f87171",lineHeight:1,textAlign:"right"}}>{Number(xgA).toFixed(2)}</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(255,255,255,0.3)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2,textAlign:"right"}}>xG</div>
+          </div>}
+          {over!=null&&<div style={{flex:1,padding:"6px 10px",borderRight:btts?"1px solid rgba(255,255,255,0.06)":undefined}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:"#fbbf24",lineHeight:1}}>{Math.round(over>1?over:over*100)}%</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(255,255,255,0.3)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>O2.5</div>
+          </div>}
+          {btts!=null&&<div style={{flex:1,padding:"6px 10px"}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:"#34d399",lineHeight:1}}>{Math.round(btts>1?btts:btts*100)}%</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(255,255,255,0.3)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>BTTS</div>
+          </div>}
+        </div>
+      )}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:9,fontWeight:700,color:"#1a3a5a",letterSpacing:"0.04em",textTransform:"uppercase"}}>StatinSite Model</span>
+        <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>StatinSite Model</span>
         <span style={{fontSize:11,fontWeight:800,color:league.color}}>Full preview →</span>
       </div>
     </div>
   </div>);
 }
 
-function InsightCard({article,featured=false,onClick}){
+function InsightCard({article,featured=false,onClick,idx=0}){
   const[hov,setHov]=useState(false); const[ref,vis]=useReveal();
-  const accent=article.type==="title_race"?"#fbbf24":"#34d399";
-  return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{borderRadius:20,overflow:"hidden",cursor:"pointer",position:"relative",
-      background:"linear-gradient(165deg,rgba(9,15,28,0.99),rgba(5,9,18,0.99))",
-      border:hov?"1px solid "+accent+"40":"1px solid rgba(255,255,255,0.062)",
-      boxShadow:hov?"0 0 32px "+accent+"12,0 20px 48px rgba(0,0,0,0.5)":"0 8px 28px rgba(0,0,0,0.3)",
-      transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
-      opacity:vis?1:0,transition:"all 0.28s cubic-bezier(.22,1,.36,1)",display:"flex",flexDirection:"column"}}>
-    <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,"+accent+"06,transparent)",pointerEvents:"none"}}/>
-    <div style={{height:2,background:"linear-gradient(90deg,"+accent+",transparent)",flexShrink:0}}/>
-    {article.image&&<div style={{height:featured?110:82,flexShrink:0}}><CardImage src={article.image} type={article.type} source={article.source||""} style={{height:"100%",width:"100%"}} zoom={hov}/></div>}
-    <div style={{padding:featured?"18px 20px":"14px 16px",position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column"}}>
-      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:10}}>
-        <CatBadge type={article.type} league={article.league} small/>
-        <span style={{marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"#1a3a5a",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+  const isTitle=article.type==="title_race";
+  const accent=isTitle?"#fbbf24":"#34d399";
+  const accentDark=isTitle?"#92400e":"#065f46";
+  const gap=article.meta?.gap;
+  const leader=article.meta?.leader;
+  const standings=article.meta?.standings||[];
+  const useTableDesign=idx%2===0; // alternate: even=table, odd=race bars
+
+  // Visual header — sparkline bg + giant gap number + live dot
+  const VisualHeader=()=>(
+    <div style={{height:100,position:"relative",overflow:"hidden",flexShrink:0,
+      background:"linear-gradient(135deg,#000,"+accentDark+"33)"}}>
+      {/* SVG sparkline bg */}
+      <svg style={{position:"absolute",inset:0,width:"100%",height:100,opacity:.18}} viewBox="0 0 400 100" preserveAspectRatio="none">
+        <polyline points="0,85 60,68 120,74 180,50 240,38 300,22 360,14 400,8" fill="none" stroke={accent} strokeWidth="2"/>
+        <polyline points="0,90 80,80 160,82 240,72 320,66 400,60" fill="none" stroke={accent} strokeWidth="1.2" opacity=".5"/>
+      </svg>
+      {/* Bottom accent */}
+      <div style={{position:"absolute",bottom:0,left:0,right:0,height:2.5,background:"linear-gradient(90deg,"+accent+","+accent+"55,transparent)"}}/>
+      {/* Live dot + league label */}
+      <div style={{position:"absolute",top:9,left:12,display:"flex",alignItems:"center",gap:5,zIndex:2}}>
+        <div style={{width:6,height:6,borderRadius:"50%",background:accent,boxShadow:"0 0 8px "+accent,animation:"snLivePulse 2s ease-in-out infinite"}}/>
+        <span style={{fontSize:8,fontWeight:700,color:accent,letterSpacing:"0.12em",textTransform:"uppercase",opacity:.85}}>
+          {(LM[article.league]?.label||"Football")+" · "+(isTitle?"Title Race":"Model Insight")}
+        </span>
       </div>
-      <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:featured?18:15,fontWeight:900,color:"#f0f6ff",lineHeight:1.25,margin:"0 0 8px"}}>{article.title}</h3>
-      <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#3a5a7a",lineHeight:1.55,margin:"0 0 auto",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:featured?3:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
-      {article.meta?.gap!=null&&(<div style={{display:"flex",gap:16,marginTop:12}}>
-        <div>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:16,fontWeight:900,color:accent}}>{article.meta.gap}pts</div>
-          <div style={{fontSize:8,fontWeight:800,color:"#1a3a5a",letterSpacing:"0.08em",textTransform:"uppercase"}}>Gap</div>
+      {/* Giant gap number */}
+      {gap!=null?(
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",gap:18,zIndex:2}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:44,fontWeight:900,color:accent,lineHeight:1,textShadow:"0 0 32px "+accent+"60"}}>{gap}</div>
+            <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:"0.12em",textTransform:"uppercase"}}>point gap</div>
+          </div>
+          {leader&&<>
+            <div style={{width:1,height:44,background:"rgba(255,255,255,.1)"}}/>
+            <div>
+              <div style={{fontFamily:"'Sora',sans-serif",fontSize:13,fontWeight:900,color:"#fff"}}>{leader}</div>
+              <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:2}}>Leader</div>
+            </div>
+          </>}
         </div>
-        {article.meta.leader&&<div>
-          <div style={{fontFamily:"'Sora',sans-serif",fontSize:13,fontWeight:900,color:"#f0f6ff"}}>{article.meta.leader}</div>
-          <div style={{fontSize:8,fontWeight:800,color:"#1a3a5a",letterSpacing:"0.08em",textTransform:"uppercase"}}>Leader</div>
-        </div>}
-      </div>)}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:14}}>
-        <span style={{fontSize:9,fontWeight:700,color:"#1a3a5a",letterSpacing:"0.04em",textTransform:"uppercase"}}>StatinSite Model</span>
-        <span style={{fontSize:11,fontWeight:800,color:accent}}>Read →</span>
+      ):(
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:2}}>
+          <div style={{fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:900,color:"rgba(255,255,255,.5)",textAlign:"center",padding:"0 20px"}}>{article.title}</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Design 1: Mini standings table
+  const TableBody=()=>(
+    <div style={{padding:"11px 13px 13px"}}>
+      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
+        <CatBadge type={article.type} league={article.league} small/>
+        <span style={{marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,0.3)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+      </div>
+      <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:14,fontWeight:900,color:"#fff",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
+      {standings.length>0?(
+        <div style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:9,overflow:"hidden",marginBottom:10}}>
+          {standings.slice(0,3).map((s,i)=>{
+            const isLeader=i===0;
+            const form=(s.form||"").split("").slice(-3);
+            return(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",
+                background:isLeader?"rgba("+( accent==="#fbbf24"?"251,191,36":"52,211,153" )+",0.06)":"transparent",
+                borderLeft:isLeader?"2.5px solid "+accent:"2.5px solid transparent",
+                borderBottom:i<2?"1px solid rgba(255,255,255,0.05)":"none"}}>
+                <span style={{fontSize:9,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:isLeader?accent:"rgba(255,255,255,0.3)",width:14,flexShrink:0}}>{i+1}</span>
+                <span style={{fontSize:11,fontWeight:700,color:isLeader?"#fff":"rgba(255,255,255,0.65)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.team||s.name}</span>
+                <div style={{display:"flex",gap:2}}>
+                  {form.map((r,j)=>(
+                    <span key={j} style={{width:14,height:14,borderRadius:3,fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",
+                      background:r==="W"?"rgba(52,211,153,.18)":r==="D"?"rgba(245,158,11,.15)":"rgba(239,68,68,.15)",
+                      color:r==="W"?"#34d399":r==="D"?"#fbbf24":"#f87171"}}>{r}</span>
+                  ))}
+                </div>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:700,color:isLeader?accent:"rgba(255,255,255,0.45)",minWidth:22,textAlign:"right"}}>{s.points||s.pts}</span>
+              </div>
+            );
+          })}
+        </div>
+      ):(
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,0.5)",lineHeight:1.55,margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
+      )}
+      <div style={{display:"flex",justifyContent:"flex-end"}}>
+        <span style={{fontSize:11,fontWeight:800,color:accent}}>Full analysis →</span>
       </div>
     </div>
+  );
+
+  // Design 2: Race bars
+  const RaceBody=()=>(
+    <div style={{padding:"11px 13px 13px"}}>
+      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
+        <CatBadge type={article.type} league={article.league} small/>
+        <span style={{marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,0.3)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+      </div>
+      <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:14,fontWeight:900,color:"#fff",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
+      {standings.length>0?(
+        <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
+          {standings.slice(0,3).map((s,i)=>{
+            const maxPts=standings[0]?.points||standings[0]?.pts||80;
+            const pts=s.points||s.pts||0;
+            const pct=Math.round(pts/maxPts*100);
+            const isLeader=i===0;
+            return(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
+                <span style={{fontSize:9,fontWeight:600,color:isLeader?accent:"rgba(255,255,255,0.45)",width:70,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.team||s.name}</span>
+                <div style={{flex:1,height:6,background:"rgba(255,255,255,0.06)",borderRadius:999,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:pct+"%",borderRadius:999,
+                    background:isLeader?"linear-gradient(90deg,"+accentDark+","+accent+")"
+                      :"rgba(255,255,255,0.2)"}}/>
+                </div>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,fontWeight:700,color:isLeader?accent:"rgba(255,255,255,0.4)",minWidth:22,textAlign:"right"}}>{pts}</span>
+              </div>
+            );
+          })}
+        </div>
+      ):(
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,0.5)",lineHeight:1.55,margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
+      )}
+      <div style={{display:"flex",justifyContent:"flex-end"}}>
+        <span style={{fontSize:11,fontWeight:800,color:accent}}>Full analysis →</span>
+      </div>
+    </div>
+  );
+
+  return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+    style={{borderRadius:16,overflow:"hidden",cursor:"pointer",background:"#000",
+      border:hov?"1px solid "+accent+"50":"1px solid rgba(255,255,255,0.09)",
+      boxShadow:hov?"0 0 32px "+accent+"18,0 20px 52px rgba(0,0,0,.65)":"0 8px 28px rgba(0,0,0,0.4)",
+      transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
+      opacity:vis?1:0,transition:"all 0.28s cubic-bezier(.22,1,.36,1)",display:"flex",flexDirection:"column"}}>
+    <VisualHeader/>
+    {useTableDesign?<TableBody/>:<RaceBody/>}
   </div>);
 }
 
@@ -305,7 +437,7 @@ function EditorialNewsCard({article,onClick}){
       opacity:vis?1:0,transition:"all 0.24s cubic-bezier(.22,1,.36,1)",minHeight:90}}>
     <div style={{width:2,flexShrink:0,background:"linear-gradient(180deg,"+tm.color+"60,"+tm.color+"10)"}}/>
     <div style={{width:112,minWidth:112,flexShrink:0}}>
-      <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%",minHeight:90}} zoom={hov}/>
+      <CardImage src={article.image} type={article.type} style={{width:"100%",height:"100%",minHeight:90}} zoom={hov}/>
     </div>
     <div style={{flex:1,padding:"11px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,overflow:"hidden"}}>
@@ -670,7 +802,7 @@ export default function NewsTrackerPage(){
       backgroundSize:"80px 80px"}}/>
     <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:800,height:300,background:"radial-gradient(ellipse at center top,rgba(56,189,248,0.04) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}}/>
 
-    <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}@keyframes apBack{from{opacity:0}to{opacity:1}}@keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"}</style>
+    <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}@keyframes apBack{from{opacity:0}to{opacity:1}}@keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}@keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}@keyframes snLivePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.55)}}"}</style>
 
     <ArticlePage article={selectedArticle} allArticles={articles} onClose={closeArticle} onNavigate={navArticle}/>
 
@@ -757,7 +889,7 @@ export default function NewsTrackerPage(){
               {insights.length>0&&(<>
                 <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights" accent="#34d399" count={insights.length}/>
                 <div style={{display:"grid",gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr",gap:14}}>
-                  {insights.slice(0,4).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                  {insights.slice(0,4).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle} idx={i}/>)}
                 </div>
               </>)}
             </section>)}

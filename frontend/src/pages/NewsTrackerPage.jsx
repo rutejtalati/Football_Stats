@@ -166,7 +166,7 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
       <div style={{position:"absolute",left:0,top:0,width:"54%",height:"100%",background:"linear-gradient(140deg,"+hc1+"cc,"+hc2+"88)",clipPath:"polygon(0 0,65% 0,48% 100%,0 100%)"}}/>
       <div style={{position:"absolute",right:0,top:0,width:"54%",height:"100%",background:"linear-gradient(220deg,"+ac1+"cc,"+ac2+"88)",clipPath:"polygon(52% 0,100% 0,100% 100%,35% 100%)"}}/>
       {/* Pitch overlay */}
-      <div style={{position:"absolute",inset:0,backgroundImage:`url("${pitchSvg}")`",backgroundSize:"100% 100%"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:`url("${pitchSvg}")`,backgroundSize:"100% 100%"}}/>
       {/* Dark overlay */}
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.42)"}}/>
       {/* HUD corner brackets */}

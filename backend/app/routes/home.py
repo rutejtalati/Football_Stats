@@ -1302,16 +1302,15 @@ async def dashboard():
         value_players(n=6),                     # 6
         trending_players(),                     # 7
         differential_captains(n=6),             # 8
-        fixture_difficulty(num_gws=6),          # 9
-        transfer_brief_home(),                  # 10
-        tactical_insight(league="epl"),         # 11
-        model_metrics(),                        # 12
-        high_scoring_matches(n=5),              # 13
-        defense_table(league="epl", n=6),       # 14
-        recent_results(n=6),                    # 15
-        analytics_term(rotate=True),            # 16
-        performance_summary(),                  # 17 — truthful model perf
-        accountability_summary(),               # 18 — truthful accountability
+        transfer_brief_home(),                  # 9
+        tactical_insight(league="epl"),         # 10
+        model_metrics(),                        # 11
+        high_scoring_matches(n=5),              # 12
+        defense_table(league="epl", n=6),       # 13
+        recent_results(n=6),                    # 14
+        analytics_term(rotate=True),            # 15
+        performance_summary(),                  # 16 — truthful model perf
+        accountability_summary(),               # 17 — truthful accountability
         return_exceptions=True,
     )
 
@@ -1319,31 +1318,30 @@ async def dashboard():
         return r if not isinstance(r, Exception) else (fallback or {})
 
     payload = {
-        "top_predictions":      _safe_result(results[0],  {"predictions": []}),
-        "model_edges":          _safe_result(results[1],  {"edges": []}),
-        "model_confidence":     _safe_result(results[2],  {}),
-        "power_rankings":       _safe_result(results[3],  {"rankings": []}),
-        "title_race":           _safe_result(results[4],  {"top4": []}),
-        "xg_leaders":           _safe_result(results[5],  {"leaders": []}),
-        "value_players":        _safe_result(results[6],  {"players": []}),
-        "trending_players":     _safe_result(results[7],  {"items": []}),
-        "differential_captains":_safe_result(results[8],  {"captains": []}),
-        "fixture_difficulty":   _safe_result(results[9],  {"teams": [], "gws": []}),
-        "transfer_brief":       _safe_result(results[10], {}),
-        "tactical_insight":     _safe_result(results[11], {"primary": None}),
-        "model_metrics":        _safe_result(results[12], {"trend": [], "by_market": []}),
-        "high_scoring_matches": _safe_result(results[13], {"matches": []}),
-        "defense_table":        _safe_result(results[14], {"table": []}),
-        "recent_results":       _safe_result(results[15], {"results": []}),
-        "analytics_term":       _safe_result(results[16], {}),
-        "performance_summary":  _safe_result(results[17], {}),
-        "accountability_summary": _safe_result(results[18], {}),
+        "top_predictions":        _safe_result(results[0],  {"predictions": []}),
+        "model_edges":            _safe_result(results[1],  {"edges": []}),
+        "model_confidence":       _safe_result(results[2],  {}),
+        "power_rankings":         _safe_result(results[3],  {"rankings": []}),
+        "title_race":             _safe_result(results[4],  {"top4": []}),
+        "xg_leaders":             _safe_result(results[5],  {"leaders": []}),
+        "value_players":          _safe_result(results[6],  {"players": []}),
+        "trending_players":       _safe_result(results[7],  {"items": []}),
+        "differential_captains":  _safe_result(results[8],  {"captains": []}),
+        "transfer_brief":         _safe_result(results[9],  {}),
+        "tactical_insight":       _safe_result(results[10], {"primary": None}),
+        "model_metrics":          _safe_result(results[11], {"trend": [], "by_market": []}),
+        "high_scoring_matches":   _safe_result(results[12], {"matches": []}),
+        "defense_table":          _safe_result(results[13], {"table": []}),
+        "recent_results":         _safe_result(results[14], {"results": []}),
+        "analytics_term":         _safe_result(results[15], {}),
+        "performance_summary":    _safe_result(results[16], {}),
+        "accountability_summary": _safe_result(results[17], {}),
         "hero_stats": {
             "competitions_count": 9,
-            "fixtures_predicted": _safe_result(results[17], {}).get("verified_count") or 0,
-            "verified_accuracy":  _safe_result(results[17], {}).get("overall_accuracy") or 0,
+            "fixtures_predicted": _safe_result(results[16], {}).get("verified_count") or 0,
+            "verified_accuracy":  _safe_result(results[16], {}).get("overall_accuracy") or 0,
         },
-        "generated_at":         datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
     _cset(cache_key, payload)

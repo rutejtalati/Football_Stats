@@ -159,22 +159,14 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
   const[hc1,hc2]=tc(homeTeam); const[ac1,ac2]=tc(awayTeam);
   const hPct=Math.round(hp*100); const dPct=Math.round(dp*100); const aPct=Math.round(ap*100);
   const hasPct=hPct+dPct+aPct>0;
-  const pitchLines=encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='170'>"
-    +"<rect x='30' y='12' width='340' height='146' fill='none' stroke='white' stroke-width='1' opacity='.13'/>"
-    +"<line x1='200' y1='12' x2='200' y2='158' stroke='white' stroke-width='1' opacity='.13'/>"
-    +"<circle cx='200' cy='85' r='34' fill='none' stroke='white' stroke-width='1' opacity='.13'/>"
-    +"<rect x='30' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/>"
-    +"<rect x='318' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/>"
-    +"</svg>"
-  );
+  const pitchSvg="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='170'%3E%3Crect x='30' y='12' width='340' height='146' fill='none' stroke='white' stroke-width='1' opacity='.13'/%3E%3Cline x1='200' y1='12' x2='200' y2='158' stroke='white' stroke-width='1' opacity='.13'/%3E%3Ccircle cx='200' cy='85' r='34' fill='none' stroke='white' stroke-width='1' opacity='.13'/%3E%3Crect x='30' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/%3E%3Crect x='318' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/%3E%3C/svg%3E";
   return(
     <div style={{position:"relative",height,overflow:"hidden",flexShrink:0,background:"#000"}}>
       {/* Team colour wedges */}
       <div style={{position:"absolute",left:0,top:0,width:"54%",height:"100%",background:"linear-gradient(140deg,"+hc1+"cc,"+hc2+"88)",clipPath:"polygon(0 0,65% 0,48% 100%,0 100%)"}}/>
       <div style={{position:"absolute",right:0,top:0,width:"54%",height:"100%",background:"linear-gradient(220deg,"+ac1+"cc,"+ac2+"88)",clipPath:"polygon(52% 0,100% 0,100% 100%,35% 100%)"}}/>
       {/* Pitch overlay */}
-      <div style={{position:"absolute",inset:0,backgroundImage:"url("data:image/svg+xml,"+pitchLines+"")",backgroundSize:"100% 100%"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:`url("${pitchSvg}")`",backgroundSize:"100% 100%"}}/>
       {/* Dark overlay */}
       <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.42)"}}/>
       {/* HUD corner brackets */}

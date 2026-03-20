@@ -47,7 +47,6 @@ const SLUG_MAP = {
   "laliga":     "laliga",
   "seriea":     "seriea",
   "ligue1":     "ligue1",
-  "bundesliga": "bundesliga",
   "ucl":        "ucl",
   "uel":        "uel",
   "uecl":       "uecl",

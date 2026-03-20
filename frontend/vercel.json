@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://football-stats-lw4b.onrender.com/api/$1"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

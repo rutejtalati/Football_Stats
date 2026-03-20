@@ -78,12 +78,11 @@ const Icons = {
     </svg>
   ),
   Logo: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <rect x="2" y="3" width="20" height="3" rx="1.5" fill="#60a5fa"/>
-      <rect x="2" y="8.5" width="13" height="3" rx="1.5" fill="#60a5fa" opacity=".65"/>
-      <rect x="2" y="14" width="16" height="3" rx="1.5" fill="#60a5fa" opacity=".4"/>
-      <rect x="2" y="19.5" width="9" height="2" rx="1" fill="#60a5fa" opacity=".25"/>
-      <rect x="19" y="14" width="3" height="7.5" rx="1.5" fill="#28d97a" opacity=".9"/>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect y="0"   width="16" height="2.5" rx="1.25" fill="#fbbf24"/>
+      <rect y="4.5" width="10" height="2.5" rx="1.25" fill="#fbbf24" opacity=".6"/>
+      <rect y="9"   width="13" height="2.5" rx="1.25" fill="#fbbf24" opacity=".35"/>
+      <rect x="12.5" y="8.5" width="3" height="7" rx="1.5" fill="#fbbf24" opacity=".9"/>
     </svg>
   ),
 };
@@ -227,348 +226,207 @@ export default function Navbar() {
     <>
       {/* ── Scoped styles ──────────────────────────────────── */}
       <style>{`
-        @keyframes snLivePulse {
-          0%,100% { opacity:1; transform:scale(1); }
-          50%     { opacity:0.45; transform:scale(0.65); }
-        }
-        @keyframes snLiveRing {
-          0%   { transform:scale(1);   opacity:0.55; }
-          80%  { transform:scale(2.4); opacity:0; }
-          100% { opacity:0; }
-        }
-        @keyframes snFadeDown {
-          from { opacity:0; transform:translateY(-5px); }
-          to   { opacity:1; transform:translateY(0); }
-        }
-        @keyframes snDrawerIn {
-          from { opacity:0; transform:translateX(-6px); }
-          to   { opacity:1; transform:translateX(0); }
-        }
+        @keyframes snLivePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.35;transform:scale(0.5)} }
+        @keyframes snLiveRing  { 0%{transform:scale(1);opacity:0.6} 80%{transform:scale(2.6);opacity:0} 100%{opacity:0} }
+        @keyframes snFadeDown  { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes snDrawerIn  { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes snBorderFlow{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes snGridPan   { 0%{background-position:0 0} 100%{background-position:40px 40px} }
+        @keyframes snGlitch    { 0%,94%,100%{clip-path:none;transform:none} 95%{clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%);transform:translateX(-2px)} 97%{clip-path:polygon(0 60%,100% 60%,100% 80%,0 80%);transform:translateX(2px)} }
+        @keyframes snScan      { 0%{top:-2px} 100%{top:700%} }
 
-        /* ─ Bar shell ─ */
         .sn-bar {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          height: 48px;
-          z-index: 200;
-          background: rgba(5, 8, 16, 0.76);
-          backdrop-filter: blur(32px) saturate(200%) brightness(0.88);
-          -webkit-backdrop-filter: blur(32px) saturate(200%) brightness(0.88);
-          border-bottom: 1px solid rgba(255,255,255,0.065);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.045),
-            0 8px 40px rgba(0,0,0,0.5),
-            0 2px 8px rgba(0,0,0,0.25);
+          position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 200;
+          background: #000;
+          backdrop-filter: blur(24px) saturate(180%);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          border-bottom: 1px solid rgba(255,215,0,0.12);
           transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-          overflow: visible;
+          overflow: hidden;
         }
-        .sn-bar::after {
-          content: "";
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 1px;
-          background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255,255,255,0.07) 20%,
-            rgba(255,255,255,0.12) 50%,
-            rgba(255,255,255,0.07) 80%,
-            transparent 100%
-          );
+        .sn-bar::before {
+          content:""; position:absolute; inset:0;
+          background-image: linear-gradient(rgba(255,215,0,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(255,215,0,0.03) 1px,transparent 1px);
+          background-size: 40px 40px;
+          animation: snGridPan 10s linear infinite;
           pointer-events: none;
         }
+        .sn-bar::after {
+          content:""; position:absolute; top:0; left:0; right:0; height:1.5px;
+          background: linear-gradient(90deg, transparent, #78350f, #fbbf24, #fde68a, #fbbf24, #78350f, transparent);
+          background-size: 300% 100%;
+          animation: snBorderFlow 5s ease infinite;
+        }
+        .sn-bar-scan {
+          position:absolute; left:0; right:0; height:1px; z-index:1;
+          background: linear-gradient(90deg, transparent, rgba(251,191,36,0.4), rgba(253,230,138,0.25), transparent);
+          animation: snScan 6s linear infinite;
+          pointer-events:none;
+        }
+        .sn-corner { position:absolute; width:9px; height:9px; z-index:2; pointer-events:none; }
+        .sn-corner--tl { top:5px; left:5px; border-top:1.5px solid rgba(251,191,36,0.7); border-left:1.5px solid rgba(251,191,36,0.7); }
+        .sn-corner--tr { top:5px; right:5px; border-top:1.5px solid rgba(251,191,36,0.7); border-right:1.5px solid rgba(251,191,36,0.7); }
+        .sn-corner--bl { bottom:5px; left:5px; border-bottom:1.5px solid rgba(251,191,36,0.25); border-left:1.5px solid rgba(251,191,36,0.25); }
+        .sn-corner--br { bottom:5px; right:5px; border-bottom:1.5px solid rgba(251,191,36,0.25); border-right:1.5px solid rgba(251,191,36,0.25); }
         .sn-bar--hidden { transform: translateY(-100%); }
         .sn-bar--open   { z-index: 202; }
 
         .sn-wrap {
-          display: flex;
-          align-items: center;
-          height: 100%;
-          max-width: 1520px;
-          margin: 0 auto;
-          padding: 0 20px;
-          gap: 8px;
-          overflow: visible;
+          position:relative; z-index:3;
+          display:flex; align-items:center; height:100%;
+          max-width:1520px; margin:0 auto; padding:0 18px; gap:3px; overflow:visible;
         }
 
-        /* ─ Brand ─ */
-        .sn-brand {
-          display: flex; align-items: center; gap: 7px;
-          text-decoration: none; flex-shrink: 0;
-          padding: 4px 8px; border-radius: 9px;
-          transition: background 0.15s; margin-right: 6px;
-        }
-        .sn-brand:hover { background: rgba(255,255,255,0.05); }
-        .sn-brand span {
-          font-size: 14px; font-weight: 900; color: #ddeeff;
-          letter-spacing: -0.025em; font-family: 'Sora', sans-serif; white-space: nowrap;
-        }
+        .sn-brand { display:flex; align-items:center; gap:9px; text-decoration:none; flex-shrink:0; margin-right:12px; padding:4px 8px; border-radius:9px; transition:background 0.15s; }
+        .sn-brand:hover { background:rgba(251,191,36,0.05); }
+        .sn-brand-icon { width:28px; height:28px; border-radius:7px; background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .sn-brand-text-wrap { display:flex; flex-direction:column; }
+        .sn-brand span { font-size:13px; font-weight:700; color:#fde68a; letter-spacing:0.06em; font-family:'Inter',sans-serif; text-shadow:0 0 24px rgba(251,191,36,0.5); animation:snGlitch 10s ease infinite; white-space:nowrap; }
+        .sn-brand-sub  { font-size:7px; font-weight:600; color:rgba(251,191,36,0.45); letter-spacing:0.18em; text-transform:uppercase; line-height:1; margin-top:-1px; }
 
-        /* ─ Nav ─ */
-        .sn-nav {
-          display: flex; align-items: center; gap: 2px;
-          flex: 1; justify-content: center;
-          min-width: 0; overflow: visible;
-        }
+        .sn-nav { display:flex; align-items:center; gap:1px; flex:1; justify-content:center; min-width:0; overflow:visible; }
 
-        /* ─ Pills ─ */
+        /* Pills — no fixed background/border; only active state gets liquid glass */
         .sn-pill {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 5px 10px; height: 30px;
-          border-radius: 8px; border: 1px solid transparent;
-          font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em;
-          color: rgba(255,255,255,0.38);
-          text-decoration: none; white-space: nowrap;
-          background: transparent; cursor: pointer;
-          font-family: 'Inter', sans-serif; line-height: 1;
-          transition: color 0.14s, background 0.14s, border-color 0.14s, box-shadow 0.14s;
-          flex-shrink: 0; overflow: visible; position: relative;
+          display:inline-flex; align-items:center; gap:5px;
+          padding:5px 10px; height:30px; border-radius:6px;
+          border:1px solid transparent;
+          font-size:11px; font-weight:600; letter-spacing:0.04em;
+          color:rgba(255,255,255,0.3);
+          text-decoration:none; background:transparent; cursor:pointer;
+          font-family:'Inter',sans-serif; line-height:1;
+          transition:color 0.14s, background 0.14s, border-color 0.14s;
+          flex-shrink:0; position:relative;
         }
-        .sn-pill svg { flex-shrink: 0; }
+        .sn-pill svg { flex-shrink:0; }
+        .sn-pill--secondary { color:rgba(255,255,255,0.18); }
+        .sn-pill:hover { color:rgba(255,255,255,0.75); }
 
-        .sn-pill--secondary { color: rgba(255,255,255,0.24); font-size: 12px; }
-
-        .sn-pill:hover {
-          color: rgba(255,255,255,0.72);
-          background: rgba(255,255,255,0.055);
-          border-color: rgba(255,255,255,0.07);
-        }
+        /* ACTIVE — liquid glass yellow */
         .sn-pill--active {
-          color: var(--pill-color, rgba(255,255,255,0.88));
-          background: color-mix(in srgb, var(--pill-color,white) 11%, transparent);
-          border-color: color-mix(in srgb, var(--pill-color,white) 22%, transparent);
-          box-shadow: 0 0 14px color-mix(in srgb, var(--pill-color,white) 10%, transparent);
+          color:#fbbf24 !important;
+          background: rgba(251,191,36,0.1);
+          border-color: rgba(251,191,36,0.2);
+          box-shadow: inset 0 1px 0 rgba(251,191,36,0.12), 0 0 16px rgba(251,191,36,0.08);
+        }
+        .sn-pill--active::after {
+          content:""; position:absolute; bottom:-1px; left:20%; right:20%; height:1px;
+          background: linear-gradient(90deg,transparent,#fbbf24,transparent);
         }
 
-        /* ─ Live pill ─ */
-        .sn-pill--live { color: rgba(255,80,80,0.62); gap: 7px; }
-        .sn-pill--live:hover {
-          color: #ff6666;
-          background: rgba(255,50,50,0.07);
-          border-color: rgba(255,50,50,0.14);
-        }
+        /* Live pill — plain text, no fixed bg. Red only when active */
+        .sn-pill--live { color:rgba(255,255,255,0.3); }
+        .sn-pill--live:hover { color:rgba(255,120,120,0.8); }
         .sn-pill--live.sn-pill--active {
-          color: #ff5252;
-          background: rgba(255,50,50,0.12);
-          border-color: rgba(255,50,50,0.28);
-          box-shadow: 0 0 18px rgba(255,60,60,0.14), 0 0 40px rgba(255,50,50,0.06);
+          color:#ff5252 !important;
+          background:rgba(255,50,50,0.1) !important;
+          border-color:rgba(255,50,50,0.22) !important;
+          box-shadow: inset 0 1px 0 rgba(255,80,80,0.1), 0 0 16px rgba(255,50,50,0.06) !important;
         }
+        .sn-pill--live.sn-pill--active::after { background:linear-gradient(90deg,transparent,#ff5252,transparent) !important; }
 
-        /* Pulse dot */
-        .sn-live-dot {
-          position: relative;
-          width: 6px; height: 6px; flex-shrink: 0;
-          display: inline-block;
-        }
-        .sn-live-dot::before {
-          content: ""; position: absolute; inset: 0; border-radius: 50%;
-          background: #ff3333;
-          animation: snLivePulse 1.7s ease-in-out infinite;
-        }
-        .sn-pill--active .sn-live-dot::after {
-          content: ""; position: absolute; inset: 0; border-radius: 50%;
-          background: rgba(255,50,50,0.45);
-          animation: snLiveRing 1.7s ease-out infinite;
-        }
-        .sn-pill:not(.sn-pill--active) .sn-live-dot::before {
-          animation-duration: 3s;
-          background: rgba(255,60,60,0.5);
-        }
+        /* Live dot — always shown but subtle unless active */
+        .sn-live-dot { position:relative; width:6px; height:6px; flex-shrink:0; display:inline-block; }
+        .sn-live-dot::before { content:""; position:absolute; inset:0; border-radius:50%; background:rgba(255,80,80,0.45); animation:snLivePulse 2s ease-in-out infinite; }
+        .sn-pill--live.sn-pill--active .sn-live-dot::before { background:#ff4444; }
+        .sn-pill--live.sn-pill--active .sn-live-dot::after { content:""; position:absolute; inset:0; border-radius:50%; background:rgba(255,50,50,0.4); animation:snLiveRing 1.8s ease-out infinite; }
+
+        .sn-pill-num { font-size:7px; font-weight:800; color:rgba(255,255,255,0.15); letter-spacing:0.1em; margin-right:1px; }
 
         /* FPL tag */
-        .sn-pill-tag {
-          font-size: 8px; font-weight: 900; letter-spacing: 0.07em;
-          padding: 1px 5px; border-radius: 4px;
-          background: rgba(40,217,122,0.13);
-          border: 1px solid rgba(40,217,122,0.22);
-          color: #28d97a; flex-shrink: 0; line-height: 1.5;
-        }
+        .sn-pill-tag { font-size:8px; font-weight:800; letter-spacing:0.07em; padding:1px 5px; border-radius:4px; background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2); color:#fbbf24; flex-shrink:0; line-height:1.5; }
+        .sn-chevron { display:inline-flex; opacity:0.35; margin-left:1px; transition:transform 0.15s; }
+        .sn-chevron--open { transform:rotate(180deg); }
 
-        /* Chevron */
-        .sn-chevron {
-          display: inline-flex; opacity: 0.4; margin-left: 1px;
-          transition: transform 0.15s;
-        }
-        .sn-chevron--open { transform: rotate(180deg); }
+        /* Status */
+        .sn-status { display:flex; align-items:center; gap:5px; font-size:8.5px; font-weight:700; letter-spacing:0.1em; color:rgba(251,191,36,0.5); text-transform:uppercase; padding-right:10px; border-right:1px solid rgba(255,255,255,0.06); }
+        .sn-status-dot { width:4px; height:4px; border-radius:50%; background:#fbbf24; box-shadow:0 0 6px #fbbf24; flex-shrink:0; }
 
-        /* ─ FPL Dropdown ─ */
+        /* FPL Dropdown */
         .sn-fpl-dropdown {
-          position: absolute; top: calc(100% + 10px);
-          left: 50%; transform: translateX(-50%);
-          min-width: 256px; z-index: 300;
-          background: rgba(5,8,16,0.97);
-          backdrop-filter: blur(28px) saturate(180%);
-          -webkit-backdrop-filter: blur(28px) saturate(180%);
-          border: 1px solid rgba(40,217,122,0.17);
-          border-radius: 14px; padding: 6px;
-          box-shadow: 0 24px 64px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.04);
-          animation: snFadeDown 0.17s cubic-bezier(0.22,1,0.36,1) both;
+          position:absolute; top:calc(100% + 10px); left:50%; transform:translateX(-50%);
+          min-width:256px; z-index:300;
+          background:#000; backdrop-filter:blur(28px) saturate(180%); -webkit-backdrop-filter:blur(28px) saturate(180%);
+          border:1px solid rgba(251,191,36,0.2); border-radius:12px; padding:6px;
+          box-shadow:0 24px 64px rgba(0,0,0,0.9), 0 0 0 1px rgba(251,191,36,0.05);
+          animation:snFadeDown 0.17s cubic-bezier(0.22,1,0.36,1) both;
         }
-        .sn-fpl-dropdown-label {
-          font-size: 8.5px; font-weight: 900; letter-spacing: 0.12em;
-          color: rgba(255,255,255,0.18); text-transform: uppercase;
-          padding: 4px 10px 8px;
-          border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 4px;
-        }
-        .sn-fpl-item {
-          display: block; padding: 9px 10px; border-radius: 9px;
-          text-decoration: none; transition: background 0.13s;
-        }
-        .sn-fpl-item:hover { background: rgba(40,217,122,0.07); }
-        .sn-fpl-item--active .sn-fpl-item-name { color: #28d97a; }
-        .sn-fpl-item-name { font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.72); margin-bottom: 2px; }
-        .sn-fpl-item-desc { font-size: 10px; color: rgba(255,255,255,0.24); font-weight: 500; }
+        .sn-fpl-dropdown-label { font-size:8.5px; font-weight:900; letter-spacing:0.12em; color:rgba(255,255,255,0.18); text-transform:uppercase; padding:4px 10px 8px; border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:4px; }
+        .sn-fpl-item { display:block; padding:9px 10px; border-radius:8px; text-decoration:none; transition:background 0.13s; }
+        .sn-fpl-item:hover { background:rgba(251,191,36,0.06); }
+        .sn-fpl-item--active .sn-fpl-item-name { color:#fbbf24; }
+        .sn-fpl-item-name { font-size:12px; font-weight:700; color:rgba(255,255,255,0.65); margin-bottom:2px; }
+        .sn-fpl-item-desc { font-size:10px; color:rgba(255,255,255,0.22); }
 
-        /* ─ Controls ─ */
-        .sn-controls { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
-        .sn-search   { display: flex; align-items: center; gap: 4px; }
-        .sn-search-input {
-          height: 30px; padding: 0 12px; border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.09);
-          background: rgba(255,255,255,0.055);
-          color: #ddeeff; font-size: 12px; font-family: inherit;
-          width: 180px; outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s, width 0.2s;
-        }
-        .sn-search-input::placeholder { color: rgba(255,255,255,0.22); }
-        .sn-search-input:focus {
-          border-color: rgba(96,165,250,0.38);
-          box-shadow: 0 0 0 3px rgba(96,165,250,0.08);
-          width: 220px;
-        }
+        /* Controls */
+        .sn-controls { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+        .sn-search   { display:flex; align-items:center; gap:4px; }
+        .sn-search-input { height:30px; padding:0 12px; border-radius:7px; border:1px solid rgba(255,215,0,0.12); background:rgba(255,255,255,0.03); color:#fde68a; font-size:12px; font-family:inherit; width:180px; outline:none; transition:border-color 0.15s, box-shadow 0.15s, width 0.2s; }
+        .sn-search-input::placeholder { color:rgba(255,255,255,0.2); }
+        .sn-search-input:focus { border-color:rgba(251,191,36,0.4); box-shadow:0 0 0 3px rgba(251,191,36,0.07); width:220px; }
+        .sn-icon-btn { display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:7px; border:1px solid rgba(255,215,0,0.1); background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.3); cursor:pointer; flex-shrink:0; transition:color 0.14s, background 0.14s; }
+        .sn-icon-btn:hover { color:rgba(251,191,36,0.8); background:rgba(251,191,36,0.06); border-color:rgba(251,191,36,0.2); }
+        .sn-hamburger { display:none; }
 
-        /* ─ Icon button ─ */
-        .sn-icon-btn {
-          display: flex; align-items: center; justify-content: center;
-          width: 32px; height: 32px; border-radius: 8px;
-          border: 1px solid transparent; background: transparent;
-          color: rgba(255,255,255,0.36); cursor: pointer; flex-shrink: 0;
-          transition: color 0.14s, background 0.14s, border-color 0.14s;
-        }
-        .sn-icon-btn:hover {
-          color: rgba(255,255,255,0.72);
-          background: rgba(255,255,255,0.055);
-          border-color: rgba(255,255,255,0.07);
-        }
+        /* Mobile drawer */
+        .sn-mobile-drawer { position:fixed; top:56px; left:0; bottom:0; width:min(268px,80vw); z-index:203; background:#000; backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); border-right:1px solid rgba(255,215,0,0.1); overflow-y:auto; padding:10px 8px 32px; animation:snDrawerIn 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+        .sn-drawer-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:13px; font-weight:700; color:rgba(255,255,255,0.3); text-decoration:none; border:1px solid transparent; margin-bottom:2px; transition:color 0.13s, background 0.13s; }
+        .sn-drawer-item:hover { color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.03); }
+        .sn-drawer-item--active { color:#fbbf24; background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.15); }
+        .sn-drawer-item--live.sn-drawer-item--active { color:#ff5252; background:rgba(255,50,50,0.08); border-color:rgba(255,50,50,0.15); }
+        .sn-backdrop { position:fixed; inset:0; z-index:201; background:rgba(0,0,0,0.7); backdrop-filter:blur(2px); }
 
-        .sn-hamburger { display: none; }
+        /* Bottom tabs */
+        .sn-bottom-tabs { display:none; }
 
-        /* ─ Mobile drawer ─ */
-        .sn-mobile-drawer {
-          position: fixed; top: 86px; left: 0; bottom: 0;
-          width: min(268px, 80vw); z-index: 203;
-          background: rgba(4,7,14,0.97);
-          backdrop-filter: blur(28px) saturate(160%);
-          -webkit-backdrop-filter: blur(28px) saturate(160%);
-          border-right: 1px solid rgba(255,255,255,0.07);
-          overflow-y: auto; padding: 10px 8px 32px;
-          animation: snDrawerIn 0.2s cubic-bezier(0.22,1,0.36,1) both;
-        }
-        .sn-drawer-item {
-          display: flex; align-items: center; gap: 10px;
-          padding: 10px 14px; border-radius: 10px;
-          font-size: 13px; font-weight: 700;
-          color: rgba(255,255,255,0.4); text-decoration: none;
-          border: 1px solid transparent; margin-bottom: 2px;
-          transition: color 0.13s, background 0.13s;
-        }
-        .sn-drawer-item:hover { color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.04); }
-        .sn-drawer-item--active {
-          color: var(--pill-color, rgba(255,255,255,0.88));
-          background: color-mix(in srgb, var(--pill-color,white) 9%, transparent);
-          border-color: color-mix(in srgb, var(--pill-color,white) 16%, transparent);
-        }
-        .sn-drawer-item--live { color: rgba(255,80,80,0.6); }
-        .sn-drawer-item--live.sn-drawer-item--active { color: #ff5252; }
-
-        /* ─ Backdrop ─ */
-        .sn-backdrop {
-          position: fixed; inset: 0; z-index: 201;
-          background: rgba(0,0,0,0.58); backdrop-filter: blur(2px);
-        }
-
-        /* ─ Desktop page offset ─────────────────────────────────────────────
-           .sn-bar (navbar): fixed, height 48px
-           .sn-live-ticker:  fixed, top 48px, height 36px
-           Combined: 84px → handled by --bar-total in index.css.
-           No override needed here.                                          */
-
-        /* ─ Bottom tabs ─ */
-        .sn-bottom-tabs { display: none; }
-
-        /* ─ Responsive ─ */
-        @media (max-width: 1240px) {
-          .sn-pill { padding: 5px 8px; font-size: 12px; gap: 4px; }
-          .sn-nav  { gap: 1px; }
-        }
-        @media (max-width: 1040px) {
-          .sn-pill--secondary { display: none; }
-        }
-        @media (max-width: 768px) {
-          .sn-nav       { display: none; }
-          .sn-hamburger { display: flex; }
-          .sn-brand span { font-size: 13px; }
-
+        /* Responsive */
+        @media (max-width:1240px) { .sn-pill { padding:5px 8px; font-size:11px; gap:4px; } .sn-nav { gap:0; } }
+        @media (max-width:1040px) { .sn-pill--secondary { display:none; } }
+        @media (max-width:768px) {
+          .sn-nav { display:none; } .sn-hamburger { display:flex; }
           .sn-bottom-tabs {
-            display: flex;
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
-            background: rgba(4,7,14,0.97);
-            backdrop-filter: blur(20px) saturate(160%);
-            -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding: 4px 0 max(6px, env(safe-area-inset-bottom));
-            justify-content: space-around;
+            display:flex; position:fixed; bottom:0; left:0; right:0; z-index:999;
+            background:#000; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+            border-top:1px solid rgba(255,215,0,0.1);
+            padding:4px 0 max(6px, env(safe-area-inset-bottom));
+            justify-content:space-around;
           }
-          .sn-page-wrap {
-            padding-top: var(--bar-total) !important;
-            padding-bottom: 72px !important;
-          }
-          .sn-drawer { top: var(--bar-total); }
+          .sn-bottom-tabs::before { content:""; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,#78350f,#fbbf24,#fde68a,#fbbf24,#78350f,transparent); background-size:200% 100%; animation:snBorderFlow 3s ease infinite; }
+          .sn-page-wrap { padding-top:var(--bar-total) !important; padding-bottom:72px !important; }
         }
-        @media (max-width: 480px) {
-          .sn-brand span  { display: none; }
-          .sn-search-input { width: 140px; }
-          .sn-search-input:focus { width: 160px; }
-        }
+        @media (max-width:480px) { .sn-brand span { display:none; } }
 
         /* Bottom tab internals */
-        .sn-bottom-tab-link {
-          display: flex; flex-direction: column; align-items: center;
-          gap: 2px; padding: 4px 6px; border-radius: 8px;
-          color: rgba(255,255,255,0.28); text-decoration: none;
-          transition: color 0.14s; flex: 1; min-width: 44px;
-        }
-        .sn-bottom-tab-link.active { color: var(--tab-color, rgba(255,255,255,0.9)); }
-        .sn-bottom-tab-icon {
-          width: 28px; height: 28px; position: relative;
-          display: flex; align-items: center; justify-content: center;
-          border-radius: 8px; background: transparent; transition: background 0.14s;
-        }
-        .sn-bottom-tab-link.active .sn-bottom-tab-icon {
-          background: color-mix(in srgb, var(--tab-color,white) 12%, transparent);
-        }
-        .sn-bti--live .sn-live-dot-bt {
-          position: absolute; top: 3px; right: 3px;
-          width: 5px; height: 5px; border-radius: 50%;
-          background: #ff3333;
-          animation: snLivePulse 1.8s ease-in-out infinite;
-        }
-        .sn-bottom-tab-label {
-          font-size: 9px; font-weight: 700; letter-spacing: 0.02em;
-          font-family: 'Inter', sans-serif;
-        }
-      `}</style>
+        .sn-bottom-tab-link { display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 6px; border-radius:8px; color:rgba(255,255,255,0.25); text-decoration:none; transition:color 0.14s; flex:1; min-width:44px; }
+        .sn-bottom-tab-link.active { color:#fbbf24; }
+        .sn-bottom-tab-icon { width:28px; height:28px; position:relative; display:flex; align-items:center; justify-content:center; border-radius:8px; background:transparent; transition:background 0.14s; }
+        .sn-bottom-tab-link.active .sn-bottom-tab-icon { background:rgba(251,191,36,0.1); box-shadow:inset 0 1px 0 rgba(251,191,36,0.12); }
+        .sn-bti--live .sn-live-dot-bt { position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:rgba(255,80,80,0.5); animation:snLivePulse 1.8s ease-in-out infinite; }
+        .sn-bottom-tab-link.active .sn-bti--live { color:#ff5252; }
+        .sn-bottom-tab-link.active .sn-bti--live .sn-live-dot-bt { background:#ff4444; }
+        .sn-bottom-tab-label { font-size:9px; font-weight:700; letter-spacing:0.02em; font-family:'Inter',sans-serif; }
+      `}
+      </style>
 
       {/* ── Bar ─────────────────────────────────────────────── */}
       <header
         className={`sn-bar${hidden ? " sn-bar--hidden" : ""}${mobileOpen ? " sn-bar--open" : ""}`}
         role="banner"
       >
+        <div className="sn-bar-scan" />
+        <div className="sn-corner sn-corner--tl" />
+        <div className="sn-corner sn-corner--tr" />
+        <div className="sn-corner sn-corner--bl" />
+        <div className="sn-corner sn-corner--br" />
         <div className="sn-wrap">
 
           {/* Logo */}
           <NavLink to="/" className="sn-brand" aria-label="StatinSite home">
-            <Icons.Logo />
-            <span>StatinSite</span>
+            <div className="sn-brand-icon"><Icons.Logo /></div>
+            <div className="sn-brand-text-wrap">
+              <span>STATINSITE</span>
+              <span className="sn-brand-sub">Football Intel</span>
+            </div>
           </NavLink>
 
           {/* Desktop nav */}
@@ -641,9 +499,10 @@ export default function Navbar() {
                 <NavLink
                   key={item.to} to={item.to} end={item.end}
                   className={`sn-pill${active ? " sn-pill--active" : ""}${item.secondary ? " sn-pill--secondary" : ""}`}
-                  style={active ? { "--pill-color": item.color } : {}}
+                  style={{}}
                   aria-current={active ? "page" : undefined}
                 >
+                  <span className="sn-pill-num">{String(NAV_ITEMS.indexOf(item)+1).padStart(2,"0")}</span>
                   <item.Icon />
                   <span>{item.label}</span>
                 </NavLink>
@@ -651,6 +510,11 @@ export default function Navbar() {
             })}
           </nav>
 
+          {/* Status */}
+          <div className="sn-status" style={{marginLeft:"auto",marginRight:8}}>
+            <span className="sn-status-dot" />
+            Online
+          </div>
           {/* Controls */}
           <div className="sn-controls">
             <div className="sn-search" ref={searchRef}>

@@ -77,27 +77,49 @@ function fbBg(fb){
 
 function useReveal(){ const ref=useRef(null); const[vis,setVis]=useState(false); useEffect(()=>{ if(!ref.current)return; const io=new IntersectionObserver(([e])=>{ if(e.isIntersecting){setVis(true);io.disconnect();} },{threshold:0.06}); io.observe(ref.current); return()=>io.disconnect(); },[]); return[ref,vis]; }
 
-function CardImage({src,type,style={},zoom=false}){
+const SOURCE_BRANDS={
+  "bbc sport":          {bg:"#b00",      fg:"#fff",   abbr:"BBC"  },
+  "sky sports":         {bg:"#0070c0",   fg:"#fff",   abbr:"SKY"  },
+  "sky sports football":{bg:"#0070c0",   fg:"#fff",   abbr:"SKY"  },
+  "the guardian":       {bg:"#005689",   fg:"#fff",   abbr:"GRD"  },
+  "espn fc":            {bg:"#cc0000",   fg:"#fff",   abbr:"ESPN" },
+  "goal.com":           {bg:"#1a1a1a",   fg:"#ffd700",abbr:"GOAL" },
+  "sports illustrated": {bg:"#c8102e",   fg:"#fff",   abbr:"SI"   },
+  "marca":              {bg:"#003580",   fg:"#fff",   abbr:"MCA"  },
+  "fabrizio romano":    {bg:"#1a0a2e",   fg:"#a78bfa",abbr:"FAB"  },
+  "statinsite":         {bg:"#0a1628",   fg:"#38bdf8",abbr:"SSI"  },
+  "statinsite intelligence engine":{bg:"#0a1628",fg:"#38bdf8",abbr:"SSI"},
+};
+function getSrcBrand(src=""){ return SOURCE_BRANDS[(src||"").toLowerCase().trim()]||null; }
+
+function CardImage({src,type,style={},zoom=false,source=""}){
   const[loaded,setLoaded]=useState(false);
   const[failed,setFailed]=useState(false);
   const fb=getFB(type);
-  if(!src||failed) return(
-    <div style={{position:"relative",overflow:"hidden",...style,background:fb.bg}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover"}}/>
-      <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+fb.accent+"40,transparent)"}}/>
-    </div>);
+  const brand=getSrcBrand(source);
+  if(!src||failed){
+    const bg=brand?brand.bg:fb.bg;
+    const accent=brand?brand.fg:fb.accent;
+    const abbr=brand?.abbr||null;
+    const sz=Math.min(parseInt(style.height||style.minHeight||60)/2.2,28);
+    return(
+      <div style={{position:"relative",overflow:"hidden",...style,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover",opacity:brand?0.12:1}}/>
+        {abbr&&<span style={{position:"relative",zIndex:1,fontSize:sz,fontWeight:900,fontFamily:"'Sora',sans-serif",color:accent,opacity:0.22,letterSpacing:"-0.04em",userSelect:"none"}}>{abbr}</span>}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:2.5,background:accent,opacity:0.65}}/>
+        <div style={{position:"absolute",top:7,left:7,width:5,height:5,borderRadius:"50%",background:accent,opacity:0.5}}/>
+      </div>);
+  }
   return(
     <div style={{position:"relative",overflow:"hidden",...style}}>
-      {!loaded&&<div style={{position:"absolute",inset:0,background:fb.bg}}/>}
+      {!loaded&&<div style={{position:"absolute",inset:0,background:fb.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {brand&&<span style={{fontSize:18,fontWeight:900,fontFamily:"'Sora',sans-serif",color:brand.fg,opacity:0.18,letterSpacing:"-0.04em"}}>{brand.abbr}</span>}
+      </div>}
       <img src={src} alt="" loading="lazy" onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}
         style={{width:"100%",height:"100%",objectFit:"cover",display:"block",
           transform:zoom?"scale(1.06)":"scale(1)",opacity:loaded?1:0,
           transition:"transform 0.35s cubic-bezier(.22,1,.36,1),opacity 0.3s ease"}}/>
-      {loaded&&<>
-        <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.15) 0%,transparent 35%,rgba(4,8,20,0.6) 100%)",pointerEvents:"none"}}/>
-      </>}
+      {loaded&&<div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 35%,rgba(4,8,20,0.55) 100%)",pointerEvents:"none"}}/>}
     </div>);
 }
 
@@ -280,8 +302,8 @@ function MatchPreviewCard({article,featured=false,onClick}){
 function InsightCard({article,featured=false,onClick,idx=0}){
   const[hov,setHov]=useState(false); const[ref,vis]=useReveal();
   const isTitle=article.type==="title_race";
-  const accent=isTitle?"#fbbf24":"#34d399";
-  const accentDark=isTitle?"#92400e":"#065f46";
+  const leaguePalette={epl:["#38bdf8","#0c4a6e"],laliga:["#fbbf24","#78350f"],seriea:["#34d399","#064e3b"],bundesliga:["#ff7c2a","#7c2d12"],ligue1:["#c084fc","#4c1d95"],ucl:["#fbbf24","#78350f"]};
+  const [accent,accentDark]=leaguePalette[article.league]||(isTitle?["#fbbf24","#92400e"]:["#34d399","#065f46"]);
   const gap=article.meta?.gap;
   const leader=article.meta?.leader;
   const standings=article.meta?.standings||[];
@@ -429,7 +451,7 @@ function EditorialNewsCard({article,onClick}){
       opacity:vis?1:0,transition:"all 0.24s cubic-bezier(.22,1,.36,1)",minHeight:90}}>
     <div style={{width:2,flexShrink:0,background:"linear-gradient(180deg,"+tm.color+"60,"+tm.color+"10)"}}/>
     <div style={{width:112,minWidth:112,flexShrink:0}}>
-      <CardImage src={article.image} type={article.type} style={{width:"100%",height:"100%",minHeight:90}} zoom={hov}/>
+      <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%",minHeight:90}} zoom={hov}/>
     </div>
     <div style={{flex:1,padding:"11px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,overflow:"hidden"}}>
@@ -442,6 +464,69 @@ function EditorialNewsCard({article,onClick}){
   </div>);
 }
 
+
+// ── Magazine card components ─────────────────────────────────────────
+function MagHeroCard({article,onClick}){
+  const[hov,setHov]=useState(false);
+  const accent=gl(article).color; const tm=gt(article);
+  return(
+    <div onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{position:"relative",borderRadius:14,overflow:"hidden",cursor:"pointer",minHeight:240,
+        border:hov?"1px solid "+accent+"55":"1px solid rgba(255,255,255,0.08)",
+        transition:"all 0.22s cubic-bezier(.22,1,.36,1)",
+        transform:hov?"translateY(-3px)":"translateY(0)",
+        boxShadow:hov?"0 20px 48px rgba(0,0,0,.6),0 0 0 1px "+accent+"18":"0 8px 24px rgba(0,0,0,0.4)"}}>
+      <div style={{position:"absolute",inset:0}}>
+        <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%"}} zoom={hov}/>
+      </div>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(0,0,0,0.95) 40%,rgba(0,0,0,0.35) 75%,rgba(0,0,0,0.1))",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:accent}}/>
+      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"16px 18px"}}>
+        <div style={{display:"flex",gap:6,marginBottom:7}}>
+          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:"rgba(0,0,0,0.65)",border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
+          {article.source&&<span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.6)",background:"rgba(0,0,0,0.65)",borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
+        </div>
+        <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:17,fontWeight:900,color:"#fff",lineHeight:1.28,margin:"0 0 7px",letterSpacing:"-0.02em"}}>{article.title}</h2>
+        {article.standfirst&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,0.6)",lineHeight:1.5,margin:"0 0 9px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst}</p>}
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:10,fontWeight:700,color:accent}}>Read more →</span>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,0.3)",marginLeft:"auto"}}>{timeAgo(article.published_at)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MagSmallCard({article,onClick}){
+  const[hov,setHov]=useState(false);const[ref,vis]=useReveal();
+  const tm=gt(article);const league=gl(article);
+  return(
+    <div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{borderRadius:12,overflow:"hidden",cursor:"pointer",display:"flex",flexDirection:"column",
+        background:"rgba(255,255,255,0.025)",
+        border:hov?"1px solid "+tm.color+"45":"1px solid rgba(255,255,255,0.07)",
+        transform:hov?"translateY(-2px)":vis?"translateY(0)":"translateY(8px)",
+        opacity:vis?1:0,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",
+        boxShadow:hov?"0 8px 24px rgba(0,0,0,0.45)":"none"}}>
+      <div style={{height:2.5,background:tm.color,flexShrink:0}}/>
+      <div style={{height:64,overflow:"hidden",flexShrink:0,position:"relative"}}>
+        <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%"}} zoom={hov}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(0,0,0,0.5),transparent)",pointerEvents:"none"}}/>
+      </div>
+      <div style={{padding:"8px 10px",flex:1,display:"flex",flexDirection:"column",gap:5}}>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:tm.color+"12",border:"1px solid "+tm.color+"25",borderRadius:3,padding:"1px 5px"}}>{tm.label}</span>
+          {article.league&&article.league!=="general"&&<span style={{fontSize:8,fontWeight:700,color:league.color,background:league.bg,borderRadius:3,padding:"1px 5px"}}>{league.abbr}</span>}
+        </div>
+        <p style={{fontFamily:"'Sora',sans-serif",fontSize:11,fontWeight:700,lineHeight:1.35,color:hov?"#fff":"rgba(255,255,255,0.85)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
+        <div style={{display:"flex",alignItems:"center",gap:4,marginTop:"auto"}}>
+          {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,0.35)",fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{article.source}</span>}
+          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:"rgba(255,255,255,0.25)",flexShrink:0}}>{timeAgo(article.published_at)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 function FeaturedCard({article,onClick}){
   const[hov,setHov]=useState(false);
   if(article.type==="match_preview")return<MatchPreviewCard article={article} featured onClick={onClick}/>;
@@ -494,7 +579,7 @@ function RelatedCard({article,onClick}){
         {article.home_logo&&<img src={article.home_logo} style={{width:20,height:36,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"} alt=""/>}
         {article.away_logo&&<img src={article.away_logo} style={{width:20,height:36,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"} alt=""/>}
       </div>
-    ):<div style={{width:44,height:36,flexShrink:0,borderRadius:8,overflow:"hidden"}}><CardImage src={article.image} type={article.type} style={{width:"100%",height:"100%"}}/></div>}
+    ):<div style={{width:44,height:36,flexShrink:0,borderRadius:8,overflow:"hidden"}}><CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%"}}/></div>}
     <div style={{flex:1,minWidth:0}}>
       <div style={{display:"flex",gap:5,marginBottom:4}}>
         <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:tm.color+"10",borderRadius:4,padding:"1px 5px"}}>{tm.label}</span>
@@ -532,7 +617,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
         {isPreview&&ht&&at
           ?<HeroVSBanner homeTeam={ht} awayTeam={at} homeLogo={article.home_logo||article.meta?.home_logo} awayLogo={article.away_logo||article.meta?.away_logo} height={220}/>
           :<div style={{width:"100%",height:260,overflow:"hidden",borderRadius:"0 0 20px 20px",position:"relative"}}>
-            <CardImage src={article.image} type={article.type} style={{width:"100%",height:"100%"}}/>
+            <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%"}}/>
             <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(5,10,22,1),rgba(5,10,22,0.35) 55%,transparent)",pointerEvents:"none"}}/>
             <div style={{position:"absolute",bottom:20,left:24}}><CatBadge type={article.type} league={article.league}/></div>
           </div>}
@@ -857,41 +942,52 @@ export default function NewsTrackerPage(){
           {/* LEFT — unified newsroom feed */}
           <div style={{display:"flex",flexDirection:"column",gap:40}}>
 
-            {/* Unified Live Feed — all types interleaved */}
-            {allFeed.length>0&&(<section>
-              <SectionHead title="Latest News" sub="Breaking football news · Transfers · Injuries · Model insights" accent="#f59e0b" count={allFeed.length}/>
-              {/* Top two wide editorial cards */}
-              {newsFeed.length>=2&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                {newsFeed.slice(0,2).map((a,i)=><EditorialNewsCard key={a.id||i} article={a} onClick={openArticle}/>)}
-              </div>)}
-              {/* Remaining news in two-column grid */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:28}}>
-                {newsFeed.slice(2,20).map((a,i)=><EditorialNewsCard key={a.id||i} article={a} onClick={openArticle}/>)}
-              </div>
-
-              {/* Match Previews inline */}
-              {previews.length>0&&(<>
-                <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="#38bdf8" count={previews.length}/>
-                <div style={{display:"grid",gridTemplateColumns:previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",gap:14,marginBottom:28}}>
-                  {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
+            {/* ── Latest News: magazine hero grid (news articles) ── */}
+            {newsFeed.length>0&&(<section style={{marginBottom:32}}>
+              <SectionHead title="Latest News" sub="Breaking football news · Transfers · Injuries" accent="#ffd60a" count={newsFeed.length}/>
+              {/* Magazine hero: first article large, next 2 stacked right */}
+              {newsFeed.length>=3&&(
+                <div style={{display:"grid",gridTemplateColumns:"1.8fr 1fr",gridTemplateRows:"auto auto",gap:8,marginBottom:8}}>
+                  <div style={{gridRow:"1/3"}}><MagHeroCard article={newsFeed[0]} onClick={openArticle}/></div>
+                  <MagSmallCard article={newsFeed[1]} onClick={openArticle}/>
+                  <MagSmallCard article={newsFeed[2]} onClick={openArticle}/>
                 </div>
-              </>)}
-
-              {/* Model Insights inline */}
-              {insights.length>0&&(<>
-                <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights" accent="#34d399" count={insights.length}/>
-                <div style={{display:"grid",gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr",gap:14}}>
-                  {insights.slice(0,4).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle} idx={i}/>)}
+              )}
+              {newsFeed.length===2&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                  {newsFeed.slice(0,2).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
                 </div>
-              </>)}
+              )}
+              {newsFeed.length===1&&<MagHeroCard article={newsFeed[0]} onClick={openArticle}/>}
+              {/* Rest in 3-col grid */}
+              {newsFeed.length>3&&(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                  {newsFeed.slice(3,21).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                </div>
+              )}
             </section>)}
 
-            {sorted.length===0&&(<div style={{padding:"60px 20px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-              <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:4}}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a3a5a" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            {/* ── Match Previews ── */}
+            {previews.length>0&&(<section style={{marginBottom:32}}>
+              <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="#38bdf8" count={previews.length}/>
+              <div style={{display:"grid",gridTemplateColumns:previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",gap:12}}>
+                {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
               </div>
-              <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"#1a3a5a",fontWeight:600,margin:0}}>No articles match the current filters</p>
-            </div>)}
+            </section>)}
+
+            {/* ── Model Insights ── */}
+            {insights.length>0&&(<section>
+              <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights" accent="#00ff9d" count={insights.length}/>
+              <div style={{display:"grid",gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr",gap:12}}>
+                {insights.slice(0,6).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle} idx={i}/>)}
+              </div>
+            </section>)}
+
+            {sorted.length===0&&newsFeed.length===0&&previews.length===0&&insights.length===0&&(
+              <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(255,255,255,0.3)",fontSize:14}}>No articles match the current filters</div>
+            )}
+
+
           </div>
 
           {/* RIGHT — sticky Transfer Hub */}

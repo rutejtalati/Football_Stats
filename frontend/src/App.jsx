@@ -17,7 +17,7 @@ import MiniGamesPage from "./pages/MiniGamesPage";
 import NewsTrackerPage from "./pages/NewsTrackerPage";
 import MatchIntelligencePage from "./pages/MatchIntelligencePage";
 import TransferPlannerPage from "./pages/TransferPlannerPage";
-import GroundZeroPage from "./pages/GroundZeroPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 import CaptaincyPage from "./pages/CaptaincyPage";
 import BestTeamPage from "./pages/BestTeamPage";
 import FplTablePage from "./pages/FplTablePage";
@@ -114,7 +114,7 @@ export default function App() {
 
             {/* Misc */}
             <Route path="/games" element={<MiniGamesPage />} />
-            <Route path="/learn" element={<GroundZeroPage />} />
+            <Route path="/learn" element={<HowItWorksPage />} />
             <Route path="/news"  element={<NewsTrackerPage />} />
 
           </Routes>

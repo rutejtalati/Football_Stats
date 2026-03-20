@@ -17,10 +17,11 @@ import MiniGamesPage from "./pages/MiniGamesPage";
 import NewsTrackerPage from "./pages/NewsTrackerPage";
 import MatchIntelligencePage from "./pages/MatchIntelligencePage";
 import TransferPlannerPage from "./pages/TransferPlannerPage";
+import GroundZeroPage from "./pages/GroundZeroPage";
+import CaptaincyPage from "./pages/CaptaincyPage";
 import BestTeamPage from "./pages/BestTeamPage";
 import FplTablePage from "./pages/FplTablePage";
 import GameweekInsightsPage from "./pages/GameweekInsightsPage";
-import CaptaincyPage from "./pages/CaptaincyPage";
 import DifferentialFinderPage from "./pages/DifferentialFinderPage";
 import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 
@@ -113,7 +114,7 @@ export default function App() {
 
             {/* Misc */}
             <Route path="/games" element={<MiniGamesPage />} />
-            <Route path="/learn" element={<ComingSoon name="Ground Zero" />} />
+            <Route path="/learn" element={<GroundZeroPage />} />
             <Route path="/news"  element={<NewsTrackerPage />} />
 
           </Routes>

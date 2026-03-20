@@ -218,7 +218,7 @@ function FeaturedRail({ fixtures, onNavigate }) {
   if (!cards.length) return null;
   return (
     <div style={{ marginBottom:32 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}><div style={{ width:3, height:10, borderRadius:999, background:"rgba(255,255,255,0.25)", flexShrink:0 }}/><span style={{ fontSize:9, fontWeight:900, letterSpacing:".14em", color:"rgba(255,255,255,0.45)", textTransform:"uppercase" }}>Featured</span></div>
+      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".14em", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", marginBottom:12 }}>Featured</div>
       <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:4 }}>
         {cards.map(f => <FeaturedCard key={f.fixture_id} f={f} onClick={() => onNavigate(f.fixture_id)} />)}
       </div>
@@ -413,7 +413,7 @@ function Section({ title, count, accent, collapsible, defaultOpen=true, children
         {accent && <div style={{ width:3, height:14, borderRadius:2, background:accent, flexShrink:0 }} />}
         <span style={{ fontSize:10, fontWeight:900, letterSpacing:".14em", color:"rgba(255,255,255,0.45)", textTransform:"uppercase" }}>{title}</span>
         {count!=null && (
-          <span style={{ fontSize:9, fontWeight:800, color:accent||"rgba(255,255,255,.35)", background:accent?`${accent}18`:"rgba(255,255,255,.05)", border:`1px solid ${accent||"rgba(255,255,255,.08)"}30`, padding:"1px 8px", borderRadius:999 }}>{count}</span>
+          <span style={{ fontSize:9, fontWeight:800, color:accent||"rgba(255,255,255,.3)", background:accent?`${accent}14`:"rgba(255,255,255,.04)", padding:"1px 7px", borderRadius:999 }}>{count}</span>
         )}
         {collapsible && (
           <span style={{ marginLeft:"auto", fontSize:11, color:"rgba(255,255,255,.15)", display:"inline-block", transition:"transform .2s", transform:open?"rotate(0)":"rotate(-90deg)" }}>▾</span>
@@ -438,19 +438,10 @@ function CardRouter({ f, onNavigate }) {
 
 // ─── Sidebar widgets ──────────────────────────────────────────────────────────
 
-function WidgetShell({ title, children, accent }) {
+function WidgetShell({ title, children }) {
   return (
-    <div style={{
-      background:"rgba(8,14,28,0.98)",
-      border:"1px solid rgba(255,255,255,0.06)",
-      borderRadius:14, padding:"14px 15px", marginBottom:10,
-      position:"relative", overflow:"hidden",
-    }}>
-      {accent && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)`, opacity:0.6 }} />}
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-        {accent && <div style={{ width:3, height:10, borderRadius:999, background:accent, flexShrink:0 }} />}
-        <span style={{ fontSize:9, fontWeight:900, letterSpacing:".13em", color:"rgba(255,255,255,0.38)", textTransform:"uppercase" }}>{title}</span>
-      </div>
+    <div style={{ background:"#080e1c", border:"1px solid rgba(255,255,255,.045)", borderRadius:14, padding:"14px 15px", marginBottom:10 }}>
+      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".13em", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", marginBottom:12 }}>{title}</div>
       {children}
     </div>
   );
@@ -502,7 +493,7 @@ function LiveTrackerWidget({ fixtures }) {
   return (
     <WidgetShell title="Live Tracker" accent="#ff4444">
       {live.length===0
-        ? <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", textAlign:"center", padding:"8px 0", fontStyle:"italic" }}>No live matches right now</div>
+        ? <div style={{ fontSize:11, color:"rgba(255,255,255,0.28)", textAlign:"center", padding:"6px 0" }}>No matches in progress</div>
         : (
           <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
             {live.map(f => (
@@ -541,7 +532,7 @@ function LeagueSummaryWidget({ fixtures }) {
               <div style={{ width:2, height:14, borderRadius:2, background:c.color, flexShrink:0 }} />
               <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,.35)", flex:1 }}>{c.label}</span>
               {live>0 && <span style={{ fontSize:9, fontWeight:800, color:"#ff4444", background:"rgba(255,40,40,.09)", padding:"1px 6px", borderRadius:999 }}>{live} live</span>}
-              <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>{total}</span>
+              <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)" }}>{total}</span>
             </div>
           );
         })}
@@ -688,7 +679,7 @@ export default function LivePage() {
               <FeaturedRail fixtures={filtered} onNavigate={id => navigate(`/match/${id}`)} />
 
               {/* ══ MAIN GRID ══ */}
-              <div style={{ display:"grid", gridTemplateColumns:"min(100%, calc(100vw - 276px)) 236px", gap:22, alignItems:"start" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1fr) 236px", gap:22, alignItems:"start" }}>
 
                 {/* Left: sections */}
                 <div>

@@ -239,10 +239,10 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
           <span style={{ color:"rgba(255,255,255,0.35)" }}>Draw {p_draw}%</span>
           <span style={{ color:"#f87171" }}>{awayTeam?.name?.split(" ").pop()} {p_away_win}%</span>
         </div>
-        <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden" }}>
-          <div style={{ width:`${p_home_win}%`, background:"#3b82f6", transition:"width 0.8s ease" }} />
-          <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.15)" }} />
-          <div style={{ width:`${p_away_win}%`, background:"#ef4444" }} />
+        <div style={{ display:"flex", height:8, borderRadius:999, overflow:"hidden", gap:2 }}>
+          <div style={{ width:`${p_home_win}%`, background:"linear-gradient(90deg,#3b82f688,#3b82f6)", boxShadow: p_home_win > p_away_win ? "0 0 10px #3b82f699" : "none", borderRadius:"999px 0 0 999px", transition:"width 0.8s ease" }} />
+          <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.18)" }} />
+          <div style={{ width:`${p_away_win}%`, background:"linear-gradient(90deg,#ef444488,#ef4444)", boxShadow: p_away_win > p_home_win ? "0 0 10px #ef444499" : "none", borderRadius:"0 999px 999px 0", transition:"width 0.8s ease" }} />
         </div>
       </div>
 
@@ -250,8 +250,8 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
       <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
         {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop()} xG`} value={xg_home} />}
         {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop()} xG`} value={xg_away} />}
-        {markets?.over_2_5 != null && <Edge label="Over 2.5" value={`${markets.over_2_5}%`} highlight />}
-        {markets?.btts     != null && <Edge label="BTTS"     value={`${markets.btts}%`} />}
+        {markets?.over_2_5 != null && <Edge label="Over 2.5" value={`${Math.round((markets.over_2_5 > 1 ? markets.over_2_5 : markets.over_2_5 * 100))}%`} highlight />}
+        {markets?.btts     != null && <Edge label="BTTS"     value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} />}
       </div>
 
       {/* Top scorelines */}

@@ -195,6 +195,13 @@ async def win_probability(fixture_id: int):
         away_form=away_stats.get("form", ""),
     )
 
+    # Fallback: if stats returned empty (cup/unknown league), use league average
+    from app.football_engine import LEAGUE_AVG_GOALS, FALLBACK_AVG
+    if xg_home <= 0 or xg_away <= 0:
+        avg = LEAGUE_AVG_GOALS.get(league_id, FALLBACK_AVG)
+        xg_home = round(avg.get("home", 1.35), 2)
+        xg_away = round(avg.get("away", 1.05), 2)
+
     # For live matches: adjust xG for remaining time + current score pressure
     remaining_xg_home = xg_home
     remaining_xg_away = xg_away

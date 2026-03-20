@@ -106,95 +106,6 @@ try:
 except ImportError:
     pass
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STARTUP — seed predictions DB automatically on every deploy
-# Runs in the background so it never delays server startup.
-# Calls all 5 league prediction endpoints, which trigger record_prediction()
-# for every upcoming fixture. Safe to re-run — record_prediction is idempotent.
-# ══════════════════════════════════════════════════════════════════════════════
-
-@app.on_event("startup")
-async def seed_predictions_on_startup():
-    """Seed the predictions DB in the background after startup."""
-    asyncio.create_task(_seed_predictions_background())
-
-
-async def _seed_predictions_background():
-    """Wait for the server to fully start, then seed all league predictions."""
-    await asyncio.sleep(10)  # give uvicorn time to fully initialise
-
-    logger = logging.getLogger("startup.seed")
-    SEED_LEAGUES = ["epl", "laliga", "seriea", "bundesliga", "ligue1"]
-
-    for code in SEED_LEAGUES:
-        try:
-            # Reuse the existing league_predictions logic directly
-            # so we don't need an HTTP call to ourselves
-            lid  = LEAGUE_IDS.get(code)
-            if not lid or not API_KEY:
-                continue
-
-            elo      = get_or_build_elo(code)
-            upcoming = fetch_upcoming_fixtures(code, limit=10)
-
-            if not upcoming:
-                logger.info("Startup seed: no upcoming fixtures for %s", code)
-                continue
-
-            from app.routes.predictions import record_prediction as _rp
-
-            for fx in upcoming:
-                hid  = fx.get("home_id")
-                aid  = fx.get("away_id")
-                hs   = fetch_team_stats_full(hid, lid) if hid else None
-                as_  = fetch_team_stats_full(aid, lid) if aid else None
-
-                pred = predict_match(
-                    home_team=fx.get("home_team", ""),
-                    away_team=fx.get("away_team", ""),
-                    home_stats=hs, away_stats=as_,
-                    league_avg=LEAGUE_AVG_GOALS.get(lid, FALLBACK_AVG),
-                    elo=elo,
-                    home_team_id=hid or 0,
-                    away_team_id=aid or 0,
-                    fixture_date=fx.get("date", "TBD"),
-                    fixture_time=fx.get("time", ""),
-                    home_logo=fx.get("home_logo", ""),
-                    away_logo=fx.get("away_logo", ""),
-                    home_form=(hs or {}).get("form", ""),
-                    away_form=(as_ or {}).get("form", ""),
-                    h2h_results=[],
-                )
-
-                try:
-                    _rp(
-                        fixture_id=fx.get("fixture_id") or 0,
-                        home_team=fx.get("home_team", ""),
-                        away_team=fx.get("away_team", ""),
-                        league=LEAGUE_NAMES.get(code, code),
-                        predicted_outcome=pred.get("predicted_outcome", "home"),
-                        confidence=pred.get("confidence", 50),
-                        xg_home=pred.get("xg_home", 0),
-                        xg_away=pred.get("xg_away", 0),
-                        p_home=pred.get("p_home_win", 0),
-                        p_draw=pred.get("p_draw", 0),
-                        p_away=pred.get("p_away_win", 0),
-                        fixture_date=fx.get("date", ""),
-                    )
-                except Exception as e:
-                    logger.warning("Startup seed: record_prediction failed for %s: %s", fx.get("fixture_id"), e)
-
-            logger.info("Startup seed: logged predictions for %s (%d fixtures)", code, len(upcoming))
-            await asyncio.sleep(1)  # small delay between leagues to avoid rate limits
-
-        except Exception as e:
-            logger.warning("Startup seed: failed for league %s: %s", code, e)
-            continue
-
-    logger.info("Startup seed complete.")
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════
@@ -434,6 +345,31 @@ async def upcoming_matches():
                 "venue_name":fix.get("venue",{}).get("name")})
     live_s={"1H","2H","HT","ET","BT","P"}
     matches.sort(key=lambda m:(0 if m.get("status") in live_s else 1, m.get("kickoff") or "9999"))
+
+    # ── Enrich with prediction probabilities from league prediction cache ──────
+    pred_lookup = {}
+    for code in ("epl","laliga","seriea","bundesliga","ligue1"):
+        cached = _cache.get(f"predictions_{code}_{CURRENT_SEASON}_v4")
+        if not cached:
+            continue
+        for p in cached.get("predictions", []):
+            fid = p.get("fixture_id")
+            if fid:
+                pred_lookup[fid] = {
+                    "p_home_win": p.get("p_home_win") or p.get("home_win"),
+                    "p_draw":     p.get("p_draw")     or p.get("draw"),
+                    "p_away_win": p.get("p_away_win") or p.get("away_win"),
+                    "xg_home":    p.get("xg_home"),
+                    "xg_away":    p.get("xg_away"),
+                    "p_over25":   p.get("over25"),
+                    "p_btts":     p.get("btts"),
+                    "confidence": p.get("confidence"),
+                }
+    for m in matches:
+        pred = pred_lookup.get(m["fixture_id"])
+        if pred:
+            m.update({k: v for k, v in pred.items() if v is not None})
+
     return {"matches":matches,"count":len(matches)}
 
 @app.get("/api/match-intelligence/{fixture_id}")

@@ -218,7 +218,7 @@ function FeaturedRail({ fixtures, onNavigate }) {
   if (!cards.length) return null;
   return (
     <div style={{ marginBottom:32 }}>
-      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".14em", color:"#1e2d3e", textTransform:"uppercase", marginBottom:12 }}>Featured</div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}><div style={{ width:3, height:10, borderRadius:999, background:"rgba(255,255,255,0.25)", flexShrink:0 }}/><span style={{ fontSize:9, fontWeight:900, letterSpacing:".14em", color:"rgba(255,255,255,0.45)", textTransform:"uppercase" }}>Featured</span></div>
       <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:4 }}>
         {cards.map(f => <FeaturedCard key={f.fixture_id} f={f} onClick={() => onNavigate(f.fixture_id)} />)}
       </div>
@@ -411,9 +411,9 @@ function Section({ title, count, accent, collapsible, defaultOpen=true, children
         style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, cursor:collapsible?"pointer":"default", userSelect:"none" }}
       >
         {accent && <div style={{ width:3, height:14, borderRadius:2, background:accent, flexShrink:0 }} />}
-        <span style={{ fontSize:10, fontWeight:900, letterSpacing:".14em", color:"#2a3d52", textTransform:"uppercase" }}>{title}</span>
+        <span style={{ fontSize:10, fontWeight:900, letterSpacing:".14em", color:"rgba(255,255,255,0.45)", textTransform:"uppercase" }}>{title}</span>
         {count!=null && (
-          <span style={{ fontSize:9, fontWeight:800, color:accent||"rgba(255,255,255,.3)", background:accent?`${accent}14`:"rgba(255,255,255,.04)", padding:"1px 7px", borderRadius:999 }}>{count}</span>
+          <span style={{ fontSize:9, fontWeight:800, color:accent||"rgba(255,255,255,.35)", background:accent?`${accent}18`:"rgba(255,255,255,.05)", border:`1px solid ${accent||"rgba(255,255,255,.08)"}30`, padding:"1px 8px", borderRadius:999 }}>{count}</span>
         )}
         {collapsible && (
           <span style={{ marginLeft:"auto", fontSize:11, color:"rgba(255,255,255,.15)", display:"inline-block", transition:"transform .2s", transform:open?"rotate(0)":"rotate(-90deg)" }}>▾</span>
@@ -438,10 +438,19 @@ function CardRouter({ f, onNavigate }) {
 
 // ─── Sidebar widgets ──────────────────────────────────────────────────────────
 
-function WidgetShell({ title, children }) {
+function WidgetShell({ title, children, accent }) {
   return (
-    <div style={{ background:"#080e1c", border:"1px solid rgba(255,255,255,.045)", borderRadius:14, padding:"14px 15px", marginBottom:10 }}>
-      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".13em", color:"#1e2d3e", textTransform:"uppercase", marginBottom:12 }}>{title}</div>
+    <div style={{
+      background:"rgba(8,14,28,0.98)",
+      border:"1px solid rgba(255,255,255,0.06)",
+      borderRadius:14, padding:"14px 15px", marginBottom:10,
+      position:"relative", overflow:"hidden",
+    }}>
+      {accent && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)`, opacity:0.6 }} />}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+        {accent && <div style={{ width:3, height:10, borderRadius:999, background:accent, flexShrink:0 }} />}
+        <span style={{ fontSize:9, fontWeight:900, letterSpacing:".13em", color:"rgba(255,255,255,0.38)", textTransform:"uppercase" }}>{title}</span>
+      </div>
       {children}
     </div>
   );
@@ -472,7 +481,7 @@ function NextKickoffWidget({ fixtures }) {
 
   if (!next) return null;
   return (
-    <WidgetShell title="Next Kick Off">
+    <WidgetShell title="Next Kick Off" accent="#60a5fa">
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
         <Logo src={next.home_logo} size={18} />
         <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.45)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{next.home_team?.split(" ").pop()}</span>
@@ -491,9 +500,9 @@ function NextKickoffWidget({ fixtures }) {
 function LiveTrackerWidget({ fixtures }) {
   const live = fixtures.filter(f => LIVE_SET.has(f.status));
   return (
-    <WidgetShell title="Live Tracker">
+    <WidgetShell title="Live Tracker" accent="#ff4444">
       {live.length===0
-        ? <div style={{ fontSize:11, color:"#141e2c", textAlign:"center", padding:"6px 0" }}>No matches in progress</div>
+        ? <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", textAlign:"center", padding:"8px 0", fontStyle:"italic" }}>No live matches right now</div>
         : (
           <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
             {live.map(f => (
@@ -523,7 +532,7 @@ function LeagueSummaryWidget({ fixtures }) {
 
   if (!rows.length) return null;
   return (
-    <WidgetShell title="Leagues">
+    <WidgetShell title="Leagues" accent="#a78bfa">
       <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
         {rows.map(({ key, live, total }) => {
           const c = LEAGUES[key];
@@ -532,7 +541,7 @@ function LeagueSummaryWidget({ fixtures }) {
               <div style={{ width:2, height:14, borderRadius:2, background:c.color, flexShrink:0 }} />
               <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,.35)", flex:1 }}>{c.label}</span>
               {live>0 && <span style={{ fontSize:9, fontWeight:800, color:"#ff4444", background:"rgba(255,40,40,.09)", padding:"1px 6px", borderRadius:999 }}>{live} live</span>}
-              <span style={{ fontSize:9, fontWeight:700, color:"#1e2d3e" }}>{total}</span>
+              <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>{total}</span>
             </div>
           );
         })}
@@ -614,7 +623,7 @@ export default function LivePage() {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
               <div>
                 <h1 style={{ fontSize:28, fontWeight:900, color:"#f0f6ff", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
-                <p style={{ color:"#1e2d3e", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>Next 7 days · Top 5 leagues</p>
+                <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>Next 7 days · Top 5 leagues</p>
               </div>
               <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", justifyContent:"flex-end" }}>
                 {liveCount>0 && (
@@ -627,7 +636,7 @@ export default function LivePage() {
                 </div>
                 {lastUp && (
                   <div style={{ background:"rgba(255,255,255,.015)", border:"1px solid rgba(255,255,255,.035)", borderRadius:999, padding:"5px 10px" }}>
-                    <span style={{ fontSize:10, color:"#141e2c", fontWeight:600 }}>
+                    <span style={{ fontSize:10, color:"rgba(255,255,255,0.28)", fontWeight:600 }}>
                       {lastUp.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
                     </span>
                   </div>
@@ -659,7 +668,7 @@ export default function LivePage() {
 
           {/* ══ STATES ══ */}
           {loading && (
-            <div style={{ textAlign:"center", padding:"56px 0", color:"#1e2d3e", fontSize:13 }}>
+            <div style={{ textAlign:"center", padding:"56px 0", color:"rgba(255,255,255,0.3)", fontSize:13 }}>
               <div style={{ width:26, height:26, borderRadius:"50%", border:"2px solid rgba(96,165,250,.1)", borderTopColor:"#60a5fa", margin:"0 auto 12px", animation:"lc-spin .8s linear infinite" }} />
               Loading fixtures…
             </div>
@@ -679,12 +688,12 @@ export default function LivePage() {
               <FeaturedRail fixtures={filtered} onNavigate={id => navigate(`/match/${id}`)} />
 
               {/* ══ MAIN GRID ══ */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 236px", gap:22, alignItems:"start" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"min(100%, calc(100vw - 276px)) 236px", gap:22, alignItems:"start" }}>
 
                 {/* Left: sections */}
                 <div>
                   {filtered.length===0 && (
-                    <div style={{ textAlign:"center", padding:"44px 0", color:"#141e2c", fontSize:13 }}>No fixtures for this filter.</div>
+                    <div style={{ textAlign:"center", padding:"44px 0", color:"rgba(255,255,255,0.28)", fontSize:13 }}>No fixtures for this filter.</div>
                   )}
 
                   {liveAll.length>0 && (

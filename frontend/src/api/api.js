@@ -3,7 +3,7 @@
 // Local dev: http://127.0.0.1:8003
 // Vercel reads VITE_API_BASE from environment variables
 
-const API_BASE = (import.meta.env.VITE_API_BASE || "https://football-stats-lw4b.onrender.com").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
 
 async function fetchJson(path, errMsg) {
   const res = await fetch(`${API_BASE}${path}`);

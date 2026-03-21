@@ -406,30 +406,30 @@ function tColour(id,fb="#38bdf8"){return TEAM_COLOURS_MAP[id]||fb;}
 // RIGHT TEAM — GK near x≈90, attack near x≈55
 // Slot order: [GK, DEF L→R, MID L→R, FWD L→R]
 const HF = {
-  "4-3-3_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,66],[32,50],[34,34],[43,82],[45,50],[43,18]],
-  "4-3-3_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,34],[68,50],[66,66],[57,18],[55,50],[57,82]],
-  "4-2-3-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[31,61],[31,39],[39,82],[39,50],[39,18],[46,50]],
-  "4-2-3-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[69,39],[69,61],[61,18],[61,50],[61,82],[54,50]],
-  "4-4-2_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,61],[34,39],[34,18],[43,61],[43,39]],
-  "4-4-2_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,39],[66,61],[66,82],[57,39],[57,61]],
-  "4-5-1_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,65],[33,50],[34,35],[34,18],[45,50]],
-  "4-5-1_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,35],[67,50],[66,65],[66,82],[55,50]],
-  "4-1-4-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[30,50],[38,82],[38,61],[38,39],[38,18],[46,50]],
-  "4-1-4-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[70,50],[62,18],[62,39],[62,61],[62,82],[54,50]],
-  "3-5-2_left":    [[10,50],[22,68],[21,50],[22,32],[31,82],[33,65],[32,50],[33,35],[31,18],[44,62],[44,38]],
-  "3-5-2_right":   [[90,50],[78,32],[79,50],[78,68],[69,18],[67,35],[68,50],[67,65],[69,82],[56,38],[56,62]],
-  "3-4-3_left":    [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[43,82],[45,50],[43,18]],
-  "3-4-3_right":   [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[57,18],[55,50],[57,82]],
-  "5-3-2_left":    [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,66],[32,50],[33,34],[44,62],[44,38]],
-  "5-3-2_right":   [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,34],[68,50],[67,66],[56,38],[56,62]],
-  "5-4-1_left":    [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,82],[33,61],[33,39],[33,18],[45,50]],
-  "5-4-1_right":   [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,18],[67,39],[67,61],[67,82],[55,50]],
-  "4-3-2-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[31,66],[31,50],[31,34],[39,62],[39,38],[46,50]],
-  "4-3-2-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[69,34],[69,50],[69,66],[61,38],[61,62],[54,50]],
-  "4-2-2-2_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[30,62],[30,38],[38,62],[38,38],[45,62],[45,38]],
-  "4-2-2-2_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[70,38],[70,62],[62,38],[62,62],[55,38],[55,62]],
-  "3-4-2-1_left":  [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[39,62],[39,38],[46,50]],
-  "3-4-2-1_right": [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[61,38],[61,62],[54,50]],
+  "4-3-3_left":    [[12,50],[20,88],[20,63],[20,37],[20,12],[34,69],[33,50],[34,31],[46,85],[47,50],[46,15]],
+  "4-3-3_right":   [[88,50],[80,12],[80,37],[80,63],[80,88],[66,31],[67,50],[66,69],[54,15],[53,50],[54,85]],
+  "4-2-3-1_left":  [[12,50],[20,85],[20,62],[20,38],[20,15],[31,63],[31,37],[40,85],[40,50],[40,15],[47,50]],
+  "4-2-3-1_right": [[88,50],[80,15],[80,38],[80,62],[80,85],[69,37],[69,63],[60,15],[60,50],[60,85],[53,50]],
+  "4-4-2_left":    [[12,50],[20,85],[20,62],[20,38],[20,15],[34,85],[34,62],[34,38],[34,15],[45,65],[45,35]],
+  "4-4-2_right":   [[88,50],[80,15],[80,38],[80,62],[80,85],[66,15],[66,38],[66,62],[66,85],[55,35],[55,65]],
+  "4-5-1_left":    [[12,50],[20,85],[20,62],[20,38],[20,15],[34,88],[34,66],[33,50],[34,34],[34,12],[46,50]],
+  "4-5-1_right":   [[88,50],[80,15],[80,38],[80,62],[80,85],[66,12],[66,34],[67,50],[66,66],[66,88],[54,50]],
+  "4-1-4-1_left":  [[12,50],[20,85],[20,62],[20,38],[20,15],[30,50],[39,85],[39,62],[39,38],[39,15],[47,50]],
+  "4-1-4-1_right": [[88,50],[80,15],[80,38],[80,62],[80,85],[70,50],[61,15],[61,38],[61,62],[61,85],[53,50]],
+  "3-5-2_left":    [[12,50],[21,72],[20,50],[21,28],[32,85],[33,66],[32,50],[33,34],[32,15],[45,65],[45,35]],
+  "3-5-2_right":   [[88,50],[79,28],[80,50],[79,72],[68,15],[67,34],[68,50],[67,66],[68,85],[55,35],[55,65]],
+  "3-4-3_left":    [[12,50],[21,72],[20,50],[21,28],[32,85],[32,62],[32,38],[32,15],[45,85],[46,50],[45,15]],
+  "3-4-3_right":   [[88,50],[79,28],[80,50],[79,72],[68,15],[68,38],[68,62],[68,85],[55,15],[54,50],[55,85]],
+  "5-3-2_left":    [[12,50],[21,88],[21,66],[20,50],[21,34],[21,12],[33,68],[32,50],[33,32],[45,65],[45,35]],
+  "5-3-2_right":   [[88,50],[79,12],[79,34],[80,50],[79,66],[79,88],[67,32],[68,50],[67,68],[55,35],[55,65]],
+  "5-4-1_left":    [[12,50],[21,88],[21,66],[20,50],[21,34],[21,12],[33,85],[33,62],[33,38],[33,15],[46,50]],
+  "5-4-1_right":   [[88,50],[79,12],[79,34],[80,50],[79,66],[79,88],[67,15],[67,38],[67,62],[67,85],[54,50]],
+  "4-3-2-1_left":  [[12,50],[20,85],[20,62],[20,38],[20,15],[31,68],[31,50],[31,32],[40,65],[40,35],[47,50]],
+  "4-3-2-1_right": [[88,50],[80,15],[80,38],[80,62],[80,85],[69,32],[69,50],[69,68],[60,35],[60,65],[53,50]],
+  "4-2-2-2_left":  [[12,50],[20,85],[20,62],[20,38],[20,15],[30,65],[30,35],[39,65],[39,35],[46,65],[46,35]],
+  "4-2-2-2_right": [[88,50],[80,15],[80,38],[80,62],[80,85],[70,35],[70,65],[61,35],[61,65],[54,35],[54,65]],
+  "3-4-2-1_left":  [[12,50],[21,72],[20,50],[21,28],[32,85],[32,62],[32,38],[32,15],[40,65],[40,35],[47,50]],
+  "3-4-2-1_right": [[88,50],[79,28],[80,50],[79,72],[68,15],[68,38],[68,62],[68,85],[60,35],[60,65],[53,50]],
 };
 function getHSlots(formation,side){
   return HF[`${formation}_${side}`]||HF[`4-3-3_${side}`];
@@ -475,7 +475,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
     const slots=getHSlots(lineup.formation,side);
-    const sz=50;
+    const sz=40;
     return lineup.xi.slice(0,11).map((p,i)=>{
       const [x,y]=slots[i]||[50,50];
       const isGK=i===0;
@@ -790,82 +790,233 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
 
   return(
     <div style={{
-      background:"#000",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",
-      overflow:"hidden",margin:"0 auto",maxWidth:900,
+      background:"#000",borderRadius:12,border:"1px solid rgba(255,255,255,.08)",
+      overflow:"hidden",margin:"0 auto",
       fontFamily:"'Inter','Sora',sans-serif",
     }}>
-      {/* ── Compact header ── */}
-      <div style={{
-        display:"flex",alignItems:"center",padding:"8px 14px 7px",
-        borderBottom:"1px solid rgba(255,255,255,.07)",background:"#000",gap:10,
-      }}>
-        {isPredicted&&<span style={{
-          fontSize:7,fontWeight:900,color:"#f59e0b",
-          background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.22)",
-          borderRadius:3,padding:"2px 7px",letterSpacing:".08em",
-        }}>PREDICTED</span>}
-        <span style={{flex:1,fontSize:9,fontWeight:700,color:"rgba(255,255,255,.18)",
-          letterSpacing:".06em",textAlign:"center"}}>LINEUP</span>
-      </div>
 
-      {/* ── Three-column main body: [HomeSidebar] [Pitch] [AwaySidebar] ── */}
-      <div style={{display:"grid",gridTemplateColumns:"120px 1fr 120px",alignItems:"stretch"}}>
-
-        {/* Home sidebar */}
-        <Sidebar lineup={home} team={homeTeam} colour={hc} isRight={false}/>
-
-        {/* Pitch — full height of grid row, no border, no padding */}
-        <div style={{position:"relative",width:"100%",paddingBottom:"50%",overflow:"hidden",background:"#000"}}>
-          <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
-            viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-            <rect width="200" height="100" fill="#000"/>
-            {/* Full-bleed half tints — edge to edge */}
-            <rect x="0" y="0" width="100" height="100" fill={hc} opacity="0.18"/>
-            <rect x="100" y="0" width="100" height="100" fill={ac} opacity="0.18"/>
-            {/* Pitch markings */}
-            <rect x="2" y="3" width="196" height="94" rx="1" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth=".6"/>
-            <line x1="100" y1="3" x2="100" y2="97" stroke="rgba(255,255,255,.8)" strokeWidth=".6"/>
-            <circle cx="100" cy="50" r="15" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".55"/>
-            <circle cx="100" cy="50" r="1.1" fill="rgba(255,255,255,.95)"/>
-            {/* Left penalty box */}
-            <rect x="2" y="26" width="23" height="48" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
-            <rect x="2" y="36" width="8" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".42"/>
-            <circle cx="16" cy="50" r=".9" fill="rgba(255,255,255,.88)"/>
-            <path d="M25,37 A14,14 0 0,1 25,63" fill="none" stroke="rgba(255,255,255,.38)" strokeWidth=".38"/>
-            <rect x="0" y="41" width="2" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.72)" strokeWidth=".45"/>
-            {/* Right penalty box */}
-            <rect x="175" y="26" width="23" height="48" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
-            <rect x="190" y="36" width="8" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".42"/>
-            <circle cx="184" cy="50" r=".9" fill="rgba(255,255,255,.88)"/>
-            <path d="M175,37 A14,14 0 0,0 175,63" fill="none" stroke="rgba(255,255,255,.38)" strokeWidth=".38"/>
-            <rect x="198" y="41" width="2" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.72)" strokeWidth=".45"/>
-            {/* Corners */}
-            <path d="M2,3 Q4,3 4,5"     fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
-            <path d="M198,3 Q196,3 196,5" fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
-            <path d="M2,97 Q4,97 4,95"   fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
-            <path d="M198,97 Q196,97 196,95" fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
-            {/* Stadium name in free zone at top-centre */}
-            {venueName&&(
-              <text x="100" y="10" textAnchor="middle" fontSize="4.2" fontFamily="Inter,sans-serif"
-                fontWeight="700" fill="rgba(255,255,255,.42)" letterSpacing=".25">
-                {String(venueName).slice(0,28)}
-              </text>
-            )}
-          </svg>
-          <div style={{position:"absolute",inset:0,zIndex:2}}>
-            <Tokens lineup={home} side="left"  colour={hc}/>
-            <Tokens lineup={away} side="right" colour={ac}/>
-          </div>
+      {/* ── Full-width bezel-less pitch ── */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"56%",overflow:"hidden",background:"#000"}}>
+        <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
+          viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">
+          <rect width="200" height="112" fill="#000"/>
+          {/* Full-bleed half tints */}
+          <rect x="0" y="0" width="100" height="112" fill={hc} opacity="0.2"/>
+          <rect x="100" y="0" width="100" height="112" fill={ac} opacity="0.2"/>
+          {/* Pitch outline — inset so players never clip border */}
+          <rect x="3" y="5" width="194" height="102" rx="1" fill="none" stroke="rgba(255,255,255,.82)" strokeWidth=".65"/>
+          {/* Halfway */}
+          <line x1="100" y1="5" x2="100" y2="107" stroke="rgba(255,255,255,.82)" strokeWidth=".65"/>
+          {/* Centre circle */}
+          <circle cx="100" cy="56" r="17" fill="none" stroke="rgba(255,255,255,.72)" strokeWidth=".6"/>
+          <circle cx="100" cy="56" r="1.3" fill="rgba(255,255,255,.96)"/>
+          {/* Left penalty box */}
+          <rect x="3" y="30" width="26" height="52" fill="none" stroke="rgba(255,255,255,.72)" strokeWidth=".55"/>
+          <rect x="3" y="41" width="10" height="30" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".44"/>
+          <circle cx="19" cy="56" r="1" fill="rgba(255,255,255,.88)"/>
+          <path d="M29,42 A16,16 0 0,1 29,70" fill="none" stroke="rgba(255,255,255,.38)" strokeWidth=".4"/>
+          <rect x="0" y="47" width="3" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.74)" strokeWidth=".48"/>
+          {/* Right penalty box */}
+          <rect x="171" y="30" width="26" height="52" fill="none" stroke="rgba(255,255,255,.72)" strokeWidth=".55"/>
+          <rect x="187" y="41" width="10" height="30" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".44"/>
+          <circle cx="181" cy="56" r="1" fill="rgba(255,255,255,.88)"/>
+          <path d="M171,42 A16,16 0 0,0 171,70" fill="none" stroke="rgba(255,255,255,.38)" strokeWidth=".4"/>
+          <rect x="197" y="47" width="3" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.74)" strokeWidth=".48"/>
+          {/* Corners */}
+          <path d="M3,5 Q5,5 5,7"       fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
+          <path d="M197,5 Q195,5 195,7" fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
+          <path d="M3,107 Q5,107 5,105" fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
+          <path d="M197,107 Q195,107 195,105" fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
+          {/* Header info inside pitch */}
+          <text x="100" y="13" textAnchor="middle" fontSize="4.5" fontFamily="Inter,sans-serif"
+            fontWeight="700" fill="rgba(255,255,255,.42)" letterSpacing=".25">
+            {venueName ? String(venueName).slice(0,30) : "LINEUP"}
+          </text>
+          {isPredicted&&(
+            <text x="100" y="20" textAnchor="middle" fontSize="3.5" fontFamily="Inter,sans-serif"
+              fontWeight="800" fill="rgba(245,158,11,.7)" letterSpacing=".15">PREDICTED</text>
+          )}
+          {/* Team name + formation labels */}
+          <text x="18" y="13" textAnchor="middle" fontSize="4" fontFamily="Inter,sans-serif"
+            fontWeight="800" fill={`${hc}cc`} letterSpacing=".1">
+            {(homeTeam?.name||"").split(" ").slice(-1)[0].slice(0,8)}
+          </text>
+          {home?.formation&&(
+            <text x="18" y="18.5" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
+              fontWeight="700" fill={`${hc}88`}>{home.formation}</text>
+          )}
+          <text x="182" y="13" textAnchor="middle" fontSize="4" fontFamily="Inter,sans-serif"
+            fontWeight="800" fill={`${ac}cc`} letterSpacing=".1">
+            {(awayTeam?.name||"").split(" ").slice(-1)[0].slice(0,8)}
+          </text>
+          {away?.formation&&(
+            <text x="182" y="18.5" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
+              fontWeight="700" fill={`${ac}88`}>{away.formation}</text>
+          )}
+        </svg>
+        {/* Tokens layer — pointer events on */}
+        <div style={{position:"absolute",inset:0,zIndex:2}}>
+          <Tokens lineup={home} side="left"  colour={hc}/>
+          <Tokens lineup={away} side="right" colour={ac}/>
         </div>
-
-        {/* Away sidebar */}
-        <Sidebar lineup={away} team={awayTeam} colour={ac} isRight={true}/>
-
       </div>
+
+      {/* ── Two detached squad cards below ── */}
+      <div style={{
+        display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,
+        padding:"8px",background:"rgba(0,0,0,.6)",
+      }}>
+        {/* Home squad card */}
+        <SquadCard lineup={home} team={homeTeam} colour={hc} isRight={false}/>
+        {/* Away squad card */}
+        <SquadCard lineup={away} team={awayTeam} colour={ac} isRight={true}/>
+      </div>
+
     </div>
   );
 }
 
+
+// ─── SQUAD CARD (bench + injuries below pitch) ───────────────────────────────
+function SquadCard({lineup,team,colour,isRight}){
+  const navigate = useNavigate();
+  const bench=(lineup?.bench||[]);
+  const injuries=(lineup?.injuries||[]).map(p=>({...p,doubt:false}));
+  const doubts=(lineup?.doubts||[]).map(p=>({...p,doubt:true}));
+  const unavail=[...injuries,...doubts];
+
+  function posColSC(pos){
+    const p=(pos||"").toUpperCase().slice(0,1);
+    if(p==="G") return{bg:"#f59e0b",label:"GK"};
+    if(p==="D") return{bg:"#60a5fa",label:"DEF"};
+    if(p==="M") return{bg:"#34d399",label:"MID"};
+    return{bg:"#f87171",label:"FWD"};
+  }
+
+  function Row({p,isOut,reason,doubt}){
+    const name=(p.name||p.player_name||"").split(" ").slice(-1)[0].slice(0,14)||"–";
+    const pos=posColSC(p.pos||p.position||"");
+    const pid=p.id;
+    return(
+      <div onClick={pid?()=>navigate(`/player/${pid}`):undefined}
+        style={{
+          display:"flex",alignItems:"center",gap:6,padding:"4px 10px",
+          flexDirection:isRight?"row-reverse":"row",
+          cursor:pid?"pointer":"default",opacity:isOut?.5:1,
+        }}>
+        <div style={{position:"relative",flexShrink:0}}>
+          <div style={{width:28,height:28,borderRadius:"50%",overflow:"hidden",
+            background:"#0a0a0a",
+            border:`1.5px solid ${isOut?"rgba(239,68,68,.4)":colour+"55"}`}}>
+            {p.photo&&<img src={p.photo} alt="" width="28" height="28"
+              style={{objectFit:"cover",objectPosition:"top"}}
+              onError={e=>e.currentTarget.style.display="none"}/>}
+          </div>
+          {!isOut&&(
+            <span style={{
+              position:"absolute",bottom:-2,
+              right:isRight?"auto":-2,left:isRight?-2:"auto",
+              fontSize:"6px",fontWeight:900,lineHeight:"11px",
+              background:pos.bg,color:"#000",borderRadius:3,
+              padding:"0 3px",boxShadow:"0 1px 3px rgba(0,0,0,.8)",
+            }}>{pos.label}</span>
+          )}
+          {isOut&&<span style={{
+            position:"absolute",bottom:-2,
+            right:isRight?"auto":-2,left:isRight?-2:"auto",
+            width:9,height:9,borderRadius:"50%",
+            background:doubt?"#fbbf24":"#ef4444",
+            border:"1.5px solid #000",display:"block",
+          }}/>}
+        </div>
+        <div style={{flex:1,minWidth:0,
+          display:"flex",flexDirection:"column",
+          alignItems:isRight?"flex-end":"flex-start"}}>
+          <span style={{fontSize:"9px",fontWeight:700,lineHeight:1.3,
+            color:isOut?"rgba(255,255,255,.42)":"rgba(255,255,255,.88)",
+            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
+          {reason&&<span style={{fontSize:"7px",fontWeight:700,lineHeight:1.2,
+            color:isOut?(doubt?"rgba(251,191,36,.6)":"rgba(239,68,68,.6)"):colour+"88",
+            fontFamily:"monospace"}}>{reason}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{
+      borderRadius:10,overflow:"hidden",
+      border:`1px solid ${colour}28`,
+      background:"#07070a",
+    }}>
+      {/* Card header */}
+      <div style={{
+        padding:"8px 10px 7px",
+        background:`linear-gradient(${isRight?"to left":"to right"},${colour}22,${colour}08)`,
+        borderBottom:`1px solid ${colour}22`,
+        display:"flex",alignItems:"center",gap:7,
+        flexDirection:isRight?"row-reverse":"row",
+      }}>
+        <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${colour}`,
+          overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {team?.logo&&<img src={team.logo} alt="" width="18" height="18"
+            style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+        </div>
+        <div style={{flex:1,minWidth:0,
+          display:"flex",flexDirection:"column",
+          alignItems:isRight?"flex-end":"flex-start",gap:1}}>
+          <span style={{fontSize:10,fontWeight:900,color:"#fff",
+            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            {team?.name?.split(" ").slice(-1)[0]||team?.name}
+          </span>
+          {lineup?.coach&&(
+            <span style={{fontSize:7.5,fontWeight:600,color:"rgba(255,255,255,.38)",
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              {(lineup.coach.name||"").split(" ").slice(-1)[0]}
+            </span>
+          )}
+        </div>
+        <span style={{
+          fontSize:7.5,fontWeight:800,color:colour,flexShrink:0,
+          background:`${colour}18`,border:`1px solid ${colour}30`,
+          borderRadius:3,padding:"1px 5px",letterSpacing:".04em",
+        }}>{lineup?.formation||""}</span>
+      </div>
+
+      {/* Bench */}
+      {bench.length>0&&(
+        <>
+          <div style={{padding:"5px 10px 2px",display:"flex",alignItems:"center",gap:4,
+            flexDirection:isRight?"row-reverse":"row"}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>
+            <span style={{fontSize:"6.5px",fontWeight:900,color:colour,opacity:.8,
+              letterSpacing:".12em",textTransform:"uppercase"}}>Bench</span>
+          </div>
+          {bench.map((p,i)=><Row key={i} p={p} isOut={false} reason={null} doubt={false}/>)}
+        </>
+      )}
+
+      {/* Unavailable */}
+      {unavail.length>0&&(
+        <>
+          <div style={{padding:"5px 10px 2px",
+            marginTop:bench.length?4:0,
+            borderTop:bench.length?"1px solid rgba(239,68,68,.1)":"none",
+            display:"flex",alignItems:"center",gap:4,
+            flexDirection:isRight?"row-reverse":"row"}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",display:"inline-block",flexShrink:0}}/>
+            <span style={{fontSize:"6.5px",fontWeight:900,color:"#ef4444",opacity:.8,
+              letterSpacing:".12em",textTransform:"uppercase"}}>Out</span>
+          </div>
+          {unavail.map((p,i)=>{
+            const reason=p.doubt?"Doubt":(p.type||p.reason||"Inj").slice(0,12);
+            return <Row key={i} p={p} isOut={true} reason={reason} doubt={p.doubt}/>;
+          })}
+        </>
+      )}
+    </div>
+  );
+}
 
 
 function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) {
@@ -1158,319 +1309,248 @@ function Timeline({ events, homeTeam, awayTeam }) {
   );
 }
 
-// ─── LIVE OVERVIEW — Option 1 ─────────────────────────────────────────────────
-function LiveOverview({ stats, homeTeam, awayTeam, events, momentumData, winProb, score, status }) {
-  const hStats = (stats||[]).find(s => s.team?.id === homeTeam?.id)?.statistics || [];
-  const aStats = (stats||[]).find(s => s.team?.id === awayTeam?.id)?.statistics || [];
-  function gs(arr,key){ return arr.find(s=>s.type===key)?.value??null; }
-  const hc = tColour(homeTeam?.id,"#38bdf8");
-  const ac = tColour(awayTeam?.id,"#f97316");
-  const hName = homeTeam?.name?.split(" ").pop()||"Home";
-  const aName = awayTeam?.name?.split(" ").pop()||"Away";
-  const hXG   = gs(hStats,"expected_goals");  const aXG   = gs(aStats,"expected_goals");
-  const hPoss = gs(hStats,"Ball Possession");  const aPoss = gs(aStats,"Ball Possession");
-  const hSOT  = gs(hStats,"Shots on Goal");    const aSOT  = gs(aStats,"Shots on Goal");
-  const wp = winProb?.pre_match;
-  const hWP = wp?.p_home_win??null, dWP = wp?.p_draw??null, aWP = wp?.p_away_win??null;
+function StatsPanel({ stats, homeTeam, awayTeam }) {
+  const [view, setView] = useState("bars"); // "bars" | "cards" | "table"
+  if (!stats?.length) return null;
 
-  function MetricCard({ label, hVal, aVal, colKey }) {
-    const hN=parseFloat(String(hVal??"0").replace("%",""))||0;
-    const aN=parseFloat(String(aVal??"0").replace("%",""))||0;
-    const hLeads=hN>aN;
-    const pct=hN/(hN+aN||1)*100;
-    const bar=colKey==="xg"?hc:colKey==="poss"?"#60a5fa":"#34d399";
-    const rgb=colKey==="xg"?"59,130,246":colKey==="poss"?"96,165,250":"52,211,153";
+  const hStats = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
+  const aStats = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
+  const hc = "#3b82f6";
+  const ac = "#ef4444";
+
+  function gs(arr, key) { return arr.find(s => s.type === key)?.value ?? null; }
+
+  const hXG = gs(hStats,"expected_goals");
+  const aXG = gs(aStats,"expected_goals");
+
+  // All stat rows
+  const ALL = [
+    { key:"Ball Possession",   label:"Possession",    group:"attack"  },
+    { key:"expected_goals",    label:"xG",            group:"attack"  },
+    { key:"Total Shots",       label:"Total Shots",   group:"attack"  },
+    { key:"Shots on Goal",     label:"On Target",     group:"attack"  },
+    { key:"Shots insidebox",   label:"Inside Box",    group:"attack"  },
+    { key:"Corner Kicks",      label:"Corners",       group:"attack"  },
+    { key:"Passes %",          label:"Pass Acc",      group:"passing" },
+    { key:"Total passes",      label:"Passes",        group:"passing" },
+    { key:"Fouls",             label:"Fouls",         group:"defence" },
+    { key:"Yellow Cards",      label:"Yellows",       group:"defence" },
+    { key:"Red Cards",         label:"Reds",          group:"defence" },
+    { key:"Offsides",          label:"Offsides",      group:"defence" },
+    { key:"Blocked Shots",     label:"Blocked",       group:"defence" },
+    { key:"Goalkeeper Saves",  label:"GK Saves",      group:"defence" },
+  ].map(r => ({
+    ...r,
+    home: gs(hStats, r.key),
+    away: gs(aStats, r.key),
+  })).filter(r => r.home != null || r.away != null);
+
+  if (!ALL.length) return null;
+
+  const hName = homeTeam?.name?.split(" ").pop() || "Home";
+  const aName = awayTeam?.name?.split(" ").pop() || "Away";
+
+  // ── Shared header ──────────────────────────────────────────────────
+  const Header = () => (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:8 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+        {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }}/>}
+        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.75)" }}>{hName}</span>
+      </div>
+
+      {/* View toggle */}
+      <div style={{ display:"flex", gap:2, background:"rgba(255,255,255,.05)", borderRadius:7, padding:2 }}>
+        {[
+          { id:"bars",  icon:"≡",  tip:"Bars"  },
+          { id:"cards", icon:"⊞",  tip:"Cards" },
+          { id:"table", icon:":::", tip:"Table" },
+        ].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} title={v.tip} style={{
+            padding:"4px 10px", borderRadius:5, border:"none", cursor:"pointer", fontSize:11,
+            fontWeight:900, letterSpacing:".04em",
+            background: view===v.id ? "rgba(255,255,255,.12)" : "transparent",
+            color: view===v.id ? "#fff" : "rgba(255,255,255,.35)",
+            transition:"all .15s",
+          }}>{v.icon}</button>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.75)" }}>{aName}</span>
+        {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }}/>}
+      </div>
+    </div>
+  );
+
+  // ── VIEW 1: Bars (existing, polished) ─────────────────────────────
+  if (view === "bars") {
+    const xgRow = ALL.find(r => r.key === "expected_goals");
+    const singles = ALL.filter(r => ["Ball Possession","Passes %","Total passes"].includes(r.key));
+    const pairedKeys = [
+      ["Total Shots","Shots on Goal"],["Corner Kicks","Fouls"],
+      ["Yellow Cards","Offsides"],["Goalkeeper Saves","Blocked Shots"],
+    ];
+    const pairs = pairedKeys.map(([k1,k2]) => [
+      ALL.find(r=>r.key===k1), ALL.find(r=>r.key===k2),
+    ]).filter(([a,b]) => a||b);
+
     return (
-      <div style={{flex:1,minWidth:0,padding:"12px 14px 11px",borderRadius:10,
-        background:`rgba(${rgb},.07)`,border:`1px solid rgba(${rgb},.18)`}}>
-        <div style={{fontSize:7.5,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",
-          color:"rgba(255,255,255,.28)",marginBottom:8}}>{label}</div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:9}}>
-          <span style={{fontSize:22,fontWeight:900,fontFamily:"monospace",
-            color:hLeads?"#fff":"rgba(255,255,255,.38)"}}>{hVal??"–"}</span>
-          <span style={{fontSize:14,fontWeight:700,fontFamily:"monospace",
-            color:"rgba(255,255,255,.25)"}}>{aVal??"–"}</span>
-        </div>
-        <div style={{height:3,borderRadius:2,overflow:"hidden",background:"rgba(255,255,255,.06)"}}>
-          <div style={{width:`${pct}%`,height:"100%",background:bar}}/>
-        </div>
-      </div>
-    );
-  }
-
-  if(!stats?.length&&!events?.length) return null;
-  return (
-    <div style={{padding:"14px 16px 4px"}}>
-      <div style={{display:"flex",gap:8,marginBottom:10}}>
-        <MetricCard label="Expected Goals (xG)" hVal={hXG}   aVal={aXG}   colKey="xg"/>
-        <MetricCard label="Possession"           hVal={hPoss} aVal={aPoss} colKey="poss"/>
-        <MetricCard label="Shots on Target"      hVal={hSOT}  aVal={aSOT}  colKey="sot"/>
-      </div>
-      {hWP!=null&&(
-        <div style={{padding:"12px 14px",borderRadius:10,background:"rgba(255,255,255,.025)",
-          border:"1px solid rgba(255,255,255,.05)",marginBottom:10}}>
-          <div style={{fontSize:7.5,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",
-            color:"rgba(255,255,255,.25)",marginBottom:8}}>Win Probability</div>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:11,fontWeight:800,marginBottom:7}}>
-            <span style={{color:hc}}>{hName} {hWP}%</span>
-            <span style={{color:"rgba(255,255,255,.28)"}}>Draw {dWP}%</span>
-            <span style={{color:ac}}>{aName} {aWP}%</span>
-          </div>
-          <div style={{display:"flex",height:8,borderRadius:999,overflow:"hidden",gap:2}}>
-            <div style={{width:`${hWP}%`,background:hc,borderRadius:"999px 0 0 999px"}}/>
-            <div style={{width:`${dWP}%`,background:"rgba(255,255,255,.18)"}}/>
-            <div style={{width:`${aWP}%`,background:ac,borderRadius:"0 999px 999px 0"}}/>
-          </div>
-        </div>
-      )}
-      <MomentumGraph momentumData={momentumData} events={events}/>
-      {events.length>0&&(
-        <div style={{marginTop:10,paddingBottom:10}}>
-          <div style={{fontSize:7.5,fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",
-            color:"rgba(255,255,255,.22)",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:"#34d399",display:"inline-block"}}/>
-            Recent Events
-          </div>
-          {[...events].reverse().slice(0,5).map((ev,i)=>{
-            const isHome=ev.team?.id===homeTeam?.id;
-            const min=fmtMin(ev.time?.elapsed,ev.time?.extra);
-            const isGoal=(ev.type||"").toLowerCase()==="goal";
-            const isYel=(ev.detail||"").toLowerCase().includes("yellow");
-            const isRed=(ev.detail||"").toLowerCase().includes("red");
-            const accent=isGoal?"#34d399":isYel?"#fbbf24":isRed?"#ef4444":"rgba(255,255,255,.08)";
-            return(
-              <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 44px 1fr",gap:6,
-                alignItems:"center",padding:"5px 8px",borderRadius:5,
-                borderLeft:`2.5px solid ${accent}`,
-                background:isGoal?"rgba(52,211,153,.04)":"transparent",marginBottom:2}}>
-                {isHome?(
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{ev.player?.name}</div>
-                    {ev.assist?.name&&<div style={{fontSize:9,color:"rgba(255,255,255,.28)"}}>ast: {ev.assist.name}</div>}
-                  </div>
-                ):<div/>}
-                <div style={{textAlign:"center",fontSize:9,fontWeight:800,color:"rgba(255,255,255,.4)",
-                  fontFamily:"monospace",background:"rgba(255,255,255,.06)",borderRadius:4,padding:"2px 4px"}}>{min}</div>
-                {!isHome?(
-                  <div>
-                    <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{ev.player?.name}</div>
-                    {ev.assist?.name&&<div style={{fontSize:9,color:"rgba(255,255,255,.28)"}}>ast: {ev.assist.name}</div>}
-                  </div>
-                ):<div/>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── STATS PANEL — B (Shot Map) / C (Mirror Scanner) ─────────────────────────
-function StatsPanel({ stats, homeTeam, awayTeam, shotMapData }) {
-  const [view, setView] = useState("shotmap");
-  if(!stats?.length) return null;
-  const hStats=stats.find(s=>s.team?.id===homeTeam?.id)?.statistics||[];
-  const aStats=stats.find(s=>s.team?.id===awayTeam?.id)?.statistics||[];
-  const hc=tColour(homeTeam?.id,"#38bdf8");
-  const ac=tColour(awayTeam?.id,"#f97316");
-  const hName=homeTeam?.name?.split(" ").pop()||"Home";
-  const aName=awayTeam?.name?.split(" ").pop()||"Away";
-  function gs(arr,key){ return arr.find(s=>s.type===key)?.value??null; }
-
-  const ALL=[
-    {key:"Ball Possession",  label:"Possession"},
-    {key:"expected_goals",   label:"xG"},
-    {key:"Total Shots",      label:"Total Shots"},
-    {key:"Shots on Goal",    label:"On Target"},
-    {key:"Shots insidebox",  label:"Inside Box"},
-    {key:"Corner Kicks",     label:"Corners"},
-    {key:"Passes %",         label:"Pass Acc"},
-    {key:"Total passes",     label:"Passes"},
-    {key:"Fouls",            label:"Fouls"},
-    {key:"Yellow Cards",     label:"Yellows"},
-    {key:"Red Cards",        label:"Reds"},
-    {key:"Offsides",         label:"Offsides"},
-    {key:"Blocked Shots",    label:"Blocked"},
-    {key:"Goalkeeper Saves", label:"GK Saves"},
-  ].map(r=>({...r,home:gs(hStats,r.key),away:gs(aStats,r.key)}))
-   .filter(r=>r.home!=null||r.away!=null);
-
-  if(!ALL.length) return null;
-
-  const Header=()=>(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,gap:8}}>
-      <div style={{display:"flex",alignItems:"center",gap:6}}>
-        {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width={15} height={15} style={{objectFit:"contain"}}/>}
-        <span style={{width:7,height:7,borderRadius:"50%",background:hc,display:"inline-block"}}/>
-        <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,.8)"}}>{hName}</span>
-      </div>
-      <div style={{display:"flex",gap:2,background:"rgba(255,255,255,.05)",borderRadius:7,padding:2}}>
-        <button onClick={()=>setView("shotmap")} style={{padding:"4px 12px",borderRadius:5,border:"none",
-          cursor:"pointer",fontSize:10,fontWeight:800,
-          background:view==="shotmap"?"rgba(255,255,255,.12)":"transparent",
-          color:view==="shotmap"?"#fff":"rgba(255,255,255,.35)"}}>Shot Map</button>
-        <button onClick={()=>setView("scanner")} style={{padding:"4px 12px",borderRadius:5,border:"none",
-          cursor:"pointer",fontSize:10,fontWeight:800,
-          background:view==="scanner"?"rgba(255,255,255,.12)":"transparent",
-          color:view==="scanner"?"#fff":"rgba(255,255,255,.35)"}}>Scanner</button>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:6}}>
-        <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,.8)"}}>{aName}</span>
-        <span style={{width:7,height:7,borderRadius:"50%",background:ac,display:"inline-block"}}/>
-        {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width={15} height={15} style={{objectFit:"contain"}}/>}
-      </div>
-    </div>
-  );
-
-  // ── B: Shot map + key grid ────────────────────────────────────────────────
-  if(view==="shotmap"){
-    const hSIB=gs(hStats,"Shots insidebox"); const aSIB=gs(aStats,"Shots insidebox");
-    const hSOT=gs(hStats,"Shots on Goal");   const aSOT=gs(aStats,"Shots on Goal");
-    const hTS =gs(hStats,"Total Shots");      const aTS =gs(aStats,"Total Shots");
-    const hSaves=gs(hStats,"Goalkeeper Saves"); const aSaves=gs(aStats,"Goalkeeper Saves");
-    const hConv=hTS&&hSOT?`${Math.round(parseFloat(hSOT)/parseFloat(hTS)*100)}%`:null;
-    const aConv=aTS&&aSOT?`${Math.round(parseFloat(aSOT)/parseFloat(aTS)*100)}%`:null;
-    const allShots=shotMapData?[
-      ...(shotMapData.home?.shots||[]).map(s=>({...s,side:"home"})),
-      ...(shotMapData.away?.shots||[]).map(s=>({...s,side:"away"})),
-    ]:[];
-    const keyCards=[
-      {label:"Shots inside box",h:hSIB, a:aSIB, rgb:"200,16,46"},
-      {label:"Conversion rate", h:hConv,a:aConv,rgb:"52,211,153"},
-      {label:"GK Saves",        h:hSaves,a:aSaves,rgb:"167,139,250"},
-    ].filter(c=>c.h!=null||c.a!=null);
-    const bottomStats=[
-      {label:"Corners", h:gs(hStats,"Corner Kicks"),a:gs(aStats,"Corner Kicks")},
-      {label:"Offsides",h:gs(hStats,"Offsides"),    a:gs(aStats,"Offsides")},
-      {label:"Yellows", h:gs(hStats,"Yellow Cards"), a:gs(aStats,"Yellow Cards")},
-      {label:"Pass Acc",h:gs(hStats,"Passes %"),     a:gs(aStats,"Passes %")},
-    ].filter(r=>r.h!=null||r.a!=null);
-    return(
-      <div style={{padding:"16px 16px 14px",borderTop:"1px solid rgba(255,255,255,.04)"}}>
+      <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
         <Header/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-          <div>
-            <div style={{fontSize:7.5,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",
-              color:"rgba(255,255,255,.22)",marginBottom:6,display:"flex",alignItems:"center",gap:5}}>
-              <span style={{width:5,height:5,borderRadius:"50%",background:hc,display:"inline-block"}}/>
-              {hName} Shot Zones
+        {xgRow && <StatBar label="Expected Goals (xG)" home={xgRow.home} away={xgRow.away} homeColor={hc} awayColor={ac} highlight={true}/>}
+        <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+          {singles.map(r => r && (
+            <div key={r.key} style={{ borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
+              <StatBar label={r.label} home={r.home} away={r.away} homeColor={hc} awayColor={ac}/>
             </div>
-            <div style={{position:"relative",paddingBottom:"60%",borderRadius:8,
-              overflow:"hidden",border:"1px solid rgba(255,255,255,.07)",background:"#080d08"}}>
-              <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} viewBox="0 0 120 72">
-                <rect width="120" height="72" fill="#080d08"/>
-                <rect x="2" y="2" width="116" height="68" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".5"/>
-                <rect x="2" y="20" width="22" height="32" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
-                <rect x="2" y="28" width="9" height="16" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth=".35"/>
-                <line x1="60" y1="2" x2="60" y2="70" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
-                <circle cx="60" cy="36" r="13" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth=".4"/>
-                <rect x="96" y="20" width="22" height="32" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
-                {allShots.filter(s=>s.side==="home").map((s,i)=>(
-                  <circle key={i} cx={(s.x||50)*1.2} cy={(s.y||50)*.72} r={s.is_goal?4:2.5}
-                    fill={s.is_goal?hc:"rgba(59,130,246,.45)"}
-                    stroke={s.is_goal?"rgba(255,255,255,.75)":"none"} strokeWidth="1"/>
-                ))}
-                {allShots.length===0&&[[26,36,true],[22,27,false],[30,43,false],[36,32,false],[42,36,false]].map(([cx,cy,g],i)=>(
-                  <circle key={i} cx={cx} cy={cy} r={g?4:2.5} fill={g?hc:"rgba(59,130,246,.4)"}
-                    stroke={g?"rgba(255,255,255,.7)":"none"} strokeWidth="1"/>
-                ))}
-              </svg>
-              <div style={{position:"absolute",bottom:5,left:7,display:"flex",gap:9}}>
-                <span style={{fontSize:7,color:"rgba(255,255,255,.38)",display:"flex",alignItems:"center",gap:3}}>
-                  <span style={{width:7,height:7,borderRadius:"50%",background:hc,border:"1px solid rgba(255,255,255,.6)",display:"inline-block"}}/>Goal</span>
-                <span style={{fontSize:7,color:"rgba(255,255,255,.38)",display:"flex",alignItems:"center",gap:3}}>
-                  <span style={{width:7,height:7,borderRadius:"50%",background:"rgba(59,130,246,.45)",display:"inline-block"}}/>Shot</span>
-              </div>
-            </div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:7}}>
-            {keyCards.map(({label,h,a,rgb})=>{
-              const hN=parseFloat(String(h??"0").replace("%",""))||0;
-              const aN=parseFloat(String(a??"0").replace("%",""))||0;
-              const hLeads=hN>aN;
-              return(
-                <div key={label} style={{padding:"10px 12px",borderRadius:8,flex:1,
-                  background:`rgba(${rgb},.07)`,border:`1px solid rgba(${rgb},.18)`}}>
-                  <div style={{fontSize:7.5,fontWeight:700,color:"rgba(255,255,255,.3)",
-                    textTransform:"uppercase",letterSpacing:".06em",marginBottom:5}}>{label}</div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-                    <span style={{fontSize:20,fontWeight:900,fontFamily:"monospace",
-                      color:hLeads?"#fff":"rgba(255,255,255,.38)"}}>{h??0}</span>
-                    <span style={{fontSize:13,fontWeight:700,fontFamily:"monospace",
-                      color:"rgba(255,255,255,.28)"}}>{a??0}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          ))}
         </div>
-        {bottomStats.length>0&&(
-          <div style={{display:"grid",gridTemplateColumns:`repeat(${bottomStats.length},minmax(0,1fr))`,gap:6}}>
-            {bottomStats.map(({label,h,a})=>{
-              const hN=parseFloat(String(h??"0").replace("%",""))||0;
-              const aN=parseFloat(String(a??"0").replace("%",""))||0;
-              const hLeads=hN>aN; const aLeads=aN>hN;
-              return(
-                <div key={label} style={{padding:"8px 6px",borderRadius:7,
-                  background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.05)",textAlign:"center"}}>
-                  <div style={{fontSize:7,fontWeight:700,color:"rgba(255,255,255,.25)",
-                    textTransform:"uppercase",letterSpacing:".04em",marginBottom:5}}>{label}</div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:4}}>
-                    <span style={{fontSize:13,fontWeight:900,fontFamily:"monospace",
-                      color:hLeads?"#fff":hN===aN?"rgba(255,255,255,.55)":"rgba(255,255,255,.38)"}}>{h??"–"}</span>
-                    <span style={{fontSize:8,color:"rgba(255,255,255,.18)"}}>–</span>
-                    <span style={{fontSize:13,fontWeight:900,fontFamily:"monospace",
-                      color:aLeads?"#fff":hN===aN?"rgba(255,255,255,.55)":"rgba(255,255,255,.38)"}}>{a??"–"}</span>
-                  </div>
-                </div>
-              );
-            })}
+        {pairs.map(([left,right], i) => (
+          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
+            {left  && <StatBar label={left.label}  home={left.home}  away={left.away}  homeColor={hc} awayColor={ac}/>}
+            {right && <StatBar label={right.label} home={right.home} away={right.away} homeColor={hc} awayColor={ac}/>}
           </div>
-        )}
+        ))}
       </div>
     );
   }
 
-  // ── C: Mirror scanner ─────────────────────────────────────────────────────
-  return(
-    <div style={{padding:"16px 16px 14px",borderTop:"1px solid rgba(255,255,255,.04)"}}>
-      <Header/>
-      <div>
-        {ALL.map(r=>{
-          const hN=parseFloat(String(r.home??"0").replace("%",""))||0;
-          const aN=parseFloat(String(r.away??"0").replace("%",""))||0;
-          const total=hN+aN||1;
-          const hPct=(hN/total)*100;
-          const hLeads=hN>aN; const aLeads=aN>hN;
-          return(
-            <div key={r.key} style={{display:"flex",alignItems:"center",gap:8,
-              padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.03)"}}>
-              <span style={{fontSize:13,fontWeight:900,fontFamily:"monospace",width:44,
-                textAlign:"right",flexShrink:0,
-                color:hLeads?"#fff":"rgba(255,255,255,.35)"}}>{r.home??"–"}</span>
-              <div style={{flex:1,height:4,borderRadius:2,overflow:"hidden",
-                background:"rgba(255,255,255,.05)",transform:"scaleX(-1)"}}>
-                <div style={{width:`${hPct}%`,height:"100%",background:hc,borderRadius:2}}/>
+  // ── VIEW 2: Metric cards grid ──────────────────────────────────────
+  if (view === "cards") {
+    const groups = [
+      { label:"Attack",  keys:["Ball Possession","expected_goals","Total Shots","Shots on Goal","Shots insidebox","Corner Kicks"] },
+      { label:"Passing", keys:["Passes %","Total passes"] },
+      { label:"Defence", keys:["Fouls","Yellow Cards","Red Cards","Offsides","Blocked Shots","Goalkeeper Saves"] },
+    ];
+
+    return (
+      <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+        <Header/>
+        {groups.map(grp => {
+          const rows = grp.keys.map(k => ALL.find(r => r.key===k)).filter(Boolean);
+          if (!rows.length) return null;
+          return (
+            <div key={grp.label} style={{ marginBottom:14 }}>
+              <div style={{ fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
+                color:"rgba(255,255,255,.2)", marginBottom:8 }}>{grp.label}</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:6 }}>
+                {rows.map(r => {
+                  const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
+                  const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
+                  const hLeads = hN > aN;
+                  const aLeads = aN > hN;
+                  return (
+                    <div key={r.key} style={{
+                      padding:"10px 10px 8px",
+                      borderRadius:10,
+                      background:"rgba(255,255,255,.03)",
+                      border:`1px solid ${hLeads ? hc+"30" : aLeads ? ac+"30" : "rgba(255,255,255,.07)"}`,
+                    }}>
+                      <div style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase", letterSpacing:".06em", marginBottom:6, textAlign:"center" }}>
+                        {r.label}
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:4 }}>
+                        <span style={{ fontSize:15, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
+                          color: hLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
+                          {r.home ?? "–"}
+                        </span>
+                        <span style={{ fontSize:8, color:"rgba(255,255,255,.18)", fontWeight:700 }}>vs</span>
+                        <span style={{ fontSize:15, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
+                          color: aLeads ? "#fff" : "rgba(255,255,255,.45)", textAlign:"right" }}>
+                          {r.away ?? "–"}
+                        </span>
+                      </div>
+                      {/* mini bar */}
+                      <div style={{ display:"flex", height:3, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.06)", marginTop:7 }}>
+                        <div style={{ width:`${(hN/(hN+aN||1))*100}%`, background:hc }}/>
+                        <div style={{ flex:1, background:ac }}/>
+                      </div>
+                      {/* winner dot */}
+                      {(hLeads||aLeads) && (
+                        <div style={{ display:"flex", justifyContent: hLeads ? "flex-start" : "flex-end", marginTop:4 }}>
+                          <span style={{ fontSize:7, fontWeight:800,
+                            color: hLeads ? hc : ac,
+                            background: hLeads ? `${hc}18` : `${ac}18`,
+                            borderRadius:3, padding:"1px 5px" }}>
+                            {hLeads ? hName : aName} ↑
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <span style={{fontSize:7.5,fontWeight:700,color:"rgba(255,255,255,.24)",
-                textTransform:"uppercase",letterSpacing:".05em",width:76,
-                textAlign:"center",flexShrink:0}}>{r.label}</span>
-              <div style={{flex:1,height:4,borderRadius:2,overflow:"hidden",
-                background:"rgba(255,255,255,.05)"}}>
-                <div style={{width:`${100-hPct}%`,height:"100%",background:ac,borderRadius:2}}/>
-              </div>
-              <span style={{fontSize:13,fontWeight:900,fontFamily:"monospace",width:44,
-                flexShrink:0,
-                color:aLeads?"#fff":"rgba(255,255,255,.35)"}}>{r.away??"–"}</span>
             </div>
           );
         })}
       </div>
+    );
+  }
+
+  // ── VIEW 3: Compact table ──────────────────────────────────────────
+  return (
+    <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+      <Header/>
+      <div style={{ overflowX:"auto" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ padding:"5px 10px", textAlign:"left", fontSize:10, fontWeight:800,
+                color:hc, fontFamily:"'JetBrains Mono',monospace", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
+                {hName}
+              </th>
+              <th style={{ padding:"5px 10px", textAlign:"center", fontSize:8, fontWeight:700,
+                color:"rgba(255,255,255,.25)", textTransform:"uppercase", letterSpacing:".08em",
+                borderBottom:"1px solid rgba(255,255,255,.06)" }}>
+                Stat
+              </th>
+              <th style={{ padding:"5px 10px", textAlign:"right", fontSize:10, fontWeight:800,
+                color:ac, fontFamily:"'JetBrains Mono',monospace", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
+                {aName}
+              </th>
+              <th style={{ width:80, padding:"5px 8px", borderBottom:"1px solid rgba(255,255,255,.06)" }}/>
+            </tr>
+          </thead>
+          <tbody>
+            {ALL.map((r, i) => {
+              const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
+              const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
+              const hLeads = hN > aN;
+              const aLeads = aN > hN;
+              const hPct = (hN/(hN+aN||1))*100;
+              return (
+                <tr key={r.key} style={{ borderBottom:"1px solid rgba(255,255,255,.03)",
+                  background: i%2===0 ? "rgba(255,255,255,.01)" : "transparent" }}>
+                  <td style={{ padding:"6px 10px", fontSize:12, fontWeight:800,
+                    fontFamily:"'JetBrains Mono',monospace",
+                    color: hLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
+                    {r.home ?? "–"}
+                  </td>
+                  <td style={{ padding:"6px 10px", textAlign:"center", fontSize:9, fontWeight:700,
+                    color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".05em" }}>
+                    {r.label}
+                  </td>
+                  <td style={{ padding:"6px 10px", textAlign:"right", fontSize:12, fontWeight:800,
+                    fontFamily:"'JetBrains Mono',monospace",
+                    color: aLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
+                    {r.away ?? "–"}
+                  </td>
+                  <td style={{ padding:"6px 8px" }}>
+                    <div style={{ display:"flex", height:4, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.05)" }}>
+                      <div style={{ width:`${hPct}%`, background:hc, borderRadius:"2px 0 0 2px" }}/>
+                      <div style={{ flex:1, background:ac, borderRadius:"0 2px 2px 0" }}/>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-
 
 function LineupsPanel({lineups,homeTeam,awayTeam,venueName}){
   if(!lineups?.length) return null;
@@ -2294,14 +2374,13 @@ export default function LiveMatchPage() {
 
             {/* ═══ LIVE TABS ═══ */}
             {mode === "live" && tab === "Overview" && (
-              <LiveOverview
-                stats={stats} homeTeam={homeTeam} awayTeam={awayTeam}
-                events={events} momentumData={momentumData} winProb={winProb}
-                score={score} status={status}
-              />
+              <>
+                {stats.length > 0 && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
+                {events.length > 0 && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
+              </>
             )}
             {mode === "live" && tab === "Events"   && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "live" && tab === "Stats"    && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} shotMapData={shotMapData} />}
+            {mode === "live" && tab === "Stats"    && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Lineups"  && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "live" && tab === "Players"  && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Commentary" && (
@@ -2321,16 +2400,13 @@ export default function LiveMatchPage() {
             {/* ═══ FULLTIME TABS ═══ */}
             {mode === "fulltime" && tab === "Overview" && (
               <>
-                <LiveOverview
-                  stats={stats} homeTeam={homeTeam} awayTeam={awayTeam}
-                  events={events} momentumData={momentumData} winProb={winProb}
-                  score={score} status={status}
-                />
+                {stats.length > 0 && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
                 <ShotMapPanel shotMapData={shotMapData} events={events} homeTeam={homeTeam} awayTeam={awayTeam} />
+                {events.length > 0 && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
               </>
             )}
             {mode === "fulltime" && tab === "Events"  && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} shotMapData={shotMapData} />}
+            {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Lineups" && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "fulltime" && tab === "Commentary" && (
               <CommentaryPanel

@@ -1158,248 +1158,325 @@ function Timeline({ events, homeTeam, awayTeam }) {
   );
 }
 
-function StatsPanel({ stats, homeTeam, awayTeam }) {
-  const [view, setView] = useState("bars"); // "bars" | "cards" | "table"
-  if (!stats?.length) return null;
-
-  const hStats = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
-  const aStats = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
-  const hc = "#3b82f6";
-  const ac = "#ef4444";
-
+// ─── LIVE OVERVIEW — Option 1: score hero + 3 metric cards + win prob + momentum ──
+function LiveOverview({ stats, homeTeam, awayTeam, events, momentumData, winProb, score, status }) {
+  const hStats = (stats||[]).find(s => s.team?.id === homeTeam?.id)?.statistics || [];
+  const aStats = (stats||[]).find(s => s.team?.id === awayTeam?.id)?.statistics || [];
   function gs(arr, key) { return arr.find(s => s.type === key)?.value ?? null; }
-
-  const hXG = gs(hStats,"expected_goals");
-  const aXG = gs(aStats,"expected_goals");
-
-  // All stat rows
-  const ALL = [
-    { key:"Ball Possession",   label:"Possession",    group:"attack"  },
-    { key:"expected_goals",    label:"xG",            group:"attack"  },
-    { key:"Total Shots",       label:"Total Shots",   group:"attack"  },
-    { key:"Shots on Goal",     label:"On Target",     group:"attack"  },
-    { key:"Shots insidebox",   label:"Inside Box",    group:"attack"  },
-    { key:"Corner Kicks",      label:"Corners",       group:"attack"  },
-    { key:"Passes %",          label:"Pass Acc",      group:"passing" },
-    { key:"Total passes",      label:"Passes",        group:"passing" },
-    { key:"Fouls",             label:"Fouls",         group:"defence" },
-    { key:"Yellow Cards",      label:"Yellows",       group:"defence" },
-    { key:"Red Cards",         label:"Reds",          group:"defence" },
-    { key:"Offsides",          label:"Offsides",      group:"defence" },
-    { key:"Blocked Shots",     label:"Blocked",       group:"defence" },
-    { key:"Goalkeeper Saves",  label:"GK Saves",      group:"defence" },
-  ].map(r => ({
-    ...r,
-    home: gs(hStats, r.key),
-    away: gs(aStats, r.key),
-  })).filter(r => r.home != null || r.away != null);
-
-  if (!ALL.length) return null;
-
+  const hc = tColour(homeTeam?.id,"#38bdf8");
+  const ac = tColour(awayTeam?.id,"#f97316");
   const hName = homeTeam?.name?.split(" ").pop() || "Home";
   const aName = awayTeam?.name?.split(" ").pop() || "Away";
+  const hXG   = gs(hStats,"expected_goals");  const aXG   = gs(aStats,"expected_goals");
+  const hPoss = gs(hStats,"Ball Possession");  const aPoss = gs(aStats,"Ball Possession");
+  const hSOT  = gs(hStats,"Shots on Goal");    const aSOT  = gs(aStats,"Shots on Goal");
+  const wp  = winProb?.pre_match;
+  const hWP = wp?.p_home_win ?? null;
+  const dWP = wp?.p_draw     ?? null;
+  const aWP = wp?.p_away_win ?? null;
 
-  // ── Shared header ──────────────────────────────────────────────────
-  const Header = () => (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:8 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }}/>}
-        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.75)" }}>{hName}</span>
-      </div>
-
-      {/* View toggle */}
-      <div style={{ display:"flex", gap:2, background:"rgba(255,255,255,.05)", borderRadius:7, padding:2 }}>
-        {[
-          { id:"bars",  icon:"≡",  tip:"Bars"  },
-          { id:"cards", icon:"⊞",  tip:"Cards" },
-          { id:"table", icon:":::", tip:"Table" },
-        ].map(v => (
-          <button key={v.id} onClick={() => setView(v.id)} title={v.tip} style={{
-            padding:"4px 10px", borderRadius:5, border:"none", cursor:"pointer", fontSize:11,
-            fontWeight:900, letterSpacing:".04em",
-            background: view===v.id ? "rgba(255,255,255,.12)" : "transparent",
-            color: view===v.id ? "#fff" : "rgba(255,255,255,.35)",
-            transition:"all .15s",
-          }}>{v.icon}</button>
-        ))}
-      </div>
-
-      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.75)" }}>{aName}</span>
-        {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }}/>}
-      </div>
-    </div>
-  );
-
-  // ── VIEW 1: Bars (existing, polished) ─────────────────────────────
-  if (view === "bars") {
-    const xgRow = ALL.find(r => r.key === "expected_goals");
-    const singles = ALL.filter(r => ["Ball Possession","Passes %","Total passes"].includes(r.key));
-    const pairedKeys = [
-      ["Total Shots","Shots on Goal"],["Corner Kicks","Fouls"],
-      ["Yellow Cards","Offsides"],["Goalkeeper Saves","Blocked Shots"],
-    ];
-    const pairs = pairedKeys.map(([k1,k2]) => [
-      ALL.find(r=>r.key===k1), ALL.find(r=>r.key===k2),
-    ]).filter(([a,b]) => a||b);
-
+  function MetricCard({ label, hVal, aVal, colKey }) {
+    const hN = parseFloat(String(hVal??"0").replace("%",""))||0;
+    const aN = parseFloat(String(aVal??"0").replace("%",""))||0;
+    const hLeads = hN > aN;
+    const pct = hN / (hN + aN || 1) * 100;
+    const bar = colKey==="xg" ? hc : colKey==="poss" ? "#60a5fa" : "#34d399";
+    const rgb = colKey==="xg" ? "59,130,246" : colKey==="poss" ? "96,165,250" : "52,211,153";
     return (
-      <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-        <Header/>
-        {xgRow && <StatBar label="Expected Goals (xG)" home={xgRow.home} away={xgRow.away} homeColor={hc} awayColor={ac} highlight={true}/>}
-        <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-          {singles.map(r => r && (
-            <div key={r.key} style={{ borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
-              <StatBar label={r.label} home={r.home} away={r.away} homeColor={hc} awayColor={ac}/>
-            </div>
-          ))}
+      <div style={{ flex:1, minWidth:0, padding:"12px 14px 11px", borderRadius:10,
+        background:`rgba(${rgb},.07)`, border:`1px solid rgba(${rgb},.18)` }}>
+        <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase",
+          color:"rgba(255,255,255,.28)", marginBottom:8 }}>{label}</div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:9 }}>
+          <span style={{ fontSize:22, fontWeight:900, fontFamily:"monospace",
+            color: hLeads ? "#fff" : "rgba(255,255,255,.38)" }}>{hVal ?? "–"}</span>
+          <span style={{ fontSize:14, fontWeight:700, fontFamily:"monospace",
+            color:"rgba(255,255,255,.25)" }}>{aVal ?? "–"}</span>
         </div>
-        {pairs.map(([left,right], i) => (
-          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
-            {left  && <StatBar label={left.label}  home={left.home}  away={left.away}  homeColor={hc} awayColor={ac}/>}
-            {right && <StatBar label={right.label} home={right.home} away={right.away} homeColor={hc} awayColor={ac}/>}
-          </div>
-        ))}
+        <div style={{ height:3, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.06)" }}>
+          <div style={{ width:`${pct}%`, height:"100%", background:bar }}/>
+        </div>
       </div>
     );
   }
 
-  // ── VIEW 2: Metric cards grid ──────────────────────────────────────
-  if (view === "cards") {
-    const groups = [
-      { label:"Attack",  keys:["Ball Possession","expected_goals","Total Shots","Shots on Goal","Shots insidebox","Corner Kicks"] },
-      { label:"Passing", keys:["Passes %","Total passes"] },
-      { label:"Defence", keys:["Fouls","Yellow Cards","Red Cards","Offsides","Blocked Shots","Goalkeeper Saves"] },
-    ];
+  if (!stats?.length && !events?.length) return null;
+
+  return (
+    <div style={{ padding:"14px 16px 4px" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+        <MetricCard label="Expected Goals (xG)" hVal={hXG}   aVal={aXG}   colKey="xg"/>
+        <MetricCard label="Possession"           hVal={hPoss} aVal={aPoss} colKey="poss"/>
+        <MetricCard label="Shots on Target"      hVal={hSOT}  aVal={aSOT}  colKey="sot"/>
+      </div>
+
+      {hWP != null && (
+        <div style={{ padding:"12px 14px", borderRadius:10,
+          background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.05)", marginBottom:10 }}>
+          <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase",
+            color:"rgba(255,255,255,.25)", marginBottom:8 }}>Win Probability</div>
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, fontWeight:800, marginBottom:7 }}>
+            <span style={{ color:hc }}>{hName} {hWP}%</span>
+            <span style={{ color:"rgba(255,255,255,.28)" }}>Draw {dWP}%</span>
+            <span style={{ color:ac }}>{aName} {aWP}%</span>
+          </div>
+          <div style={{ display:"flex", height:8, borderRadius:999, overflow:"hidden", gap:2 }}>
+            <div style={{ width:`${hWP}%`, background:hc, borderRadius:"999px 0 0 999px" }}/>
+            <div style={{ width:`${dWP}%`, background:"rgba(255,255,255,.18)" }}/>
+            <div style={{ width:`${aWP}%`, background:ac, borderRadius:"0 999px 999px 0" }}/>
+          </div>
+        </div>
+      )}
+
+      <MomentumGraph momentumData={momentumData} events={events} />
+
+      {events.length > 0 && (
+        <div style={{ marginTop:10, paddingBottom:10 }}>
+          <div style={{ fontSize:7.5, fontWeight:900, letterSpacing:".12em", textTransform:"uppercase",
+            color:"rgba(255,255,255,.22)", marginBottom:8, display:"flex", alignItems:"center", gap:5 }}>
+            <span style={{ width:5, height:5, borderRadius:"50%", background:"#34d399", display:"inline-block" }}/>
+            Recent Events
+          </div>
+          {[...events].reverse().slice(0,5).map((ev,i) => {
+            const isHome = ev.team?.id === homeTeam?.id;
+            const min    = fmtMin(ev.time?.elapsed, ev.time?.extra);
+            const isGoal = (ev.type||"").toLowerCase()==="goal";
+            const isYel  = (ev.detail||"").toLowerCase().includes("yellow");
+            const isRed  = (ev.detail||"").toLowerCase().includes("red");
+            const accent = isGoal ? "#34d399" : isYel ? "#fbbf24" : isRed ? "#ef4444" : "rgba(255,255,255,.08)";
+            return (
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 44px 1fr",
+                gap:6, alignItems:"center", padding:"5px 8px", borderRadius:5,
+                borderLeft:`2.5px solid ${accent}`,
+                background:isGoal?"rgba(52,211,153,.04)":"transparent", marginBottom:2 }}>
+                {isHome ? (
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0" }}>{ev.player?.name}</div>
+                    {ev.assist?.name && <div style={{ fontSize:9, color:"rgba(255,255,255,.28)" }}>ast: {ev.assist.name}</div>}
+                  </div>
+                ) : <div/>}
+                <div style={{ textAlign:"center", fontSize:9, fontWeight:800,
+                  color:"rgba(255,255,255,.4)", fontFamily:"monospace",
+                  background:"rgba(255,255,255,.06)", borderRadius:4, padding:"2px 4px" }}>{min}</div>
+                {!isHome ? (
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0" }}>{ev.player?.name}</div>
+                    {ev.assist?.name && <div style={{ fontSize:9, color:"rgba(255,255,255,.28)" }}>ast: {ev.assist.name}</div>}
+                  </div>
+                ) : <div/>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── STATS PANEL — B (Shot Map + grid) / C (Mirror scanner) toggle ────────────
+function StatsPanel({ stats, homeTeam, awayTeam, shotMapData }) {
+  const [view, setView] = useState("shotmap"); // "shotmap" | "scanner"
+  if (!stats?.length) return null;
+  const hStats = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
+  const aStats = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
+  const hc = tColour(homeTeam?.id,"#38bdf8");
+  const ac = tColour(awayTeam?.id,"#f97316");
+  const hName = homeTeam?.name?.split(" ").pop() || "Home";
+  const aName = awayTeam?.name?.split(" ").pop() || "Away";
+  function gs(arr,key){ return arr.find(s=>s.type===key)?.value??null; }
+
+  const ALL = [
+    { key:"Ball Possession",  label:"Possession" },
+    { key:"expected_goals",   label:"xG"         },
+    { key:"Total Shots",      label:"Total Shots" },
+    { key:"Shots on Goal",    label:"On Target"   },
+    { key:"Shots insidebox",  label:"Inside Box"  },
+    { key:"Corner Kicks",     label:"Corners"     },
+    { key:"Passes %",         label:"Pass Acc"    },
+    { key:"Total passes",     label:"Passes"      },
+    { key:"Fouls",            label:"Fouls"       },
+    { key:"Yellow Cards",     label:"Yellows"     },
+    { key:"Red Cards",        label:"Reds"        },
+    { key:"Offsides",         label:"Offsides"    },
+    { key:"Blocked Shots",    label:"Blocked"     },
+    { key:"Goalkeeper Saves", label:"GK Saves"    },
+  ].map(r=>({...r,home:gs(hStats,r.key),away:gs(aStats,r.key)}))
+   .filter(r=>r.home!=null||r.away!=null);
+
+  if(!ALL.length) return null;
+
+  const Header = () => (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, gap:8 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+        {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width={15} height={15} style={{objectFit:"contain"}}/>}
+        <span style={{ width:7, height:7, borderRadius:"50%", background:hc, display:"inline-block" }}/>
+        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.8)" }}>{hName}</span>
+      </div>
+      <div style={{ display:"flex", gap:2, background:"rgba(255,255,255,.05)", borderRadius:7, padding:2 }}>
+        <button onClick={()=>setView("shotmap")} style={{ padding:"4px 12px", borderRadius:5, border:"none",
+          cursor:"pointer", fontSize:10, fontWeight:800,
+          background:view==="shotmap"?"rgba(255,255,255,.12)":"transparent",
+          color:view==="shotmap"?"#fff":"rgba(255,255,255,.35)" }}>Shot Map</button>
+        <button onClick={()=>setView("scanner")} style={{ padding:"4px 12px", borderRadius:5, border:"none",
+          cursor:"pointer", fontSize:10, fontWeight:800,
+          background:view==="scanner"?"rgba(255,255,255,.12)":"transparent",
+          color:view==="scanner"?"#fff":"rgba(255,255,255,.35)" }}>Scanner</button>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.8)" }}>{aName}</span>
+        <span style={{ width:7, height:7, borderRadius:"50%", background:ac, display:"inline-block" }}/>
+        {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width={15} height={15} style={{objectFit:"contain"}}/>}
+      </div>
+    </div>
+  );
+
+  // ── B: Shot map + key number grid ─────────────────────────────────────────
+  if (view === "shotmap") {
+    const hSIB   = gs(hStats,"Shots insidebox");  const aSIB   = gs(aStats,"Shots insidebox");
+    const hSOT   = gs(hStats,"Shots on Goal");     const aSOT   = gs(aStats,"Shots on Goal");
+    const hTS    = gs(hStats,"Total Shots");        const aTS    = gs(aStats,"Total Shots");
+    const hSaves = gs(hStats,"Goalkeeper Saves");   const aSaves = gs(aStats,"Goalkeeper Saves");
+    const hConv  = hTS&&hSOT ? `${Math.round(parseFloat(hSOT)/parseFloat(hTS)*100)}%` : null;
+    const aConv  = aTS&&aSOT ? `${Math.round(parseFloat(aSOT)/parseFloat(aTS)*100)}%` : null;
+    const allShots = shotMapData ? [
+      ...(shotMapData.home?.shots||[]).map(s=>({...s,side:"home"})),
+      ...(shotMapData.away?.shots||[]).map(s=>({...s,side:"away"})),
+    ] : [];
+    const keyCards = [
+      { label:"Shots inside box", h:hSIB,  a:aSIB,  rgb:"200,16,46"    },
+      { label:"Conversion rate",  h:hConv, a:aConv, rgb:"52,211,153"   },
+      { label:"GK Saves",         h:hSaves,a:aSaves, rgb:"167,139,250"  },
+    ].filter(c=>c.h!=null||c.a!=null);
+    const bottomStats = [
+      { label:"Corners",  h:gs(hStats,"Corner Kicks"),  a:gs(aStats,"Corner Kicks")  },
+      { label:"Offsides", h:gs(hStats,"Offsides"),       a:gs(aStats,"Offsides")       },
+      { label:"Yellows",  h:gs(hStats,"Yellow Cards"),   a:gs(aStats,"Yellow Cards")   },
+      { label:"Pass Acc", h:gs(hStats,"Passes %"),        a:gs(aStats,"Passes %")        },
+    ].filter(r=>r.h!=null||r.a!=null);
 
     return (
-      <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ padding:"16px 16px 14px", borderTop:"1px solid rgba(255,255,255,.04)" }}>
         <Header/>
-        {groups.map(grp => {
-          const rows = grp.keys.map(k => ALL.find(r => r.key===k)).filter(Boolean);
-          if (!rows.length) return null;
-          return (
-            <div key={grp.label} style={{ marginBottom:14 }}>
-              <div style={{ fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
-                color:"rgba(255,255,255,.2)", marginBottom:8 }}>{grp.label}</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:6 }}>
-                {rows.map(r => {
-                  const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
-                  const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
-                  const hLeads = hN > aN;
-                  const aLeads = aN > hN;
-                  return (
-                    <div key={r.key} style={{
-                      padding:"10px 10px 8px",
-                      borderRadius:10,
-                      background:"rgba(255,255,255,.03)",
-                      border:`1px solid ${hLeads ? hc+"30" : aLeads ? ac+"30" : "rgba(255,255,255,.07)"}`,
-                    }}>
-                      <div style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,.3)",
-                        textTransform:"uppercase", letterSpacing:".06em", marginBottom:6, textAlign:"center" }}>
-                        {r.label}
-                      </div>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:4 }}>
-                        <span style={{ fontSize:15, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-                          color: hLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
-                          {r.home ?? "–"}
-                        </span>
-                        <span style={{ fontSize:8, color:"rgba(255,255,255,.18)", fontWeight:700 }}>vs</span>
-                        <span style={{ fontSize:15, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-                          color: aLeads ? "#fff" : "rgba(255,255,255,.45)", textAlign:"right" }}>
-                          {r.away ?? "–"}
-                        </span>
-                      </div>
-                      {/* mini bar */}
-                      <div style={{ display:"flex", height:3, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.06)", marginTop:7 }}>
-                        <div style={{ width:`${(hN/(hN+aN||1))*100}%`, background:hc }}/>
-                        <div style={{ flex:1, background:ac }}/>
-                      </div>
-                      {/* winner dot */}
-                      {(hLeads||aLeads) && (
-                        <div style={{ display:"flex", justifyContent: hLeads ? "flex-start" : "flex-end", marginTop:4 }}>
-                          <span style={{ fontSize:7, fontWeight:800,
-                            color: hLeads ? hc : ac,
-                            background: hLeads ? `${hc}18` : `${ac}18`,
-                            borderRadius:3, padding:"1px 5px" }}>
-                            {hLeads ? hName : aName} ↑
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+          <div>
+            <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase",
+              color:"rgba(255,255,255,.22)", marginBottom:6, display:"flex", alignItems:"center", gap:5 }}>
+              <span style={{ width:5,height:5,borderRadius:"50%",background:hc,display:"inline-block"}}/>
+              {hName} Shot Zones
+            </div>
+            <div style={{ position:"relative", paddingBottom:"60%", borderRadius:8,
+              overflow:"hidden", border:"1px solid rgba(255,255,255,.07)", background:"#080d08" }}>
+              <svg style={{ position:"absolute",inset:0,width:"100%",height:"100%" }} viewBox="0 0 120 72">
+                <rect width="120" height="72" fill="#080d08"/>
+                <rect x="2" y="2" width="116" height="68" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".5"/>
+                <rect x="2" y="20" width="22" height="32" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
+                <rect x="2" y="28" width="9" height="16" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth=".35"/>
+                <line x1="60" y1="2" x2="60" y2="70" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
+                <circle cx="60" cy="36" r="13" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth=".4"/>
+                <rect x="96" y="20" width="22" height="32" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
+                {allShots.filter(s=>s.side==="home").map((s,i)=>(
+                  <circle key={i} cx={(s.x||50)*1.2} cy={(s.y||50)*.72} r={s.is_goal?4:2.5}
+                    fill={s.is_goal?hc:"rgba(59,130,246,.45)"}
+                    stroke={s.is_goal?"rgba(255,255,255,.75)":"none"} strokeWidth="1"/>
+                ))}
+                {allShots.length===0&&[[26,36,true],[22,27,false],[30,43,false],[36,32,false],[42,36,false]].map(([cx,cy,g],i)=>(
+                  <circle key={i} cx={cx} cy={cy} r={g?4:2.5} fill={g?hc:"rgba(59,130,246,.4)"}
+                    stroke={g?"rgba(255,255,255,.7)":"none"} strokeWidth="1"/>
+                ))}
+              </svg>
+              <div style={{ position:"absolute",bottom:5,left:7,display:"flex",gap:9 }}>
+                <span style={{ fontSize:7,color:"rgba(255,255,255,.38)",display:"flex",alignItems:"center",gap:3 }}>
+                  <span style={{ width:7,height:7,borderRadius:"50%",background:hc,border:"1px solid rgba(255,255,255,.6)",display:"inline-block" }}/>Goal</span>
+                <span style={{ fontSize:7,color:"rgba(255,255,255,.38)",display:"flex",alignItems:"center",gap:3 }}>
+                  <span style={{ width:7,height:7,borderRadius:"50%",background:"rgba(59,130,246,.45)",display:"inline-block" }}/>Shot</span>
               </div>
+            </div>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+            {keyCards.map(({label,h,a,rgb})=>{
+              const hN=parseFloat(String(h??"0").replace("%",""))||0;
+              const aN=parseFloat(String(a??"0").replace("%",""))||0;
+              const hLeads=hN>aN;
+              return (
+                <div key={label} style={{ padding:"10px 12px", borderRadius:8, flex:1,
+                  background:`rgba(${rgb},.07)`, border:`1px solid rgba(${rgb},.18)` }}>
+                  <div style={{ fontSize:7.5, fontWeight:700, color:"rgba(255,255,255,.3)",
+                    textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>{label}</div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                    <span style={{ fontSize:20,fontWeight:900,fontFamily:"monospace",
+                      color:hLeads?"#fff":"rgba(255,255,255,.38)" }}>{h??0}</span>
+                    <span style={{ fontSize:13,fontWeight:700,fontFamily:"monospace",
+                      color:"rgba(255,255,255,.28)" }}>{a??0}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {bottomStats.length>0&&(
+          <div style={{ display:"grid", gridTemplateColumns:`repeat(${bottomStats.length},minmax(0,1fr))`, gap:6 }}>
+            {bottomStats.map(({label,h,a})=>{
+              const hN=parseFloat(String(h??"0").replace("%",""))||0;
+              const aN=parseFloat(String(a??"0").replace("%",""))||0;
+              const hLeads=hN>aN; const aLeads=aN>hN;
+              return (
+                <div key={label} style={{ padding:"8px 6px", borderRadius:7,
+                  background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.05)", textAlign:"center" }}>
+                  <div style={{ fontSize:7, fontWeight:700, color:"rgba(255,255,255,.25)",
+                    textTransform:"uppercase", letterSpacing:".04em", marginBottom:5 }}>{label}</div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:4 }}>
+                    <span style={{ fontSize:13,fontWeight:900,fontFamily:"monospace",
+                      color:hLeads?"#fff":hN===aN?"rgba(255,255,255,.55)":"rgba(255,255,255,.38)" }}>{h??"–"}</span>
+                    <span style={{ fontSize:8,color:"rgba(255,255,255,.18)" }}>–</span>
+                    <span style={{ fontSize:13,fontWeight:900,fontFamily:"monospace",
+                      color:aLeads?"#fff":hN===aN?"rgba(255,255,255,.55)":"rgba(255,255,255,.38)" }}>{a??"–"}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── C: Mirror scanner ─────────────────────────────────────────────────────
+  return (
+    <div style={{ padding:"16px 16px 14px", borderTop:"1px solid rgba(255,255,255,.04)" }}>
+      <Header/>
+      <div>
+        {ALL.map(r=>{
+          const hN=parseFloat(String(r.home??"0").replace("%",""))||0;
+          const aN=parseFloat(String(r.away??"0").replace("%",""))||0;
+          const total=hN+aN||1;
+          const hPct=(hN/total)*100;
+          const hLeads=hN>aN; const aLeads=aN>hN;
+          return (
+            <div key={r.key} style={{ display:"flex", alignItems:"center", gap:8,
+              padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,.03)" }}>
+              <span style={{ fontSize:13, fontWeight:900, fontFamily:"monospace", width:44,
+                textAlign:"right", flexShrink:0, color:hLeads?"#fff":"rgba(255,255,255,.35)" }}>{r.home??"–"}</span>
+              <div style={{ flex:1, height:4, borderRadius:2, overflow:"hidden",
+                background:"rgba(255,255,255,.05)", transform:"scaleX(-1)" }}>
+                <div style={{ width:`${hPct}%`, height:"100%", background:hc, borderRadius:2 }}/>
+              </div>
+              <span style={{ fontSize:7.5, fontWeight:700, color:"rgba(255,255,255,.24)",
+                textTransform:"uppercase", letterSpacing:".05em", width:76,
+                textAlign:"center", flexShrink:0 }}>{r.label}</span>
+              <div style={{ flex:1, height:4, borderRadius:2, overflow:"hidden",
+                background:"rgba(255,255,255,.05)" }}>
+                <div style={{ width:`${100-hPct}%`, height:"100%", background:ac, borderRadius:2 }}/>
+              </div>
+              <span style={{ fontSize:13, fontWeight:900, fontFamily:"monospace", width:44,
+                flexShrink:0, color:aLeads?"#fff":"rgba(255,255,255,.35)" }}>{r.away??"–"}</span>
             </div>
           );
         })}
       </div>
-    );
-  }
-
-  // ── VIEW 3: Compact table ──────────────────────────────────────────
-  return (
-    <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-      <Header/>
-      <div style={{ overflowX:"auto" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ padding:"5px 10px", textAlign:"left", fontSize:10, fontWeight:800,
-                color:hc, fontFamily:"'JetBrains Mono',monospace", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
-                {hName}
-              </th>
-              <th style={{ padding:"5px 10px", textAlign:"center", fontSize:8, fontWeight:700,
-                color:"rgba(255,255,255,.25)", textTransform:"uppercase", letterSpacing:".08em",
-                borderBottom:"1px solid rgba(255,255,255,.06)" }}>
-                Stat
-              </th>
-              <th style={{ padding:"5px 10px", textAlign:"right", fontSize:10, fontWeight:800,
-                color:ac, fontFamily:"'JetBrains Mono',monospace", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
-                {aName}
-              </th>
-              <th style={{ width:80, padding:"5px 8px", borderBottom:"1px solid rgba(255,255,255,.06)" }}/>
-            </tr>
-          </thead>
-          <tbody>
-            {ALL.map((r, i) => {
-              const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
-              const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
-              const hLeads = hN > aN;
-              const aLeads = aN > hN;
-              const hPct = (hN/(hN+aN||1))*100;
-              return (
-                <tr key={r.key} style={{ borderBottom:"1px solid rgba(255,255,255,.03)",
-                  background: i%2===0 ? "rgba(255,255,255,.01)" : "transparent" }}>
-                  <td style={{ padding:"6px 10px", fontSize:12, fontWeight:800,
-                    fontFamily:"'JetBrains Mono',monospace",
-                    color: hLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
-                    {r.home ?? "–"}
-                  </td>
-                  <td style={{ padding:"6px 10px", textAlign:"center", fontSize:9, fontWeight:700,
-                    color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".05em" }}>
-                    {r.label}
-                  </td>
-                  <td style={{ padding:"6px 10px", textAlign:"right", fontSize:12, fontWeight:800,
-                    fontFamily:"'JetBrains Mono',monospace",
-                    color: aLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
-                    {r.away ?? "–"}
-                  </td>
-                  <td style={{ padding:"6px 8px" }}>
-                    <div style={{ display:"flex", height:4, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.05)" }}>
-                      <div style={{ width:`${hPct}%`, background:hc, borderRadius:"2px 0 0 2px" }}/>
-                      <div style={{ flex:1, background:ac, borderRadius:"0 2px 2px 0" }}/>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
+
 
 function LineupsPanel({lineups,homeTeam,awayTeam,venueName}){
   if(!lineups?.length) return null;
@@ -2223,13 +2300,14 @@ export default function LiveMatchPage() {
 
             {/* ═══ LIVE TABS ═══ */}
             {mode === "live" && tab === "Overview" && (
-              <>
-                {stats.length > 0 && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
-                {events.length > 0 && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
-              </>
+              <LiveOverview
+                stats={stats} homeTeam={homeTeam} awayTeam={awayTeam}
+                events={events} momentumData={momentumData} winProb={winProb}
+                score={score} status={status}
+              />
             )}
             {mode === "live" && tab === "Events"   && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "live" && tab === "Stats"    && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
+            {mode === "live" && tab === "Stats"    && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} shotMapData={shotMapData} />}
             {mode === "live" && tab === "Lineups"  && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "live" && tab === "Players"  && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Commentary" && (
@@ -2249,13 +2327,16 @@ export default function LiveMatchPage() {
             {/* ═══ FULLTIME TABS ═══ */}
             {mode === "fulltime" && tab === "Overview" && (
               <>
-                {stats.length > 0 && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
+                <LiveOverview
+                  stats={stats} homeTeam={homeTeam} awayTeam={awayTeam}
+                  events={events} momentumData={momentumData} winProb={winProb}
+                  score={score} status={status}
+                />
                 <ShotMapPanel shotMapData={shotMapData} events={events} homeTeam={homeTeam} awayTeam={awayTeam} />
-                {events.length > 0 && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
               </>
             )}
             {mode === "fulltime" && tab === "Events"  && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
+            {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} shotMapData={shotMapData} />}
             {mode === "fulltime" && tab === "Lineups" && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "fulltime" && tab === "Commentary" && (
               <CommentaryPanel

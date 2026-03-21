@@ -436,7 +436,7 @@ function getHSlots(formation,side){
 }
 
 // ─── UNIFIED PITCH LINEUP (Horizontal) ───────────────────────────────────────
-function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
+function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
   if(!homeLineup&&!awayLineup) return null;
   const hc=tColour(homeTeam?.id,"#38bdf8");
   const ac=tColour(awayTeam?.id,"#f97316");
@@ -590,8 +590,11 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   }
 
   return(
-    <div style={{background:"#000",borderRadius:10,border:"1px solid rgba(255,255,255,.09)",
-      overflow:"hidden",margin:"0",fontFamily:"'Inter','Sora',sans-serif"}}>
+    <div style={{
+      background:"#000",borderRadius:10,border:"1px solid rgba(255,255,255,.09)",
+      overflow:"hidden",margin:"0 auto",maxWidth:820,
+      fontFamily:"'Inter','Sora',sans-serif",
+    }}>
 
       {/* ── Header ── */}
       <div style={{display:"flex",alignItems:"center",padding:"10px 16px 8px",
@@ -654,48 +657,45 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       </div>
 
-      {/* ── Horizontal pitch — pitch black, crisp white markings ── */}
+      {/* ── Horizontal pitch — black, radical half-colours, stadium name ── */}
       <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden",background:"#000"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
           viewBox="0 0 200 104" xmlns="http://www.w3.org/2000/svg">
-          {/* Pitch black fill */}
           <rect width="200" height="104" fill="#000"/>
-          {/* Subtle half tints */}
-          <rect x="4" y="4" width="96" height="96" fill={`${hc}07`}/>
-          <rect x="100" y="4" width="96" height="96" fill={`${ac}07`}/>
+          {/* Radical half tints — team colours at higher opacity */}
+          <rect x="4" y="4" width="96" height="96" fill={`${hc}`} opacity="0.13"/>
+          <rect x="100" y="4" width="96" height="96" fill={`${ac}`} opacity="0.13"/>
           {/* Pitch outline */}
-          <rect x="4" y="4" width="192" height="96" rx="1" fill="none" stroke="rgba(255,255,255,.75)" strokeWidth=".6"/>
+          <rect x="4" y="4" width="192" height="96" rx="1" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth=".65"/>
           {/* Halfway line */}
-          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.75)" strokeWidth=".6"/>
+          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.8)" strokeWidth=".65"/>
           {/* Centre circle */}
-          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".6"/>
-          <circle cx="100" cy="52" r="1.1" fill="rgba(255,255,255,.95)"/>
+          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".6"/>
+          <circle cx="100" cy="52" r="1.2" fill="rgba(255,255,255,.95)"/>
           {/* Left penalty box */}
-          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".55"/>
-          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
+          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".55"/>
+          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".45"/>
           <circle cx="20" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
-          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".4"/>
-          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
+          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
+          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.75)" strokeWidth=".5"/>
           {/* Right penalty box */}
-          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".55"/>
-          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
+          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".55"/>
+          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".45"/>
           <circle cx="180" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
-          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".4"/>
-          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
+          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
+          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.75)" strokeWidth=".5"/>
           {/* Corners */}
-          <path d="M4,4 Q6,4 6,6"           fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          <path d="M196,4 Q194,4 194,6"     fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          <path d="M4,100 Q6,100 6,98"       fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          {/* Team name labels */}
-          <text x="26" y="9" textAnchor="middle" fontSize="3.5" fontFamily="Inter,sans-serif"
-            fontWeight="800" fill={`${hc}90`} letterSpacing=".4">
-            {(homeTeam?.name||"").split(" ").pop().slice(0,7)} →
-          </text>
-          <text x="174" y="9" textAnchor="middle" fontSize="3.5" fontFamily="Inter,sans-serif"
-            fontWeight="800" fill={`${ac}90`} letterSpacing=".4">
-            ← {(awayTeam?.name||"").split(" ").pop().slice(0,7)}
-          </text>
+          <path d="M4,4 Q6,4 6,6"           fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          <path d="M196,4 Q194,4 194,6"     fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          <path d="M4,100 Q6,100 6,98"       fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          {/* Stadium name — top centre */}
+          {venueName&&(
+            <text x="100" y="9.5" textAnchor="middle" fontSize="3.8" fontFamily="Inter,sans-serif"
+              fontWeight="700" fill="rgba(255,255,255,.45)" letterSpacing=".3">
+              {String(venueName).slice(0,28)}
+            </text>
+          )}
         </svg>
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
           <Tokens lineup={home} side="left"  colour={hc}/>
@@ -1313,13 +1313,13 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
   );
 }
 
-function LineupsPanel({lineups,homeTeam,awayTeam}){
+function LineupsPanel({lineups,homeTeam,awayTeam,venueName}){
   if(!lineups?.length) return null;
   const tid = l => l.team?.id ?? l.team_id;
   const home=lineups.find(l=>tid(l)===homeTeam?.id)||lineups[0];
   const away=lineups.find(l=>tid(l)===awayTeam?.id)||lineups[1];
   if(!home&&!away) return null;
-  return <PitchLineup homeLineup={home} awayLineup={away} homeTeam={homeTeam} awayTeam={awayTeam}/>;
+  return <PitchLineup homeLineup={home} awayLineup={away} homeTeam={homeTeam} awayTeam={awayTeam} venueName={venueName}/>;
 }
 
 
@@ -2092,8 +2092,8 @@ export default function LiveMatchPage() {
             {mode === "prematch" && tab === "Lineups" && (
               <>
                 {lineups.length > 0
-                  ? <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} />
-                  : <PitchLineup homeLineup={predictedHome} awayLineup={predictedAway} homeTeam={homeTeam} awayTeam={awayTeam} />
+                  ? <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />
+                  : <PitchLineup homeLineup={predictedHome} awayLineup={predictedAway} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />
                 }
                 <InjuryPanel injuries={injuries} homeTeam={homeTeam} awayTeam={awayTeam} />
               </>
@@ -2124,7 +2124,7 @@ export default function LiveMatchPage() {
             )}
             {mode === "live" && tab === "Events"   && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Stats"    && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "live" && tab === "Lineups"  && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} />}
+            {mode === "live" && tab === "Lineups"  && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "live" && tab === "Players"  && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Commentary" && (
               <CommentaryPanel
@@ -2150,7 +2150,7 @@ export default function LiveMatchPage() {
             )}
             {mode === "fulltime" && tab === "Events"  && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "fulltime" && tab === "Lineups" && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} />}
+            {mode === "fulltime" && tab === "Lineups" && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "fulltime" && tab === "Commentary" && (
               <CommentaryPanel
                 fixtureId={fixtureId} mode={mode} fixture={fixture}

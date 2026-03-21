@@ -385,36 +385,43 @@ const TEAM_COLOURS_MAP = {
 };
 function tColour(id,fb="#38bdf8"){return TEAM_COLOURS_MAP[id]||fb;}
 
-// ─── FORMATION DATA ───────────────────────────────────────────────────────────
-// Vertical pitch (0,0)=top-left, (100,100)=bottom-right in SVG space.
-// Logical coords: x=0..100 (left→right pitch width), y=0..100 (GK at y=8, fwd at y=78).
-// HOME attacks upward → svgY = 100 - y  (GK at svgY=92, attack at svgY=22)
-// AWAY attacks downward → svgY = y       (GK at svgY=8, attack at svgY=78+)
-// Slot order matches API player order: [GK, DEF(L→R), MID(L→R), FWD(L→R)]
-const FDATA = {
-  "4-3-3":   [[50,8],[14,24],[38,24],[62,24],[86,24],[32,50],[50,38],[68,50],[14,78],[50,78],[86,78]],
-  "4-2-3-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[40,40],[60,40],[22,62],[50,58],[78,62],[50,78]],
-  "4-4-2":   [[50,8],[14,24],[38,24],[62,24],[86,24],[14,50],[38,50],[62,50],[86,50],[42,78],[58,78]],
-  "4-5-1":   [[50,8],[14,24],[38,24],[62,24],[86,24],[14,50],[34,50],[50,46],[66,50],[86,50],[50,78]],
-  "4-1-4-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[50,38],[14,52],[38,52],[62,52],[86,52],[50,78]],
-  "3-5-2":   [[50,8],[34,24],[50,22],[66,24],[12,52],[36,50],[50,42],[64,50],[88,52],[42,78],[58,78]],
-  "3-4-3":   [[50,8],[34,24],[50,22],[66,24],[12,50],[40,48],[60,48],[88,50],[16,78],[50,78],[84,78]],
-  "5-3-2":   [[50,8],[10,28],[30,24],[50,22],[70,24],[90,28],[36,50],[50,42],[64,50],[42,78],[58,78]],
-  "5-4-1":   [[50,8],[10,28],[30,24],[50,22],[70,24],[90,28],[14,50],[38,50],[62,50],[86,50],[50,78]],
-  "3-4-2-1": [[50,8],[34,24],[50,22],[66,24],[12,50],[40,46],[60,46],[88,50],[36,66],[64,66],[50,80]],
-  "4-3-2-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[32,42],[50,38],[68,42],[38,62],[62,62],[50,78]],
-  "4-2-2-2": [[50,8],[14,24],[38,24],[62,24],[86,24],[40,40],[60,40],[34,60],[66,60],[42,78],[58,78]],
+// ─── HORIZONTAL FORMATION SLOTS ──────────────────────────────────────────────
+// x = pitch length (0=left goal line, 100=right goal line)
+// y = pitch width  (0=top touchline, 100=bottom touchline)
+// LEFT TEAM  — GK near x≈10, attack near x≈45
+// RIGHT TEAM — GK near x≈90, attack near x≈55
+// Slot order: [GK, DEF L→R, MID L→R, FWD L→R]
+const HF = {
+  "4-3-3_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,66],[32,50],[34,34],[43,82],[45,50],[43,18]],
+  "4-3-3_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,34],[68,50],[66,66],[57,18],[55,50],[57,82]],
+  "4-2-3-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[31,61],[31,39],[39,82],[39,50],[39,18],[46,50]],
+  "4-2-3-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[69,39],[69,61],[61,18],[61,50],[61,82],[54,50]],
+  "4-4-2_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,61],[34,39],[34,18],[43,61],[43,39]],
+  "4-4-2_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,39],[66,61],[66,82],[57,39],[57,61]],
+  "4-5-1_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,65],[33,50],[34,35],[34,18],[45,50]],
+  "4-5-1_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,35],[67,50],[66,65],[66,82],[55,50]],
+  "4-1-4-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[30,50],[38,82],[38,61],[38,39],[38,18],[46,50]],
+  "4-1-4-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[70,50],[62,18],[62,39],[62,61],[62,82],[54,50]],
+  "3-5-2_left":    [[10,50],[22,68],[21,50],[22,32],[31,82],[33,65],[32,50],[33,35],[31,18],[44,62],[44,38]],
+  "3-5-2_right":   [[90,50],[78,32],[79,50],[78,68],[69,18],[67,35],[68,50],[67,65],[69,82],[56,38],[56,62]],
+  "3-4-3_left":    [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[43,82],[45,50],[43,18]],
+  "3-4-3_right":   [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[57,18],[55,50],[57,82]],
+  "5-3-2_left":    [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,66],[32,50],[33,34],[44,62],[44,38]],
+  "5-3-2_right":   [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,34],[68,50],[67,66],[56,38],[56,62]],
+  "5-4-1_left":    [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,82],[33,61],[33,39],[33,18],[45,50]],
+  "5-4-1_right":   [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,18],[67,39],[67,61],[67,82],[55,50]],
+  "4-3-2-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[31,66],[31,50],[31,34],[39,62],[39,38],[46,50]],
+  "4-3-2-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[69,34],[69,50],[69,66],[61,38],[61,62],[54,50]],
+  "4-2-2-2_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[30,62],[30,38],[38,62],[38,38],[45,62],[45,38]],
+  "4-2-2-2_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[70,38],[70,62],[62,38],[62,62],[55,38],[55,62]],
+  "3-4-2-1_left":  [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[39,62],[39,38],[46,50]],
+  "3-4-2-1_right": [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[61,38],[61,62],[54,50]],
 };
-function getSlots(formation,side){
-  const slots=FDATA[formation]||FDATA["4-3-3"];
-  return slots.map(([x,y])=>({
-    x,
-    // svgY: home attacks up (svgY=100-y), away attacks down (svgY=y)
-    svgY: side==="home" ? 100-y : y,
-  }));
+function getHSlots(formation,side){
+  return HF[`${formation}_${side}`]||HF[`4-3-3_${side}`];
 }
 
-// ─── UNIFIED PITCH LINEUP ────────────────────────────────────────────────────
+// ─── HORIZONTAL PITCH LINEUP ─────────────────────────────────────────────────
 function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   if(!homeLineup&&!awayLineup) return null;
   const hc=tColour(homeTeam?.id,"#38bdf8");
@@ -437,9 +444,9 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
           photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null),
           confidence:p?.confidence??pl.confidence};
       }),
-      bench:bench.map(p=>{
+      bench:bench.slice(0,9).map(p=>{
         const pl=p?.player||p||{};
-        return{id:pl.id,name:pl.name||"",
+        return{id:pl.id,name:pl.name||"",pos:pl.pos||pl.position||"",
           photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null)};
       }),
     };
@@ -449,28 +456,30 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   const away=norm(awayLineup);
   const isPredicted=home?.predicted||away?.predicted;
 
+  // ── Player tokens — larger circles, horizontal pitch coords ──────────
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
-    const slots=getSlots(lineup.formation,side);
+    const slots=getHSlots(lineup.formation,side);
     return lineup.xi.slice(0,11).map((p,i)=>{
-      const s=slots[i]||{x:50,svgY:50};
+      const [x,y]=slots[i]||[50,50];
       const isGK=i===0;
-      const sz=isGK?38:32;
       const short=(p.name||"").split(" ").pop().slice(0,11);
+      // GK: 38px  •  outfield: 34px  — up from 32/22
+      const sz=isGK?38:34;
       return(
         <div key={i} style={{
-          position:"absolute",left:`${s.x}%`,top:`${s.svgY}%`,
+          position:"absolute",left:`${x}%`,top:`${y}%`,
           transform:"translate(-50%,-50%)",
           display:"flex",flexDirection:"column",alignItems:"center",gap:2,
-          zIndex:2,pointerEvents:"none",
+          zIndex:3,pointerEvents:"none",
         }}>
           <div style={{
             width:sz,height:sz,borderRadius:"50%",
             border:`${isGK?3:2.5}px solid ${colour}`,
             boxShadow:isGK
-              ?`0 0 0 2px #0f2a10,0 0 0 5px ${colour},0 2px 10px rgba(0,0,0,.8)`
-              :`0 2px 8px rgba(0,0,0,.65)`,
-            background:"#0a1a0a",overflow:"hidden",flexShrink:0,
+              ?`0 0 0 2px #0c2410,0 0 0 5px ${colour}55,0 3px 10px rgba(0,0,0,.8)`
+              :`0 2px 8px rgba(0,0,0,.7)`,
+            background:"#0a1c0b",overflow:"hidden",flexShrink:0,
           }}>
             {p.photo&&<img src={p.photo} alt="" width={sz} height={sz}
               style={{objectFit:"cover",objectPosition:"top center",display:"block"}}
@@ -478,14 +487,15 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
           </div>
           <div style={{
             fontSize:"7.5px",fontWeight:700,color:"rgba(255,255,255,.95)",
-            textShadow:"0 1px 6px #000,0 0 8px rgba(0,0,0,.9)",
-            background:"rgba(0,0,0,.72)",
-            padding:"1px 4px",borderRadius:3,whiteSpace:"nowrap",
-            maxWidth:64,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.35,
+            textShadow:"0 1px 6px #000,0 0 12px rgba(0,0,0,.9)",
+            background:"rgba(0,0,0,.75)",
+            padding:"1.5px 4px",borderRadius:3,whiteSpace:"nowrap",
+            maxWidth:62,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.3,
+            letterSpacing:"0.01em",fontFamily:"'Inter','Sora',sans-serif",
           }}>{short}</div>
           {p.confidence!==undefined&&(
-            <div style={{width:28,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
-              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.6}}/>
+            <div style={{width:28,height:2,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.65}}/>
             </div>
           )}
         </div>
@@ -493,144 +503,265 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
     });
   }
 
-  // ── Option A: card-grid bench (4-per-row, team-coloured tiles) ──────────────
-  function BenchGrid({lineup,colour,align}){
+  // ── Bench strip — card style with position badge ─────────────────────
+  function BenchStrip({lineup,colour,align}){
     if(!lineup?.bench?.length) return null;
     const isRight=align==="right";
     return(
-      <div style={{flex:1}}>
-        <div style={{fontSize:"7px",fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",
-          color:`${colour}99`,marginBottom:7,display:"flex",alignItems:"center",
-          justifyContent:isRight?"flex-end":"flex-start",gap:4}}>
-          {!isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>}
-          Bench
-          {isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>}
+      <div style={{flex:1,overflow:"hidden",minWidth:0}}>
+        <div style={{
+          fontSize:"7px",fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",
+          color:`${colour}`,opacity:.7,
+          marginBottom:6,display:"flex",alignItems:"center",
+          justifyContent:isRight?"flex-end":"flex-start",gap:5,
+        }}>
+          <span style={{width:6,height:6,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>
+          BENCH
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}}>
-          {lineup.bench.slice(0,8).map((p,i)=>(
-            <div key={i} style={{
-              background:`${colour}09`,
-              border:`1px solid ${colour}22`,
-              borderRadius:7,padding:"5px 4px",
-              display:"flex",flexDirection:"column",alignItems:"center",gap:3,
-            }}>
-              <div style={{width:28,height:28,borderRadius:"50%",background:"#0d1f0e",
-                border:`1.5px solid ${colour}44`,overflow:"hidden",flexShrink:0}}>
-                {p.photo&&<img src={p.photo} alt="" width="28" height="28"
-                  style={{objectFit:"cover",objectPosition:"top"}}
-                  onError={e=>e.currentTarget.style.display="none"}/>}
+        <div style={{
+          display:"flex",gap:4,flexWrap:"nowrap",overflow:"hidden",
+          justifyContent:isRight?"flex-end":"flex-start",
+        }}>
+          {lineup.bench.slice(0,7).map((p,i)=>{
+            const pos=(p.pos||"").slice(0,1).toUpperCase();
+            const posColor=pos==="G"?"#f59e0b":pos==="D"?"#60a5fa":pos==="M"?"#34d399":"#f87171";
+            return(
+              <div key={i} style={{
+                flexShrink:0,
+                display:"flex",flexDirection:"column",alignItems:"center",gap:3,
+                padding:"6px 5px 5px",
+                borderRadius:8,
+                background:`${colour}0a`,
+                border:`1px solid ${colour}22`,
+                minWidth:44,
+              }}>
+                {/* avatar */}
+                <div style={{position:"relative"}}>
+                  <div style={{
+                    width:28,height:28,borderRadius:"50%",overflow:"hidden",
+                    background:"#111",border:`1.5px solid ${colour}44`,flexShrink:0,
+                  }}>
+                    {p.photo&&<img src={p.photo} alt="" width="28" height="28"
+                      style={{objectFit:"cover",objectPosition:"top"}}
+                      onError={e=>e.currentTarget.style.display="none"}/>}
+                  </div>
+                  {/* pos badge bottom-right of avatar */}
+                  {pos&&<span style={{
+                    position:"absolute",bottom:-2,right:-3,
+                    fontSize:"6px",fontWeight:900,
+                    background:posColor,color:"#000",
+                    borderRadius:3,padding:"0px 2.5px",lineHeight:"10px",
+                    boxShadow:"0 1px 4px rgba(0,0,0,.7)",
+                  }}>{pos}</span>}
+                </div>
+                {/* name */}
+                <span style={{
+                  fontSize:"7px",fontWeight:700,
+                  color:"rgba(255,255,255,.55)",
+                  whiteSpace:"nowrap",maxWidth:42,
+                  overflow:"hidden",textOverflow:"ellipsis",
+                  fontFamily:"'Inter',sans-serif",
+                  textAlign:"center",
+                }}>
+                  {(p.name||"").split(" ").pop().slice(0,9)}
+                </span>
               </div>
-              <span style={{fontSize:"6.5px",fontWeight:700,color:"rgba(255,255,255,.5)",
-                textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
-                width:"100%",display:"block",fontFamily:"'Inter',sans-serif"}}>
-                {(p.name||"").split(" ").pop().slice(0,9)}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
   }
 
-  const allUnavail=[
-    ...(home?.injuries||[]).map(p=>({...p,tm:"home"})),
-    ...(home?.doubts||[]).map(p=>({...p,tm:"home",doubt:true})),
-    ...(away?.injuries||[]).map(p=>({...p,tm:"away"})),
-    ...(away?.doubts||[]).map(p=>({...p,tm:"away",doubt:true})),
+  // ── Unavailable — split by team, colour-coded ────────────────────────
+  const homeUnavail=[
+    ...(home?.injuries||[]).map(p=>({...p,doubt:false})),
+    ...(home?.doubts||[]).map(p=>({...p,doubt:true})),
+  ];
+  const awayUnavail=[
+    ...(away?.injuries||[]).map(p=>({...p,doubt:false})),
+    ...(away?.doubts||[]).map(p=>({...p,doubt:true})),
   ];
 
-  return(
-    <div style={{padding:"14px 18px",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
-
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <div style={{display:"flex",alignItems:"center",gap:7}}>
-          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${hc}`,
-            overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="16" height="16"
-              style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-          </div>
-          <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{homeTeam?.name}</span>
-          {home?.formation&&<span style={{fontSize:9,fontWeight:800,color:hc,
-            background:`${hc}12`,border:`1px solid ${hc}30`,borderRadius:4,padding:"1px 6px"}}>
-            {home.formation}</span>}
-          {home?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
-            color:"rgba(52,211,153,.75)",fontFamily:"'JetBrains Mono',monospace"}}>
-            {home.confidence}%</span>}
+  function UnavailBlock({players,colour,label}){
+    if(!players.length) return null;
+    return(
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{
+          fontSize:"7px",fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",
+          color:`${colour}`,opacity:.65,marginBottom:5,
+          display:"flex",alignItems:"center",gap:5,
+        }}>
+          <span style={{width:6,height:6,borderRadius:"50%",background:colour,display:"inline-block"}}/>
+          {label} — OUT
         </div>
-        {isPredicted&&<span style={{fontSize:8,fontWeight:900,color:"#f59e0b",
-          background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.2)",
-          borderRadius:4,padding:"2px 8px",letterSpacing:".06em"}}>PREDICTED</span>}
-        <div style={{display:"flex",alignItems:"center",gap:7,flexDirection:"row-reverse"}}>
-          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${ac}`,
-            overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="16" height="16"
+        <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+          {players.slice(0,10).map((p,i)=>{
+            const reason=p.doubt?"Doubt":(p.type||p.reason||"Inj");
+            const isDanger=!p.doubt;
+            return(
+              <span key={i} style={{
+                display:"inline-flex",alignItems:"center",gap:3,
+                padding:"2px 7px 2px 4px",borderRadius:5,
+                background:isDanger?`${colour}0d`:`rgba(245,158,11,.06)`,
+                border:`1px solid ${isDanger?colour+"28":"rgba(245,158,11,.2)"}`,
+              }}>
+                <span style={{
+                  width:4,height:4,borderRadius:"50%",flexShrink:0,
+                  background:isDanger?colour:"#f59e0b",
+                }}/>
+                <span style={{fontSize:8.5,fontWeight:700,color:"rgba(255,255,255,.7)"}}>
+                  {(p.name||"").split(" ").slice(-1)[0]}
+                </span>
+                <span style={{
+                  fontSize:7,fontWeight:700,
+                  color:isDanger?`${colour}99`:"rgba(245,158,11,.6)",
+                  fontFamily:"'JetBrains Mono',monospace",
+                }}>{reason}</span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{
+      background:"#060f07",borderRadius:14,
+      border:"1px solid rgba(255,255,255,.07)",
+      overflow:"hidden",margin:"14px 18px",
+      fontFamily:"'Inter','Sora',sans-serif",
+    }}>
+
+      {/* ── Top header bar ── */}
+      <div style={{display:"flex",alignItems:"center",padding:"10px 16px 8px",
+        borderBottom:"1px solid rgba(255,255,255,.05)",gap:12}}>
+
+        {/* Home */}
+        <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${hc}`,
+            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
+            justifyContent:"center",flexShrink:0}}>
+            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="22" height="22"
               style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
           </div>
-          <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{awayTeam?.name}</span>
-          {away?.formation&&<span style={{fontSize:9,fontWeight:800,color:ac,
-            background:`${ac}12`,border:`1px solid ${ac}30`,borderRadius:4,padding:"1px 6px"}}>
-            {away.formation}</span>}
-          {away?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
-            color:"rgba(52,211,153,.75)",fontFamily:"'JetBrains Mono',monospace"}}>
-            {away.confidence}%</span>}
+          <div>
+            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
+              {homeTeam?.name}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
+              {home?.formation&&<span style={{fontSize:8,fontWeight:800,color:hc,
+                background:`${hc}14`,border:`1px solid ${hc}30`,borderRadius:4,
+                padding:"1px 5px",letterSpacing:".04em"}}>{home.formation}</span>}
+              {home?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
+                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
+                {home.confidence}% conf</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Centre */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,flexShrink:0}}>
+          {isPredicted&&<span style={{fontSize:7,fontWeight:900,color:"#f59e0b",
+            background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.22)",
+            borderRadius:4,padding:"2px 7px",letterSpacing:".08em"}}>PREDICTED</span>}
+          <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.2)",letterSpacing:".06em"}}>
+            LINEUP
+          </span>
+        </div>
+
+        {/* Away */}
+        <div style={{flex:1,display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
+              {awayTeam?.name}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2,justifyContent:"flex-end"}}>
+              {away?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
+                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
+                {away.confidence}% conf</span>}
+              {away?.formation&&<span style={{fontSize:8,fontWeight:800,color:ac,
+                background:`${ac}14`,border:`1px solid ${ac}30`,borderRadius:4,
+                padding:"1px 5px",letterSpacing:".04em"}}>{away.formation}</span>}
+            </div>
+          </div>
+          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${ac}`,
+            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
+            justifyContent:"center",flexShrink:0}}>
+            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="22" height="22"
+              style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+          </div>
         </div>
       </div>
 
-      {/* Vertical pitch — viewBox 0 0 100 100 */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"145%",
-        borderRadius:10,overflow:"hidden",border:"1px solid rgba(255,255,255,.05)"}}>
+      {/* ── Horizontal pitch — 2:1 landscape ── */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"52%",overflow:"hidden"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
-          viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-          <rect width="100" height="100" fill="#0f2a10"/>
-          {[0,10,20,30,40,50,60,70,80,90].map((y,i)=>(
-            <rect key={i} x="0" y={y} width="100" height="10"
-              fill={i%2===0?"rgba(255,255,255,.025)":"rgba(0,0,0,0)"}/>
-          ))}
-          <rect x="2" y="2" width="96" height="96" rx=".5" fill="none"
-            stroke="rgba(255,255,255,.7)" strokeWidth=".6"/>
-          <line x1="2" y1="50" x2="98" y2="50" stroke="rgba(255,255,255,.65)" strokeWidth=".5"/>
-          <circle cx="50" cy="50" r="10" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          <circle cx="50" cy="50" r=".8" fill="rgba(255,255,255,.95)"/>
-          {/* Home penalty box — bottom */}
-          <rect x="21" y="78" width="58" height="20" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          <rect x="33" y="88" width="34" height="10" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".35"/>
-          <circle cx="50" cy="90" r=".7" fill="rgba(255,255,255,.85)"/>
-          <path d="M28,78 A14,14 0 0,0 72,78" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".35"/>
-          {/* Away penalty box — top */}
-          <rect x="21" y="2" width="58" height="20" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
-          <rect x="33" y="2" width="34" height="10" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".35"/>
-          <circle cx="50" cy="10" r=".7" fill="rgba(255,255,255,.85)"/>
-          <path d="M28,22 A14,14 0 0,1 72,22" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".35"/>
-          {/* Goals */}
-          <rect x="39" y="98" width="22" height="3" fill="rgba(255,255,255,.06)"
-            stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
-          <rect x="39" y="-1" width="22" height="3" fill="rgba(255,255,255,.06)"
-            stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          viewBox="0 0 200 104" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hplTurf" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#0c2410"/>
+              <stop offset="50%" stopColor="#0f2d14"/>
+              <stop offset="100%" stopColor="#0c2410"/>
+            </linearGradient>
+            <pattern id="hplStripes" x="0" y="0" width="20" height="104" patternUnits="userSpaceOnUse">
+              <rect x="0" y="0" width="10" height="104" fill="rgba(255,255,255,.02)"/>
+            </pattern>
+          </defs>
+          <rect width="200" height="104" fill="url(#hplTurf)"/>
+          <rect width="200" height="104" fill="url(#hplStripes)"/>
+          {/* Pitch outline */}
+          <rect x="4" y="4" width="192" height="96" rx="1" fill="none"
+            stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
+          {/* Halfway */}
+          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
+          {/* Centre circle */}
+          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".45"/>
+          <circle cx="100" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
+          {/* Left penalty box */}
+          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
+          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
+          <circle cx="20" cy="52" r=".75" fill="rgba(255,255,255,.8)"/>
+          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
+          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.05)"
+            stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          {/* Right penalty box */}
+          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
+          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
+          <circle cx="180" cy="52" r=".75" fill="rgba(255,255,255,.8)"/>
+          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
+          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.05)"
+            stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
           {/* Corners */}
-          <path d="M2,2 Q4,2 4,4"      fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          <path d="M98,2 Q96,2 96,4"   fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          <path d="M2,98 Q4,98 4,96"   fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          <path d="M98,98 Q96,98 96,96" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          {/* Formation watermarks */}
-          <text x="50" y="44" textAnchor="middle" fontSize="2.5" fill="rgba(255,255,255,.1)"
-            fontFamily="'JetBrains Mono',sans-serif" fontWeight="800" letterSpacing=".5">{away?.formation||""}</text>
-          <text x="50" y="58" textAnchor="middle" fontSize="2.5" fill="rgba(255,255,255,.1)"
-            fontFamily="'JetBrains Mono',sans-serif" fontWeight="800" letterSpacing=".5">{home?.formation||""}</text>
-          {/* Team colour direction strips */}
-          <rect x="2" y="2"  width="96" height="3" fill={`${ac}18`} rx=".5"/>
-          <rect x="2" y="95" width="96" height="3" fill={`${hc}18`} rx=".5"/>
+          <path d="M4,4 Q6,4 6,6"         fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
+          <path d="M196,4 Q194,4 194,6"   fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
+          <path d="M4,100 Q6,100 6,98"    fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
+          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
+          {/* Attack direction labels */}
+          <text x="26" y="9" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
+            fontWeight="700" fill={`${hc}60`} letterSpacing=".4">
+            {(homeTeam?.name||"").split(" ").pop().slice(0,7)} →
+          </text>
+          <text x="174" y="9" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
+            fontWeight="700" fill={`${ac}60`} letterSpacing=".4">
+            ← {(awayTeam?.name||"").split(" ").pop().slice(0,7)}
+          </text>
+          {/* Subtle half-tint for each team's half */}
+          <rect x="4" y="4" width="96" height="96" fill={`${hc}05`}/>
+          <rect x="100" y="4" width="96" height="96" fill={`${ac}05`}/>
         </svg>
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          <Tokens lineup={home} side="home" colour={hc}/>
-          <Tokens lineup={away} side="away" colour={ac}/>
+          <Tokens lineup={home} side="left"  colour={hc}/>
+          <Tokens lineup={away} side="right" colour={ac}/>
         </div>
       </div>
 
-      {/* Coach */}
+      {/* ── Coach row ── */}
       {(home?.coach||away?.coach)&&(
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:9,
-          padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",
+          padding:"6px 16px",borderTop:"1px solid rgba(255,255,255,.04)",
+          background:"rgba(0,0,0,.15)"}}>
           {home?.coach&&(
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               {home.coach.photo&&<img src={home.coach.photo} alt="" width="20" height="20"
@@ -656,91 +787,29 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       )}
 
-      {/* ── Bench (card grid) ── */}
+      {/* ── Bench — side-by-side card grid ── */}
       {(home?.bench?.length>0||away?.bench?.length>0)&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1px 1fr",gap:0,marginTop:12,
-          padding:"10px 14px 12px",borderTop:"1px solid rgba(255,255,255,.04)",
-          background:"rgba(0,0,0,.14)"}}>
-          <BenchGrid lineup={home} colour={hc} align="left"/>
-          <div style={{background:"rgba(255,255,255,.06)"}}/>
-          <BenchGrid lineup={away} colour={ac} align="right"/>
+        <div style={{
+          display:"flex",gap:10,padding:"10px 14px 10px",
+          borderTop:"1px solid rgba(255,255,255,.04)",
+          background:"rgba(0,0,0,.2)",alignItems:"flex-start",
+        }}>
+          <BenchStrip lineup={home} colour={hc} align="left"/>
+          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.05)",flexShrink:0}}/>
+          <BenchStrip lineup={away} colour={ac} align="right"/>
         </div>
       )}
 
-      {/* ── Unavailable — split by team ── */}
-      {allUnavail.length>0&&(
-        <div style={{margin:"0 0",padding:"10px 14px 12px",
-          borderTop:"1px solid rgba(255,255,255,.04)"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1px 1fr",gap:0}}>
-
-            {/* Home unavailable */}
-            <div style={{paddingRight:12}}>
-              <div style={{fontSize:"7px",fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
-                color:`${hc}70`,marginBottom:7,display:"flex",alignItems:"center",gap:4}}>
-                <span style={{width:6,height:6,borderRadius:"50%",background:hc,display:"inline-block"}}/>
-                {homeTeam?.name||"Home"} — out
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                {allUnavail.filter(p=>p.tm==="home").slice(0,8).map((p,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                    padding:"3px 8px",
-                    background:`${hc}07`,
-                    border:`1px solid ${hc}1a`,
-                    borderLeft:`2px solid ${hc}55`,
-                    borderRadius:"0 5px 5px 0"}}>
-                    <span style={{fontSize:"8px",fontWeight:700,color:"rgba(255,255,255,.62)",
-                      fontFamily:"'Inter',sans-serif"}}>
-                      {(p.name||"").split(" ").slice(-1)[0]}
-                    </span>
-                    <span style={{fontSize:"7px",fontWeight:700,
-                      color: p.doubt?"rgba(251,191,36,.75)":"rgba(248,113,113,.65)",
-                      background: p.doubt?"rgba(245,158,11,.08)":"rgba(248,113,113,.08)",
-                      border:`1px solid ${p.doubt?"rgba(245,158,11,.2)":"rgba(248,113,113,.18)"}`,
-                      borderRadius:3,padding:"1px 5px",flexShrink:0,
-                      fontFamily:"'JetBrains Mono',monospace"}}>
-                      {p.doubt?"Doubt":(p.type||p.reason||"Inj")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{background:"rgba(255,255,255,.06)"}}/>
-
-            {/* Away unavailable */}
-            <div style={{paddingLeft:12}}>
-              <div style={{fontSize:"7px",fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
-                color:`${ac}70`,marginBottom:7,display:"flex",alignItems:"center",
-                justifyContent:"flex-end",gap:4}}>
-                {awayTeam?.name||"Away"} — out
-                <span style={{width:6,height:6,borderRadius:"50%",background:ac,display:"inline-block"}}/>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                {allUnavail.filter(p=>p.tm==="away").slice(0,8).map((p,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                    padding:"3px 8px",
-                    background:`${ac}07`,
-                    border:`1px solid ${ac}1a`,
-                    borderRight:`2px solid ${ac}55`,
-                    borderRadius:"5px 0 0 5px"}}>
-                    <span style={{fontSize:"8px",fontWeight:700,color:"rgba(255,255,255,.62)",
-                      fontFamily:"'Inter',sans-serif"}}>
-                      {(p.name||"").split(" ").slice(-1)[0]}
-                    </span>
-                    <span style={{fontSize:"7px",fontWeight:700,
-                      color: p.doubt?"rgba(251,191,36,.75)":"rgba(248,113,113,.65)",
-                      background: p.doubt?"rgba(245,158,11,.08)":"rgba(248,113,113,.08)",
-                      border:`1px solid ${p.doubt?"rgba(245,158,11,.2)":"rgba(248,113,113,.18)"}`,
-                      borderRadius:3,padding:"1px 5px",flexShrink:0,
-                      fontFamily:"'JetBrains Mono',monospace"}}>
-                      {p.doubt?"Doubt":(p.type||p.reason||"Inj")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
+      {/* ── Unavailable — split left/right by team, colour-coded ── */}
+      {(homeUnavail.length>0||awayUnavail.length>0)&&(
+        <div style={{
+          display:"flex",gap:10,padding:"8px 14px 10px",
+          borderTop:"1px solid rgba(255,255,255,.04)",
+          background:"rgba(0,0,0,.25)",alignItems:"flex-start",
+        }}>
+          <UnavailBlock players={homeUnavail} colour={hc} label={homeTeam?.name?.split(" ").pop()||"Home"}/>
+          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.05)",flexShrink:0}}/>
+          <UnavailBlock players={awayUnavail} colour={ac} label={awayTeam?.name?.split(" ").pop()||"Away"}/>
         </div>
       )}
     </div>

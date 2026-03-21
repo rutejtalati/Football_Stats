@@ -54,8 +54,8 @@ function SectionLabel({ children, accent }) {
       marginBottom: 14,
     }}>
       {accent && <span style={{ width:3, height:16, borderRadius:2, background:accent, display:"inline-block", flexShrink:0 }} />}
-      <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.12em",
-        color: "rgba(255,255,255,.38)", textTransform: "uppercase" }}>
+      <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.14em",
+        color: "rgba(255,255,255,.35)", textTransform: "uppercase" }}>
         {children}
       </span>
     </div>
@@ -113,24 +113,17 @@ function StatBar({ label, home, away, homeColor = "#38bdf8", awayColor = "#f9731
   const aNum  = parseFloat(String(away ?? "0").replace("%","")) || 0;
   const total = hNum + aNum || 1;
   const hPct  = (hNum / total) * 100;
-  const leading = hPct > 55 ? "home" : hPct < 45 ? "away" : "even";
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{
-          fontSize:12, fontWeight:900, fontFamily:"'JetBrains Mono',monospace", minWidth:36,
-          color: leading === "home" ? homeColor : "rgba(255,255,255,.75)",
-        }}>{home ?? "–"}</span>
-        <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,.25)", letterSpacing:".07em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
-        <span style={{
-          fontSize:12, fontWeight:900, fontFamily:"'JetBrains Mono',monospace", minWidth:36, textAlign:"right",
-          color: leading === "away" ? awayColor : "rgba(255,255,255,.75)",
-        }}>{away ?? "–"}</span>
+        <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40 }}>{home ?? "–"}</span>
+        <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40, textAlign:"right" }}>{away ?? "–"}</span>
       </div>
       <div style={{ display:"flex", height:3, borderRadius:999, overflow:"hidden", background:"rgba(255,255,255,.05)" }}>
-        <div className="lm-stat-bar" style={{ width:`${hPct}%`, "--w":`${hPct}%`, background:homeColor, borderRadius:"999px 0 0 999px" }} />
-        <div style={{ width:`${100-hPct}%`, background:awayColor, borderRadius:"0 999px 999px 0", transition:"width .6s ease" }} />
+        <div className="lm-stat-bar" style={{ width:`${hPct}%`, "--w":`${hPct}%`, background:homeColor }} />
+        <div style={{ width:`${100-hPct}%`, background:awayColor, transition:"width 0.6s ease" }} />
       </div>
     </div>
   );
@@ -226,38 +219,38 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
   const { p_home_win, p_draw, p_away_win, xg_home, xg_away, top_scorelines } = pre_match;
 
   const Edge = ({ label, value, highlight, accent }) => {
-    const col = accent || (highlight ? "#34d399" : "rgba(255,255,255,.55)");
+    const col = accent || (highlight ? "#34d399" : "rgba(255,255,255,.6)");
     return (
       <div style={{
         display:"flex", flexDirection:"column", alignItems:"center", gap:3,
-        padding:"8px 14px",
-        background:`${col}09`,
-        border:`1px solid ${col}28`,
-        borderRadius:10, flex:1, minWidth:72,
+        padding:"8px 12px",
+        background:`${col}08`,
+        border:`1px solid ${col}25`,
+        borderRadius:9, flex:1, minWidth:68,
         position:"relative", overflow:"hidden",
       }}>
-        <div style={{ position:"absolute", top:0, left:0, right:0, height:1.5, background:`linear-gradient(90deg,transparent,${col}99,transparent)` }} />
-        <span style={{ fontSize:17, fontWeight:900, color:col, fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{value}</span>
-        <span style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,.3)", letterSpacing:".07em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
+        <div style={{ position:"absolute", top:0, left:0, right:0, height:1.5, background:`linear-gradient(90deg,transparent,${col}aa,transparent)` }} />
+        <span style={{ fontSize:16, fontWeight:900, color:col, fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{value}</span>
+        <span style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,.28)", letterSpacing:".06em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
       </div>
     );
   };
 
   return (
-    <div style={{ padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+    <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
       <SectionLabel>Model Prediction</SectionLabel>
 
       {/* Win prob bar */}
       <div style={{ marginBottom:14 }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, fontSize:11, fontWeight:800 }}>
           <span style={{ color:"#38bdf8" }}>{homeTeam?.name?.split(" ").pop()} {p_home_win}%</span>
-          <span style={{ color:"rgba(255,255,255,0.3)" }}>Draw {p_draw}%</span>
+          <span style={{ color:"rgba(255,255,255,0.35)" }}>Draw {p_draw}%</span>
           <span style={{ color:"#f97316" }}>{awayTeam?.name?.split(" ").pop()} {p_away_win}%</span>
         </div>
         <div style={{ display:"flex", height:7, borderRadius:999, overflow:"hidden", gap:1.5 }}>
-          <div style={{ width:`${p_home_win}%`, background:"linear-gradient(90deg,#1d6fa4,#38bdf8)", boxShadow: p_home_win > p_away_win ? "0 0 14px #38bdf866" : "none", borderRadius:"999px 0 0 999px", transition:"width 0.8s ease" }} />
-          <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.14)" }} />
-          <div style={{ width:`${p_away_win}%`, background:"linear-gradient(90deg,#c2400a,#f97316)", boxShadow: p_away_win > p_home_win ? "0 0 14px #f9731666" : "none", borderRadius:"0 999px 999px 0", transition:"width 0.8s ease" }} />
+          <div style={{ width:`${p_home_win}%`, background:"linear-gradient(90deg,#1d6fa4,#38bdf8)", boxShadow: p_home_win > p_away_win ? "0 0 14px #38bdf866" : "none", borderRadius:"999px 0 0 999px", transition:"width .8s ease" }} />
+          <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.18)" }} />
+          <div style={{ width:`${p_away_win}%`, background:"linear-gradient(90deg,#c2400a,#f97316)", boxShadow: p_away_win > p_home_win ? "0 0 14px #f9731666" : "none", borderRadius:"0 999px 999px 0", transition:"width .8s ease" }} />
         </div>
       </div>
 
@@ -266,7 +259,7 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
         {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop()} xG`} value={xg_home} accent="#38bdf8" />}
         {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop()} xG`} value={xg_away} accent="#f97316" />}
         {markets?.over_2_5 != null && <Edge label="O2.5 Goals" value={`${Math.round((markets.over_2_5 > 1 ? markets.over_2_5 : markets.over_2_5 * 100))}%`} highlight accent="#34d399" />}
-        {markets?.btts     != null && <Edge label="BTTS"       value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} accent="#a78bfa" />}
+        {markets?.btts     != null && <Edge label="BTTS"     value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} accent="#a78bfa" />}
       </div>
 
       {/* Top scorelines */}
@@ -279,13 +272,12 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
             {top_scorelines.slice(0,5).map(s => (
               <div key={s.score} style={{
                 padding:"4px 11px", borderRadius:7,
-                background:"rgba(56,189,248,.06)",
-                border:"1px solid rgba(56,189,248,.18)",
+                background:"rgba(56,189,248,.06)", border:"1px solid rgba(56,189,248,.2)",
                 fontSize:11, fontWeight:900, color:"#38bdf8",
                 fontFamily:"'JetBrains Mono',monospace",
                 display:"flex", alignItems:"baseline", gap:5,
               }}>
-                {s.score} <span style={{ color:"rgba(56,189,248,.45)", fontSize:8.5 }}>{s.probability}%</span>
+                {s.score}<span style={{ color:"rgba(56,189,248,.4)", fontSize:8.5 }}>{s.probability}%</span>
               </div>
             ))}
           </div>
@@ -306,11 +298,11 @@ function FormRow({ label, form }) {
         {results.map((r,i) => (
           <div key={i} style={{
             width:20, height:20, borderRadius:3,
-            background:`${color(r)}1e`,
-            border:`1px solid ${color(r)}66`,
+            background:`${color(r)}1a`,
+            border:`1px solid ${color(r)}55`,
             display:"flex", alignItems:"center", justifyContent:"center",
             fontSize:8, fontWeight:900, color:color(r),
-            boxShadow: r === "W" ? `0 0 6px ${color(r)}44` : "none",
+            boxShadow: r==="W" ? `0 0 6px ${color(r)}44` : "none",
           }}>{r}</div>
         ))}
       </div>
@@ -327,7 +319,7 @@ function MatchupPanel({ homeStats, awayStats, homeTeam, awayTeam }) {
   ].filter(r => r.h != null || r.a != null);
 
   return (
-    <div style={{ padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+    <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
       <SectionLabel>Recent Form</SectionLabel>
       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
         <FormRow label={homeTeam?.name?.split(" ").pop()} form={homeStats?.form} />
@@ -359,7 +351,7 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
         <div style={{
           width:6, height:6, borderRadius:"50%",
           background: type.toLowerCase().includes("suspend") ? "#f59e0b" : "#f87171",
-          boxShadow: type.toLowerCase().includes("suspend") ? "0 0 6px #f59e0b66" : "0 0 6px #f8717166",
+          boxShadow: type.toLowerCase().includes("suspend") ? "0 0 5px #f59e0b55" : "0 0 5px #f8717155",
           flexShrink:0,
         }} />
         <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.7)", flex:1 }}>{player.name || "Unknown"}</span>
@@ -635,14 +627,14 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: homeWin ? "#38bdf8" : awayWin ? "rgba(255,255,255,0.25)" : "#fff",
+              color: homeWin ? "#38bdf8" : awayWin ? "rgba(255,255,255,.22)" : "#fff",
               fontFamily:"'JetBrains Mono',monospace",
               textShadow: homeWin ? "0 0 28px rgba(56,189,248,.55)" : "none",
             }}>{hGoals}</span>
             <span style={{ fontSize:26, fontWeight:300, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>–</span>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: awayWin ? "#f97316" : homeWin ? "rgba(255,255,255,0.25)" : "#fff",
+              color: awayWin ? "#f97316" : homeWin ? "rgba(255,255,255,.22)" : "#fff",
               fontFamily:"'JetBrains Mono',monospace",
               textShadow: awayWin ? "0 0 28px rgba(249,115,22,.55)" : "none",
             }}>{aGoals}</span>
@@ -730,8 +722,8 @@ function MomentumGraph({ momentumData, events }) {
             const barH  = Math.min(100, (total / 2) * 100);
             return (
               <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
-                <div style={{ height:`${Math.max(hPct * barH / 100, 4)}%`, background:"rgba(56,189,248,0.65)", borderRadius:"2px 2px 0 0", transition:"height 0.4s" }} />
-                <div style={{ height:`${Math.max((100-hPct) * barH / 100, 4)}%`, background:"rgba(249,115,22,0.6)", borderRadius:"0 0 2px 2px" }} />
+                <div style={{ height:`${Math.max(hPct * barH / 100, 4)}%`, background:"rgba(56,189,248,.65)", borderRadius:"2px 2px 0 0", transition:"height .4s" }} />
+                <div style={{ height:`${Math.max((100-hPct) * barH / 100, 4)}%`, background:"rgba(249,115,22,.6)", borderRadius:"0 0 2px 2px" }} />
               </div>
             );
           })}
@@ -765,7 +757,7 @@ function Timeline({ events, homeTeam, awayTeam }) {
   return (
     <div style={{ padding:"14px 20px" }}>
       <SectionLabel>Match Events</SectionLabel>
-      <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+      <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
         {events.map((ev, i) => {
           const isHome = ev.team?.id === homeTeam?.id;
           const min    = fmtMin(ev.time?.elapsed, ev.time?.extra);
@@ -776,7 +768,7 @@ function Timeline({ events, homeTeam, awayTeam }) {
               padding:"7px 10px",
               borderBottom:"1px solid rgba(255,255,255,0.025)",
               borderLeft: (ev.type||"").toLowerCase()==="goal" ? "3px solid #34d399" : (ev.detail||"").toLowerCase().includes("yellow") ? "3px solid #fbbf24" : (ev.detail||"").toLowerCase().includes("red") ? "3px solid #ef4444" : (ev.type||"").toLowerCase()==="subst" ? "3px solid #60a5fa" : "3px solid transparent",
-              background: (ev.type||"").toLowerCase()==="goal" ? "rgba(52,211,153,.06)" : "transparent",
+              background: (ev.type||"").toLowerCase()==="goal" ? "rgba(52,211,153,.04)" : "transparent",
               borderRadius: 4,
             }}>
               {isHome ? (
@@ -837,13 +829,13 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
 
   if (!rows.length) return null;
   return (
-    <div style={{ padding:"16px 20px", borderTop:"1px solid rgba(255,255,255,.04)" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-        {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={13} height={13} style={{ objectFit:"contain", opacity:.8 }} />}
+    <div style={{ padding:"14px 20px", borderTop:"1px solid rgba(255,255,255,.04)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+        {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={14} height={14} style={{ objectFit:"contain" }} />}
         <SectionLabel>Match Statistics</SectionLabel>
-        {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={13} height={13} style={{ objectFit:"contain", opacity:.8 }} />}
+        {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={14} height={14} style={{ objectFit:"contain" }} />}
       </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
         {rows.map(r => <StatBar key={r.label} label={r.label} home={r.home} away={r.away} />)}
       </div>
     </div>
@@ -1158,7 +1150,7 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
                       <span style={{ fontSize:12, fontWeight:700, color: p.isHome ? "#38bdf8" : "#f97316" }}>{p.player?.name}</span>
                     </div>
                   </td>
-                  <td style={{ padding:"6px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:900, color: parseFloat(rating) >= 8 ? "#34d399" : parseFloat(rating) >= 7 ? "#38bdf8" : "rgba(255,255,255,.65)" }}>{rating}</td>
+                  <td style={{ padding:"6px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:900, color: parseFloat(rating) >= 8 ? "#34d399" : parseFloat(rating) >= 7 ? "#38bdf8" : "rgba(255,255,255,.6)" }}>{rating}</td>
                   <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#e2e8f0" }}>{goals}</td>
                   <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#e2e8f0" }}>{assists}</td>
                   <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#e2e8f0" }}>{passes}</td>
@@ -1206,6 +1198,71 @@ export default function LiveMatchPage() {
 
   const mode = deriveMode(fixture?.fixture?.status?.short);
 
+  // ── Lineup response parser — shared by loadCore and direct lineup fetch ─────
+  // /api/match-lineup/{id} returns:
+  //   { mode: "official"|"predicted", home: {...}, away: {...} }
+  // home/away shape: { formation, starting_xi, bench, injuries, doubts, coach, ... }
+  const _applyLineupResponse = useCallback((lu) => {
+    if (!lu) return;
+    const isPredicted = lu.mode === "predicted";
+
+    const posToGroup = pos => {
+      if (!pos) return "MID";
+      const p = (pos || "").toUpperCase();
+      if (p.startsWith("G")) return "GK";
+      if (p.startsWith("D") || p === "CB" || p === "LB" || p === "RB" || p === "LWB" || p === "RWB") return "DEF";
+      if (p.startsWith("F") || p === "ST" || p === "LW" || p === "RW" || p === "CF") return "FWD";
+      return "MID";
+    };
+
+    ["home", "away"].forEach(side => {
+      const raw = lu[side];
+      if (!raw) return;
+
+      // Build the lineups[] shape that LineupsPanel expects (official path)
+      if (!isPredicted && raw.starting_xi?.length) {
+        const wrap = p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos, photo: p.photo } });
+        setLineups(prev => {
+          const others = prev.filter(l => l.team?.name !== raw.team_name);
+          return [...others, {
+            team: { id: raw.team_id, name: raw.team_name, logo: raw.logo },
+            formation: raw.formation,
+            startXI:    (raw.starting_xi || []).map(wrap),
+            substitutes:(raw.bench || []).map(wrap),
+            coach: raw.coach,
+          }];
+        });
+      }
+
+      // Build predicted shape for PredictedLineupsPanel
+      if (isPredicted && (raw.starting_xi?.length || raw.start_xi?.length)) {
+        const xi = raw.starting_xi || raw.start_xi || [];
+        const predicted = {
+          formation: raw.formation || "4-3-3",
+          team_name: raw.team_name,
+          predicted: true,
+          confidence: raw.confidence || lu.confidence || 70,
+          start_xi: xi.map(p => ({
+            id: p.id, name: p.name, number: p.number,
+            pos: p.pos, group: posToGroup(p.pos),
+            grid: p.grid,
+            confidence: p.confidence || 72,
+            photo: p.photo,
+          })),
+          subs: (raw.bench || raw.subs || []).map(p => ({
+            id: p.id, name: p.name, number: p.number,
+            pos: p.pos, confidence: p.confidence || 55,
+            photo: p.photo,
+          })),
+          injuries:  raw.injuries || [],
+          doubts:    raw.doubts   || [],
+        };
+        if (side === "home") setPredictedHome(predicted);
+        else setPredictedAway(predicted);
+      }
+    });
+  }, []);
+
   // ── Core data fetch — uses /api/match-intelligence/{id} ─────────────────
   const loadCore = useCallback(async () => {
     if (!fixtureId) return;
@@ -1213,8 +1270,9 @@ export default function LiveMatchPage() {
       const resp = await fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`);
       let d = resp.ok ? await resp.json() : null;
 
-      // On 404 — fixture not in API cache yet (prematch). Try to build minimal
-      // fixture from the upcoming matches list so the page still renders.
+      // On 404 — fixture not in intelligence cache yet (common for prematch fixtures
+      // that haven't been enriched). Build fixture from /api/matches/upcoming and
+      // then fetch lineup + win-prob separately so the page is fully functional.
       if (!d || d.error) {
         try {
           const upcoming = await fetch(`${BACKEND}/api/matches/upcoming`)
@@ -1223,7 +1281,7 @@ export default function LiveMatchPage() {
           if (match) {
             setFixture({
               fixture: { id: match.fixture_id, status: { short: match.status || "NS", elapsed: match.minute }, date: match.kickoff },
-              league: { name: match.league_name },
+              league: { name: match.league_name, logo: match.league_logo },
               teams: {
                 home: { id: match.home_id, name: match.home_team, logo: match.home_logo },
                 away: { id: match.away_id, name: match.away_team, logo: match.away_logo },
@@ -1232,6 +1290,19 @@ export default function LiveMatchPage() {
             });
           }
         } catch(e) {}
+
+        // Still fetch lineup and win-prob even when intelligence is unavailable
+        try {
+          const luResp = await fetch(`${BACKEND}/api/match-lineup/${fixtureId}`);
+          if (luResp.ok) {
+            const lu = await luResp.json();
+            _applyLineupResponse(lu);
+          }
+        } catch(e) {}
+
+        fetch(`${BACKEND}/api/win-probability/${fixtureId}`)
+          .then(r => r.ok ? r.json() : null).then(d => d && setWinProb(d)).catch(() => {});
+
         setLoading(false);
         return;
       }
@@ -1277,56 +1348,12 @@ export default function LiveMatchPage() {
       }
       setStats(st);
 
-      // Lineups — backend returns {home:{startXI,bench,...}, away:{...}}
-      // bench = substitutes in API-Football terminology
-      const lu = [];
-      ["home","away"].forEach(side => {
-        const raw = d.lineups?.[side];
-        if (!raw) return;
-        const wrap = p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } });
-        lu.push({
-          team: { id: side === "home" ? h.home_id : h.away_id, name: raw.team_name },
-          formation: raw.formation,
-          startXI:    (raw.startXI || []).map(wrap),
-          substitutes:(raw.bench   || raw.substitutes || []).map(wrap),
-          coach: raw.coach,
-        });
-      });
-      setLineups(lu);
-
-      // For prematch with predicted lineups from match-intelligence
-      // match_intelligence.py sets predicted:true when no official lineup exists
-      if (d.lineups && (lu.length === 0 || lu.every(l => !l.startXI?.length))) {
-        // Try to get predicted lineup from the intelligence response
-        ["home","away"].forEach(side => {
-          const raw = d.lineups?.[side];
-          if (!raw?.startXI?.length) return;
-          const posToGroup = pos => {
-            if (!pos) return "MID";
-            const p = pos.toUpperCase();
-            if (p === "G") return "GK";
-            if (p === "D") return "DEF";
-            if (p === "M") return "MID";
-            if (p === "F") return "FWD";
-            return "MID";
-          };
-          const wrap = p => ({
-            id: p.id, name: p.name, number: p.number,
-            pos: p.pos, group: posToGroup(p.pos),
-            grid: p.grid,
-            confidence: p.confidence || 70,
-          });
-          const predicted = {
-            formation: raw.formation || "4-3-3",
-            team_name: raw.team_name,
-            predicted: raw.predicted ?? true,
-            start_xi: raw.startXI.map(wrap),
-            subs: (raw.bench || []).map(wrap),
-            confidence: raw.predicted ? 70 : 90,
-          };
-          if (side === "home") setPredictedHome(predicted);
-          else setPredictedAway(predicted);
-        });
+      // Lineups — intelligence response embeds lineup data; normalise and apply.
+      // _applyLineupResponse handles both official (mode=official) and predicted shapes.
+      if (d.lineups) {
+        // intelligence wraps lineups as {home:{...}, away:{...}} with a top-level predicted flag
+        const isPredicted = d._meta?.has_official_lineups === false || d.lineups?.home?.predicted;
+        _applyLineupResponse({ mode: isPredicted ? "predicted" : "official", ...d.lineups });
       }
 
       // Win probability from prediction block
@@ -1361,19 +1388,20 @@ export default function LiveMatchPage() {
     fetch(`${BACKEND}/api/win-probability/${fixtureId}`)
       .then(r => r.ok ? r.json() : null).then(d => d && setWinProb(d)).catch(() => {});
 
+    // Always fetch lineup — covers the case where intelligence 404'd
+    // and also keeps lineups fresh for prematch announcements
+    fetch(`${BACKEND}/api/match-lineup/${fixtureId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && _applyLineupResponse(d))
+      .catch(() => {});
+
     if (currentMode === "live" || currentMode === "fulltime") {
-      // Momentum + shot map for live/FT
       fetch(`${BACKEND}/api/match-momentum/${fixtureId}`)
         .then(r => r.ok ? r.json() : null).then(d => d && setMomentumData(d)).catch(() => {});
       fetch(`${BACKEND}/api/shot-map/${fixtureId}`)
         .then(r => r.ok ? r.json() : null).then(d => d && setShotMapData(d)).catch(() => {});
     }
-
-    // Predicted lineups + injuries for prematch
-    // NOTE: These require new backend routes — see BACKEND ROUTES NEEDED below.
-    // Gracefully no-ops if unavailable.
-    // Predicted lineups come from match-intelligence response — no separate fetch needed
-  }, [fixtureId]);
+  }, [fixtureId, _applyLineupResponse]);
 
   useEffect(() => {
     loadCore();
@@ -1418,13 +1446,12 @@ export default function LiveMatchPage() {
         @keyframes lmScanX { 0%{left:-40%} 100%{left:140%} }
         @keyframes lmBorderFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
         @keyframes lmBarIn { from{width:0} to{width:var(--w)} }
-        @keyframes lmGlow { 0%,100%{box-shadow:0 0 8px var(--c,#38bdf8)} 50%{box-shadow:0 0 20px var(--c,#38bdf8)} }
-        @keyframes lmFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lmGlow { 0%,100%{box-shadow:0 0 8px var(--c,#60a5fa)} 50%{box-shadow:0 0 22px var(--c,#60a5fa)} }
         .lm-tab { background:none; border:none; cursor:pointer; font-family:'Inter','Sora',sans-serif; transition:all 0.15s; }
         .lm-tab:hover { color:rgba(255,255,255,0.85) !important; }
         .lm-stat-bar { animation: lmBarIn 0.7s cubic-bezier(.22,1,.36,1) both; }
-        .lm-card { background:rgba(255,255,255,.018); border:1px solid rgba(255,255,255,.06); border-radius:10px; transition:border-color .2s, box-shadow .2s; }
-        .lm-card:hover { border-color:rgba(255,255,255,.12); box-shadow:0 6px 22px rgba(0,0,0,.55); }
+        .lm-card { background:rgba(255,255,255,.018); border:1px solid rgba(255,255,255,.06); border-radius:9px; transition:border-color .2s, box-shadow .2s; }
+        .lm-card:hover { border-color:rgba(255,255,255,.11); box-shadow:0 5px 20px rgba(0,0,0,.55); }
       `}</style>
 
       {/* Back nav */}
@@ -1469,23 +1496,23 @@ export default function LiveMatchPage() {
           <div style={{
             position:"sticky", top:0, zIndex:100,
             background:"rgba(0,0,0,0.97)", backdropFilter:"blur(16px)",
-            borderBottom:"1px solid rgba(255,255,255,0.06)",
+            borderBottom:"1px solid rgba(255,255,255,.06)",
             display:"flex", padding:"0 16px", overflowX:"auto",
           }}>
             {tabs.map(t => {
               const isActive = tab === t;
-              const isLiveTab = t === "Commentary" && mode === "live";
-              const isStatsTab = t === "Stats" && (mode === "live" || mode === "fulltime");
+              const isLiveTab  = t === "Commentary" && mode === "live";
+              const isStatsTab = t === "Stats"      && (mode === "live" || mode === "fulltime");
               return (
                 <button key={t} className="lm-tab" onClick={() => setTab(t)} style={{
                   padding:"11px 16px", fontSize:10, fontWeight:800,
-                  letterSpacing:"0.06em", textTransform:"uppercase",
-                  color: isActive ? "#fff" : "rgba(255,255,255,0.3)",
+                  letterSpacing:".06em", textTransform:"uppercase",
+                  color: isActive ? "#fff" : "rgba(255,255,255,.28)",
                   borderBottom: isActive ? "2px solid #fff" : "2px solid transparent",
                   marginBottom:-1, whiteSpace:"nowrap",
                   display:"flex", alignItems:"center", gap:5,
                 }}>
-                  {isLiveTab && <span style={{ width:5, height:5, borderRadius:"50%", background:"#a78bfa", animation:"livePulse 1.5s ease-in-out infinite", flexShrink:0 }} />}
+                  {isLiveTab  && <span style={{ width:5, height:5, borderRadius:"50%", background:"#a78bfa", animation:"livePulse 1.5s ease-in-out infinite", flexShrink:0 }} />}
                   {isStatsTab && <span style={{ width:5, height:5, borderRadius:"50%", background:"#34d399", animation:"livePulse 1.5s ease-in-out infinite", flexShrink:0 }} />}
                   {t}
                 </button>

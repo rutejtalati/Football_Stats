@@ -444,7 +444,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   function norm(raw){
     if(!raw) return null;
     const xi=raw.startXI||raw.starting_xi||raw.start_xi||[];
-    const bench=raw.substitutes||raw.subs||raw.bench||[];
+    const bench=raw.substitutes||raw.bench||raw.subs||[];
     return{
       formation:raw.formation||"4-3-3",
       predicted:raw.predicted||false,
@@ -470,26 +470,26 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   const away=norm(awayLineup);
   const isPredicted=home?.predicted||away?.predicted;
 
-  // Player token on horizontal pitch
+  // Player token on horizontal pitch — matches HTML preview
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
     const slots=getHSlots(lineup.formation,side);
     return lineup.xi.slice(0,11).map((p,i)=>{
       const [x,y]=slots[i]||[50,50];
       const isGK=i===0;
-      const sz=isGK?36:30;
-      const short=(p.name||"").split(" ").pop().slice(0,11);
+      const sz=isGK?34:28;
+      const short=(p.name||"").split(" ").pop().slice(0,13);
       return(
         <div key={i} style={{
           position:"absolute",left:`${x}%`,top:`${y}%`,
           transform:"translate(-50%,-50%)",
-          display:"flex",flexDirection:"column",alignItems:"center",gap:1.5,
+          display:"flex",flexDirection:"column",alignItems:"center",gap:2,
           zIndex:3,pointerEvents:"none",
         }}>
           <div style={{
             width:sz,height:sz,borderRadius:"50%",
-            border:`${isGK?3:2.5}px solid ${colour}`,
-            boxShadow:isGK?`0 0 0 2px #0c2410,0 0 0 4.5px ${colour}55,0 2px 10px rgba(0,0,0,.8)`:`0 2px 8px rgba(0,0,0,.7)`,
+            border:`2.5px solid ${colour}`,
+            boxShadow:isGK?`0 0 0 2px #0c2410,0 0 0 4.5px ${colour}55`:"none",
             background:"#0a1c0b",overflow:"hidden",flexShrink:0,
           }}>
             {p.photo&&<img src={p.photo} alt="" width={sz} height={sz}
@@ -498,14 +498,14 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
           </div>
           <div style={{
             fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.93)",
-            textShadow:"0 1px 6px #000,0 0 12px rgba(0,0,0,.9)",
-            background:"rgba(0,0,0,.74)",padding:"1.5px 4px",borderRadius:3,
-            whiteSpace:"nowrap",maxWidth:58,overflow:"hidden",textOverflow:"ellipsis",
+            textShadow:"0 1px 5px #000",background:"rgba(0,0,0,.74)",
+            padding:"1px 3.5px",borderRadius:3,whiteSpace:"nowrap",
+            maxWidth:62,overflow:"hidden",textOverflow:"ellipsis",
             lineHeight:1.3,letterSpacing:"0.01em",fontFamily:"'Inter',sans-serif",
           }}>{short}</div>
           {p.confidence!==undefined&&(
-            <div style={{width:24,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
-              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.65}}/>
+            <div style={{width:22,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.6}}/>
             </div>
           )}
         </div>
@@ -513,47 +513,50 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
     });
   }
 
-  // Bench card strip
+  // Bench — horizontal pill strip matching HTML preview exactly
   function BenchStrip({lineup,colour,align}){
     if(!lineup?.bench?.length) return null;
     const isRight=align==="right";
-    const posColor=pos=>pos==="G"?"#f59e0b":pos==="D"?"#60a5fa":pos==="M"?"#34d399":"#f87171";
     return(
       <div style={{flex:1,overflow:"hidden",minWidth:0}}>
-        <div style={{fontSize:"6.5px",fontWeight:900,color:`${colour}80`,letterSpacing:".12em",
-          textTransform:"uppercase",marginBottom:5,display:"flex",alignItems:"center",
-          justifyContent:isRight?"flex-end":"flex-start",gap:4}}>
-          <span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>
+        <div style={{
+          fontSize:"6.5px",fontWeight:900,
+          color:`${colour}`,opacity:.7,
+          letterSpacing:".12em",textTransform:"uppercase",marginBottom:4,
+          display:"flex",alignItems:"center",
+          justifyContent:isRight?"flex-end":"flex-start",gap:4,
+        }}>
+          {!isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>}
           BENCH
+          {isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>}
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"nowrap",overflow:"hidden",
-          justifyContent:isRight?"flex-end":"flex-start"}}>
-          {lineup.bench.slice(0,7).map((p,i)=>{
-            const pos=(p.pos||"").slice(0,1).toUpperCase();
-            return(
-              <div key={i} style={{flexShrink:0,display:"flex",flexDirection:"column",
-                alignItems:"center",gap:3,padding:"5px 4px 4px",borderRadius:8,
-                background:`${colour}0a`,border:`1px solid ${colour}20`,minWidth:40}}>
-                <div style={{position:"relative"}}>
-                  <div style={{width:26,height:26,borderRadius:"50%",overflow:"hidden",
-                    background:"#111",border:`1.5px solid ${colour}44`,flexShrink:0}}>
-                    {p.photo&&<img src={p.photo} alt="" width="26" height="26"
-                      style={{objectFit:"cover",objectPosition:"top"}}
-                      onError={e=>e.currentTarget.style.display="none"}/>}
-                  </div>
-                  {pos&&<span style={{position:"absolute",bottom:-2,right:-3,
-                    fontSize:"6px",fontWeight:900,background:posColor(pos),color:"#000",
-                    borderRadius:3,padding:"0 2.5px",lineHeight:"10px",
-                    boxShadow:"0 1px 4px rgba(0,0,0,.7)"}}>{pos}</span>}
-                </div>
-                <span style={{fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.5)",
-                  whiteSpace:"nowrap",maxWidth:38,overflow:"hidden",textOverflow:"ellipsis",
-                  fontFamily:"'Inter',sans-serif",textAlign:"center"}}>
-                  {(p.name||"").split(" ").pop().slice(0,9)}
-                </span>
+        <div style={{
+          display:"flex",gap:3,flexWrap:"nowrap",overflow:"hidden",
+          justifyContent:isRight?"flex-end":"flex-start",
+        }}>
+          {lineup.bench.slice(0,7).map((p,i)=>(
+            <div key={i} style={{
+              flexShrink:0,display:"flex",alignItems:"center",gap:3,
+              padding: isRight?"2px 3px 2px 5px":"2px 5px 2px 3px",
+              borderRadius:5,
+              background:"rgba(255,255,255,.025)",
+              border:"1px solid rgba(255,255,255,.06)",
+              borderLeft: isRight?"1px solid rgba(255,255,255,.06)":`2px solid ${colour}`,
+              borderRight: isRight?`2px solid ${colour}`:"1px solid rgba(255,255,255,.06)",
+            }}>
+              {isRight&&<span style={{fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.42)",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>
+                {(p.name||"").split(" ").pop().slice(0,11)}
+              </span>}
+              <div style={{width:17,height:17,borderRadius:"50%",overflow:"hidden",background:"#111",border:`1px solid ${colour}44`,flexShrink:0}}>
+                {p.photo&&<img src={p.photo} alt="" width="17" height="17"
+                  style={{objectFit:"cover",objectPosition:"top"}}
+                  onError={e=>e.currentTarget.style.display="none"}/>}
               </div>
-            );
-          })}
+              {!isRight&&<span style={{fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.42)",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>
+                {(p.name||"").split(" ").pop().slice(0,11)}
+              </span>}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -1324,9 +1327,9 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
 
 function LineupsPanel({lineups,homeTeam,awayTeam}){
   if(!lineups?.length) return null;
-  const teamId = l => l.team?.id ?? l.team_id;
-  const home=lineups.find(l=>teamId(l)===homeTeam?.id)||lineups[0];
-  const away=lineups.find(l=>teamId(l)===awayTeam?.id)||lineups[1];
+  const tid = l => l.team?.id ?? l.team_id;
+  const home=lineups.find(l=>tid(l)===homeTeam?.id)||lineups[0];
+  const away=lineups.find(l=>tid(l)===awayTeam?.id)||lineups[1];
   if(!home&&!away) return null;
   return <PitchLineup homeLineup={home} awayLineup={away} homeTeam={homeTeam} awayTeam={awayTeam}/>;
 }
@@ -1784,7 +1787,7 @@ function CommentaryPanel({
 const TABS_BY_MODE = {
   prematch: ["Preview","Lineups","Odds","Commentary"],
   live:     ["Overview","Events","Stats","Lineups","Players","Commentary"],
-  fulltime: ["Overview","Events","Stats","Players","Commentary"],
+  fulltime: ["Overview","Events","Stats","Lineups","Commentary"],
 };
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -1919,33 +1922,22 @@ export default function LiveMatchPage() {
 
       // Lineups from match-intelligence
       // d.lineups is an array [{team_id, team_name, start_xi, subs, formation, ...}]
-      // NOT {home, away} — split by team_id to get each side
       if (d.lineups?.length) {
         const hId = h.home_id;
         const aId = h.away_id;
         const isPred = d._meta?.has_official_lineups === false;
-
-        // Each entry has start_xi (from _n_official_lineups) or start_xi (predicted)
-        // Normalise field names before passing to applyLineup
         const normLu = (lu) => lu ? {
           ...lu,
-          team_id:    lu.team_id   || lu.team?.id,
-          team_name:  lu.team_name || lu.team?.name,
-          logo:       lu.team_logo || lu.team?.logo || "",
-          // unify field names — backend uses start_xi, applyLineup checks starting_xi/start_xi/startXI
+          team_id:    lu.team_id   ?? lu.team?.id,
+          team_name:  lu.team_name ?? lu.team?.name,
+          logo:       lu.team_logo ?? lu.team?.logo ?? "",
           starting_xi: lu.start_xi || lu.startXI || lu.starting_xi || [],
           bench:       lu.subs     || lu.substitutes || lu.bench    || [],
         } : null;
-
-        const homeLu = d.lineups.find(l => (l.team_id || l.team?.id) === hId);
-        const awayLu = d.lineups.find(l => (l.team_id || l.team?.id) === aId)
-                    || d.lineups.find(l => (l.team_id || l.team?.id) !== hId);
-
-        applyLineup({
-          mode: isPred ? "predicted" : "official",
-          home: normLu(homeLu),
-          away: normLu(awayLu),
-        });
+        const homeLu = d.lineups.find(l=>(l.team_id??l.team?.id)===hId);
+        const awayLu = d.lineups.find(l=>(l.team_id??l.team?.id)===aId)
+                    || d.lineups.find(l=>(l.team_id??l.team?.id)!==hId);
+        applyLineup({ mode:isPred?"predicted":"official", home:normLu(homeLu), away:normLu(awayLu) });
       }
 
       // Win probability from prediction block
@@ -2170,7 +2162,7 @@ export default function LiveMatchPage() {
             )}
             {mode === "fulltime" && tab === "Events"  && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "fulltime" && tab === "Players" && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
+            {mode === "fulltime" && tab === "Lineups" && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Commentary" && (
               <CommentaryPanel
                 fixtureId={fixtureId} mode={mode} fixture={fixture}

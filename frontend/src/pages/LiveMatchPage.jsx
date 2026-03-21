@@ -448,19 +448,80 @@ function PredictedLineupsPanel({ predictedHome, predictedAway, homeTeam, awayTea
     );
   }
 
+  // Convert start_xi to startXI format for PredictedPitchPlayers
+  function PredictedPitchPlayers({ prediction, color, side }) {
+    if (!prediction?.start_xi?.length) return null;
+    const parts = (prediction.formation || "4-3-3").split("-").map(n => parseInt(n));
+    const players = prediction.start_xi;
+    // Build rows: GK first, then by formation
+    const gk = players.filter(p => p.group === "GK");
+    const rest = players.filter(p => p.group !== "GK");
+    let idx = 0;
+    const rows = [gk, ...parts.map(n => { const r = rest.slice(idx, idx+n); idx+=n; return r; })];
+    if (side === "away") rows.reverse();
+    const total = rows.length;
+    const xStart = side === "home" ? 4 : 52;
+    const xRange = 44;
+    return (
+      <>
+        {rows.map((row, ri) => {
+          const yPct = ((ri + 0.5) / total) * 88 + 6;
+          return row.map((p, pi) => {
+            const xPct = row.length === 1 ? xStart + xRange/2 : xStart + (pi/(row.length-1))*xRange;
+            const name = (p.name||"").split(" ").pop().slice(0,9);
+            const num = p.number || "";
+            return (
+              <g key={ri+"-"+pi}>
+                <circle cx={xPct+"%"} cy={yPct+"%"} r="4.2%"
+                  fill={color} stroke="rgba(255,255,255,.9)" strokeWidth=".8%"
+                  opacity={p.confidence > 75 ? 1 : 0.65}/>
+                <text x={xPct+"%"} y={(yPct+1.3)+"%"} textAnchor="middle"
+                  fontSize="2.8%" fill="#fff" fontWeight="800" fontFamily="Inter,sans-serif">{num}</text>
+                <text x={xPct+"%"} y={(yPct+7.8)+"%"} textAnchor="middle"
+                  fontSize="2.3%" fill="rgba(255,255,255,.75)" fontFamily="Inter,sans-serif">{name}</text>
+              </g>
+            );
+          });
+        })}
+      </>
+    );
+  }
+
   return (
     <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-      <SectionLabel>Expected Lineups</SectionLabel>
-      <div style={{ position:"relative", width:"100%", paddingBottom:"64%", borderRadius:12, overflow:"hidden", marginBottom:16 }}>
-        <PitchSvg />
-        <div style={{ position:"absolute", inset:0, display:"flex", padding:"12px 8px" }}>
-          <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"space-around" }}>
-            <FormationLayout prediction={predictedHome} color="rgba(59,130,246,0.85)" />
-          </div>
-          <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"space-around" }}>
-            <FormationLayout prediction={predictedAway} color="rgba(239,68,68,0.8)" />
-          </div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ width:10, height:10, borderRadius:"50%", background:"#3b82f6", display:"inline-block" }}/>
+          <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{homeTeam?.name}</span>
+          {predictedHome?.formation && <span style={{ fontSize:10, fontWeight:700, color:"#60a5fa", background:"rgba(96,165,250,.1)", border:"1px solid rgba(96,165,250,.25)", borderRadius:4, padding:"1px 7px" }}>{predictedHome.formation}</span>}
+          <span style={{ fontSize:9, fontWeight:700, color:"#fbbf24", background:"rgba(251,191,36,.1)", border:"1px solid rgba(251,191,36,.25)", borderRadius:4, padding:"1px 6px" }}>PREDICTED</span>
         </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {predictedAway?.formation && <span style={{ fontSize:10, fontWeight:700, color:"#f87171", background:"rgba(239,68,68,.1)", border:"1px solid rgba(239,68,68,.25)", borderRadius:4, padding:"1px 7px" }}>{predictedAway.formation}</span>}
+          <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{awayTeam?.name}</span>
+          <span style={{ width:10, height:10, borderRadius:"50%", background:"#ef4444", display:"inline-block" }}/>
+        </div>
+      </div>
+      <div style={{ position:"relative", width:"100%", paddingBottom:"62%", borderRadius:12, overflow:"hidden", marginBottom:16, background:"#0a1f0d" }}>
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet">
+          {[0,7.75,15.5,23.25,31,38.75,46.5].map((y,i) => (
+            <rect key={i} x="0" y={y} width="100" height="7.75" fill={i%2===0?"rgba(255,255,255,.012)":"rgba(0,0,0,0)"} />
+          ))}
+          <rect x="2" y="1.5" width="96" height="59" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".5"/>
+          <line x1="50" y1="1.5" x2="50" y2="60.5" stroke="rgba(255,255,255,.22)" strokeWidth=".4"/>
+          <circle cx="50" cy="31" r="9" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
+          <circle cx="50" cy="31" r=".8" fill="rgba(255,255,255,.4)"/>
+          <rect x="2" y="18" width="16" height="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
+          <rect x="82" y="18" width="16" height="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
+          <rect x="2" y="23" width="6.5" height="16" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth=".4"/>
+          <rect x="91.5" y="23" width="6.5" height="16" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth=".4"/>
+          <rect x="0" y="27" width="2" height="8" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5"/>
+          <rect x="98" y="27" width="2" height="8" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5"/>
+          <circle cx="12" cy="31" r=".7" fill="rgba(255,255,255,.4)"/>
+          <circle cx="88" cy="31" r=".7" fill="rgba(255,255,255,.4)"/>
+          {predictedHome && <PredictedPitchPlayers prediction={predictedHome} color="#3b82f6" side="home"/>}
+          {predictedAway && <PredictedPitchPlayers prediction={predictedAway} color="#ef4444" side="away"/>}
+        </svg>
       </div>
       {(predictedHome?.confidence || predictedAway?.confidence) && (
         <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
@@ -1121,9 +1182,30 @@ export default function LiveMatchPage() {
     if (!fixtureId) return;
     try {
       const resp = await fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`);
-      // 404 = fixture not yet in API cache (prematch) — show page with no data
-      const d = resp.ok ? await resp.json() : null;
-      if (!d || d.error) { setLoading(false); return; }
+      let d = resp.ok ? await resp.json() : null;
+
+      // On 404 — fixture not in API cache yet (prematch). Try to build minimal
+      // fixture from the upcoming matches list so the page still renders.
+      if (!d || d.error) {
+        try {
+          const upcoming = await fetch(`${BACKEND}/api/matches/upcoming`)
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+          const match = (upcoming?.matches || []).find(m => String(m.fixture_id) === String(fixtureId));
+          if (match) {
+            setFixture({
+              fixture: { id: match.fixture_id, status: { short: match.status || "NS", elapsed: match.minute }, date: match.kickoff },
+              league: { name: match.league_name },
+              teams: {
+                home: { id: match.home_id, name: match.home_team, logo: match.home_logo },
+                away: { id: match.away_id, name: match.away_team, logo: match.away_logo },
+              },
+              score: { fulltime: { home: match.home_score, away: match.away_score }, halftime: { home: null, away: null } },
+            });
+          }
+        } catch(e) {}
+        setLoading(false);
+        return;
+      }
 
       const h = d.header || {};
       // Rebuild fixture shape expected by deriveMode / ScoreHero / PreMatchHero
@@ -1182,6 +1264,40 @@ export default function LiveMatchPage() {
         });
       });
       setLineups(lu);
+
+      // For prematch with predicted lineups from match-intelligence
+      // match_intelligence.py sets predicted:true when no official lineup exists
+      if (lu.length === 0 && d.lineups) {
+        // Try to get predicted lineup from the intelligence response
+        ["home","away"].forEach(side => {
+          const raw = d.lineups?.[side];
+          if (!raw?.startXI?.length) return;
+          const posToGroup = pos => {
+            if (!pos) return "MID";
+            const p = pos.toUpperCase();
+            if (p === "G") return "GK";
+            if (p === "D") return "DEF";
+            if (p === "M") return "MID";
+            if (p === "F") return "FWD";
+            return "MID";
+          };
+          const wrap = p => ({
+            id: p.id, name: p.name, number: p.number,
+            pos: p.pos, group: posToGroup(p.pos),
+            confidence: p.confidence || 70,
+          });
+          const predicted = {
+            formation: raw.formation || "4-3-3",
+            team_name: raw.team_name,
+            predicted: raw.predicted ?? true,
+            start_xi: raw.startXI.map(wrap),
+            subs: (raw.bench || []).map(wrap),
+            confidence: raw.predicted ? 70 : 90,
+          };
+          if (side === "home") setPredictedHome(predicted);
+          else setPredictedAway(predicted);
+        });
+      }
 
       // Win probability from prediction block
       if (d.prediction && !winProb) {

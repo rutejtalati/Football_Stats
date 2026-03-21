@@ -477,7 +477,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
     return lineup.xi.slice(0,11).map((p,i)=>{
       const [x,y]=slots[i]||[50,50];
       const isGK=i===0;
-      const sz=isGK?34:28;
+      const sz=isGK?42:36;
       const short=(p.name||"").split(" ").pop().slice(0,13);
       return(
         <div key={i} style={{
@@ -497,14 +497,14 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
               onError={e=>{e.currentTarget.style.display="none";}}/>}
           </div>
           <div style={{
-            fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.93)",
-            textShadow:"0 1px 5px #000",background:"rgba(0,0,0,.74)",
-            padding:"1px 3.5px",borderRadius:3,whiteSpace:"nowrap",
-            maxWidth:62,overflow:"hidden",textOverflow:"ellipsis",
+            fontSize:"8.5px",fontWeight:700,color:"rgba(255,255,255,.95)",
+            textShadow:"0 1px 5px #000,0 0 8px #000",background:"rgba(0,0,0,.78)",
+            padding:"1.5px 4px",borderRadius:3,whiteSpace:"nowrap",
+            maxWidth:72,overflow:"hidden",textOverflow:"ellipsis",
             lineHeight:1.3,letterSpacing:"0.01em",fontFamily:"'Inter',sans-serif",
           }}>{short}</div>
           {p.confidence!==undefined&&(
-            <div style={{width:22,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+            <div style={{width:26,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
               <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.6}}/>
             </div>
           )}
@@ -513,111 +513,77 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
     });
   }
 
-  // Option C — compact scan-line rows: photo + name + position tag
-  function BenchStrip({lineup, colour, align}){
+  // Bench — horizontal pill strip matching HTML preview exactly
+  function BenchStrip({lineup,colour,align}){
     if(!lineup?.bench?.length) return null;
-    const isRight = align==="right";
-    const posColor = pos => {
-      const p = (pos||"").toUpperCase().slice(0,1);
-      if(p==="G") return {bg:"rgba(245,158,11,.15)",tc:"#f59e0b",label:"GK"};
-      if(p==="D") return {bg:"rgba(96,165,250,.13)",tc:"#60a5fa",label:"DEF"};
-      if(p==="M") return {bg:"rgba(52,211,153,.12)",tc:"#34d399",label:"MID"};
-      return {bg:"rgba(248,113,113,.12)",tc:"#f87171",label:"FWD"};
-    };
+    const isRight=align==="right";
     return(
-      <div style={{flex:1,minWidth:0}}>
+      <div style={{flex:1,overflow:"hidden",minWidth:0}}>
         <div style={{
-          fontSize:"6.5px",fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",
-          marginBottom:5,display:"flex",alignItems:"center",gap:4,
-          justifyContent:isRight?"flex-end":"flex-start",
-          color:colour,opacity:.75,
+          fontSize:"7px",fontWeight:900,
+          color:`${colour}`,opacity:.7,
+          letterSpacing:".12em",textTransform:"uppercase",marginBottom:6,
+          display:"flex",alignItems:"center",
+          justifyContent:isRight?"flex-end":"flex-start",gap:4,
         }}>
-          {!isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0,opacity:1}}/>}
+          {!isRight&&<span style={{width:6,height:6,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>}
           BENCH
-          {isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0,opacity:1}}/>}
+          {isRight&&<span style={{width:6,height:6,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>}
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:2}}>
-          {lineup.bench.slice(0,8).map((p,i)=>{
-            const pc = posColor(p.pos);
-            const displayName = (p.name||"").split(" ").slice(-1)[0].slice(0,14);
-            return(
-              <div key={i} style={{
-                display:"flex",alignItems:"center",gap:6,
-                padding:"3px 6px",borderRadius:5,
-                background:"rgba(255,255,255,.025)",
-                flexDirection: isRight ? "row-reverse" : "row",
-              }}>
-                <div style={{
-                  width:16,height:16,borderRadius:"50%",overflow:"hidden",
-                  background:"#111",border:`1.5px solid ${colour}50`,flexShrink:0,
-                }}>
-                  {p.photo&&<img src={p.photo} alt="" width="16" height="16"
-                    style={{objectFit:"cover",objectPosition:"top"}}
-                    onError={e=>e.currentTarget.style.display="none"}/>}
-                </div>
-                <span style={{
-                  fontSize:"8.5px",fontWeight:700,color:"rgba(255,255,255,.72)",
-                  flex:1,fontFamily:"'Inter',sans-serif",
-                  textAlign: isRight ? "right" : "left",
-                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
-                }}>{displayName}</span>
-                <span style={{
-                  fontSize:"6.5px",fontWeight:800,borderRadius:3,padding:"1px 4px",
-                  background:pc.bg,color:pc.tc,flexShrink:0,lineHeight:1.4,
-                  fontFamily:"'Inter',sans-serif",letterSpacing:".02em",
-                }}>{pc.label}</span>
+        <div style={{
+          display:"flex",gap:4,flexWrap:"nowrap",overflow:"hidden",
+          justifyContent:isRight?"flex-end":"flex-start",
+        }}>
+          {lineup.bench.slice(0,7).map((p,i)=>(
+            <div key={i} style={{
+              flexShrink:0,display:"flex",alignItems:"center",gap:5,
+              padding: isRight?"3px 5px 3px 7px":"3px 7px 3px 5px",
+              borderRadius:6,
+              background:"rgba(255,255,255,.03)",
+              border:"1px solid rgba(255,255,255,.07)",
+              borderLeft: isRight?"1px solid rgba(255,255,255,.07)":`2.5px solid ${colour}`,
+              borderRight: isRight?`2.5px solid ${colour}`:"1px solid rgba(255,255,255,.07)",
+            }}>
+              {isRight&&<span style={{fontSize:"9.5px",fontWeight:700,color:"rgba(255,255,255,.55)",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>
+                {(p.name||"").split(" ").pop().slice(0,12)}
+              </span>}
+              <div style={{width:24,height:24,borderRadius:"50%",overflow:"hidden",background:"#111",border:`1.5px solid ${colour}55`,flexShrink:0}}>
+                {p.photo&&<img src={p.photo} alt="" width="24" height="24"
+                  style={{objectFit:"cover",objectPosition:"top"}}
+                  onError={e=>e.currentTarget.style.display="none"}/>}
               </div>
-            );
-          })}
+              {!isRight&&<span style={{fontSize:"9.5px",fontWeight:700,color:"rgba(255,255,255,.55)",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>
+                {(p.name||"").split(" ").pop().slice(0,12)}
+              </span>}
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
-  // Option C — unavailable: left-border accent rows, red=injury amber=doubt
+  // Unavailable block — split by team
   const homeUnavail=[...(home?.injuries||[]).map(p=>({...p,doubt:false})),...(home?.doubts||[]).map(p=>({...p,doubt:true}))];
   const awayUnavail=[...(away?.injuries||[]).map(p=>({...p,doubt:false})),...(away?.doubts||[]).map(p=>({...p,doubt:true}))];
 
-  function UnavailBlock({players, colour, align}){
+  function UnavailBlock({players,colour}){
     if(!players.length) return null;
-    const isRight = align==="right";
     return(
       <div style={{flex:1,minWidth:0}}>
-        <div style={{display:"flex",flexDirection:"column",gap:2}}>
-          {players.slice(0,7).map((p,i)=>{
-            const isDoubt = p.doubt;
-            const ac2 = isDoubt ? "#fbbf24" : "#ef4444";
-            const bg2 = isDoubt ? "rgba(251,191,36,.05)" : "rgba(239,68,68,.05)";
-            const reason = isDoubt ? "Doubt" : (p.type||p.reason||p.player_type||"Inj");
-            const name = (p.name||p.player_name||"").split(" ").slice(-1)[0].slice(0,14);
+        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+          {players.slice(0,8).map((p,i)=>{
+            const reason=p.doubt?"Doubt":(p.type||p.reason||"Inj");
             return(
-              <div key={i} style={{
-                display:"flex",alignItems:"center",gap:6,
-                padding:"3px 6px",borderRadius:5,
-                background:bg2,
-                borderLeft: isRight ? "none"  : `2px solid ${ac2}`,
-                borderRight: isRight ? `2px solid ${ac2}` : "none",
-                flexDirection: isRight ? "row-reverse" : "row",
-              }}>
-                <div style={{
-                  width:16,height:16,borderRadius:"50%",overflow:"hidden",
-                  background:"#111",opacity:.5,flexShrink:0,
-                }}>
-                  {p.photo&&<img src={p.photo} alt="" width="16" height="16"
-                    style={{objectFit:"cover",objectPosition:"top"}}
-                    onError={e=>e.currentTarget.style.display="none"}/>}
-                </div>
-                <span style={{
-                  fontSize:"8.5px",fontWeight:700,color:"rgba(255,255,255,.65)",
-                  flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
-                  textAlign: isRight ? "right" : "left",
-                  fontFamily:"'Inter',sans-serif",
-                }}>{name}</span>
-                <span style={{
-                  fontSize:"6.5px",fontWeight:700,color:`${ac2}bb`,
-                  fontFamily:"'JetBrains Mono',monospace",flexShrink:0,
-                }}>{reason}</span>
-              </div>
+              <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,
+                padding:"3px 8px 3px 4px",borderRadius:6,
+                background:`${colour}0d`,border:`1px solid ${colour}25`}}>
+                <span style={{width:5,height:5,borderRadius:"50%",flexShrink:0,background:colour}}/>
+                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.75)"}}>
+                  {(p.name||p.player_name||"").split(" ").slice(-1)[0]}
+                </span>
+                <span style={{fontSize:8,fontWeight:700,color:`${colour}80`,
+                  fontFamily:"'JetBrains Mono',monospace"}}>{reason}</span>
+              </span>
             );
           })}
         </div>
@@ -626,7 +592,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   }
 
   return(
-    <div style={{background:"#060f07",borderRadius:14,border:"1px solid rgba(255,255,255,.07)",
+    <div style={{background:"#060f07",borderRadius:10,border:"1px solid rgba(255,255,255,.07)",
       overflow:"hidden",margin:"0",fontFamily:"'Inter','Sora',sans-serif"}}>
 
       {/* ── Header ── */}
@@ -690,8 +656,8 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       </div>
 
-      {/* ── Horizontal pitch — 2:1 landscape ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"52%",overflow:"hidden"}}>
+      {/* ── Horizontal pitch — reduced height, bigger tokens ── */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
           viewBox="0 0 200 104" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -779,48 +745,43 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       )}
 
-      {/* ── Bench — Option C scan-line rows ── */}
+      {/* ── Bench ── */}
       {(home?.bench?.length>0||away?.bench?.length>0)&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1px 1fr",gap:0,
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.16)"}}>
-          <div style={{padding:"9px 12px"}}>
-            <BenchStrip lineup={home} colour={hc} align="left"/>
-          </div>
-          <div style={{background:"rgba(255,255,255,.05)"}}/>
-          <div style={{padding:"9px 12px"}}>
-            <BenchStrip lineup={away} colour={ac} align="right"/>
-          </div>
+        <div style={{display:"flex",gap:8,padding:"8px 12px 9px",
+          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.18)",alignItems:"flex-start"}}>
+          <BenchStrip lineup={home} colour={hc} align="left"/>
+          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
+          <BenchStrip lineup={away} colour={ac} align="right"/>
         </div>
       )}
 
-      {/* ── Unavailable — Option C left-border accent rows ── */}
+      {/* ── Unavailable — split by team ── */}
       {(homeUnavail.length>0||awayUnavail.length>0)&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1px 1fr",gap:0,
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.22)"}}>
-          <div style={{padding:"8px 12px"}}>
+        <div style={{display:"flex",gap:10,padding:"7px 12px 9px",
+          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.22)",alignItems:"flex-start"}}>
+          <div style={{flex:1,minWidth:0}}>
             {homeUnavail.length>0&&(
               <>
-                <div style={{fontSize:"6.5px",fontWeight:900,color:`${hc}`,opacity:.65,
-                  letterSpacing:".12em",textTransform:"uppercase",marginBottom:5,
-                  display:"flex",alignItems:"center",gap:4}}>
+                <div style={{fontSize:"6.5px",fontWeight:900,color:`${hc}70`,letterSpacing:".12em",
+                  textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",gap:4}}>
                   <span style={{width:5,height:5,borderRadius:"50%",background:hc,display:"inline-block"}}/>
                   OUT
                 </div>
-                <UnavailBlock players={homeUnavail} colour={hc} align="left"/>
+                <UnavailBlock players={homeUnavail} colour={hc}/>
               </>
             )}
           </div>
-          <div style={{background:"rgba(255,255,255,.05)"}}/>
-          <div style={{padding:"8px 12px"}}>
+          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
+          <div style={{flex:1,minWidth:0}}>
             {awayUnavail.length>0&&(
               <>
-                <div style={{fontSize:"6.5px",fontWeight:900,color:`${ac}`,opacity:.65,
-                  letterSpacing:".12em",textTransform:"uppercase",marginBottom:5,
-                  display:"flex",alignItems:"center",justifyContent:"flex-end",gap:4}}>
+                <div style={{fontSize:"6.5px",fontWeight:900,color:`${ac}70`,letterSpacing:".12em",
+                  textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",
+                  justifyContent:"flex-end",gap:4}}>
                   OUT
                   <span style={{width:5,height:5,borderRadius:"50%",background:ac,display:"inline-block"}}/>
                 </div>
-                <UnavailBlock players={awayUnavail} colour={ac} align="right"/>
+                <UnavailBlock players={awayUnavail} colour={ac}/>
               </>
             )}
           </div>

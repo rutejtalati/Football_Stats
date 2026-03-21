@@ -1120,32 +1120,34 @@ export default function LiveMatchPage() {
   const loadCore = useCallback(async () => {
     if (!fixtureId) return;
     try {
-      const d = await fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)
-        .then(r => r.ok ? r.json() : null).catch(() => null);
-      if (!d) { setLoading(false); return; }
+      const resp = await fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`);
+      // 404 = fixture not yet in API cache (prematch) — show page with no data
+      const d = resp.ok ? await resp.json() : null;
+      if (!d || d.error) { setLoading(false); return; }
 
       const h = d.header || {};
-      // Rebuild fixture shape expected by deriveMode / ScoreHero
+      // Rebuild fixture shape expected by deriveMode / ScoreHero / PreMatchHero
       const fx = {
         fixture: {
           id: h.fixture_id,
-          status: { short: h.status, elapsed: h.minute },
+          status: { short: h.status || "NS", elapsed: h.minute },
           date: h.kickoff,
-          venue: { name: h.venue },
+          venue: { name: h.venue_name || h.venue },
+          referee: h.referee,
         },
-        league: { name: h.league, logo: h.league_logo },
+        league: { name: h.league_name, logo: h.league_logo, round: h.round },
         teams: {
           home: { id: h.home_id, name: h.home_team, logo: h.home_logo },
           away: { id: h.away_id, name: h.away_team, logo: h.away_logo },
         },
         score: {
-          fulltime: { home: h.home_score, away: h.away_score },
-          halftime: { home: h.ht_home,    away: h.ht_away    },
+          fulltime: { home: h.home_score,              away: h.away_score },
+          halftime: { home: h.score?.ht_home ?? null,  away: h.score?.ht_away ?? null },
         },
       };
       setFixture(fx);
 
-      // Events — map backend shape to component shape
+      // Events
       const ev = (d.events || []).map(e => ({
         time: { elapsed: e.minute, extra: e.extra_minute },
         team: { id: e.team_id, name: e.team },
@@ -1156,7 +1158,7 @@ export default function LiveMatchPage() {
       }));
       setEvents(ev);
 
-      // Statistics — map to array shape [{team:{id,name}, statistics:[{type,value}]}]
+      // Statistics
       const st = [];
       if (d.statistics?.home?.length) {
         st.push({ team: { id: h.home_id, name: h.home_team }, statistics: d.statistics.home });
@@ -1164,22 +1166,41 @@ export default function LiveMatchPage() {
       }
       setStats(st);
 
-      // Lineups — map {home:{formation,startXI,substitutes}, away:{...}}
+      // Lineups — backend returns {home:{startXI,bench,...}, away:{...}}
+      // bench = substitutes in API-Football terminology
       const lu = [];
       ["home","away"].forEach(side => {
         const raw = d.lineups?.[side];
         if (!raw) return;
+        const wrap = p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } });
         lu.push({
           team: { id: side === "home" ? h.home_id : h.away_id, name: raw.team_name },
           formation: raw.formation,
-          startXI: (raw.startXI || []).map(p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } })),
-          substitutes: (raw.substitutes || []).map(p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } })),
+          startXI:    (raw.startXI || []).map(wrap),
+          substitutes:(raw.bench   || raw.substitutes || []).map(wrap),
+          coach: raw.coach,
         });
       });
       setLineups(lu);
 
+      // Win probability from prediction block
+      if (d.prediction && !winProb) {
+        const p = d.prediction;
+        setWinProb({
+          pre_match: {
+            p_home_win: Math.round((p.p_home_win||0)*100),
+            p_draw:     Math.round((p.p_draw||0)*100),
+            p_away_win: Math.round((p.p_away_win||0)*100),
+            xg_home: p.xg_home, xg_away: p.xg_away,
+            top_scorelines: p.top_scorelines || [],
+          },
+          markets: p.markets || {},
+        });
+      }
+
       setError(null);
     } catch (e) {
+      console.error("loadCore error:", e);
       setError("Could not load match data.");
     } finally {
       setLoading(false);

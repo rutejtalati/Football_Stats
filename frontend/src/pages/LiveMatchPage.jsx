@@ -1342,13 +1342,7 @@ export default function LiveMatchPage() {
     // Predicted lineups + injuries for prematch
     // NOTE: These require new backend routes — see BACKEND ROUTES NEEDED below.
     // Gracefully no-ops if unavailable.
-    if (currentMode === "prematch") {
-      // predicted-lineup, team-stats — gracefully no-op if backend route absent
-      fetch(`${BACKEND}/api/predicted-lineup/${fixtureId}?side=home`)
-        .then(r => r.ok ? r.json() : null).then(d => d && setPredictedHome(d)).catch(() => {});
-      fetch(`${BACKEND}/api/predicted-lineup/${fixtureId}?side=away`)
-        .then(r => r.ok ? r.json() : null).then(d => d && setPredictedAway(d)).catch(() => {});
-    }
+    // Predicted lineups come from match-intelligence response — no separate fetch needed
   }, [fixtureId]);
 
   useEffect(() => {

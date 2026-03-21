@@ -37,65 +37,13 @@ from app.football_engine import EloRatings, TTLCache, predict_match, LEAGUE_AVG_
 # ── 5. THE ONE AND ONLY APP ───────────────────────────────────────────────────
 app = FastAPI(title="StatinSite API", version="4.0.0")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# STARTUP — seed DB path + run verification on boot
-# ══════════════════════════════════════════════════════════════════════════════
-import os as _os
-# Force predictions DB to /tmp so it survives Render restarts
-if not _os.getenv("PREDICTIONS_DB"):
-    _os.environ["PREDICTIONS_DB"] = "/tmp/predictions.db"
-
-@app.on_event("startup")
-async def _startup_tasks():
-    """Run after server starts: verify any unresolved predictions immediately."""
-    await asyncio.sleep(8)  # let other startup tasks finish first
-    try:
-        from app.routes.predictions import _verify_recent_results
-        await _verify_recent_results()
-        print("Startup verification complete.")
-    except Exception as exc:
-        print(f"Startup verification failed: {exc}")
-    # Seed predictions for all leagues so DB has data even after restart
-    await asyncio.sleep(2)
-    try:
-        for _code in ["epl", "laliga", "seriea", "bundesliga", "ligue1"]:
-            try:
-                await asyncio.get_event_loop().run_in_executor(
-                    None, lambda c=_code: __import__(
-                        "app.routes.main", fromlist=["get_league_predictions"]
-                    )
-                )
-            except Exception:
-                pass
-    except Exception:
-        pass
-
-@app.on_event("startup")
-async def _schedule_verification():
-    """Re-verify every 30 minutes in the background."""
-    async def _loop():
-        while True:
-            await asyncio.sleep(1800)
-            try:
-                from app.routes.predictions import _verify_recent_results
-                await _verify_recent_results()
-            except Exception as exc:
-                print(f"Scheduled verification failed: {exc}")
-    asyncio.create_task(_loop())
-
-
-
 # ── 6. Middleware ─────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", "http://localhost:5174",
-        "http://127.0.0.1:5173", "http://127.0.0.1:5174",
-        "https://statinsite.com", "https://www.statinsite.com",
-        "https://football-stats-lw4b.onrender.com",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ── 7. Routers (AFTER app is created) ────────────────────────────────────────

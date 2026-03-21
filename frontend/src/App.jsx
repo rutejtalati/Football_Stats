@@ -16,6 +16,7 @@ import TeamPage from "./pages/TeamPage";
 import MiniGamesPage from "./pages/MiniGamesPage";
 import NewsTrackerPage from "./pages/NewsTrackerPage";
 import MatchIntelligencePage from "./pages/MatchIntelligencePage";
+import LiveMatchPage from "./pages/LiveMatchPage";
 import TransferPlannerPage from "./pages/TransferPlannerPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import CaptaincyPage from "./pages/CaptaincyPage";
@@ -109,8 +110,8 @@ export default function App() {
             <Route path="/team/:teamId/:league" element={<TeamPage />} />
 
             {/* Match */}
-            <Route path="/match/:fixtureId"         element={<MatchIntelligencePage />} />
-            <Route path="/match-preview/:fixtureId" element={<MatchIntelligencePage />} />
+            <Route path="/match/:fixtureId"         element={<LiveMatchPage />} />
+            <Route path="/match-preview/:fixtureId" element={<LiveMatchPage />} />
 
             {/* Misc */}
             <Route path="/games" element={<MiniGamesPage />} />

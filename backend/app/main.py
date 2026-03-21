@@ -102,6 +102,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.routes.commentary import router as commentary_router
+    app.include_router(commentary_router)
+except ImportError:
+    pass
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════

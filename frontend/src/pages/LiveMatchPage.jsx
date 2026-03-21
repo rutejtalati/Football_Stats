@@ -6,15 +6,13 @@
 //   /api/match-lineup/{id}        — dedicated lineup endpoint (official or predicted)
 //   /api/win-probability/{id}     — Poisson win prob + markets
 //   /api/match-momentum/{id}      — per-minute momentum data
-//   /api/shot-map/{id}            — shot coordinates
-//   OpenRouter                    — AI commentary generation
+//   /api/commentary/{id}          — AI commentary (proxied via backend, uses OPENROUTER_API_KEY)
 // ═══════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-const BACKEND        = "https://football-stats-lw4b.onrender.com";
-const OPENROUTER_KEY = import.meta.env.VITE_OPENROUTER_KEY || "";
+const BACKEND = import.meta.env.VITE_API_BASE_URL || "https://football-stats-lw4b.onrender.com";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 const LIVE_STATUSES = new Set(["1H","2H","HT","ET","BT","P"]);
@@ -886,108 +884,75 @@ function CommentaryPanel({ homeTeam, awayTeam, score, events, stats, momentumDat
       setStatus(statusMessages[si]);
     }, 1100);
 
-    // Build context from real backend data
-    const hGoals = score?.fulltime?.home ?? 0;
-    const aGoals = score?.fulltime?.away ?? 0;
-    const elapsed = events?.length ? Math.max(...events.map(e => e.time?.elapsed || 0)) : 0;
-
-    const recentEvents = (events || []).slice(-6).map(e => {
-      const min = fmtMin(e.time?.elapsed, e.time?.extra);
-      const t   = (e.type||"").toLowerCase();
-      const d   = (e.detail||"").toLowerCase();
-      const type = t === "goal" ? "GOAL" : t === "card" && d.includes("yellow") ? "YELLOW" : t === "card" && d.includes("red") ? "RED CARD" : t === "subst" ? "SUB" : t.toUpperCase();
-      return `${min} ${type}: ${e.player?.name}${e.assist?.name ? ` (ast ${e.assist.name})` : ""} — ${e.team?.name}`;
-    }).join("\n");
-
-    const statLines = (() => {
-      if (!stats?.length) return "No stats available";
-      const hS = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
-      const aS = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
-      const get = (arr, key) => arr.find(s => s.type === key)?.value ?? "–";
-      return [
-        `Possession: ${get(hS,"Ball Possession")} vs ${get(aS,"Ball Possession")}`,
-        `Shots: ${get(hS,"Total Shots")} vs ${get(aS,"Total Shots")}`,
-        `On target: ${get(hS,"Shots on Goal")} vs ${get(aS,"Shots on Goal")}`,
-        `xG: ${get(hS,"expected_goals")} vs ${get(aS,"expected_goals")}`,
-        `Corners: ${get(hS,"Corner Kicks")} vs ${get(aS,"Corner Kicks")}`,
-      ].join(", ");
-    })();
-
-    const momentumLine = momentumData?.overall
-      ? `Momentum: ${homeTeam?.name} ${momentumData.overall.home_pct}% vs ${awayTeam?.name} ${momentumData.overall.away_pct}%`
-      : "";
-
-    const prompt = `You are a live football commentator for StatinSite, a sports analytics platform. Write 2 fresh commentary entries for the current moment in this match.
-
-Match: ${homeTeam?.name} vs ${awayTeam?.name}
-Current score: ${hGoals}–${aGoals} (${elapsed}' elapsed)
-Mode: ${mode}
-
-Recent events:
-${recentEvents || "None yet"}
-
-Live stats: ${statLines}
-${momentumLine}
-
-Write exactly 2 commentary entries as JSON (no markdown, no preamble):
-[
-  {"minute":"${elapsed}'","type":"chance|duel|pressure|insight|tactical","text":"2-3 vivid sentences like Sky Sports commentary. Include player names and tactical observations. Bold key player names with **name** syntax."},
-  {"minute":"${Math.max(elapsed-2,1)}'","type":"chance|duel|pressure|insight|tactical","text":"Another vivid moment from the match. Reference the stats or form above."}
-]
-
-Return only valid JSON array.`;
-
     try {
-      const apiKey = OPENROUTER_KEY;
-      if (!apiKey) throw new Error("no-key");
-
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://statinsite.com",
-          "X-Title": "StatinSite",
-        },
+      // Call our own backend — OPENROUTER_API_KEY stays server-side
+      const res = await fetch(`${BACKEND}/api/commentary/${fixtureId}`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "anthropic/claude-sonnet-4-5",
-          max_tokens: 500,
-          messages: [{ role:"user", content: prompt }],
+          home_team:  homeTeam?.name  || "",
+          away_team:  awayTeam?.name  || "",
+          home_score: score?.fulltime?.home ?? 0,
+          away_score: score?.fulltime?.away ?? 0,
+          elapsed,
+          mode,
+          events: (events || []).slice(-8).map(e => ({
+            minute: fmtMin(e.time?.elapsed, e.time?.extra),
+            type:   (e.type  || "info").toLowerCase(),
+            player: e.player?.name || "Unknown",
+            team:   e.team?.name   || "",
+            assist: e.assist?.name || null,
+          })),
+          stats: (() => {
+            if (!stats?.length) return null;
+            const hS = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
+            const aS = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
+            const g  = (arr, key) => arr.find(s => s.type === key)?.value ?? null;
+            return {
+              possession: `${g(hS,"Ball Possession")}-${g(aS,"Ball Possession")}`,
+              shots:      `${g(hS,"Total Shots")}-${g(aS,"Total Shots")}`,
+              on_target:  `${g(hS,"Shots on Goal")}-${g(aS,"Shots on Goal")}`,
+              xg:         `${g(hS,"expected_goals")}-${g(aS,"expected_goals")}`,
+              corners:    `${g(hS,"Corner Kicks")}-${g(aS,"Corner Kicks")}`,
+              pass_acc:   `${g(hS,"Passes %")}-${g(aS,"Passes %")}`,
+            };
+          })(),
+          momentum: momentumData?.overall ? {
+            home_pct:        momentumData.overall.home_pct,
+            away_pct:        momentumData.overall.away_pct,
+            dominant_period: momentumData.periods?.find(p => p.dominant !== "even")?.label || null,
+          } : null,
         }),
       });
 
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      const raw  = data.choices?.[0]?.message?.content || "[]";
-      const clean = raw.replace(/```json|```/g,"").trim();
-      const entries = JSON.parse(clean);
+      if (res.status === 429) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || "Rate limited — wait a moment");
+      }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || `Server error ${res.status}`);
+      }
 
-      const newEntries = entries.slice(0,2).map(entry => ({
-        minute: entry.minute,
-        type:   entry.type || "insight",
+      const entries = await res.json();
+      const newEntries = (Array.isArray(entries) ? entries : [entries]).slice(0, 2).map(entry => ({
+        minute: entry.minute || `${elapsed}'`,
+        type:   entry.type   || "insight",
         isHome: false,
-        text:   entry.text,
+        text:   entry.text   || "",
         ai:     true,
       }));
       setFeed(prev => [...newEntries, ...prev]);
 
     } catch (err) {
-      const noKey = err.message === "no-key";
       setFeed(prev => [{
         minute: `${elapsed}'`,
         type:   "info",
-        text:   noKey
-          ? "Add VITE_OPENROUTER_KEY to your .env file to enable AI commentary. The backend data is already connected — events, stats, and momentum all feed directly into the prompt."
-          : `Commentary generation failed: ${err.message}. Check your OpenRouter key and CORS configuration.`,
-        ai: true,
-        error: true,
+        text:   `Commentary unavailable: ${err.message}`,
+        ai:     true,
+        error:  true,
       }, ...prev]);
-    } finally {
-      clearInterval(tickRef.current);
-      setLoading(false);
-      setStatus("");
-    }
-  }
+  } finally {
 
   const TYPE_STYLE = {
     goal:      { bg:"rgba(52,211,153,.1)",  border:"rgba(52,211,153,.22)",  label:"Goal",        labelColor:"#34d399"  },

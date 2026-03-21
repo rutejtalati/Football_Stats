@@ -1116,22 +1116,68 @@ export default function LiveMatchPage() {
 
   const mode = deriveMode(fixture?.fixture?.status?.short);
 
-  // ── Core data fetch (always) ──────────────────────────────────────────────
+  // ── Core data fetch — uses /api/match-intelligence/{id} ─────────────────
   const loadCore = useCallback(async () => {
     if (!fixtureId) return;
     try {
-      const [fx, ev, st, lu, pl] = await Promise.all([
-        fetch(`${BACKEND}/api/stats/${fixtureId}`).then(r => r.json()).catch(() => null),
-        fetch(`${BACKEND}/api/stats/${fixtureId}?type=events`).then(r => r.json()).catch(() => []),
-        fetch(`${BACKEND}/api/stats/${fixtureId}?type=statistics`).then(r => r.json()).catch(() => []),
-        fetch(`${BACKEND}/api/stats/${fixtureId}?type=lineups`).then(r => r.json()).catch(() => []),
-        fetch(`${BACKEND}/api/stats/${fixtureId}?type=players`).then(r => r.json()).catch(() => []),
-      ]);
-      if (fx) setFixture(fx);
-      if (Array.isArray(ev)) setEvents(ev);
-      if (Array.isArray(st)) setStats(st);
-      if (Array.isArray(lu)) setLineups(lu);
-      if (Array.isArray(pl)) setPlayers(pl);
+      const d = await fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      if (!d) { setLoading(false); return; }
+
+      const h = d.header || {};
+      // Rebuild fixture shape expected by deriveMode / ScoreHero
+      const fx = {
+        fixture: {
+          id: h.fixture_id,
+          status: { short: h.status, elapsed: h.minute },
+          date: h.kickoff,
+          venue: { name: h.venue },
+        },
+        league: { name: h.league, logo: h.league_logo },
+        teams: {
+          home: { id: h.home_id, name: h.home_team, logo: h.home_logo },
+          away: { id: h.away_id, name: h.away_team, logo: h.away_logo },
+        },
+        score: {
+          fulltime: { home: h.home_score, away: h.away_score },
+          halftime: { home: h.ht_home,    away: h.ht_away    },
+        },
+      };
+      setFixture(fx);
+
+      // Events — map backend shape to component shape
+      const ev = (d.events || []).map(e => ({
+        time: { elapsed: e.minute, extra: e.extra_minute },
+        team: { id: e.team_id, name: e.team },
+        player: { name: e.player },
+        assist: e.assist ? { name: e.assist } : null,
+        type: e.type,
+        detail: e.detail,
+      }));
+      setEvents(ev);
+
+      // Statistics — map to array shape [{team:{id,name}, statistics:[{type,value}]}]
+      const st = [];
+      if (d.statistics?.home?.length) {
+        st.push({ team: { id: h.home_id, name: h.home_team }, statistics: d.statistics.home });
+        st.push({ team: { id: h.away_id, name: h.away_team }, statistics: d.statistics.away || [] });
+      }
+      setStats(st);
+
+      // Lineups — map {home:{formation,startXI,substitutes}, away:{...}}
+      const lu = [];
+      ["home","away"].forEach(side => {
+        const raw = d.lineups?.[side];
+        if (!raw) return;
+        lu.push({
+          team: { id: side === "home" ? h.home_id : h.away_id, name: raw.team_name },
+          formation: raw.formation,
+          startXI: (raw.startXI || []).map(p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } })),
+          substitutes: (raw.substitutes || []).map(p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } })),
+        });
+      });
+      setLineups(lu);
+
       setError(null);
     } catch (e) {
       setError("Could not load match data.");
@@ -1160,14 +1206,11 @@ export default function LiveMatchPage() {
     // NOTE: These require new backend routes — see BACKEND ROUTES NEEDED below.
     // Gracefully no-ops if unavailable.
     if (currentMode === "prematch") {
+      // predicted-lineup, team-stats — gracefully no-op if backend route absent
       fetch(`${BACKEND}/api/predicted-lineup/${fixtureId}?side=home`)
         .then(r => r.ok ? r.json() : null).then(d => d && setPredictedHome(d)).catch(() => {});
       fetch(`${BACKEND}/api/predicted-lineup/${fixtureId}?side=away`)
         .then(r => r.ok ? r.json() : null).then(d => d && setPredictedAway(d)).catch(() => {});
-      fetch(`${BACKEND}/api/injuries/${fixtureId}`)
-        .then(r => r.ok ? r.json() : null).then(d => d?.injuries && setInjuries(d.injuries)).catch(() => {});
-      fetch(`${BACKEND}/api/team-stats/${fixtureId}`)
-        .then(r => r.ok ? r.json() : null).then(d => d && setTeamStats(d)).catch(() => {});
     }
   }, [fixtureId]);
 

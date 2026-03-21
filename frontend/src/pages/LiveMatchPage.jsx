@@ -1137,264 +1137,144 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
 
 // ─── Commentary helpers ───────────────────────────────────────────────────────
 
-/** Map match-intelligence statistics dict → flat "home-away" strings for the API */
 function buildStatStr(statsObj, key) {
   const h = statsObj?.[key]?.home;
   const a = statsObj?.[key]?.away;
   if (h == null && a == null) return null;
-  return `${h ?? 0}-${a ?? 0}`;
+  const hv = String(h ?? 0).replace("%","");
+  const av = String(a ?? 0).replace("%","");
+  return `${hv}-${av}`;
 }
 
-/** Build the full POST body for /api/commentary/{id} from all available state */
-function buildCommentaryPayload({
-  d,           // raw match-intelligence response
-  fixture,
-  events,
-  stats,
-  momentumData,
-  lineups,
-  predictedHome,
-  predictedAway,
-  winProb,
-  mode,
-}) {
+function buildCommentaryPayload({ d, fixture, events, stats, momentumData, lineups, predictedHome, predictedAway, winProb, mode }) {
   if (!d) return null;
   const h   = d.header || {};
   const s   = d.statistics || {};
-  const hf  = d.home_recent_form  || [];
-  const af  = d.away_recent_form  || [];
-  const hss = d.home_season_stats || {};
-  const ass = d.away_season_stats || {};
-  const h2h = d.h2h || {};
-  const inj = d.injuries || {};
-  const ven = d.venue || {};
-  const ins = d.insights || [];
-  const pred = d.prediction || {};
   const elapsed = h.elapsed || fixture?.fixture?.status?.elapsed || 0;
 
-  // Events → commentary shape
   const evList = (d.events || []).slice(-10).map(e => ({
-    minute: e.minute,
-    type:   e.type   || "",
-    detail: e.detail || "",
+    minute: e.minute, type: e.type || "", detail: e.detail || "",
     player: e.player_name || e.player || "",
     team:   e.team_name   || e.team   || "",
     assist: e.assist_name || e.assist || null,
   }));
 
-  // Live stats from normalised statistics block
   const statsPayload = {
-    possession:       buildStatStr(s, "possession"),
-    shots_total:      buildStatStr(s, "shots_total"),
-    shots_on_target:  buildStatStr(s, "shots_on_target"),
-    shots_inside_box: buildStatStr(s, "shots_inside_box"),
-    shots_outside_box:buildStatStr(s, "shots_outside_box"),
-    xg:               buildStatStr(s, "expected_goals"),
-    corners:          buildStatStr(s, "corner_kicks"),
-    pass_accuracy:    buildStatStr(s, "pass_accuracy"),
-    total_passes:     buildStatStr(s, "total_passes"),
-    fouls:            buildStatStr(s, "fouls"),
-    offsides:         buildStatStr(s, "offsides"),
-    yellow_cards:     buildStatStr(s, "yellow_cards"),
-    red_cards:        buildStatStr(s, "red_cards"),
-    goalkeeper_saves: buildStatStr(s, "goalkeeper_saves"),
+    possession:        buildStatStr(s,"possession"),
+    shots_total:       buildStatStr(s,"shots_total"),
+    shots_on_target:   buildStatStr(s,"shots_on_target"),
+    shots_inside_box:  buildStatStr(s,"shots_inside_box"),
+    shots_outside_box: buildStatStr(s,"shots_outside_box"),
+    xg:                buildStatStr(s,"expected_goals"),
+    corners:           buildStatStr(s,"corner_kicks"),
+    pass_accuracy:     buildStatStr(s,"pass_accuracy"),
+    total_passes:      buildStatStr(s,"total_passes"),
+    fouls:             buildStatStr(s,"fouls"),
+    offsides:          buildStatStr(s,"offsides"),
+    yellow_cards:      buildStatStr(s,"yellow_cards"),
+    red_cards:         buildStatStr(s,"red_cards"),
+    goalkeeper_saves:  buildStatStr(s,"goalkeeper_saves"),
   };
 
-  // Momentum from momentumData state
   const mom = momentumData
     ? { home_pct: momentumData.home_pct, away_pct: momentumData.away_pct, dominant_period: momentumData.dominant_period || null }
     : null;
 
-  // H2H
+  const h2h = d.h2h || {};
   const h2hPayload = h2h.count ? {
-    count:     h2h.count,
-    home_wins: h2h.home_wins,
-    draws:     h2h.draws,
-    away_wins: h2h.away_wins,
+    count: h2h.count, home_wins: h2h.home_wins, draws: h2h.draws, away_wins: h2h.away_wins,
     avg_goals: h2h.results?.length
-      ? parseFloat(
-          (h2h.results.reduce((acc, r) => acc + (r.home_goals||0) + (r.away_goals||0), 0) / h2h.results.length).toFixed(2)
-        )
+      ? parseFloat((h2h.results.reduce((a,r) => a+(r.home_goals||0)+(r.away_goals||0),0) / h2h.results.length).toFixed(2))
       : null,
-    results: (h2h.results || []).slice(0, 5).map(r => ({
-      date: r.date, home_team: r.home_team, away_team: r.away_team,
-      home_goals: r.home_goals, away_goals: r.away_goals,
-    })),
+    results: (h2h.results||[]).slice(0,5).map(r=>({ date:r.date, home_team:r.home_team, away_team:r.away_team, home_goals:r.home_goals, away_goals:r.away_goals })),
   } : null;
 
-  // Recent form
-  const fmtForm = (list) => (list || []).slice(0, 5).map(f => ({
-    date: f.date, opponent: f.opponent, result: f.result,
-    goals_for: f.goals_for, goals_against: f.goals_against, home_away: f.home_away,
-  }));
+  const fmtForm = list => (list||[]).slice(0,5).map(f=>({ date:f.date, opponent:f.opponent, result:f.result, goals_for:f.goals_for, goals_against:f.goals_against, home_away:f.home_away }));
+  const fmtSeason = ss => ss?.played ? { played:ss.played, wins:ss.wins, draws:ss.draws, losses:ss.losses, goals_for_avg:ss.goals_for_avg?String(ss.goals_for_avg):null, goals_against_avg:ss.goals_against_avg?String(ss.goals_against_avg):null, clean_sheets:ss.clean_sheets, form:ss.form } : null;
+  const fmtInj = list => (list||[]).map(p=>({ player_name:p.player_name||p.name||"", type:p.type||p.reason||"Injury" }));
 
-  // Season stats
-  const fmtSeason = (ss) => ss?.played ? {
-    played:            ss.played,
-    wins:              ss.wins,
-    draws:             ss.draws,
-    losses:            ss.losses,
-    goals_for_avg:     ss.goals_for_avg   ? String(ss.goals_for_avg)   : null,
-    goals_against_avg: ss.goals_against_avg ? String(ss.goals_against_avg) : null,
-    clean_sheets:      ss.clean_sheets,
-    form:              ss.form,
+  const inj = d.injuries || {};
+  const ven = d.venue    || {};
+  const pred = d.prediction || {};
+  const ins  = d.insights   || [];
+
+  const homeLu = (lineups||[]).find(l=>l.team?.id===h.home_id)||null;
+  const awayLu = (lineups||[]).find(l=>l.team?.id===h.away_id)||null;
+
+  const predPayload = (pred.p_home_win!=null||winProb?.pre_match) ? {
+    p_home_win: pred.p_home_win!=null ? pred.p_home_win*100 : winProb?.pre_match?.p_home_win,
+    p_draw:     pred.p_draw!=null     ? pred.p_draw*100     : winProb?.pre_match?.p_draw,
+    p_away_win: pred.p_away_win!=null ? pred.p_away_win*100 : winProb?.pre_match?.p_away_win,
+    xg_home:    pred.xg_home ?? winProb?.pre_match?.xg_home ?? null,
+    xg_away:    pred.xg_away ?? winProb?.pre_match?.xg_away ?? null,
+    btts:       pred.btts    ?? null,
+    over_2_5:   pred.over_2_5?? null,
   } : null;
-
-  // Injuries — normalise to {player_name, type}
-  const fmtInj = (list) => (list || []).map(p => ({
-    player_name: p.player_name || p.name || "",
-    type: p.type || p.reason || "Injury",
-  }));
-
-  // Player ratings from players state (live/FT only)
-  // players is [{player:{name}, teamLogo, isHome, statistics:[{games:{rating,minutes}}]}]
-  const ratingsPayload = (d.players_data || []).flatMap(teamBlock =>
-    (teamBlock.players || [])
-      .map(entry => {
-        const g = (entry.statistics || [{}])[0]?.games || {};
-        const r = parseFloat(g.rating);
-        if (!r) return null;
-        const teamName = teamBlock.team?.name || "";
-        return { name: entry.player?.name || "", team: teamName, rating: r, minutes: g.minutes || null };
-      })
-      .filter(Boolean)
-  ).slice(0, 12);
-
-  // Prediction from winProb state or d.prediction
-  const predPayload = (pred.p_home_win != null || winProb?.pre_match) ? {
-    p_home_win: pred.p_home_win  != null ? pred.p_home_win  * 100 : winProb?.pre_match?.p_home_win,
-    p_draw:     pred.p_draw      != null ? pred.p_draw      * 100 : winProb?.pre_match?.p_draw,
-    p_away_win: pred.p_away_win  != null ? pred.p_away_win  * 100 : winProb?.pre_match?.p_away_win,
-    xg_home:    pred.xg_home  ?? winProb?.pre_match?.xg_home ?? null,
-    xg_away:    pred.xg_away  ?? winProb?.pre_match?.xg_away ?? null,
-    btts:       pred.btts     ?? null,
-    over_2_5:   pred.over_2_5 ?? null,
-  } : null;
-
-  // Formations
-  const homeLu  = lineups?.find(l => l.team?.id === h.home_id) || null;
-  const awayLu  = lineups?.find(l => l.team?.id === h.away_id) || null;
-  const homeFm  = homeLu?.formation || predictedHome?.formation || null;
-  const awayFm  = awayLu?.formation || predictedAway?.formation || null;
-
-  // Insights
-  const insPayload = (ins || []).slice(0, 5).map(i => ({
-    type: i.type || "", title: i.title || "", body: i.body || "",
-  }));
 
   return {
-    home_team:  h.home_team  || "",
-    away_team:  h.away_team  || "",
-    home_score: h.home_score ?? 0,
-    away_score: h.away_score ?? 0,
-    elapsed:    elapsed,
-    mode:       mode,
-    events:     evList,
-    stats:      statsPayload,
-    momentum:   mom,
-    h2h:        h2hPayload,
-    home_form:  fmtForm(hf),
-    away_form:  fmtForm(af),
-    home_season_stats: fmtSeason(hss),
-    away_season_stats: fmtSeason(ass),
-    injuries: {
-      home: fmtInj(inj.home || []),
-      away: fmtInj(inj.away || []),
-    },
-    venue: ven.name ? {
-      name: ven.name, city: ven.city,
-      capacity: ven.capacity, surface: ven.surface,
-    } : null,
-    referee:               h.referee       || null,
-    league_round:          h.round         || null,
-    home_lineup_formation: homeFm,
-    away_lineup_formation: awayFm,
-    player_ratings:        ratingsPayload,
-    prediction:            predPayload,
-    insights:              insPayload,
+    home_team:  h.home_team  || "", away_team: h.away_team || "",
+    home_score: h.home_score ?? 0,  away_score: h.away_score ?? 0,
+    elapsed, mode,
+    events:   evList,
+    stats:    statsPayload,
+    momentum: mom,
+    h2h:      h2hPayload,
+    home_form: fmtForm(d.home_recent_form), away_form: fmtForm(d.away_recent_form),
+    home_season_stats: fmtSeason(d.home_season_stats),
+    away_season_stats: fmtSeason(d.away_season_stats),
+    injuries: { home: fmtInj(inj.home||[]), away: fmtInj(inj.away||[]) },
+    venue: ven.name ? { name:ven.name, city:ven.city, capacity:ven.capacity, surface:ven.surface } : null,
+    referee:               h.referee || null,
+    league_round:          h.round   || null,
+    home_lineup_formation: homeLu?.formation || predictedHome?.formation || null,
+    away_lineup_formation: awayLu?.formation || predictedAway?.formation || null,
+    player_ratings: [],
+    prediction: predPayload,
+    insights:   ins.slice(0,5).map(i=>({ type:i.type||"", title:i.title||"", body:i.body||"" })),
   };
 }
 
-// ─── Commentary type config ───────────────────────────────────────────────────
 const COMM_TYPE_STYLE = {
-  goal:         { color:"#34d399", bg:"rgba(52,211,153,.1)",  border:"rgba(52,211,153,.2)",  label:"GOAL"       },
-  chance:       { color:"#f87171", bg:"rgba(248,113,113,.1)", border:"rgba(248,113,113,.22)", label:"CHANCE"    },
-  pressure:     { color:"#fbbf24", bg:"rgba(251,191,36,.1)",  border:"rgba(251,191,36,.22)",  label:"PRESSURE"  },
-  tactical:     { color:"#60a5fa", bg:"rgba(96,165,250,.1)",  border:"rgba(96,165,250,.2)",   label:"TACTICAL"  },
-  insight:      { color:"#a78bfa", bg:"rgba(167,139,250,.1)", border:"rgba(167,139,250,.2)",  label:"INSIGHT"   },
-  duel:         { color:"#fb923c", bg:"rgba(251,146,60,.1)",  border:"rgba(251,146,60,.2)",   label:"DUEL"      },
-  set_piece:    { color:"#e879f9", bg:"rgba(232,121,249,.1)", border:"rgba(232,121,249,.2)",  label:"SET PIECE" },
-  substitution: { color:"#4ade80", bg:"rgba(74,222,128,.1)",  border:"rgba(74,222,128,.2)",   label:"SUB"       },
-  preview:      { color:"#60a5fa", bg:"rgba(96,165,250,.1)",  border:"rgba(96,165,250,.2)",   label:"PREVIEW"   },
-  prediction:   { color:"#a78bfa", bg:"rgba(167,139,250,.1)", border:"rgba(167,139,250,.2)",  label:"PREDICTION"},
-  h2h:          { color:"#fbbf24", bg:"rgba(251,191,36,.1)",  border:"rgba(251,191,36,.22)",  label:"H2H"       },
-  form:         { color:"#34d399", bg:"rgba(52,211,153,.1)",  border:"rgba(52,211,153,.2)",   label:"FORM"      },
-  card:         { color:"#fbbf24", bg:"rgba(251,191,36,.1)",  border:"rgba(251,191,36,.22)",  label:"CARD"      },
+  goal:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.25)",  label:"GOAL"       },
+  chance:       { color:"#f87171", bg:"rgba(248,113,113,.12)", border:"rgba(248,113,113,.25)", label:"CHANCE"     },
+  pressure:     { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"PRESSURE"   },
+  tactical:     { color:"#60a5fa", bg:"rgba(96,165,250,.12)",  border:"rgba(96,165,250,.22)",  label:"TACTICAL"   },
+  insight:      { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"INSIGHT"    },
+  duel:         { color:"#fb923c", bg:"rgba(251,146,60,.12)",  border:"rgba(251,146,60,.22)",  label:"DUEL"       },
+  set_piece:    { color:"#e879f9", bg:"rgba(232,121,249,.12)", border:"rgba(232,121,249,.22)", label:"SET PIECE"  },
+  substitution: { color:"#4ade80", bg:"rgba(74,222,128,.12)",  border:"rgba(74,222,128,.22)",  label:"SUB"        },
+  preview:      { color:"#60a5fa", bg:"rgba(96,165,250,.12)",  border:"rgba(96,165,250,.22)",  label:"PREVIEW"    },
+  prediction:   { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"PREDICTION" },
+  h2h:          { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"H2H"        },
+  form:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.22)",  label:"FORM"       },
+  card:         { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"CARD"       },
 };
-function commStyle(type) {
-  return COMM_TYPE_STYLE[(type||"").toLowerCase()] || COMM_TYPE_STYLE.insight;
-}
+function commStyle(t) { return COMM_TYPE_STYLE[(t||"").toLowerCase()] || COMM_TYPE_STYLE.insight; }
 
-/** Renders **bold** markdown in text as <strong> */
 function CommText({ text }) {
-  const parts = (text || "").split(/\*\*(.+?)\*\*/g);
   return (
     <span>
-      {parts.map((p, i) =>
-        i % 2 === 1
-          ? <strong key={i} style={{ color:"#fff", fontWeight:800 }}>{p}</strong>
-          : p
+      {(text||"").split(/\*\*(.+?)\*\*/g).map((p,i) =>
+        i%2===1 ? <strong key={i} style={{color:"#fff",fontWeight:800}}>{p}</strong> : p
       )}
     </span>
   );
 }
 
-// ─── CommentaryPanel component ────────────────────────────────────────────────
+// ─── CommentaryPanel ──────────────────────────────────────────────────────────
 function CommentaryPanel({
   fixtureId, mode, fixture, events, stats, momentumData,
-  lineups, predictedHome, predictedAway, winProb,
-  matchIntelRaw,
+  lineups, predictedHome, predictedAway, winProb, matchIntelRaw,
   commentaryFeed, setCommentaryFeed,
   commLoading, setCommLoading,
-  commCooldown, setCommCooldown, commCoolRef,
+  commCooldown, setCommCooldown, commCoolRef, commAutoFired,
   homeTeam, awayTeam,
 }) {
-  const elapsed  = fixture?.fixture?.status?.elapsed || 0;
-  const score    = fixture?.score;
-  const hScore   = score?.fulltime?.home ?? 0;
-  const aScore   = score?.fulltime?.away ?? 0;
-  const isLive   = mode === "live";
-  const isFT     = mode === "fulltime";
-
-  async function generate() {
-    if (commLoading || commCooldown > 0) return;
-    const payload = buildCommentaryPayload({
-      d: matchIntelRaw, fixture, events, stats, momentumData,
-      lineups, predictedHome, predictedAway, winProb, mode,
-    });
-    if (!payload) return;
-
-    setCommLoading(true);
-    try {
-      const resp = await fetch(`${BACKEND}/api/commentary/${fixtureId}`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
-      });
-      if (resp.ok) {
-        const entries = await resp.json();
-        if (Array.isArray(entries) && entries.length) {
-          setCommentaryFeed(prev => [...entries.reverse(), ...prev].slice(0, 30));
-        }
-      } else if (resp.status === 429) {
-        const { detail } = await resp.json().catch(() => ({}));
-        const wait = parseInt((detail || "").match(/\d+/)?.[0] || "20");
-        startCooldown(wait);
-      }
-    } catch(e) { console.error("Commentary error", e); }
-    finally { setCommLoading(false); }
-    startCooldown(20);
-  }
+  const elapsed = fixture?.fixture?.status?.elapsed || 0;
+  const hScore  = fixture?.score?.fulltime?.home ?? 0;
+  const aScore  = fixture?.score?.fulltime?.away ?? 0;
+  const isLive  = mode === "live";
+  const isFT    = mode === "fulltime";
 
   function startCooldown(secs) {
     setCommCooldown(secs);
@@ -1407,156 +1287,155 @@ function CommentaryPanel({
     }, 1000);
   }
 
+  async function generate() {
+    if (commLoading || commCooldown > 0) return;
+    const payload = buildCommentaryPayload({ d:matchIntelRaw, fixture, events, stats, momentumData, lineups, predictedHome, predictedAway, winProb, mode });
+    if (!payload) return;
+    setCommLoading(true);
+    try {
+      const resp = await fetch(`${BACKEND}/api/commentary/${fixtureId}`, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload),
+      });
+      if (resp.ok) {
+        const entries = await resp.json();
+        if (Array.isArray(entries) && entries.length) {
+          // newest entries prepended; cap feed at 40 entries
+          setCommentaryFeed(prev => [...entries.slice().reverse(), ...prev].slice(0,40));
+        }
+      } else if (resp.status === 429) {
+        const body = await resp.json().catch(()=>({}));
+        const wait = parseInt((body.detail||"").match(/\d+/)?.[0]||"20");
+        startCooldown(wait);
+      }
+    } catch(e) { console.error("Commentary error", e); }
+    finally { setCommLoading(false); }
+    startCooldown(20);
+  }
+
+  // ── Auto-generate once when Commentary tab first opens with data ready ─────
+  useEffect(() => {
+    if (commAutoFired.current) return;
+    if (!matchIntelRaw) return;
+    if (commCooldown > 0 || commLoading) return;
+    commAutoFired.current = true;
+    generate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchIntelRaw]);
+
   const isReady = !commLoading && commCooldown === 0;
 
-  // Live stat pills extracted from match-intelligence statistics
   const st = matchIntelRaw?.statistics || {};
   const pills = [
-    ["Possession",  buildStatStr(st,"possession")],
-    ["xG",          buildStatStr(st,"expected_goals")],
-    ["Shots",       buildStatStr(st,"shots_total")],
-    ["On target",   buildStatStr(st,"shots_on_target")],
-    ["Pass acc",    buildStatStr(st,"pass_accuracy")],
-    ["Corners",     buildStatStr(st,"corner_kicks")],
-    ["Fouls",       buildStatStr(st,"fouls")],
-    ["GK saves",    buildStatStr(st,"goalkeeper_saves")],
-  ].filter(([,v]) => v && v !== "null-null" && v !== "0-0");
+    ["Possession", buildStatStr(st,"possession")],
+    ["xG",         buildStatStr(st,"expected_goals")],
+    ["Shots",      buildStatStr(st,"shots_total")],
+    ["On target",  buildStatStr(st,"shots_on_target")],
+    ["Pass acc",   buildStatStr(st,"pass_accuracy")],
+    ["Corners",    buildStatStr(st,"corner_kicks")],
+    ["Fouls",      buildStatStr(st,"fouls")],
+    ["GK saves",   buildStatStr(st,"goalkeeper_saves")],
+  ].filter(([,v]) => v && v !== "null-null" && v !== "0-0" && v !== "undefined-undefined");
 
-  // Pre-computed insights from match-intelligence
-  const insights = (matchIntelRaw?.insights || []).slice(0, 3);
+  const insights = (matchIntelRaw?.insights||[]).slice(0,3);
 
   return (
-    <div style={{ padding:"0 0 40px" }}>
+    <div style={{padding:"0 0 48px"}}>
 
-      {/* ── Match status bar ── */}
-      <div style={{
-        display:"flex", alignItems:"center", justifyContent:"space-between",
-        padding:"10px 20px 6px", borderBottom:"1px solid rgba(255,255,255,.05)",
-      }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          {isLive && (
-            <span style={{
-              width:7, height:7, borderRadius:"50%", background:"#ef4444",
-              display:"inline-block", flexShrink:0,
-              animation:"livePulse 1.4s ease-in-out infinite",
-            }}/>
-          )}
-          <span style={{ fontSize:11, fontWeight:800,
-            color: isLive ? "#ef4444" : isFT ? "#a78bfa" : "#60a5fa",
-            letterSpacing:".07em",
-          }}>
-            {isLive ? `LIVE · ${elapsed}'` : isFT ? "FULL TIME" : "PRE-MATCH"}
+      {/* ── Status bar ── */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px 6px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {isLive && <span style={{width:7,height:7,borderRadius:"50%",background:"#ef4444",display:"inline-block",flexShrink:0,animation:"livePulse 1.4s ease-in-out infinite"}}/>}
+          <span style={{fontSize:11,fontWeight:800,color:isLive?"#ef4444":isFT?"#a78bfa":"#60a5fa",letterSpacing:".07em"}}>
+            {isLive?`LIVE · ${elapsed}'`:isFT?"FULL TIME":"PRE-MATCH"}
           </span>
-          <span style={{ fontSize:11, color:"rgba(255,255,255,.3)" }}>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>
             {homeTeam?.name} {hScore}–{aScore} {awayTeam?.name}
           </span>
         </div>
-        <span style={{ fontSize:9, color:"rgba(255,255,255,.18)", fontFamily:"monospace", letterSpacing:".04em" }}>
-          AI · claude-haiku-4-5
+        <span style={{fontSize:9,color:"rgba(255,255,255,.18)",fontFamily:"monospace",letterSpacing:".04em"}}>
+          AI · OpenRouter · claude-haiku-4-5
         </span>
       </div>
 
-      {/* ── Generate button ── */}
-      <div style={{ padding:"10px 20px 4px" }}>
-        <button
-          onClick={generate}
-          disabled={!isReady}
-          style={{
-            display:"flex", alignItems:"center", gap:8,
-            padding:"8px 16px",
-            background: isReady ? "rgba(167,139,250,.1)" : "rgba(255,255,255,.03)",
-            border: `1px solid ${isReady ? "rgba(167,139,250,.3)" : "rgba(255,255,255,.08)"}`,
-            borderRadius:8, cursor: isReady ? "pointer" : "not-allowed",
-            fontSize:11, fontWeight:900, letterSpacing:".06em", textTransform:"uppercase",
-            color: isReady ? "#a78bfa" : "rgba(255,255,255,.22)",
-            transition:"all .15s", width:"100%", justifyContent:"center",
-          }}
-        >
+      {/* ── Stat pills ── */}
+      {pills.length > 0 && (
+        <div style={{padding:"8px 20px 2px",display:"flex",flexWrap:"wrap",gap:4}}>
+          {pills.map(([label,val])=>(
+            <span key={label} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 8px",borderRadius:5,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",fontSize:10,fontWeight:700}}>
+              <span style={{color:"rgba(255,255,255,.38)"}}>{label}</span>
+              <span style={{color:"#e2e8f0",fontFamily:"'JetBrains Mono',monospace"}}>{val}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* ── Refresh button ── */}
+      <div style={{padding:"8px 20px 4px"}}>
+        <button onClick={generate} disabled={!isReady} style={{
+          display:"flex",alignItems:"center",gap:8,padding:"8px 16px",width:"100%",
+          justifyContent:"center",
+          background:isReady?"rgba(167,139,250,.1)":"rgba(255,255,255,.03)",
+          border:`1px solid ${isReady?"rgba(167,139,250,.3)":"rgba(255,255,255,.07)"}`,
+          borderRadius:8,cursor:isReady?"pointer":"not-allowed",
+          fontSize:11,fontWeight:900,letterSpacing:".06em",textTransform:"uppercase",
+          color:isReady?"#a78bfa":"rgba(255,255,255,.22)",transition:"all .15s",
+        }}>
           {commLoading ? (
             <>
-              <span style={{ width:12, height:12, borderRadius:"50%",
-                border:"1.5px solid rgba(167,139,250,.3)", borderTopColor:"#a78bfa",
-                animation:"livePulse .7s linear infinite", display:"inline-block",flexShrink:0 }}/>
-              Generating commentary…
+              <span style={{width:12,height:12,borderRadius:"50%",border:"1.5px solid rgba(167,139,250,.3)",borderTopColor:"#a78bfa",display:"inline-block",flexShrink:0,animation:"livePulse .7s linear infinite"}}/>
+              Generating…
             </>
           ) : commCooldown > 0 ? (
-            <>
-              <span style={{ fontFamily:"monospace" }}>{commCooldown}s</span>
-              · Next commentary available soon
-            </>
+            <span style={{fontFamily:"monospace",letterSpacing:".04em"}}>
+              Refresh in {commCooldown}s
+            </span>
           ) : (
             <>
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <path d="M6.5 1v3M6.5 9v3M1 6.5h3M9 6.5h3M2.9 2.9l2.1 2.1M7.9 7.9l2.1 2.1M2.9 10.1l2.1-2.1M7.9 5.1l2.1-2.1"
-                  stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round"/>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{flexShrink:0}}>
+                <path d="M6.5 1v3M6.5 9v3M1 6.5h3M9 6.5h3M2.9 2.9l2.1 2.1M7.9 7.9l2.1 2.1M2.9 10.1l2.1-2.1M7.9 5.1l2.1-2.1" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              {commentaryFeed.length === 0 ? "Generate commentary" : "Refresh commentary"}
+              {commentaryFeed.length===0 ? "Generating commentary…" : "Refresh commentary"}
             </>
           )}
         </button>
       </div>
 
-      {/* ── Stat pills (live/FT only) ── */}
-      {pills.length > 0 && (
-        <div style={{ padding:"6px 20px 4px", display:"flex", flexWrap:"wrap", gap:4 }}>
-          {pills.map(([label, val]) => (
-            <span key={label} style={{
-              display:"inline-flex", alignItems:"center", gap:5,
-              padding:"3px 8px", borderRadius:5,
-              background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)",
-              fontSize:10, fontWeight:700,
-            }}>
-              <span style={{ color:"rgba(255,255,255,.4)" }}>{label}</span>
-              <span style={{ color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace" }}>{val}</span>
-            </span>
+      {/* ── Loading skeleton ── */}
+      {commLoading && commentaryFeed.length === 0 && (
+        <div style={{padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
+          {[1,2,3].map(i=>(
+            <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+              <div style={{width:28,height:10,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,marginTop:3}}/>
+              <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{width:60,height:8,borderRadius:4,background:"rgba(167,139,250,.15)"}}/>
+                <div style={{width:"90%",height:8,borderRadius:4,background:"rgba(255,255,255,.05)"}}/>
+                <div style={{width:"75%",height:8,borderRadius:4,background:"rgba(255,255,255,.04)"}}/>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       {/* ── Commentary feed ── */}
       {commentaryFeed.length > 0 && (
-        <div style={{ margin:"10px 0 0" }}>
-          <div style={{
-            fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
-            color:"rgba(255,255,255,.22)", padding:"0 20px 6px",
-            display:"flex", alignItems:"center", gap:6,
-          }}>
-            <span style={{ width:5, height:5, borderRadius:"50%", background:"#a78bfa", display:"inline-block" }}/>
-            AI Commentary Feed
+        <div style={{margin:"10px 0 0"}}>
+          <div style={{fontSize:8,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.2)",padding:"0 20px 6px",display:"flex",alignItems:"center",gap:6}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:"#a78bfa",display:"inline-block"}}/>
+            AI Commentary
           </div>
-          {commentaryFeed.map((entry, i) => {
-            const cs = commStyle(entry.type);
-            return (
-              <div key={i} style={{
-                display:"flex", gap:12, padding:"11px 20px",
-                borderBottom:"1px solid rgba(255,255,255,.04)",
-                alignItems:"flex-start",
-                animation:"fadeUp .3s ease both",
-                animationDelay:`${i * 0.05}s`,
-              }}>
-                <div style={{
-                  fontSize:10, fontWeight:800, color:"rgba(255,255,255,.3)",
-                  width:30, flexShrink:0, fontFamily:"'JetBrains Mono',monospace",
-                  paddingTop:2,
-                }}>
-                  {entry.minute || "–"}
+          {commentaryFeed.map((entry,i)=>{
+            const cs=commStyle(entry.type);
+            return(
+              <div key={i} style={{display:"flex",gap:12,padding:"11px 20px",borderBottom:"1px solid rgba(255,255,255,.04)",alignItems:"flex-start",animation:"fadeUp .3s ease both",animationDelay:`${Math.min(i*.04,0.3)}s`}}>
+                <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,.28)",width:30,flexShrink:0,fontFamily:"'JetBrains Mono',monospace",paddingTop:2}}>
+                  {entry.minute||"–"}
                 </div>
-                <div style={{ flex:1 }}>
-                  <span style={{
-                    display:"inline-block", fontSize:7, fontWeight:900,
-                    letterSpacing:".1em", textTransform:"uppercase",
-                    background:cs.bg, color:cs.color,
-                    border:`1px solid ${cs.border}`,
-                    borderRadius:4, padding:"2px 6px", marginBottom:5,
-                  }}>
+                <div style={{flex:1}}>
+                  <span style={{display:"inline-block",fontSize:7,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",background:cs.bg,color:cs.color,border:`1px solid ${cs.border}`,borderRadius:4,padding:"2px 6px",marginBottom:6}}>
                     {cs.label}
                   </span>
-                  <div style={{
-                    fontSize:12.5, lineHeight:1.65,
-                    color:"rgba(255,255,255,.78)",
-                    fontFamily:"'Inter','Sora',sans-serif",
-                  }}>
-                    <CommText text={entry.text} />
+                  <div style={{fontSize:12.5,lineHeight:1.7,color:"rgba(255,255,255,.78)",fontFamily:"'Inter','Sora',sans-serif"}}>
+                    <CommText text={entry.text}/>
                   </div>
                 </div>
               </div>
@@ -1565,45 +1444,19 @@ function CommentaryPanel({
         </div>
       )}
 
-      {/* ── Empty state ── */}
-      {commentaryFeed.length === 0 && !commLoading && (
-        <div style={{
-          padding:"40px 20px", textAlign:"center",
-          color:"rgba(255,255,255,.18)", fontSize:13, lineHeight:1.7,
-        }}>
-          {mode === "prematch"
-            ? "Generate AI commentary for a pre-match preview using H2H records, form, injuries and model predictions."
-            : mode === "live"
-            ? "Generate live AI commentary using real-time stats, events and momentum data."
-            : "Generate a match report with key turning points and standout performers."}
-        </div>
-      )}
-
-      {/* ── Pre-computed insights from match-intelligence ── */}
+      {/* ── Pre-computed match insights ── */}
       {insights.length > 0 && (
-        <div style={{ margin:"12px 16px 0" }}>
-          <div style={{
-            fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
-            color:"rgba(255,255,255,.22)", marginBottom:6,
-            display:"flex", alignItems:"center", gap:6,
-          }}>
-            <span style={{ width:5, height:5, borderRadius:"50%", background:"#34d399", display:"inline-block" }}/>
+        <div style={{margin:"14px 16px 0"}}>
+          <div style={{fontSize:8,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.2)",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:"#34d399",display:"inline-block"}}/>
             Match Intelligence
           </div>
-          {insights.map((ins, i) => (
-            <div key={i} style={{
-              padding:"10px 14px", borderRadius:10, marginBottom:6,
-              background:"rgba(52,211,153,.05)", border:"1px solid rgba(52,211,153,.12)",
-            }}>
-              <div style={{
-                fontSize:9, fontWeight:800, color:"#34d399",
-                letterSpacing:".06em", marginBottom:4,
-              }}>
-                {(ins.title || "").toUpperCase()}
+          {insights.map((ins,i)=>(
+            <div key={i} style={{padding:"10px 14px",borderRadius:10,marginBottom:6,background:"rgba(52,211,153,.05)",border:"1px solid rgba(52,211,153,.12)"}}>
+              <div style={{fontSize:9,fontWeight:800,color:"#34d399",letterSpacing:".06em",marginBottom:4}}>
+                {(ins.title||"").toUpperCase()}
               </div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.62)", lineHeight:1.55 }}>
-                {ins.body}
-              </div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,.6)",lineHeight:1.6}}>{ins.body}</div>
             </div>
           ))}
         </div>
@@ -1644,12 +1497,13 @@ export default function LiveMatchPage() {
   const [error,         setError]        = useState(null);
   const pollRef = useRef(null);
 
-  // ── Commentary state (populated from match-intelligence response) ────────
+  // ── Commentary state ──────────────────────────────────────────────────────
   const [matchIntelRaw,  setMatchIntelRaw]  = useState(null);
   const [commentaryFeed, setCommentaryFeed] = useState([]);
   const [commLoading,    setCommLoading]    = useState(false);
   const [commCooldown,   setCommCooldown]   = useState(0);
-  const commCoolRef = useRef(null);
+  const commCoolRef    = useRef(null);
+  const commAutoFired  = useRef(false);   // ensure auto-generate fires only once per fixture
 
   const mode = deriveMode(fixture?.fixture?.status?.short);
 
@@ -1748,7 +1602,7 @@ export default function LiveMatchPage() {
       }
       setStats(st);
 
-      // Save full match-intelligence payload for commentary tab
+      // Persist full match-intelligence payload so CommentaryPanel can read it
       setMatchIntelRaw(d);
 
       // Lineups from match-intelligence
@@ -1928,15 +1782,14 @@ export default function LiveMatchPage() {
               <PredictionStrip winProb={winProb} homeTeam={homeTeam} awayTeam={awayTeam} />
             )}
             {mode === "prematch" && tab === "Commentary" && (
-              <CommentaryPanel
-                fixtureId={fixtureId} mode={mode} fixture={fixture}
+              <CommentaryPanel fixtureId={fixtureId} mode={mode} fixture={fixture}
                 events={events} stats={stats} momentumData={momentumData}
                 lineups={lineups} predictedHome={predictedHome} predictedAway={predictedAway}
                 winProb={winProb} matchIntelRaw={matchIntelRaw}
                 commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
                 commLoading={commLoading} setCommLoading={setCommLoading}
                 commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef}
+                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}
@@ -1953,15 +1806,14 @@ export default function LiveMatchPage() {
             {mode === "live" && tab === "Lineups"  && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Players"  && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Commentary" && (
-              <CommentaryPanel
-                fixtureId={fixtureId} mode={mode} fixture={fixture}
+              <CommentaryPanel fixtureId={fixtureId} mode={mode} fixture={fixture}
                 events={events} stats={stats} momentumData={momentumData}
                 lineups={lineups} predictedHome={predictedHome} predictedAway={predictedAway}
                 winProb={winProb} matchIntelRaw={matchIntelRaw}
                 commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
                 commLoading={commLoading} setCommLoading={setCommLoading}
                 commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef}
+                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}
@@ -1978,15 +1830,14 @@ export default function LiveMatchPage() {
             {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Players" && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Commentary" && (
-              <CommentaryPanel
-                fixtureId={fixtureId} mode={mode} fixture={fixture}
+              <CommentaryPanel fixtureId={fixtureId} mode={mode} fixture={fixture}
                 events={events} stats={stats} momentumData={momentumData}
                 lineups={lineups} predictedHome={predictedHome} predictedAway={predictedAway}
                 winProb={winProb} matchIntelRaw={matchIntelRaw}
                 commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
                 commLoading={commLoading} setCommLoading={setCommLoading}
                 commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef}
+                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}

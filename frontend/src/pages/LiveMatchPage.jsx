@@ -55,7 +55,7 @@ function SectionLabel({ children, accent }) {
     }}>
       {accent && <span style={{ width:3, height:16, borderRadius:2, background:accent, display:"inline-block", flexShrink:0 }} />}
       <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.14em",
-        color: "rgba(255,255,255,.35)", textTransform: "uppercase" }}>
+        color: "rgba(255,255,255,0.5)", textTransform: "uppercase" }}>
         {children}
       </span>
     </div>
@@ -108,7 +108,7 @@ function EventIcon({ type, detail }) {
   return <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>–</span>;
 }
 
-function StatBar({ label, home, away, homeColor = "#38bdf8", awayColor = "#f97316" }) {
+function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef4444" }) {
   const hNum  = parseFloat(String(home ?? "0").replace("%","")) || 0;
   const aNum  = parseFloat(String(away ?? "0").replace("%","")) || 0;
   const total = hNum + aNum || 1;
@@ -121,7 +121,7 @@ function StatBar({ label, home, away, homeColor = "#38bdf8", awayColor = "#f9731
         <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
         <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40, textAlign:"right" }}>{away ?? "–"}</span>
       </div>
-      <div style={{ display:"flex", height:3, borderRadius:999, overflow:"hidden", background:"rgba(255,255,255,.05)" }}>
+      <div style={{ display:"flex", height:4, borderRadius:3, overflow:"hidden", background:"rgba(255,255,255,0.06)" }}>
         <div className="lm-stat-bar" style={{ width:`${hPct}%`, "--w":`${hPct}%`, background:homeColor }} />
         <div style={{ width:`${100-hPct}%`, background:awayColor, transition:"width 0.6s ease" }} />
       </div>
@@ -218,48 +218,43 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
 
   const { p_home_win, p_draw, p_away_win, xg_home, xg_away, top_scorelines } = pre_match;
 
-  const Edge = ({ label, value, highlight, accent }) => {
-    const col = accent || (highlight ? "#34d399" : "rgba(255,255,255,.6)");
-    return (
-      <div style={{
-        display:"flex", flexDirection:"column", alignItems:"center", gap:3,
-        padding:"8px 12px",
-        background:`${col}08`,
-        border:`1px solid ${col}25`,
-        borderRadius:9, flex:1, minWidth:68,
-        position:"relative", overflow:"hidden",
-      }}>
-        <div style={{ position:"absolute", top:0, left:0, right:0, height:1.5, background:`linear-gradient(90deg,transparent,${col}aa,transparent)` }} />
-        <span style={{ fontSize:16, fontWeight:900, color:col, fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{value}</span>
-        <span style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,.28)", letterSpacing:".06em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
-      </div>
-    );
-  };
+  const Edge = ({ label, value, highlight }) => (
+    <div style={{
+      display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+      padding:"10px 16px",
+      background: highlight ? "rgba(96,165,250,0.08)" : "rgba(255,255,255,0.025)",
+      border: `1px solid ${highlight ? "rgba(96,165,250,0.2)" : "rgba(255,255,255,0.05)"}`,
+      borderRadius:12, flex:1, minWidth:80,
+    }}>
+      <span style={{ fontSize:18, fontWeight:900, color: highlight ? "#60a5fa" : "#f0f6ff", fontFamily:"'JetBrains Mono',monospace" }}>{value}</span>
+      <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
+    </div>
+  );
 
   return (
-    <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+    <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
       <SectionLabel>Model Prediction</SectionLabel>
 
       {/* Win prob bar */}
       <div style={{ marginBottom:14 }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, fontSize:11, fontWeight:800 }}>
-          <span style={{ color:"#38bdf8" }}>{homeTeam?.name?.split(" ").pop()} {p_home_win}%</span>
+          <span style={{ color:"#60a5fa" }}>{homeTeam?.name?.split(" ").pop()} {p_home_win}%</span>
           <span style={{ color:"rgba(255,255,255,0.35)" }}>Draw {p_draw}%</span>
-          <span style={{ color:"#f97316" }}>{awayTeam?.name?.split(" ").pop()} {p_away_win}%</span>
+          <span style={{ color:"#f87171" }}>{awayTeam?.name?.split(" ").pop()} {p_away_win}%</span>
         </div>
-        <div style={{ display:"flex", height:7, borderRadius:999, overflow:"hidden", gap:1.5 }}>
-          <div style={{ width:`${p_home_win}%`, background:"linear-gradient(90deg,#1d6fa4,#38bdf8)", boxShadow: p_home_win > p_away_win ? "0 0 14px #38bdf866" : "none", borderRadius:"999px 0 0 999px", transition:"width .8s ease" }} />
+        <div style={{ display:"flex", height:8, borderRadius:999, overflow:"hidden", gap:2 }}>
+          <div style={{ width:`${p_home_win}%`, background:"linear-gradient(90deg,#3b82f688,#3b82f6)", boxShadow: p_home_win > p_away_win ? "0 0 10px #3b82f699" : "none", borderRadius:"999px 0 0 999px", transition:"width 0.8s ease" }} />
           <div style={{ width:`${p_draw}%`,     background:"rgba(255,255,255,0.18)" }} />
-          <div style={{ width:`${p_away_win}%`, background:"linear-gradient(90deg,#c2400a,#f97316)", boxShadow: p_away_win > p_home_win ? "0 0 14px #f9731666" : "none", borderRadius:"0 999px 999px 0", transition:"width .8s ease" }} />
+          <div style={{ width:`${p_away_win}%`, background:"linear-gradient(90deg,#ef444488,#ef4444)", boxShadow: p_away_win > p_home_win ? "0 0 10px #ef444499" : "none", borderRadius:"0 999px 999px 0", transition:"width 0.8s ease" }} />
         </div>
       </div>
 
       {/* Key metrics */}
       <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-        {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop()} xG`} value={xg_home} accent="#38bdf8" />}
-        {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop()} xG`} value={xg_away} accent="#f97316" />}
-        {markets?.over_2_5 != null && <Edge label="O2.5 Goals" value={`${Math.round((markets.over_2_5 > 1 ? markets.over_2_5 : markets.over_2_5 * 100))}%`} highlight accent="#34d399" />}
-        {markets?.btts     != null && <Edge label="BTTS"     value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} accent="#a78bfa" />}
+        {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop()} xG`} value={xg_home} />}
+        {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop()} xG`} value={xg_away} />}
+        {markets?.over_2_5 != null && <Edge label="Over 2.5" value={`${Math.round((markets.over_2_5 > 1 ? markets.over_2_5 : markets.over_2_5 * 100))}%`} highlight />}
+        {markets?.btts     != null && <Edge label="BTTS"     value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} />}
       </div>
 
       {/* Top scorelines */}
@@ -271,13 +266,13 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {top_scorelines.slice(0,5).map(s => (
               <div key={s.score} style={{
-                padding:"4px 11px", borderRadius:7,
-                background:"rgba(56,189,248,.06)", border:"1px solid rgba(56,189,248,.2)",
-                fontSize:11, fontWeight:900, color:"#38bdf8",
+                padding:"4px 10px", borderRadius:8,
+                background:"rgba(255,255,255,0.04)",
+                border:"1px solid rgba(255,255,255,0.07)",
+                fontSize:11, fontWeight:800, color:"#e2e8f0",
                 fontFamily:"'JetBrains Mono',monospace",
-                display:"flex", alignItems:"baseline", gap:5,
               }}>
-                {s.score}<span style={{ color:"rgba(56,189,248,.4)", fontSize:8.5 }}>{s.probability}%</span>
+                {s.score} <span style={{ color:"rgba(255,255,255,0.3)", fontSize:9 }}>{s.probability}%</span>
               </div>
             ))}
           </div>
@@ -297,12 +292,11 @@ function FormRow({ label, form }) {
       <div style={{ display:"flex", gap:4 }}>
         {results.map((r,i) => (
           <div key={i} style={{
-            width:20, height:20, borderRadius:3,
-            background:`${color(r)}1a`,
+            width:22, height:22, borderRadius:4,
+            background:`${color(r)}22`,
             border:`1px solid ${color(r)}55`,
             display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:8, fontWeight:900, color:color(r),
-            boxShadow: r==="W" ? `0 0 6px ${color(r)}44` : "none",
+            fontSize:9, fontWeight:900, color:color(r),
           }}>{r}</div>
         ))}
       </div>
@@ -319,7 +313,7 @@ function MatchupPanel({ homeStats, awayStats, homeTeam, awayTeam }) {
   ].filter(r => r.h != null || r.a != null);
 
   return (
-    <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+    <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
       <SectionLabel>Recent Form</SectionLabel>
       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
         <FormRow label={homeTeam?.name?.split(" ").pop()} form={homeStats?.form} />
@@ -350,8 +344,7 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
       <div style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,0.03)" }}>
         <div style={{
           width:6, height:6, borderRadius:"50%",
-          background: type.toLowerCase().includes("suspend") ? "#f59e0b" : "#f87171",
-          boxShadow: type.toLowerCase().includes("suspend") ? "0 0 5px #f59e0b55" : "0 0 5px #f8717155",
+          background: type.toLowerCase().includes("suspend") ? "#fbbf24" : "#f87171",
           flexShrink:0,
         }} />
         <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.7)", flex:1 }}>{player.name || "Unknown"}</span>
@@ -361,7 +354,7 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
   };
 
   return (
-    <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+    <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
       <SectionLabel>Availability</SectionLabel>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
         {[{ team:homeTeam, list:homeInj },{ team:awayTeam, list:awayInj }].map(({ team, list }) => (
@@ -383,179 +376,296 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
   );
 }
 
-function PredictedLineupsPanel({ predictedHome, predictedAway, homeTeam, awayTeam }) {
-  const hasAny = predictedHome?.start_xi?.length || predictedAway?.start_xi?.length;
-  if (!hasAny) return null;
+// ─── TEAM COLOUR MAP ─────────────────────────────────────────────────────────
+const TEAM_COLOURS_MAP = {
+  40:"#c8102e",42:"#1a5bab",33:"#1d6fa4",50:"#6cacd4",49:"#034694",
+  47:"#c8c8c8",55:"#8f8f8f",66:"#7B003C",51:"#0057b8",65:"#7a263a",
+  36:"#cc0000",48:"#FDB913",45:"#003399",529:"#004b87",541:"#e8e8e8",
+  530:"#cb3524",157:"#d3010c",165:"#fde100",489:"#010E80",492:"#fb090b",
+};
+function tColour(id,fb="#38bdf8"){return TEAM_COLOURS_MAP[id]||fb;}
 
-  function PlayerChip({ player, color }) {
-    const [hov, setHov] = useState(false);
-    const conf = player.confidence;
-    return (
-      <div
-        onMouseEnter={() => setHov(true)}
-        onMouseLeave={() => setHov(false)}
-        style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", gap:3, cursor:"default" }}
-      >
-        <div style={{
-          width:28, height:28, borderRadius:"50%",
-          background:color,
-          border:`2px solid ${conf > 75 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"}`,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:9, fontWeight:900, color:"#fff",
-          boxShadow: hov ? `0 0 12px ${color}` : "none",
-          transition:"box-shadow 0.2s",
+// Formation coordinate table — viewBox 0 0 100 62, percentage-based
+// [xHome%, y%] — away mirrors x as (100-x)
+const FCOORDS = {
+  "4-3-3":  [[5,31],[18,10],[18,25],[18,37],[18,52],[32,16],[32,31],[32,46],[46,10],[46,31],[46,52]],
+  "4-2-3-1":[[5,31],[18,10],[18,24],[18,38],[18,52],[28,22],[28,40],[40,10],[40,31],[40,52],[48,31]],
+  "4-4-2":  [[5,31],[18,10],[18,24],[18,38],[18,52],[32,10],[32,24],[32,38],[32,52],[44,20],[44,42]],
+  "3-5-2":  [[5,31],[18,14],[18,31],[18,48],[30,6],[30,19],[30,31],[30,43],[30,56],[44,20],[44,42]],
+  "3-4-3":  [[5,31],[18,14],[18,31],[18,48],[32,8],[32,22],[32,40],[32,54],[44,10],[44,31],[44,52]],
+  "5-3-2":  [[5,31],[18,6],[18,18],[18,31],[18,44],[18,56],[32,16],[32,31],[32,46],[44,20],[44,42]],
+  "4-5-1":  [[5,31],[18,10],[18,24],[18,38],[18,52],[32,6],[32,18],[32,31],[32,44],[32,56],[46,31]],
+  "4-1-4-1":[[5,31],[18,10],[18,24],[18,38],[18,52],[26,31],[36,6],[36,20],[36,42],[36,56],[46,31]],
+  "3-4-2-1":[[5,31],[18,14],[18,31],[18,48],[30,8],[30,22],[30,40],[30,54],[40,18],[40,44],[48,31]],
+};
+function fCoords(formation,side){
+  const f=FCOORDS[formation]||FCOORDS["4-3-3"];
+  return side==="home"?f:f.map(([x,y])=>[100-x,y]);
+}
+
+// ─── UNIFIED PITCH LINEUP ────────────────────────────────────────────────────
+function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
+  if(!homeLineup&&!awayLineup) return null;
+  const hc=tColour(homeTeam?.id,"#38bdf8");
+  const ac=tColour(awayTeam?.id,"#f97316");
+
+  function norm(raw){
+    if(!raw) return null;
+    const xi=raw.startXI||raw.starting_xi||raw.start_xi||[];
+    const bench=raw.substitutes||raw.bench||raw.subs||[];
+    return {
+      formation:raw.formation||"4-3-3",
+      predicted:raw.predicted||false,
+      confidence:raw.confidence,
+      coach:raw.coach||null,
+      injuries:raw.injuries||[],
+      doubts:raw.doubts||[],
+      xi:xi.map(p=>{
+        const pl=p?.player||p||{};
+        return{
+          id:pl.id,name:pl.name||"",number:pl.number,pos:pl.pos||pl.position||"",
+          photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null),
+          confidence:p?.confidence??pl.confidence,
+        };
+      }),
+      bench:bench.map(p=>{
+        const pl=p?.player||p||{};
+        return{
+          id:pl.id,name:pl.name||"",pos:pl.pos||"",
+          photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null),
+        };
+      }),
+    };
+  }
+
+  const home=norm(homeLineup);
+  const away=norm(awayLineup);
+  const isPredicted=home?.predicted||away?.predicted;
+
+  function Tokens({lineup,coords,colour}){
+    if(!lineup?.xi?.length) return null;
+    return lineup.xi.slice(0,11).map((p,i)=>{
+      const pos=coords[i]; if(!pos) return null;
+      const [xp,yp]=pos;
+      const isGK=i===0;
+      const short=(p.name||"").split(" ").pop().slice(0,10);
+      return(
+        <div key={i} style={{
+          position:"absolute",left:`${xp}%`,top:`${yp}%`,
+          transform:"translate(-50%,-50%)",
+          display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+          zIndex:2,pointerEvents:"none",
         }}>
-          {player.number || "?"}
-        </div>
-        <span style={{ fontSize:8, fontWeight:700, color:"#c8d8e8", whiteSpace:"nowrap", maxWidth:52, overflow:"hidden", textOverflow:"ellipsis", textAlign:"center" }}>
-          {player.name?.split(" ").pop()}
-        </span>
-        {conf && (
-          <span style={{ fontSize:7, color: conf > 80 ? "#34d399" : conf > 60 ? "#fbbf24" : "rgba(255,255,255,0.3)", fontWeight:700 }}>
-            {conf}%
-          </span>
-        )}
-        {hov && (
-          <div style={{ position:"absolute", bottom:"105%", left:"50%", transform:"translateX(-50%)", background:"#0d1b2a", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"6px 10px", zIndex:20, whiteSpace:"nowrap", marginBottom:6 }}>
-            <div style={{ fontSize:11, fontWeight:800, color:"#f0f6ff" }}>{player.name}</div>
-            <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>{player.pos} · {conf}% confidence</div>
+          <div style={{
+            width:30,height:30,borderRadius:"50%",
+            border:`2px solid ${colour}`,
+            boxShadow:isGK?`0 0 0 2px #000,0 0 0 4px ${colour}`:"0 2px 8px rgba(0,0,0,.7)",
+            background:"#06060a",overflow:"hidden",flexShrink:0,
+          }}>
+            {p.photo&&<img src={p.photo} alt="" width="30" height="30"
+              style={{objectFit:"cover",objectPosition:"top center",display:"block"}}
+              onError={e=>{e.currentTarget.style.display="none";}}/>}
           </div>
-        )}
-      </div>
-    );
-  }
-
-  function FormationLayout({ prediction, color }) {
-    if (!prediction?.start_xi?.length) return null;
-    const formation = prediction.formation || "4-3-3";
-    const players   = prediction.start_xi;
-    const rows      = [players.filter(p => p.group === "GK")];
-    const formParts = formation.split("-");
-    let idx = 0;
-    formParts.forEach(n => {
-      const count = parseInt(n);
-      const group = idx === 0 ? "DEF" : idx === formParts.length - 1 ? "FWD" : "MID";
-      rows.push(players.filter(p => p.group === group).slice(0, count));
-      idx++;
+          <div style={{
+            fontSize:7,fontWeight:700,color:"rgba(255,255,255,.82)",
+            textShadow:"0 1px 5px #000",background:"rgba(0,0,0,.58)",
+            padding:"1px 4px",borderRadius:2,whiteSpace:"nowrap",
+            maxWidth:52,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.3,
+          }}>{short}</div>
+          {p.confidence!==undefined&&(
+            <div style={{width:26,height:1.5,borderRadius:999,background:"rgba(255,255,255,.07)",overflow:"hidden"}}>
+              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.5}}/>
+            </div>
+          )}
+        </div>
+      );
     });
-    return (
-      <div style={{ display:"flex", flexDirection:"column", gap:8, alignItems:"center", width:"100%" }}>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontWeight:700, marginBottom:4 }}>
-          {formation}
-          {prediction.predicted && (
-            <span style={{ marginLeft:6, fontSize:8, color:"#fbbf24", fontWeight:800 }}>PREDICTED</span>
-          )}
-        </div>
-        {rows.map((row, i) => (
-          <div key={i} style={{ display:"flex", justifyContent:"space-around", width:"100%", gap:4 }}>
-            {row.map((p, j) => <PlayerChip key={j} player={p} color={color} />)}
-          </div>
-        ))}
-      </div>
-    );
   }
 
-  // Convert start_xi to startXI format for PredictedPitchPlayers
-  function PredictedPitchPlayers({ prediction, color, side }) {
-    if (!prediction?.start_xi?.length) return null;
-    const players = prediction.start_xi;
-    // Use grid field if available (e.g. "1:1", "2:1") — same as MatchIntelligencePage
-    const hasGrid = players.some(p => p.grid);
-    let rows;
-    if (hasGrid) {
-      const rowMap = {};
-      players.forEach(p => {
-        const row = p.grid?.split(":")[0] || "1";
-        if (!rowMap[row]) rowMap[row] = [];
-        rowMap[row].push(p);
-      });
-      rows = Object.keys(rowMap).sort((a,b) => Number(a)-Number(b)).map(k => rowMap[k]);
-      if (side === "away") rows.reverse();
-    } else {
-      // Fallback: use formation + group
-      const parts = (prediction.formation || "4-3-3").split("-").map(n => parseInt(n));
-      const gk = players.filter(p => p.group === "GK");
-      const rest = players.filter(p => p.group !== "GK");
-      let idx = 0;
-      rows = [gk, ...parts.map(n => { const r = rest.slice(idx, idx+n); idx+=n; return r; })];
-      if (side === "away") rows.reverse();
-    }
-    const total = rows.length;
-    const xStart = side === "home" ? 4 : 52;
-    const xRange = 44;
-    return (
-      <>
-        {rows.map((row, ri) => {
-          const yPct = ((ri + 0.5) / total) * 88 + 6;
-          return row.map((p, pi) => {
-            const xPct = row.length === 1 ? xStart + xRange/2 : xStart + (pi/(row.length-1))*xRange;
-            const name = (p.name||"").split(" ").pop().slice(0,9);
-            const num = p.number || "";
-            return (
-              <g key={ri+"-"+pi}>
-                <circle cx={xPct+"%"} cy={yPct+"%"} r="4.2%"
-                  fill={color} stroke="rgba(255,255,255,.9)" strokeWidth=".8%"
-                  opacity={p.confidence > 75 ? 1 : 0.65}/>
-                <text x={xPct+"%"} y={(yPct+1.3)+"%"} textAnchor="middle"
-                  fontSize="2.8%" fill="#fff" fontWeight="800" fontFamily="Inter,sans-serif">{num}</text>
-                <text x={xPct+"%"} y={(yPct+7.8)+"%"} textAnchor="middle"
-                  fontSize="2.3%" fill="rgba(255,255,255,.75)" fontFamily="Inter,sans-serif">{name}</text>
-              </g>
-            );
-          });
-        })}
-      </>
-    );
-  }
-
-  return (
-    <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ width:10, height:10, borderRadius:"50%", background:"#3b82f6", display:"inline-block" }}/>
-          <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{homeTeam?.name}</span>
-          {predictedHome?.formation && <span style={{ fontSize:10, fontWeight:700, color:"#60a5fa", background:"rgba(96,165,250,.1)", border:"1px solid rgba(96,165,250,.25)", borderRadius:4, padding:"1px 7px" }}>{predictedHome.formation}</span>}
-          <span style={{ fontSize:9, fontWeight:700, color:"#fbbf24", background:"rgba(251,191,36,.1)", border:"1px solid rgba(251,191,36,.25)", borderRadius:4, padding:"1px 6px" }}>PREDICTED</span>
+  function BenchRow({lineup,colour,label}){
+    if(!lineup?.bench?.length) return null;
+    return(
+      <div style={{flex:1}}>
+        <div style={{fontSize:8,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
+          color:"rgba(255,255,255,.13)",marginBottom:6,display:"flex",alignItems:"center",gap:4}}>
+          <span style={{width:5,height:5,borderRadius:"50%",border:`1.5px solid ${colour}`,display:"inline-block"}}/>
+          {label}
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          {predictedAway?.formation && <span style={{ fontSize:10, fontWeight:700, color:"#f87171", background:"rgba(239,68,68,.1)", border:"1px solid rgba(239,68,68,.25)", borderRadius:4, padding:"1px 7px" }}>{predictedAway.formation}</span>}
-          <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{awayTeam?.name}</span>
-          <span style={{ width:10, height:10, borderRadius:"50%", background:"#ef4444", display:"inline-block" }}/>
-        </div>
-      </div>
-      <div style={{ position:"relative", width:"100%", paddingBottom:"62%", borderRadius:12, overflow:"hidden", marginBottom:16, background:"#0a1f0d" }}>
-        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet">
-          {[0,7.75,15.5,23.25,31,38.75,46.5].map((y,i) => (
-            <rect key={i} x="0" y={y} width="100" height="7.75" fill={i%2===0?"rgba(255,255,255,.012)":"rgba(0,0,0,0)"} />
+        <div style={{display:"flex",gap:4,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
+          {lineup.bench.slice(0,7).map((p,i)=>(
+            <div key={i} style={{
+              flexShrink:0,display:"flex",alignItems:"center",gap:4,
+              padding:"3px 7px 3px 3px",borderRadius:999,
+              background:"rgba(255,255,255,.014)",border:"1px solid rgba(255,255,255,.055)",
+            }}>
+              <div style={{width:20,height:20,borderRadius:"50%",overflow:"hidden",
+                background:"#111",border:`1px solid ${colour}33`,flexShrink:0}}>
+                {p.photo&&<img src={p.photo} alt="" width="20" height="20"
+                  style={{objectFit:"cover",objectPosition:"top"}}
+                  onError={e=>e.currentTarget.style.display="none"}/>}
+              </div>
+              <span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.45)",whiteSpace:"nowrap"}}>
+                {(p.name||"").split(" ").pop().slice(0,11)}
+              </span>
+            </div>
           ))}
-          <rect x="2" y="1.5" width="96" height="59" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".5"/>
-          <line x1="50" y1="1.5" x2="50" y2="60.5" stroke="rgba(255,255,255,.22)" strokeWidth=".4"/>
-          <circle cx="50" cy="31" r="9" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
-          <circle cx="50" cy="31" r=".8" fill="rgba(255,255,255,.4)"/>
-          <rect x="2" y="18" width="16" height="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
-          <rect x="82" y="18" width="16" height="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
-          <rect x="2" y="23" width="6.5" height="16" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth=".4"/>
-          <rect x="91.5" y="23" width="6.5" height="16" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth=".4"/>
-          <rect x="0" y="27" width="2" height="8" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5"/>
-          <rect x="98" y="27" width="2" height="8" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5"/>
-          <circle cx="12" cy="31" r=".7" fill="rgba(255,255,255,.4)"/>
-          <circle cx="88" cy="31" r=".7" fill="rgba(255,255,255,.4)"/>
-          {predictedHome && <PredictedPitchPlayers prediction={predictedHome} color="#3b82f6" side="home"/>}
-          {predictedAway && <PredictedPitchPlayers prediction={predictedAway} color="#ef4444" side="away"/>}
-        </svg>
+        </div>
       </div>
-      {(predictedHome?.confidence || predictedAway?.confidence) && (
-        <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
-          {predictedHome && (
-            <Pill color="rgba(59,130,246,0.1)" textColor="#93c5fd">
-              {homeTeam?.name} lineup confidence: {predictedHome.confidence}%
-            </Pill>
+    );
+  }
+
+  const hCoords=fCoords(home?.formation||"4-3-3","home");
+  const aCoords=fCoords(away?.formation||"4-3-3","away");
+  const allUnavail=[
+    ...(home?.injuries||[]).map(p=>({...p,tm:"home"})),
+    ...(home?.doubts||[]).map(p=>({...p,tm:"home",doubt:true})),
+    ...(away?.injuries||[]).map(p=>({...p,tm:"away"})),
+    ...(away?.doubts||[]).map(p=>({...p,tm:"away",doubt:true})),
+  ];
+
+  return(
+    <div style={{padding:"16px 20px",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+        <div style={{display:"flex",alignItems:"center",gap:7}}>
+          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${hc}`,overflow:"hidden",
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="16" height="16"
+              style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+          </div>
+          <span style={{fontSize:11,fontWeight:800,color:"#fff"}}>{homeTeam?.name}</span>
+          {home?.formation&&<span style={{fontSize:9,fontWeight:800,color:hc,
+            background:`${hc}12`,border:`1px solid ${hc}30`,borderRadius:4,padding:"1px 6px"}}>
+            {home.formation}</span>}
+          {home?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
+            color:"rgba(52,211,153,.7)",fontFamily:"'JetBrains Mono',monospace"}}>
+            {home.confidence}%</span>}
+        </div>
+        {isPredicted&&<span style={{fontSize:8,fontWeight:900,color:"#f59e0b",
+          background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.2)",
+          borderRadius:4,padding:"2px 8px",letterSpacing:".06em"}}>PREDICTED</span>}
+        <div style={{display:"flex",alignItems:"center",gap:7,flexDirection:"row-reverse"}}>
+          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${ac}`,overflow:"hidden",
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="16" height="16"
+              style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+          </div>
+          <span style={{fontSize:11,fontWeight:800,color:"#fff"}}>{awayTeam?.name}</span>
+          {away?.formation&&<span style={{fontSize:9,fontWeight:800,color:ac,
+            background:`${ac}12`,border:`1px solid ${ac}30`,borderRadius:4,padding:"1px 6px"}}>
+            {away.formation}</span>}
+          {away?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
+            color:"rgba(52,211,153,.7)",fontFamily:"'JetBrains Mono',monospace"}}>
+            {away.confidence}%</span>}
+        </div>
+      </div>
+
+      {/* Pitch */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"60%",
+        borderRadius:10,overflow:"hidden",border:"1px solid rgba(255,255,255,.04)"}}>
+        <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
+          viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet">
+          <rect width="100" height="62" fill="#010a03"/>
+          {[0,7.75,15.5,23.25,31,38.75,46.5].map((y,i)=>(
+            <rect key={i} x="0" y={y} width="100" height="7.75"
+              fill={i%2===0?"rgba(255,255,255,.01)":"rgba(0,0,0,0)"}/>
+          ))}
+          <rect x="1.5" y="1.5" width="97" height="59" rx=".5" fill="none"
+            stroke="rgba(255,255,255,.22)" strokeWidth=".5"/>
+          <line x1="50" y1="1.5" x2="50" y2="60.5"
+            stroke="rgba(255,255,255,.22)" strokeWidth=".45"/>
+          <circle cx="50" cy="31" r="9" fill="none"
+            stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
+          <circle cx="50" cy="31" r=".7" fill="rgba(255,255,255,.5)"/>
+          <rect x="1.5" y="17.5" width="15" height="27" fill="none"
+            stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
+          <rect x="1.5" y="22.5" width="6" height="17" fill="none"
+            stroke="rgba(255,255,255,.12)" strokeWidth=".35"/>
+          <circle cx="11" cy="31" r=".65" fill="rgba(255,255,255,.4)"/>
+          <path d="M16.5,22 A8,8 0 0,1 16.5,40" fill="none"
+            stroke="rgba(255,255,255,.12)" strokeWidth=".35"/>
+          <rect x="83.5" y="17.5" width="15" height="27" fill="none"
+            stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
+          <rect x="92.5" y="22.5" width="6" height="17" fill="none"
+            stroke="rgba(255,255,255,.12)" strokeWidth=".35"/>
+          <circle cx="89" cy="31" r=".65" fill="rgba(255,255,255,.4)"/>
+          <path d="M83.5,22 A8,8 0 0,0 83.5,40" fill="none"
+            stroke="rgba(255,255,255,.12)" strokeWidth=".35"/>
+          <rect x="0" y="27" width="1.5" height="8" fill="rgba(255,255,255,.03)"
+            stroke="rgba(255,255,255,.25)" strokeWidth=".4"/>
+          <rect x="98.5" y="27" width="1.5" height="8" fill="rgba(255,255,255,.03)"
+            stroke="rgba(255,255,255,.25)" strokeWidth=".4"/>
+          <path d="M1.5,1.5 Q3,1.5 3,3"   fill="none" stroke="rgba(255,255,255,.16)" strokeWidth=".4"/>
+          <path d="M98.5,1.5 Q97,1.5 97,3" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth=".4"/>
+          <path d="M1.5,60.5 Q3,60.5 3,59" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth=".4"/>
+          <path d="M98.5,60.5 Q97,60.5 97,59" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth=".4"/>
+        </svg>
+        {/* Player token overlay */}
+        <div style={{position:"absolute",inset:0}}>
+          <Tokens lineup={home} coords={hCoords} colour={hc}/>
+          <Tokens lineup={away} coords={aCoords} colour={ac}/>
+        </div>
+      </div>
+
+      {/* Coach */}
+      {(home?.coach||away?.coach)&&(
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:9,
+          padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+          {home?.coach&&(
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              {home.coach.photo&&<img src={home.coach.photo} alt="" width="20" height="20"
+                style={{borderRadius:"50%",objectFit:"cover",objectPosition:"top",
+                  border:`1px solid ${hc}44`}}
+                onError={e=>e.currentTarget.style.display="none"}/>}
+              <div>
+                <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.6)"}}>{home.coach.name}</div>
+                <div style={{fontSize:8,color:"rgba(255,255,255,.22)"}}>Manager</div>
+              </div>
+            </div>
           )}
-          {predictedAway && (
-            <Pill color="rgba(239,68,68,0.1)" textColor="#fca5a5">
-              {awayTeam?.name} lineup confidence: {predictedAway.confidence}%
-            </Pill>
+          {away?.coach&&(
+            <div style={{display:"flex",alignItems:"center",gap:6,flexDirection:"row-reverse"}}>
+              {away.coach.photo&&<img src={away.coach.photo} alt="" width="20" height="20"
+                style={{borderRadius:"50%",objectFit:"cover",objectPosition:"top",
+                  border:`1px solid ${ac}44`}}
+                onError={e=>e.currentTarget.style.display="none"}/>}
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.6)"}}>{away.coach.name}</div>
+                <div style={{fontSize:8,color:"rgba(255,255,255,.22)"}}>Manager</div>
+              </div>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* Bench */}
+      {(home?.bench?.length>0||away?.bench?.length>0)&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}}>
+          <BenchRow lineup={home} colour={hc} label={`${homeTeam?.name||""} Bench`}/>
+          <BenchRow lineup={away} colour={ac} label={`${awayTeam?.name||""} Bench`}/>
+        </div>
+      )}
+
+      {/* Unavailable */}
+      {allUnavail.length>0&&(
+        <div style={{marginTop:8,padding:"8px 10px",
+          background:"rgba(248,113,113,.025)",border:"1px solid rgba(248,113,113,.08)",borderRadius:8}}>
+          <div style={{fontSize:8,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
+            color:"rgba(248,113,113,.3)",marginBottom:5}}>Unavailable</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+            {allUnavail.slice(0,14).map((p,i)=>(
+              <span key={i} style={{display:"inline-flex",alignItems:"center",gap:3,
+                padding:"2px 7px",borderRadius:4,
+                background:"rgba(248,113,113,.05)",border:"1px solid rgba(248,113,113,.12)"}}>
+                <span style={{fontSize:8.5,fontWeight:700,color:"rgba(248,113,113,.7)"}}>{p.name}</span>
+                <span style={{fontSize:7.5,color:"rgba(248,113,113,.35)",
+                  fontFamily:"'JetBrains Mono',monospace"}}>
+                  {p.doubt?"Doubt":(p.type||p.reason||"Inj")}
+                </span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -627,16 +737,16 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: homeWin ? "#38bdf8" : awayWin ? "rgba(255,255,255,.22)" : "#fff",
+              color: homeWin ? "#60a5fa" : awayWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
               fontFamily:"'JetBrains Mono',monospace",
-              textShadow: homeWin ? "0 0 28px rgba(56,189,248,.55)" : "none",
+              textShadow: homeWin ? "0 0 30px rgba(96,165,250,0.4)" : "none",
             }}>{hGoals}</span>
             <span style={{ fontSize:26, fontWeight:300, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>–</span>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: awayWin ? "#f97316" : homeWin ? "rgba(255,255,255,.22)" : "#fff",
+              color: awayWin ? "#f87171" : homeWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
               fontFamily:"'JetBrains Mono',monospace",
-              textShadow: awayWin ? "0 0 28px rgba(249,115,22,.55)" : "none",
+              textShadow: awayWin ? "0 0 30px rgba(248,113,113,0.4)" : "none",
             }}>{aGoals}</span>
           </div>
           {score?.halftime && isFT && (
@@ -668,9 +778,9 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
             { label:"Poss",  h:hPoss,  a:aPoss  },
           ].filter(s => s.h || s.a).map(({ label, h, a }) => (
             <div key={label} style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:12, fontWeight:900, color:"#38bdf8", fontFamily:"'JetBrains Mono',monospace" }}>{h ?? "–"}</span>
+              <span style={{ fontSize:12, fontWeight:800, color:"#60a5fa", fontFamily:"'JetBrains Mono',monospace" }}>{h ?? "–"}</span>
               <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.22)", letterSpacing:"0.08em", textTransform:"uppercase" }}>{label}</span>
-              <span style={{ fontSize:12, fontWeight:900, color:"#f97316", fontFamily:"'JetBrains Mono',monospace" }}>{a ?? "–"}</span>
+              <span style={{ fontSize:12, fontWeight:800, color:"#f87171", fontFamily:"'JetBrains Mono',monospace" }}>{a ?? "–"}</span>
             </div>
           ))}
         </div>
@@ -722,8 +832,8 @@ function MomentumGraph({ momentumData, events }) {
             const barH  = Math.min(100, (total / 2) * 100);
             return (
               <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
-                <div style={{ height:`${Math.max(hPct * barH / 100, 4)}%`, background:"rgba(56,189,248,.65)", borderRadius:"2px 2px 0 0", transition:"height .4s" }} />
-                <div style={{ height:`${Math.max((100-hPct) * barH / 100, 4)}%`, background:"rgba(249,115,22,.6)", borderRadius:"0 0 2px 2px" }} />
+                <div style={{ height:`${Math.max(hPct * barH / 100, 4)}%`, background:"rgba(59,130,246,0.55)", borderRadius:"2px 2px 0 0", transition:"height 0.4s" }} />
+                <div style={{ height:`${Math.max((100-hPct) * barH / 100, 4)}%`, background:"rgba(239,68,68,0.55)", borderRadius:"0 0 2px 2px" }} />
               </div>
             );
           })}
@@ -755,7 +865,7 @@ function MomentumGraph({ momentumData, events }) {
 function Timeline({ events, homeTeam, awayTeam }) {
   if (!events?.length) return null;
   return (
-    <div style={{ padding:"14px 20px" }}>
+    <div style={{ padding:"20px 24px" }}>
       <SectionLabel>Match Events</SectionLabel>
       <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
         {events.map((ev, i) => {
@@ -829,8 +939,8 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
 
   if (!rows.length) return null;
   return (
-    <div style={{ padding:"14px 20px", borderTop:"1px solid rgba(255,255,255,.04)" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+    <div style={{ padding:"20px 24px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
         {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={14} height={14} style={{ objectFit:"contain" }} />}
         <SectionLabel>Match Statistics</SectionLabel>
         {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={14} height={14} style={{ objectFit:"contain" }} />}
@@ -844,154 +954,15 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
 
 function LineupsPanel({ lineups, homeTeam, awayTeam }) {
   if (!lineups?.length) return null;
-  const home = lineups.find(l => l.team?.id === homeTeam?.id);
-  const away = lineups.find(l => l.team?.id === awayTeam?.id);
+  const home = lineups.find(l => l.team?.id === homeTeam?.id) || lineups[0];
+  const away = lineups.find(l => l.team?.id === awayTeam?.id) || lineups[1];
   if (!home && !away) return null;
-
-  function PlayerChip({ player, color }) {
-    const [hov, setHov] = useState(false);
-    return (
-      <div
-        onMouseEnter={() => setHov(true)}
-        onMouseLeave={() => setHov(false)}
-        style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", gap:3, cursor:"default" }}
-      >
-        <div style={{
-          width:28, height:28, borderRadius:"50%", background:color,
-          border:"2px solid rgba(255,255,255,0.25)",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:9, fontWeight:900, color:"#fff",
-          boxShadow: hov ? `0 0 10px ${color}` : "none", transition:"box-shadow 0.2s",
-        }}>
-          {player?.player?.number || "?"}
-        </div>
-        <span style={{ fontSize:8, fontWeight:700, color:"#c8d8e8", whiteSpace:"nowrap", maxWidth:52, overflow:"hidden", textOverflow:"ellipsis", textAlign:"center" }}>
-          {player?.player?.name?.split(" ").pop()}
-        </span>
-        {hov && (
-          <div style={{ position:"absolute", bottom:"105%", left:"50%", transform:"translateX(-50%)", background:"#0d1b2a", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"6px 10px", zIndex:20, whiteSpace:"nowrap", marginBottom:6 }}>
-            <div style={{ fontSize:11, fontWeight:800, color:"#f0f6ff" }}>{player?.player?.name}</div>
-            <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>#{player?.player?.number} · {player?.player?.pos}</div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Build player rows from formation string
-  function buildRows(lineup, flip) {
-    const formStr = lineup?.formation || "4-3-3";
-    const parts = formStr.split("-").map(n => parseInt(n));
-    const players = lineup?.startXI || [];
-    let idx = 1;
-    const rows = [
-      [players[0]],
-      ...parts.map(n => { const row = players.slice(idx, idx + n); idx += n; return row; }),
-    ];
-    if (flip) rows.reverse();
-    return rows;
-  }
-
-  // Position players on a unified full pitch using absolute x/y percentages
-  function PitchPlayers({ lineup, flip, color, side }) {
-    const rows = buildRows(lineup, flip);
-    const totalRows = rows.length;
-    // x: home occupies left 50%, away occupies right 50%
-    const xStart = side === "home" ? 4 : 52;
-    const xRange = 44;
-    return (
-      <>
-        {rows.map((row, ri) => {
-          const yPct = ((ri + 0.5) / totalRows) * 88 + 6;
-          return row.map((p, pi) => {
-            const xPct = row.length === 1
-              ? xStart + xRange / 2
-              : xStart + (pi / (row.length - 1)) * xRange;
-            const player = p?.player || p || {};
-            const name = (player.name || "").split(" ").pop() || "?";
-            const num = player.number || "";
-            return (
-              <g key={`${ri}-${pi}`}>
-                <circle
-                  cx={`${xPct}%`} cy={`${yPct}%`} r="4.2%"
-                  fill={color} stroke="rgba(255,255,255,.9)" strokeWidth="0.8%"
-                />
-                <text x={`${xPct}%`} y={`${yPct + 1.2}%`}
-                  textAnchor="middle" fontSize="2.8%" fill="#fff" fontWeight="800"
-                  fontFamily="'Inter',sans-serif">{num}</text>
-                <text x={`${xPct}%`} y={`${yPct + 7.5}%`}
-                  textAnchor="middle" fontSize="2.4%" fill="rgba(255,255,255,.75)"
-                  fontFamily="'Inter',sans-serif">{name.slice(0,8)}</text>
-              </g>
-            );
-          });
-        })}
-      </>
-    );
-  }
-
-  return (
-    <div style={{ padding:"20px 24px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-      {/* Formation labels */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ width:10, height:10, borderRadius:"50%", background:"#3b82f6", display:"inline-block" }} />
-          <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{homeTeam?.name}</span>
-          {home?.formation && <span style={{ fontSize:10, fontWeight:700, color:"#60a5fa", background:"rgba(96,165,250,.1)", border:"1px solid rgba(96,165,250,.25)", borderRadius:4, padding:"1px 7px" }}>{home.formation}</span>}
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          {away?.formation && <span style={{ fontSize:10, fontWeight:700, color:"#f87171", background:"rgba(239,68,68,.1)", border:"1px solid rgba(239,68,68,.25)", borderRadius:4, padding:"1px 7px" }}>{away.formation}</span>}
-          <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{awayTeam?.name}</span>
-          <span style={{ width:10, height:10, borderRadius:"50%", background:"#ef4444", display:"inline-block" }} />
-        </div>
-      </div>
-      {/* Single unified pitch with both teams */}
-      <div style={{ position:"relative", width:"100%", paddingBottom:"62%", borderRadius:12, overflow:"hidden", background:"#0a1f0d" }}>
-        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet">
-          {/* Grass stripes */}
-          {[0,7.75,15.5,23.25,31,38.75,46.5].map((y,i) => (
-            <rect key={i} x="0" y={y} width="100" height="7.75" fill={i%2===0 ? "rgba(255,255,255,.012)" : "rgba(0,0,0,0)"} />
-          ))}
-          {/* Pitch boundary */}
-          <rect x="2" y="1.5" width="96" height="59" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".5"/>
-          {/* Centre line */}
-          <line x1="50" y1="1.5" x2="50" y2="60.5" stroke="rgba(255,255,255,.22)" strokeWidth=".4"/>
-          {/* Centre circle */}
-          <circle cx="50" cy="31" r="9" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth=".4"/>
-          <circle cx="50" cy="31" r=".8" fill="rgba(255,255,255,.4)"/>
-          {/* Penalty areas */}
-          <rect x="2" y="18" width="16" height="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
-          <rect x="82" y="18" width="16" height="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".4"/>
-          <rect x="2" y="23" width="6.5" height="16" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth=".4"/>
-          <rect x="91.5" y="23" width="6.5" height="16" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth=".4"/>
-          {/* Goals */}
-          <rect x="0" y="27" width="2" height="8" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5"/>
-          <rect x="98" y="27" width="2" height="8" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5"/>
-          {/* Penalty spots */}
-          <circle cx="12" cy="31" r=".7" fill="rgba(255,255,255,.4)"/>
-          <circle cx="88" cy="31" r=".7" fill="rgba(255,255,255,.4)"/>
-          {/* Player positions */}
-          {home && <PitchPlayers lineup={home} flip={false} color="#3b82f6" side="home" />}
-          {away && <PitchPlayers lineup={away} flip={true} color="#ef4444" side="away" />}
-        </svg>
-      </div>
-      {(home?.substitutes?.length > 0 || away?.substitutes?.length > 0) && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:16 }}>
-          {[home, away].map((lu, side) => lu && (
-            <div key={side}>
-              <div style={{ fontSize:8, fontWeight:800, color:"rgba(255,255,255,0.2)", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>Substitutes</div>
-              {lu.substitutes?.slice(0,7).map((p,i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 0", borderBottom:"1px solid rgba(255,255,255,0.025)" }}>
-                  <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.22)", width:18, fontFamily:"'JetBrains Mono',monospace" }}>{p?.player?.number}</span>
-                  <span style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)" }}>{p?.player?.name}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <PitchLineup
+    homeLineup={home}
+    awayLineup={away}
+    homeTeam={homeTeam}
+    awayTeam={awayTeam}
+  />;
 }
 
 function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
@@ -1114,7 +1085,7 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
   ];
 
   return (
-    <div style={{ padding:"14px 20px", borderTop:"1px solid rgba(255,255,255,.04)" }}>
+    <div style={{ padding:"20px 24px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
       <SectionLabel>Player Ratings</SectionLabel>
       <div style={{ overflowX:"auto" }}>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
@@ -1147,10 +1118,10 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
                   <td style={{ padding:"7px 8px" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                       {p.teamLogo && <img src={p.teamLogo} alt="" width={13} height={13} style={{ objectFit:"contain" }} />}
-                      <span style={{ fontSize:12, fontWeight:700, color: p.isHome ? "#38bdf8" : "#f97316" }}>{p.player?.name}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color: p.isHome ? "#93c5fd" : "#fca5a5" }}>{p.player?.name}</span>
                     </div>
                   </td>
-                  <td style={{ padding:"6px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:900, color: parseFloat(rating) >= 8 ? "#34d399" : parseFloat(rating) >= 7 ? "#38bdf8" : "rgba(255,255,255,.6)" }}>{rating}</td>
+                  <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:800, color: parseFloat(rating) >= 8 ? "#34d399" : "#e2e8f0" }}>{rating}</td>
                   <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#e2e8f0" }}>{goals}</td>
                   <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#e2e8f0" }}>{assists}</td>
                   <td style={{ padding:"7px 8px", textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#e2e8f0" }}>{passes}</td>
@@ -1198,71 +1169,6 @@ export default function LiveMatchPage() {
 
   const mode = deriveMode(fixture?.fixture?.status?.short);
 
-  // ── Lineup response parser — shared by loadCore and direct lineup fetch ─────
-  // /api/match-lineup/{id} returns:
-  //   { mode: "official"|"predicted", home: {...}, away: {...} }
-  // home/away shape: { formation, starting_xi, bench, injuries, doubts, coach, ... }
-  const _applyLineupResponse = useCallback((lu) => {
-    if (!lu) return;
-    const isPredicted = lu.mode === "predicted";
-
-    const posToGroup = pos => {
-      if (!pos) return "MID";
-      const p = (pos || "").toUpperCase();
-      if (p.startsWith("G")) return "GK";
-      if (p.startsWith("D") || p === "CB" || p === "LB" || p === "RB" || p === "LWB" || p === "RWB") return "DEF";
-      if (p.startsWith("F") || p === "ST" || p === "LW" || p === "RW" || p === "CF") return "FWD";
-      return "MID";
-    };
-
-    ["home", "away"].forEach(side => {
-      const raw = lu[side];
-      if (!raw) return;
-
-      // Build the lineups[] shape that LineupsPanel expects (official path)
-      if (!isPredicted && raw.starting_xi?.length) {
-        const wrap = p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos, photo: p.photo } });
-        setLineups(prev => {
-          const others = prev.filter(l => l.team?.name !== raw.team_name);
-          return [...others, {
-            team: { id: raw.team_id, name: raw.team_name, logo: raw.logo },
-            formation: raw.formation,
-            startXI:    (raw.starting_xi || []).map(wrap),
-            substitutes:(raw.bench || []).map(wrap),
-            coach: raw.coach,
-          }];
-        });
-      }
-
-      // Build predicted shape for PredictedLineupsPanel
-      if (isPredicted && (raw.starting_xi?.length || raw.start_xi?.length)) {
-        const xi = raw.starting_xi || raw.start_xi || [];
-        const predicted = {
-          formation: raw.formation || "4-3-3",
-          team_name: raw.team_name,
-          predicted: true,
-          confidence: raw.confidence || lu.confidence || 70,
-          start_xi: xi.map(p => ({
-            id: p.id, name: p.name, number: p.number,
-            pos: p.pos, group: posToGroup(p.pos),
-            grid: p.grid,
-            confidence: p.confidence || 72,
-            photo: p.photo,
-          })),
-          subs: (raw.bench || raw.subs || []).map(p => ({
-            id: p.id, name: p.name, number: p.number,
-            pos: p.pos, confidence: p.confidence || 55,
-            photo: p.photo,
-          })),
-          injuries:  raw.injuries || [],
-          doubts:    raw.doubts   || [],
-        };
-        if (side === "home") setPredictedHome(predicted);
-        else setPredictedAway(predicted);
-      }
-    });
-  }, []);
-
   // ── Core data fetch — uses /api/match-intelligence/{id} ─────────────────
   const loadCore = useCallback(async () => {
     if (!fixtureId) return;
@@ -1270,9 +1176,8 @@ export default function LiveMatchPage() {
       const resp = await fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`);
       let d = resp.ok ? await resp.json() : null;
 
-      // On 404 — fixture not in intelligence cache yet (common for prematch fixtures
-      // that haven't been enriched). Build fixture from /api/matches/upcoming and
-      // then fetch lineup + win-prob separately so the page is fully functional.
+      // On 404 — fixture not in API cache yet (prematch). Try to build minimal
+      // fixture from the upcoming matches list so the page still renders.
       if (!d || d.error) {
         try {
           const upcoming = await fetch(`${BACKEND}/api/matches/upcoming`)
@@ -1281,7 +1186,7 @@ export default function LiveMatchPage() {
           if (match) {
             setFixture({
               fixture: { id: match.fixture_id, status: { short: match.status || "NS", elapsed: match.minute }, date: match.kickoff },
-              league: { name: match.league_name, logo: match.league_logo },
+              league: { name: match.league_name },
               teams: {
                 home: { id: match.home_id, name: match.home_team, logo: match.home_logo },
                 away: { id: match.away_id, name: match.away_team, logo: match.away_logo },
@@ -1290,19 +1195,6 @@ export default function LiveMatchPage() {
             });
           }
         } catch(e) {}
-
-        // Still fetch lineup and win-prob even when intelligence is unavailable
-        try {
-          const luResp = await fetch(`${BACKEND}/api/match-lineup/${fixtureId}`);
-          if (luResp.ok) {
-            const lu = await luResp.json();
-            _applyLineupResponse(lu);
-          }
-        } catch(e) {}
-
-        fetch(`${BACKEND}/api/win-probability/${fixtureId}`)
-          .then(r => r.ok ? r.json() : null).then(d => d && setWinProb(d)).catch(() => {});
-
         setLoading(false);
         return;
       }
@@ -1348,12 +1240,56 @@ export default function LiveMatchPage() {
       }
       setStats(st);
 
-      // Lineups — intelligence response embeds lineup data; normalise and apply.
-      // _applyLineupResponse handles both official (mode=official) and predicted shapes.
-      if (d.lineups) {
-        // intelligence wraps lineups as {home:{...}, away:{...}} with a top-level predicted flag
-        const isPredicted = d._meta?.has_official_lineups === false || d.lineups?.home?.predicted;
-        _applyLineupResponse({ mode: isPredicted ? "predicted" : "official", ...d.lineups });
+      // Lineups — backend returns {home:{startXI,bench,...}, away:{...}}
+      // bench = substitutes in API-Football terminology
+      const lu = [];
+      ["home","away"].forEach(side => {
+        const raw = d.lineups?.[side];
+        if (!raw) return;
+        const wrap = p => ({ player: { id: p.id, name: p.name, number: p.number, pos: p.pos } });
+        lu.push({
+          team: { id: side === "home" ? h.home_id : h.away_id, name: raw.team_name },
+          formation: raw.formation,
+          startXI:    (raw.startXI || []).map(wrap),
+          substitutes:(raw.bench   || raw.substitutes || []).map(wrap),
+          coach: raw.coach,
+        });
+      });
+      setLineups(lu);
+
+      // For prematch with predicted lineups from match-intelligence
+      // match_intelligence.py sets predicted:true when no official lineup exists
+      if (d.lineups && (lu.length === 0 || lu.every(l => !l.startXI?.length))) {
+        // Try to get predicted lineup from the intelligence response
+        ["home","away"].forEach(side => {
+          const raw = d.lineups?.[side];
+          if (!raw?.startXI?.length) return;
+          const posToGroup = pos => {
+            if (!pos) return "MID";
+            const p = pos.toUpperCase();
+            if (p === "G") return "GK";
+            if (p === "D") return "DEF";
+            if (p === "M") return "MID";
+            if (p === "F") return "FWD";
+            return "MID";
+          };
+          const wrap = p => ({
+            id: p.id, name: p.name, number: p.number,
+            pos: p.pos, group: posToGroup(p.pos),
+            grid: p.grid,
+            confidence: p.confidence || 70,
+          });
+          const predicted = {
+            formation: raw.formation || "4-3-3",
+            team_name: raw.team_name,
+            predicted: raw.predicted ?? true,
+            start_xi: raw.startXI.map(wrap),
+            subs: (raw.bench || []).map(wrap),
+            confidence: raw.predicted ? 70 : 90,
+          };
+          if (side === "home") setPredictedHome(predicted);
+          else setPredictedAway(predicted);
+        });
       }
 
       // Win probability from prediction block
@@ -1388,20 +1324,19 @@ export default function LiveMatchPage() {
     fetch(`${BACKEND}/api/win-probability/${fixtureId}`)
       .then(r => r.ok ? r.json() : null).then(d => d && setWinProb(d)).catch(() => {});
 
-    // Always fetch lineup — covers the case where intelligence 404'd
-    // and also keeps lineups fresh for prematch announcements
-    fetch(`${BACKEND}/api/match-lineup/${fixtureId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => d && _applyLineupResponse(d))
-      .catch(() => {});
-
     if (currentMode === "live" || currentMode === "fulltime") {
+      // Momentum + shot map for live/FT
       fetch(`${BACKEND}/api/match-momentum/${fixtureId}`)
         .then(r => r.ok ? r.json() : null).then(d => d && setMomentumData(d)).catch(() => {});
       fetch(`${BACKEND}/api/shot-map/${fixtureId}`)
         .then(r => r.ok ? r.json() : null).then(d => d && setShotMapData(d)).catch(() => {});
     }
-  }, [fixtureId, _applyLineupResponse]);
+
+    // Predicted lineups + injuries for prematch
+    // NOTE: These require new backend routes — see BACKEND ROUTES NEEDED below.
+    // Gracefully no-ops if unavailable.
+    // Predicted lineups come from match-intelligence response — no separate fetch needed
+  }, [fixtureId]);
 
   useEffect(() => {
     loadCore();
@@ -1450,8 +1385,8 @@ export default function LiveMatchPage() {
         .lm-tab { background:none; border:none; cursor:pointer; font-family:'Inter','Sora',sans-serif; transition:all 0.15s; }
         .lm-tab:hover { color:rgba(255,255,255,0.85) !important; }
         .lm-stat-bar { animation: lmBarIn 0.7s cubic-bezier(.22,1,.36,1) both; }
-        .lm-card { background:rgba(255,255,255,.018); border:1px solid rgba(255,255,255,.06); border-radius:9px; transition:border-color .2s, box-shadow .2s; }
-        .lm-card:hover { border-color:rgba(255,255,255,.11); box-shadow:0 5px 20px rgba(0,0,0,.55); }
+        .lm-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.08); border-radius:12px; transition:border-color .2s, box-shadow .2s; }
+        .lm-card:hover { border-color:rgba(255,255,255,.16); box-shadow:0 8px 28px rgba(0,0,0,.5); }
       `}</style>
 
       {/* Back nav */}
@@ -1467,7 +1402,7 @@ export default function LiveMatchPage() {
       {loading && (
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:280, color:"rgba(255,255,255,0.25)", fontSize:13 }}>
           <div style={{ textAlign:"center" }}>
-            <div style={{ width:26, height:26, borderRadius:"50%", border:"2px solid rgba(56,189,248,.1)", borderTopColor:"#38bdf8", margin:"0 auto 12px", animation:"livePulse .75s linear infinite" }} />
+            <div style={{ width:28, height:28, borderRadius:"50%", border:"2px solid rgba(96,165,250,0.15)", borderTopColor:"#60a5fa", margin:"0 auto 14px", animation:"livePulse 0.8s linear infinite" }} />
             Loading match…
           </div>
         </div>
@@ -1492,36 +1427,26 @@ export default function LiveMatchPage() {
             <MomentumGraph momentumData={momentumData} events={events} />
           )}
 
-          {/* ── Sticky tabs — flat underline, no cards ── */}
+          {/* ── Sticky tabs ── */}
           <div style={{
             position:"sticky", top:0, zIndex:100,
             background:"rgba(0,0,0,0.97)", backdropFilter:"blur(16px)",
-            borderBottom:"1px solid rgba(255,255,255,.06)",
-            display:"flex", padding:"0 16px", overflowX:"auto",
+            borderBottom:"1px solid rgba(255,255,255,0.08)",
+            display:"flex", padding:"0 20px", overflowX:"auto",
           }}>
-            {tabs.map(t => {
-              const isActive = tab === t;
-              const isLiveTab  = t === "Commentary" && mode === "live";
-              const isStatsTab = t === "Stats"      && (mode === "live" || mode === "fulltime");
-              return (
-                <button key={t} className="lm-tab" onClick={() => setTab(t)} style={{
-                  padding:"11px 16px", fontSize:10, fontWeight:800,
-                  letterSpacing:".06em", textTransform:"uppercase",
-                  color: isActive ? "#fff" : "rgba(255,255,255,.28)",
-                  borderBottom: isActive ? "2px solid #fff" : "2px solid transparent",
-                  marginBottom:-1, whiteSpace:"nowrap",
-                  display:"flex", alignItems:"center", gap:5,
-                }}>
-                  {isLiveTab  && <span style={{ width:5, height:5, borderRadius:"50%", background:"#a78bfa", animation:"livePulse 1.5s ease-in-out infinite", flexShrink:0 }} />}
-                  {isStatsTab && <span style={{ width:5, height:5, borderRadius:"50%", background:"#34d399", animation:"livePulse 1.5s ease-in-out infinite", flexShrink:0 }} />}
-                  {t}
-                </button>
-              );
-            })}
+            {tabs.map(t => (
+              <button key={t} className="lm-tab" onClick={() => setTab(t)} style={{
+                padding:"12px 14px", fontSize:11, fontWeight:800,
+                letterSpacing:"0.04em", textTransform:"uppercase",
+                color: tab === t ? "#60a5fa" : "rgba(255,255,255,0.35)",
+                borderBottom: tab === t ? "2px solid #60a5fa" : "2px solid transparent",
+                marginBottom:-1, whiteSpace:"nowrap",
+              }}>{t}</button>
+            ))}
           </div>
 
           {/* ── Tab content ── */}
-          <div style={{ maxWidth:920, margin:"0 auto", padding:"0 20px 60px" }}>
+          <div style={{ maxWidth:900, margin:"0 auto", padding:"0 0 60px" }}>
 
             {/* ═══ PREMATCH TABS ═══ */}
             {mode === "prematch" && tab === "Preview" && (
@@ -1535,7 +1460,7 @@ export default function LiveMatchPage() {
               <>
                 {lineups.length > 0
                   ? <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} />
-                  : <PredictedLineupsPanel predictedHome={predictedHome} predictedAway={predictedAway} homeTeam={homeTeam} awayTeam={awayTeam} />
+                  : <PitchLineup homeLineup={predictedHome} awayLineup={predictedAway} homeTeam={homeTeam} awayTeam={awayTeam} />
                 }
                 <InjuryPanel injuries={injuries} homeTeam={homeTeam} awayTeam={awayTeam} />
               </>

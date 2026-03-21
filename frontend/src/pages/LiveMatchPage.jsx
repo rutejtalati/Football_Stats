@@ -600,195 +600,272 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
     );
   }
 
+  // ── position badge colour ──────────────────────────────────────────────────
+  function posCol(pos){
+    const p=(pos||"").toUpperCase().slice(0,1);
+    if(p==="G") return "#f59e0b";
+    if(p==="D") return "#60a5fa";
+    if(p==="M") return "#34d399";
+    return "#f87171";
+  }
+
+  // ── Sidebar: bench + injuries, vertical avatar rows ────────────────────────
+  function Sidebar({lineup,team,colour,isRight}){
+    const bench=(lineup?.bench||[]);
+    const unavail=[
+      ...(lineup?.injuries||[]).map(p=>({...p,doubt:false})),
+      ...(lineup?.doubts||[]).map(p=>({...p,doubt:true})),
+    ];
+
+    function PlayerRow({p,isOut,reason,doubt}){
+      const name=(p.name||p.player_name||"").split(" ").slice(-1)[0].slice(0,13)||"–";
+      const pos=(p.pos||p.position||"").slice(0,1).toUpperCase();
+      const pid=p.id;
+      return(
+        <div
+          onClick={pid?()=>navigate(`/player/${pid}`):undefined}
+          style={{
+            display:"flex",alignItems:"center",gap:5,
+            padding:"3px 0",
+            flexDirection:isRight?"row-reverse":"row",
+            cursor:pid?"pointer":"default",
+            opacity:isOut?.52:1,
+          }}
+        >
+          <div style={{position:"relative",flexShrink:0}}>
+            <div style={{
+              width:26,height:26,borderRadius:"50%",overflow:"hidden",
+              background:"#0a0a0a",
+              border:`1.5px solid ${isOut?"rgba(239,68,68,.45)":colour+"55"}`,
+            }}>
+              {p.photo&&<img src={p.photo} alt="" width="26" height="26"
+                style={{objectFit:"cover",objectPosition:"top"}}
+                onError={e=>e.currentTarget.style.display="none"}/>}
+            </div>
+            {!isOut&&pos&&(
+              <span style={{
+                position:"absolute",bottom:-2,right:isRight?"auto":-2,left:isRight?-2:"auto",
+                fontSize:"6px",fontWeight:900,lineHeight:"11px",
+                background:posCol(pos),color:"#000",
+                borderRadius:3,padding:"0 2.5px",
+                boxShadow:"0 1px 3px rgba(0,0,0,.8)",
+              }}>{pos}</span>
+            )}
+            {isOut&&(
+              <span style={{
+                position:"absolute",bottom:-2,right:isRight?"auto":-2,left:isRight?-2:"auto",
+                width:9,height:9,borderRadius:"50%",
+                background:doubt?"#fbbf24":"#ef4444",
+                border:"1.5px solid #000",display:"block",
+              }}/>
+            )}
+          </div>
+          <div style={{
+            flex:1,minWidth:0,
+            display:"flex",flexDirection:"column",
+            alignItems:isRight?"flex-end":"flex-start",
+          }}>
+            <span style={{
+              fontSize:"8.5px",fontWeight:700,
+              color:isOut?"rgba(255,255,255,.42)":"rgba(255,255,255,.85)",
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+              lineHeight:1.3,
+            }}>{name}</span>
+            {reason&&<span style={{
+              fontSize:"6.5px",fontWeight:700,lineHeight:1.2,
+              color:isOut?(doubt?"#fbbf2488":"#ef444488"): `${colour}88`,
+              fontFamily:"monospace",
+            }}>{reason}</span>}
+          </div>
+        </div>
+      );
+    }
+
+    return(
+      <div style={{
+        background:`linear-gradient(${isRight?"to left":"to right"},${colour}1e,${colour}07)`,
+        borderRight:isRight?"none":`1px solid ${colour}25`,
+        borderLeft:isRight?`1px solid ${colour}25`:"none",
+        padding:"10px 8px",
+        display:"flex",flexDirection:"column",
+        minHeight:0,
+      }}>
+        {/* Team name + formation */}
+        <div style={{
+          marginBottom:8,paddingBottom:7,
+          borderBottom:`1px solid ${colour}20`,
+          display:"flex",flexDirection:"column",
+          alignItems:isRight?"flex-end":"flex-start",gap:3,
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:5,flexDirection:isRight?"row-reverse":"row"}}>
+            <div style={{
+              width:20,height:20,borderRadius:"50%",
+              border:`2px solid ${colour}`,overflow:"hidden",
+              background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,
+            }}>
+              {team?.logo&&<img src={team.logo} alt="" width="16" height="16"
+                style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+            </div>
+            <span style={{
+              fontSize:10,fontWeight:900,color:"#fff",
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+            }}>{team?.name?.split(" ").slice(-1)[0]||team?.name}</span>
+          </div>
+          {lineup?.formation&&(
+            <span style={{
+              fontSize:7.5,fontWeight:800,color:colour,
+              background:`${colour}18`,border:`1px solid ${colour}30`,
+              borderRadius:3,padding:"0 5px",letterSpacing:".04em",
+            }}>{lineup.formation}</span>
+          )}
+          {lineup?.coach&&(
+            <div style={{
+              marginTop:2,display:"flex",alignItems:"center",gap:4,
+              flexDirection:isRight?"row-reverse":"row",
+            }}>
+              <div style={{
+                width:16,height:16,borderRadius:"50%",overflow:"hidden",
+                background:"#111",border:`1px solid ${colour}44`,flexShrink:0,
+              }}>
+                {lineup.coach.photo&&<img src={lineup.coach.photo} alt="" width="16" height="16"
+                  style={{objectFit:"cover",objectPosition:"top"}}
+                  onError={e=>e.currentTarget.style.display="none"}/>}
+              </div>
+              <span style={{
+                fontSize:"7px",fontWeight:700,
+                color:"rgba(255,255,255,.45)",
+                overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+              }}>{(lineup.coach.name||"").split(" ").slice(-1)[0]}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Bench */}
+        {bench.length>0&&(
+          <>
+            <div style={{
+              fontSize:"6.5px",fontWeight:900,letterSpacing:".12em",
+              textTransform:"uppercase",color:colour,opacity:.75,
+              marginBottom:5,display:"flex",alignItems:"center",gap:4,
+              justifyContent:isRight?"flex-end":"flex-start",
+            }}>
+              {!isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>}
+              Bench
+              {isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:2,marginBottom:8}}>
+              {bench.map((p,i)=>(
+                <PlayerRow key={i} p={p} isOut={false} reason={null} doubt={false}/>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Unavailable */}
+        {unavail.length>0&&(
+          <>
+            <div style={{
+              fontSize:"6.5px",fontWeight:900,letterSpacing:".12em",
+              textTransform:"uppercase",color:"#ef4444",opacity:.75,
+              marginBottom:5,paddingTop:6,
+              borderTop:`1px solid rgba(239,68,68,.15)`,
+              display:"flex",alignItems:"center",gap:4,
+              justifyContent:isRight?"flex-end":"flex-start",
+            }}>
+              {!isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",display:"inline-block"}}/>}
+              Out
+              {isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",display:"inline-block"}}/>}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:2}}>
+              {unavail.map((p,i)=>{
+                const reason=p.doubt?"Doubt":(p.type||p.reason||p.player_type||"Inj").slice(0,10);
+                return <PlayerRow key={i} p={p} isOut={true} reason={reason} doubt={p.doubt}/>;
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return(
     <div style={{
-      background:"#000",borderRadius:10,border:"1px solid rgba(255,255,255,.09)",
-      overflow:"hidden",margin:"0 auto",maxWidth:820,
+      background:"#000",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",
+      overflow:"hidden",margin:"0 auto",maxWidth:900,
       fontFamily:"'Inter','Sora',sans-serif",
     }}>
-
-      {/* ── Header ── */}
-      <div style={{display:"flex",alignItems:"center",padding:"10px 16px 8px",
-        borderBottom:"1px solid rgba(255,255,255,.08)",background:"#000",gap:12}}>
-
-        {/* Home */}
-        <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${hc}`,
-            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
-            justifyContent:"center",flexShrink:0}}>
-            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="22" height="22"
-              style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-          </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
-              {homeTeam?.name}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
-              {home?.formation&&<span style={{fontSize:8,fontWeight:800,color:hc,
-                background:`${hc}14`,border:`1px solid ${hc}30`,borderRadius:4,
-                padding:"1px 5px",letterSpacing:".04em"}}>{home.formation}</span>}
-              {home?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
-                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
-                {home.confidence}% conf</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* Centre */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,flexShrink:0}}>
-          {isPredicted&&<span style={{fontSize:7,fontWeight:900,color:"#f59e0b",
-            background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.22)",
-            borderRadius:4,padding:"2px 7px",letterSpacing:".08em"}}>PREDICTED</span>}
-          <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.2)",letterSpacing:".06em"}}>
-            LINEUP
-          </span>
-        </div>
-
-        {/* Away */}
-        <div style={{flex:1,display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
-              {awayTeam?.name}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2,justifyContent:"flex-end"}}>
-              {away?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
-                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
-                {away.confidence}% conf</span>}
-              {away?.formation&&<span style={{fontSize:8,fontWeight:800,color:ac,
-                background:`${ac}14`,border:`1px solid ${ac}30`,borderRadius:4,
-                padding:"1px 5px",letterSpacing:".04em"}}>{away.formation}</span>}
-            </div>
-          </div>
-          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${ac}`,
-            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
-            justifyContent:"center",flexShrink:0}}>
-            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="22" height="22"
-              style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-          </div>
-        </div>
+      {/* ── Compact header ── */}
+      <div style={{
+        display:"flex",alignItems:"center",padding:"8px 14px 7px",
+        borderBottom:"1px solid rgba(255,255,255,.07)",background:"#000",gap:10,
+      }}>
+        {isPredicted&&<span style={{
+          fontSize:7,fontWeight:900,color:"#f59e0b",
+          background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.22)",
+          borderRadius:3,padding:"2px 7px",letterSpacing:".08em",
+        }}>PREDICTED</span>}
+        <span style={{flex:1,fontSize:9,fontWeight:700,color:"rgba(255,255,255,.18)",
+          letterSpacing:".06em",textAlign:"center"}}>LINEUP</span>
       </div>
 
-      {/* ── Horizontal pitch — black, radical half-colours, stadium name ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden",background:"#000"}}>
-        <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
-          viewBox="0 0 200 104" xmlns="http://www.w3.org/2000/svg">
-          <rect width="200" height="104" fill="#000"/>
-          {/* Radical half tints — team colours at higher opacity */}
-          <rect x="4" y="4" width="96" height="96" fill={`${hc}`} opacity="0.13"/>
-          <rect x="100" y="4" width="96" height="96" fill={`${ac}`} opacity="0.13"/>
-          {/* Pitch outline */}
-          <rect x="4" y="4" width="192" height="96" rx="1" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth=".65"/>
-          {/* Halfway line */}
-          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.8)" strokeWidth=".65"/>
-          {/* Centre circle */}
-          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".6"/>
-          <circle cx="100" cy="52" r="1.2" fill="rgba(255,255,255,.95)"/>
-          {/* Left penalty box */}
-          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".55"/>
-          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".45"/>
-          <circle cx="20" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
-          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.75)" strokeWidth=".5"/>
-          {/* Right penalty box */}
-          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".55"/>
-          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".45"/>
-          <circle cx="180" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
-          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.75)" strokeWidth=".5"/>
-          {/* Corners */}
-          <path d="M4,4 Q6,4 6,6"           fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
-          <path d="M196,4 Q194,4 194,6"     fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
-          <path d="M4,100 Q6,100 6,98"       fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
-          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
-          {/* Stadium name — top centre */}
-          {venueName&&(
-            <text x="100" y="9.5" textAnchor="middle" fontSize="3.8" fontFamily="Inter,sans-serif"
-              fontWeight="700" fill="rgba(255,255,255,.45)" letterSpacing=".3">
-              {String(venueName).slice(0,28)}
-            </text>
-          )}
-        </svg>
-        <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          <Tokens lineup={home} side="left"  colour={hc}/>
-          <Tokens lineup={away} side="right" colour={ac}/>
+      {/* ── Three-column main body: [HomeSidebar] [Pitch] [AwaySidebar] ── */}
+      <div style={{display:"grid",gridTemplateColumns:"120px 1fr 120px",alignItems:"stretch"}}>
+
+        {/* Home sidebar */}
+        <Sidebar lineup={home} team={homeTeam} colour={hc} isRight={false}/>
+
+        {/* Pitch — full height of grid row, no border, no padding */}
+        <div style={{position:"relative",width:"100%",paddingBottom:"50%",overflow:"hidden",background:"#000"}}>
+          <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
+            viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="200" height="100" fill="#000"/>
+            {/* Full-bleed half tints — edge to edge */}
+            <rect x="0" y="0" width="100" height="100" fill={hc} opacity="0.18"/>
+            <rect x="100" y="0" width="100" height="100" fill={ac} opacity="0.18"/>
+            {/* Pitch markings */}
+            <rect x="2" y="3" width="196" height="94" rx="1" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth=".6"/>
+            <line x1="100" y1="3" x2="100" y2="97" stroke="rgba(255,255,255,.8)" strokeWidth=".6"/>
+            <circle cx="100" cy="50" r="15" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".55"/>
+            <circle cx="100" cy="50" r="1.1" fill="rgba(255,255,255,.95)"/>
+            {/* Left penalty box */}
+            <rect x="2" y="26" width="23" height="48" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
+            <rect x="2" y="36" width="8" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".42"/>
+            <circle cx="16" cy="50" r=".9" fill="rgba(255,255,255,.88)"/>
+            <path d="M25,37 A14,14 0 0,1 25,63" fill="none" stroke="rgba(255,255,255,.38)" strokeWidth=".38"/>
+            <rect x="0" y="41" width="2" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.72)" strokeWidth=".45"/>
+            {/* Right penalty box */}
+            <rect x="175" y="26" width="23" height="48" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
+            <rect x="190" y="36" width="8" height="28" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".42"/>
+            <circle cx="184" cy="50" r=".9" fill="rgba(255,255,255,.88)"/>
+            <path d="M175,37 A14,14 0 0,0 175,63" fill="none" stroke="rgba(255,255,255,.38)" strokeWidth=".38"/>
+            <rect x="198" y="41" width="2" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.72)" strokeWidth=".45"/>
+            {/* Corners */}
+            <path d="M2,3 Q4,3 4,5"     fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
+            <path d="M198,3 Q196,3 196,5" fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
+            <path d="M2,97 Q4,97 4,95"   fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
+            <path d="M198,97 Q196,97 196,95" fill="none" stroke="rgba(255,255,255,.62)" strokeWidth=".42"/>
+            {/* Stadium name in free zone at top-centre */}
+            {venueName&&(
+              <text x="100" y="10" textAnchor="middle" fontSize="4.2" fontFamily="Inter,sans-serif"
+                fontWeight="700" fill="rgba(255,255,255,.42)" letterSpacing=".25">
+                {String(venueName).slice(0,28)}
+              </text>
+            )}
+          </svg>
+          <div style={{position:"absolute",inset:0,zIndex:2}}>
+            <Tokens lineup={home} side="left"  colour={hc}/>
+            <Tokens lineup={away} side="right" colour={ac}/>
+          </div>
         </div>
+
+        {/* Away sidebar */}
+        <Sidebar lineup={away} team={awayTeam} colour={ac} isRight={true}/>
+
       </div>
-
-      {/* ── Coach row ── */}
-      {(home?.coach||away?.coach)&&(
-        <div style={{display:"flex",justifyContent:"space-between",
-          padding:"6px 16px",borderTop:"1px solid rgba(255,255,255,.06)",
-          background:"#000"}}>
-          {home?.coach&&(
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              {home.coach.photo&&<img src={home.coach.photo} alt="" width="18" height="18"
-                style={{borderRadius:"50%",objectFit:"cover",objectPosition:"top",border:`1px solid ${hc}44`}}
-                onError={e=>e.currentTarget.style.display="none"}/>}
-              <div>
-                <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.6)"}}>{home.coach.name}</div>
-                <div style={{fontSize:8,color:"rgba(255,255,255,.22)"}}>Manager</div>
-              </div>
-            </div>
-          )}
-          {away?.coach&&(
-            <div style={{display:"flex",alignItems:"center",gap:6,flexDirection:"row-reverse"}}>
-              {away.coach.photo&&<img src={away.coach.photo} alt="" width="18" height="18"
-                style={{borderRadius:"50%",objectFit:"cover",objectPosition:"top",border:`1px solid ${ac}44`}}
-                onError={e=>e.currentTarget.style.display="none"}/>}
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.6)"}}>{away.coach.name}</div>
-                <div style={{fontSize:8,color:"rgba(255,255,255,.22)"}}>Manager</div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Bench ── */}
-      {(home?.bench?.length>0||away?.bench?.length>0)&&(
-        <div style={{display:"flex",gap:8,padding:"8px 12px 9px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"#050505",alignItems:"flex-start"}}>
-          <BenchStrip lineup={home} colour={hc} align="left"/>
-          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
-          <BenchStrip lineup={away} colour={ac} align="right"/>
-        </div>
-      )}
-
-      {/* ── Unavailable — split by team ── */}
-      {(homeUnavail.length>0||awayUnavail.length>0)&&(
-        <div style={{display:"flex",gap:10,padding:"7px 12px 9px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"#030303",alignItems:"flex-start"}}>
-          <div style={{flex:1,minWidth:0}}>
-            {homeUnavail.length>0&&(
-              <>
-                <div style={{fontSize:"6.5px",fontWeight:900,color:`${hc}70`,letterSpacing:".12em",
-                  textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",gap:4}}>
-                  <span style={{width:5,height:5,borderRadius:"50%",background:hc,display:"inline-block"}}/>
-                  OUT
-                </div>
-                <UnavailBlock players={homeUnavail} colour={hc}/>
-              </>
-            )}
-          </div>
-          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
-          <div style={{flex:1,minWidth:0}}>
-            {awayUnavail.length>0&&(
-              <>
-                <div style={{fontSize:"6.5px",fontWeight:900,color:`${ac}70`,letterSpacing:".12em",
-                  textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",
-                  justifyContent:"flex-end",gap:4}}>
-                  OUT
-                  <span style={{width:5,height:5,borderRadius:"50%",background:ac,display:"inline-block"}}/>
-                </div>
-                <UnavailBlock players={awayUnavail} colour={ac}/>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
 
 
 function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) {

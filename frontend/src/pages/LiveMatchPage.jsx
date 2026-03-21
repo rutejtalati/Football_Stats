@@ -791,18 +791,23 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
   return(
     <div style={{
       background:"#000",borderRadius:12,border:"1px solid rgba(255,255,255,.08)",
-      overflow:"hidden",margin:"0 auto",
+      overflow:"hidden",margin:"0 auto",maxWidth:760,
       fontFamily:"'Inter','Sora',sans-serif",
     }}>
 
       {/* ── Full-width bezel-less pitch ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"56%",overflow:"hidden",background:"#000"}}>
+      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden",background:"#000"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
           viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="pitchClip">
+              <rect x="3" y="5" width="194" height="102" rx="1"/>
+            </clipPath>
+          </defs>
           <rect width="200" height="112" fill="#000"/>
-          {/* Full-bleed half tints */}
-          <rect x="0" y="0" width="100" height="112" fill={hc} opacity="0.2"/>
-          <rect x="100" y="0" width="100" height="112" fill={ac} opacity="0.2"/>
+          {/* Half tints clipped exactly to pitch outline — no bleed */}
+          <rect x="3" y="5" width="97" height="102" fill={hc} opacity="0.22" clipPath="url(#pitchClip)"/>
+          <rect x="100" y="5" width="97" height="102" fill={ac} opacity="0.22" clipPath="url(#pitchClip)"/>
           {/* Pitch outline — inset so players never clip border */}
           <rect x="3" y="5" width="194" height="102" rx="1" fill="none" stroke="rgba(255,255,255,.82)" strokeWidth=".65"/>
           {/* Halfway */}

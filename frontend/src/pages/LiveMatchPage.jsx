@@ -2,6 +2,7 @@
 // StatinSite — Match Detail Page
 // Mode-driven: prematch / live / fulltime
 // ═══════════════════════════════════════════════════════════════════
+import HorizontalPitchLineup from "../components/HorizontalPitchLineup";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
@@ -384,44 +385,36 @@ const TEAM_COLOURS_MAP = {
 };
 function tColour(id,fb="#38bdf8"){return TEAM_COLOURS_MAP[id]||fb;}
 
-// ─── HORIZONTAL FORMATION SLOTS ──────────────────────────────────────────────
-// Coordinate system (0-100 normalised):
-//   x = pitch length (0=left goal, 100=right goal)
-//   y = pitch width  (0=top touchline, 100=bottom touchline)
-// LEFT TEAM  — GK near x≈10, attack near x≈45
-// RIGHT TEAM — GK near x≈90, attack near x≈55
-// Slot order: [GK, DEF left→right, MID left→right, FWD left→right]
-const HF = {
-  "4-3-3_left":   [[10,50],[23,82],[23,61],[23,39],[23,18],[34,66],[32,50],[34,34],[43,82],[45,50],[43,18]],
-  "4-3-3_right":  [[90,50],[77,18],[77,39],[77,61],[77,82],[66,34],[68,50],[66,66],[57,18],[55,50],[57,82]],
-  "4-2-3-1_left": [[10,50],[23,82],[23,61],[23,39],[23,18],[31,61],[31,39],[39,82],[39,50],[39,18],[46,50]],
-  "4-2-3-1_right":[[90,50],[77,18],[77,39],[77,61],[77,82],[69,39],[69,61],[61,18],[61,50],[61,82],[54,50]],
-  "4-4-2_left":   [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,61],[34,39],[34,18],[43,61],[43,39]],
-  "4-4-2_right":  [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,39],[66,61],[66,82],[57,39],[57,61]],
-  "4-5-1_left":   [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,65],[33,50],[34,35],[34,18],[45,50]],
-  "4-5-1_right":  [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,35],[67,50],[66,65],[66,82],[55,50]],
-  "4-1-4-1_left": [[10,50],[23,82],[23,61],[23,39],[23,18],[30,50],[38,82],[38,61],[38,39],[38,18],[46,50]],
-  "4-1-4-1_right":[[90,50],[77,18],[77,39],[77,61],[77,82],[70,50],[62,18],[62,39],[62,61],[62,82],[54,50]],
-  "3-5-2_left":   [[10,50],[22,68],[21,50],[22,32],[31,82],[33,65],[32,50],[33,35],[31,18],[44,62],[44,38]],
-  "3-5-2_right":  [[90,50],[78,32],[79,50],[78,68],[69,18],[67,35],[68,50],[67,65],[69,82],[56,38],[56,62]],
-  "3-4-3_left":   [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[43,82],[45,50],[43,18]],
-  "3-4-3_right":  [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[57,18],[55,50],[57,82]],
-  "5-3-2_left":   [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,66],[32,50],[33,34],[44,62],[44,38]],
-  "5-3-2_right":  [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,34],[68,50],[67,66],[56,38],[56,62]],
-  "5-4-1_left":   [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,82],[33,61],[33,39],[33,18],[45,50]],
-  "5-4-1_right":  [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,18],[67,39],[67,61],[67,82],[55,50]],
-  "4-3-2-1_left": [[10,50],[23,82],[23,61],[23,39],[23,18],[31,66],[31,50],[31,34],[39,62],[39,38],[46,50]],
-  "4-3-2-1_right":[[90,50],[77,18],[77,39],[77,61],[77,82],[69,34],[69,50],[69,66],[61,38],[61,62],[54,50]],
-  "4-2-2-2_left": [[10,50],[23,82],[23,61],[23,39],[23,18],[30,62],[30,38],[38,62],[38,38],[45,62],[45,38]],
-  "4-2-2-2_right":[[90,50],[77,18],[77,39],[77,61],[77,82],[70,38],[70,62],[62,38],[62,62],[55,38],[55,62]],
-  "3-4-2-1_left": [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[39,62],[39,38],[46,50]],
-  "3-4-2-1_right":[[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[61,38],[61,62],[54,50]],
+// ─── FORMATION DATA ───────────────────────────────────────────────────────────
+// Vertical pitch (0,0)=top-left, (100,100)=bottom-right in SVG space.
+// Logical coords: x=0..100 (left→right pitch width), y=0..100 (GK at y=8, fwd at y=78).
+// HOME attacks upward → svgY = 100 - y  (GK at svgY=92, attack at svgY=22)
+// AWAY attacks downward → svgY = y       (GK at svgY=8, attack at svgY=78+)
+// Slot order matches API player order: [GK, DEF(L→R), MID(L→R), FWD(L→R)]
+const FDATA = {
+  "4-3-3":   [[50,8],[14,24],[38,24],[62,24],[86,24],[32,50],[50,38],[68,50],[14,78],[50,78],[86,78]],
+  "4-2-3-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[40,40],[60,40],[22,62],[50,58],[78,62],[50,78]],
+  "4-4-2":   [[50,8],[14,24],[38,24],[62,24],[86,24],[14,50],[38,50],[62,50],[86,50],[42,78],[58,78]],
+  "4-5-1":   [[50,8],[14,24],[38,24],[62,24],[86,24],[14,50],[34,50],[50,46],[66,50],[86,50],[50,78]],
+  "4-1-4-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[50,38],[14,52],[38,52],[62,52],[86,52],[50,78]],
+  "3-5-2":   [[50,8],[34,24],[50,22],[66,24],[12,52],[36,50],[50,42],[64,50],[88,52],[42,78],[58,78]],
+  "3-4-3":   [[50,8],[34,24],[50,22],[66,24],[12,50],[40,48],[60,48],[88,50],[16,78],[50,78],[84,78]],
+  "5-3-2":   [[50,8],[10,28],[30,24],[50,22],[70,24],[90,28],[36,50],[50,42],[64,50],[42,78],[58,78]],
+  "5-4-1":   [[50,8],[10,28],[30,24],[50,22],[70,24],[90,28],[14,50],[38,50],[62,50],[86,50],[50,78]],
+  "3-4-2-1": [[50,8],[34,24],[50,22],[66,24],[12,50],[40,46],[60,46],[88,50],[36,66],[64,66],[50,80]],
+  "4-3-2-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[32,42],[50,38],[68,42],[38,62],[62,62],[50,78]],
+  "4-2-2-2": [[50,8],[14,24],[38,24],[62,24],[86,24],[40,40],[60,40],[34,60],[66,60],[42,78],[58,78]],
 };
-function getHSlots(formation,side){
-  return HF[`${formation}_${side}`]||HF[`4-3-3_${side}`];
+function getSlots(formation,side){
+  const slots=FDATA[formation]||FDATA["4-3-3"];
+  return slots.map(([x,y])=>({
+    x,
+    // svgY: home attacks up (svgY=100-y), away attacks down (svgY=y)
+    svgY: side==="home" ? 100-y : y,
+  }));
 }
 
-// ─── HORIZONTAL PITCH LINEUP ─────────────────────────────────────────────────
+// ─── UNIFIED PITCH LINEUP ────────────────────────────────────────────────────
 function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   if(!homeLineup&&!awayLineup) return null;
   const hc=tColour(homeTeam?.id,"#38bdf8");
@@ -444,7 +437,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
           photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null),
           confidence:p?.confidence??pl.confidence};
       }),
-      bench:bench.slice(0,9).map(p=>{
+      bench:bench.map(p=>{
         const pl=p?.player||p||{};
         return{id:pl.id,name:pl.name||"",
           photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null)};
@@ -456,41 +449,38 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   const away=norm(awayLineup);
   const isPredicted=home?.predicted||away?.predicted;
 
-  // Player token rendered as absolute-positioned div over the pitch
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
-    const slots=getHSlots(lineup.formation,side);
+    const slots=getSlots(lineup.formation,side);
     return lineup.xi.slice(0,11).map((p,i)=>{
-      const [x,y]=slots[i]||[50,50];
+      const s=slots[i]||{x:50,svgY:50};
       const isGK=i===0;
       const short=(p.name||"").split(" ").pop().slice(0,11);
       return(
         <div key={i} style={{
-          position:"absolute",left:`${x}%`,top:`${y}%`,
+          position:"absolute",left:`${s.x}%`,top:`${s.svgY}%`,
           transform:"translate(-50%,-50%)",
-          display:"flex",flexDirection:"column",alignItems:"center",gap:1.5,
-          zIndex:3,pointerEvents:"none",
+          display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+          zIndex:2,pointerEvents:"none",
         }}>
           <div style={{
-            width:isGK?26:22,height:isGK?26:22,borderRadius:"50%",
-            border:`${isGK?2.5:2}px solid ${colour}`,
-            boxShadow:isGK?`0 0 0 2px #0c2410,0 0 0 4px ${colour}66,0 2px 8px rgba(0,0,0,.7)`:`0 1px 6px rgba(0,0,0,.6)`,
-            background:"#0a1c0b",overflow:"hidden",flexShrink:0,
+            width:32,height:32,borderRadius:"50%",
+            border:`2.5px solid ${colour}`,
+            background:"#0a1a0a",overflow:"hidden",flexShrink:0,
           }}>
-            {p.photo&&<img src={p.photo} alt="" width={isGK?26:22} height={isGK?26:22}
+            {p.photo&&<img src={p.photo} alt="" width="32" height="32"
               style={{objectFit:"cover",objectPosition:"top center",display:"block"}}
               onError={e=>{e.currentTarget.style.display="none";}}/>}
           </div>
           <div style={{
-            fontSize:"6.5px",fontWeight:700,color:"rgba(255,255,255,.93)",
-            textShadow:"0 1px 5px #000",background:"rgba(0,0,0,.72)",
-            padding:"1px 3.5px",borderRadius:3,whiteSpace:"nowrap",
-            maxWidth:54,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.35,
-            letterSpacing:"0.02em",fontFamily:"'Inter','Sora',sans-serif",
+            fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.92)",
+            textShadow:"0 1px 6px #000",background:"rgba(0,0,0,.68)",
+            padding:"1px 4px",borderRadius:3,whiteSpace:"nowrap",
+            maxWidth:58,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.35,
           }}>{short}</div>
           {p.confidence!==undefined&&(
-            <div style={{width:22,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
-              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.6}}/>
+            <div style={{width:26,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.5}}/>
             </div>
           )}
         </div>
@@ -498,41 +488,31 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
     });
   }
 
-  function BenchStrip({lineup,colour,align}){
+  function BenchRow({lineup,colour,label}){
     if(!lineup?.bench?.length) return null;
-    const isRight=align==="right";
     return(
-      <div style={{flex:1,overflow:"hidden",minWidth:0}}>
-        <div style={{fontSize:"6.5px",fontWeight:900,color:`${colour}80`,letterSpacing:".12em",
-          textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",
-          justifyContent:isRight?"flex-end":"flex-start",gap:4}}>
-          {isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>}
-          Bench
-          {!isRight&&<span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>}
+      <div style={{flex:1}}>
+        <div style={{fontSize:"7.5px",fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
+          color:"rgba(255,255,255,.15)",marginBottom:6,display:"flex",alignItems:"center",gap:4}}>
+          <span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>
+          {label}
         </div>
-        <div style={{display:"flex",gap:3,flexWrap:"nowrap",overflow:"hidden",
-          justifyContent:isRight?"flex-end":"flex-start"}}>
+        <div style={{display:"flex",gap:4,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
           {lineup.bench.slice(0,7).map((p,i)=>(
-            <div key={i} style={{flexShrink:0,display:"flex",alignItems:"center",gap:3,
-              padding:isRight?"2px 3px 2px 5px":"2px 5px 2px 3px",borderRadius:5,
-              background:"rgba(255,255,255,.025)",
-              border:"1px solid rgba(255,255,255,.06)",
-              borderLeft:isRight?"1px solid rgba(255,255,255,.06)":`2px solid ${colour}`,
-              borderRight:isRight?`2px solid ${colour}`:"1px solid rgba(255,255,255,.06)"}}>
-              {isRight&&<span style={{fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.42)",
-                whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>
-                {(p.name||"").split(" ").pop().slice(0,10)}
-              </span>}
-              <div style={{width:17,height:17,borderRadius:"50%",overflow:"hidden",
+            <div key={i} style={{flexShrink:0,display:"flex",alignItems:"center",gap:4,
+              padding:"3px 7px 3px 3px",borderRadius:7,
+              borderLeft:`2px solid ${colour}`,background:"rgba(255,255,255,.02)",
+              border:`0.5px solid rgba(255,255,255,.05)`,
+              borderLeftWidth:"2px",borderLeftColor:colour}}>
+              <div style={{width:20,height:20,borderRadius:"50%",overflow:"hidden",
                 background:"#111",border:`1px solid ${colour}33`,flexShrink:0}}>
-                {p.photo&&<img src={p.photo} alt="" width="17" height="17"
+                {p.photo&&<img src={p.photo} alt="" width="20" height="20"
                   style={{objectFit:"cover",objectPosition:"top"}}
                   onError={e=>e.currentTarget.style.display="none"}/>}
               </div>
-              {!isRight&&<span style={{fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.42)",
-                whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>
-                {(p.name||"").split(" ").pop().slice(0,10)}
-              </span>}
+              <span style={{fontSize:"7.5px",fontWeight:700,color:"rgba(255,255,255,.42)",whiteSpace:"nowrap"}}>
+                {(p.name||"").split(" ").pop().slice(0,11)}
+              </span>
             </div>
           ))}
         </div>
@@ -548,133 +528,97 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   ];
 
   return(
-    <div style={{background:"#060f07",borderRadius:14,border:"1px solid rgba(255,255,255,.07)",
-      overflow:"hidden",margin:"14px 18px",fontFamily:"'Inter','Sora',sans-serif"}}>
+    <div style={{padding:"14px 18px",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
 
-      {/* ── Header bar ── */}
-      <div style={{display:"flex",alignItems:"center",padding:"10px 16px 8px",
-        borderBottom:"1px solid rgba(255,255,255,.05)",gap:12}}>
-
-        {/* Home */}
-        <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${hc}`,
-            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
-            justifyContent:"center",flexShrink:0}}>
-            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="22" height="22"
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:7}}>
+          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${hc}`,
+            overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="16" height="16"
               style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
           </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
-              {homeTeam?.name}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
-              {home?.formation&&<span style={{fontSize:8,fontWeight:800,color:hc,
-                background:`${hc}14`,border:`1px solid ${hc}30`,borderRadius:4,padding:"1px 5px",
-                letterSpacing:".04em"}}>{home.formation}</span>}
-              {home?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
-                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
-                {home.confidence}% conf</span>}
-            </div>
-          </div>
+          <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{homeTeam?.name}</span>
+          {home?.formation&&<span style={{fontSize:9,fontWeight:800,color:hc,
+            background:`${hc}12`,border:`1px solid ${hc}30`,borderRadius:4,padding:"1px 6px"}}>
+            {home.formation}</span>}
+          {home?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
+            color:"rgba(52,211,153,.75)",fontFamily:"'JetBrains Mono',monospace"}}>
+            {home.confidence}%</span>}
         </div>
-
-        {/* Centre badge */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,flexShrink:0}}>
-          {isPredicted&&<span style={{fontSize:7,fontWeight:900,color:"#f59e0b",
-            background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.22)",
-            borderRadius:4,padding:"2px 7px",letterSpacing:".08em"}}>PREDICTED</span>}
-          <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.2)",letterSpacing:".06em"}}>LINEUP</span>
-        </div>
-
-        {/* Away */}
-        <div style={{flex:1,display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
-              {awayTeam?.name}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2,justifyContent:"flex-end"}}>
-              {away?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
-                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
-                {away.confidence}% conf</span>}
-              {away?.formation&&<span style={{fontSize:8,fontWeight:800,color:ac,
-                background:`${ac}14`,border:`1px solid ${ac}30`,borderRadius:4,padding:"1px 5px",
-                letterSpacing:".04em"}}>{away.formation}</span>}
-            </div>
-          </div>
-          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${ac}`,
-            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
-            justifyContent:"center",flexShrink:0}}>
-            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="22" height="22"
+        {isPredicted&&<span style={{fontSize:8,fontWeight:900,color:"#f59e0b",
+          background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.2)",
+          borderRadius:4,padding:"2px 8px",letterSpacing:".06em"}}>PREDICTED</span>}
+        <div style={{display:"flex",alignItems:"center",gap:7,flexDirection:"row-reverse"}}>
+          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${ac}`,
+            overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="16" height="16"
               style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
           </div>
+          <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{awayTeam?.name}</span>
+          {away?.formation&&<span style={{fontSize:9,fontWeight:800,color:ac,
+            background:`${ac}12`,border:`1px solid ${ac}30`,borderRadius:4,padding:"1px 6px"}}>
+            {away.formation}</span>}
+          {away?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
+            color:"rgba(52,211,153,.75)",fontFamily:"'JetBrains Mono',monospace"}}>
+            {away.confidence}%</span>}
         </div>
       </div>
 
-      {/* ── Landscape pitch — 2:1 aspect ratio ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"50%",overflow:"hidden"}}>
-
-        {/* SVG pitch markings */}
+      {/* Vertical pitch — viewBox 0 0 100 100 */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"145%",
+        borderRadius:10,overflow:"hidden",border:"1px solid rgba(255,255,255,.05)"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
-          viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="hplTurf" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#0c2410"/>
-              <stop offset="50%" stopColor="#0f2d14"/>
-              <stop offset="100%" stopColor="#0c2410"/>
-            </linearGradient>
-            <pattern id="hplStripes" x="0" y="0" width="20" height="100" patternUnits="userSpaceOnUse">
-              <rect x="0" y="0" width="10" height="100" fill="rgba(255,255,255,0.02)"/>
-            </pattern>
-          </defs>
-          <rect width="200" height="100" fill="url(#hplTurf)"/>
-          <rect width="200" height="100" fill="url(#hplStripes)"/>
-          {/* Pitch outline */}
-          <rect x="4" y="4" width="192" height="92" rx="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
-          {/* Halfway */}
-          <line x1="100" y1="4" x2="100" y2="96" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
-          {/* Centre circle */}
-          <circle cx="100" cy="50" r="15" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".45"/>
-          <circle cx="100" cy="50" r=".9" fill="rgba(255,255,255,.9)"/>
-          {/* Left penalty box */}
-          <rect x="4" y="26" width="24" height="48" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
-          <rect x="4" y="37" width="9" height="26" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
-          <circle cx="19" cy="50" r=".75" fill="rgba(255,255,255,.8)"/>
-          <path d="M28,38 A14,14 0 0,1 28,62" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
-          <rect x="0" y="41" width="4" height="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          {/* Right penalty box */}
-          <rect x="172" y="26" width="24" height="48" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
-          <rect x="187" y="37" width="9" height="26" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
-          <circle cx="181" cy="50" r=".75" fill="rgba(255,255,255,.8)"/>
-          <path d="M172,38 A14,14 0 0,0 172,62" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
-          <rect x="196" y="41" width="4" height="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          {/* Corner arcs */}
-          <path d="M4,4 Q6,4 6,6"       fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".4"/>
-          <path d="M196,4 Q194,4 194,6"  fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".4"/>
-          <path d="M4,96 Q6,96 6,94"     fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".4"/>
-          <path d="M196,96 Q194,96 194,94" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".4"/>
-          {/* Attack direction labels */}
-          <text x="27" y="8.5" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill={`${hc}55`} letterSpacing=".5">
-            {(homeTeam?.name||"").split(" ").pop().slice(0,6)} →
-          </text>
-          <text x="173" y="8.5" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill={`${ac}55`} letterSpacing=".5">
-            ← {(awayTeam?.name||"").split(" ").pop().slice(0,6)}
-          </text>
+          viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <rect width="100" height="100" fill="#0f2a10"/>
+          {[0,10,20,30,40,50,60,70,80,90].map((y,i)=>(
+            <rect key={i} x="0" y={y} width="100" height="10"
+              fill={i%2===0?"rgba(255,255,255,.025)":"rgba(0,0,0,0)"}/>
+          ))}
+          <rect x="2" y="2" width="96" height="96" rx=".5" fill="none"
+            stroke="rgba(255,255,255,.7)" strokeWidth=".6"/>
+          <line x1="2" y1="50" x2="98" y2="50" stroke="rgba(255,255,255,.65)" strokeWidth=".5"/>
+          <circle cx="50" cy="50" r="10" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <circle cx="50" cy="50" r=".8" fill="rgba(255,255,255,.95)"/>
+          {/* Home penalty box — bottom */}
+          <rect x="21" y="78" width="58" height="20" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <rect x="33" y="88" width="34" height="10" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".35"/>
+          <circle cx="50" cy="90" r=".7" fill="rgba(255,255,255,.85)"/>
+          <path d="M28,78 A14,14 0 0,0 72,78" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".35"/>
+          {/* Away penalty box — top */}
+          <rect x="21" y="2" width="58" height="20" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <rect x="33" y="2" width="34" height="10" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".35"/>
+          <circle cx="50" cy="10" r=".7" fill="rgba(255,255,255,.85)"/>
+          <path d="M28,22 A14,14 0 0,1 72,22" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".35"/>
+          {/* Goals */}
+          <rect x="39" y="98" width="22" height="3" fill="rgba(255,255,255,.06)"
+            stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          <rect x="39" y="-1" width="22" height="3" fill="rgba(255,255,255,.06)"
+            stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          {/* Corners */}
+          <path d="M2,2 Q4,2 4,4"      fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <path d="M98,2 Q96,2 96,4"   fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <path d="M2,98 Q4,98 4,96"   fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <path d="M98,98 Q96,98 96,96" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          {/* Formation watermarks */}
+          <text x="50" y="44" textAnchor="middle" fontSize="2.5" fill="rgba(255,255,255,.1)"
+            fontFamily="'JetBrains Mono',sans-serif" fontWeight="800" letterSpacing=".5">{away?.formation||""}</text>
+          <text x="50" y="58" textAnchor="middle" fontSize="2.5" fill="rgba(255,255,255,.1)"
+            fontFamily="'JetBrains Mono',sans-serif" fontWeight="800" letterSpacing=".5">{home?.formation||""}</text>
+          {/* Team colour direction strips */}
+          <rect x="2" y="2"  width="96" height="3" fill={`${ac}18`} rx=".5"/>
+          <rect x="2" y="95" width="96" height="3" fill={`${hc}18`} rx=".5"/>
         </svg>
-
-        {/* Player tokens */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          <Tokens lineup={home} side="left"  colour={hc}/>
-          <Tokens lineup={away} side="right" colour={ac}/>
+          <Tokens lineup={home} side="home" colour={hc}/>
+          <Tokens lineup={away} side="away" colour={ac}/>
         </div>
       </div>
 
-      {/* ── Coach row ── */}
+      {/* Coach */}
       {(home?.coach||away?.coach)&&(
-        <div style={{display:"flex",justifyContent:"space-between",
-          padding:"6px 16px",borderTop:"1px solid rgba(255,255,255,.04)",
-          background:"rgba(0,0,0,.12)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:9,
+          padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
           {home?.coach&&(
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               {home.coach.photo&&<img src={home.coach.photo} alt="" width="20" height="20"
@@ -700,19 +644,17 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       )}
 
-      {/* ── Bench strip ── */}
+      {/* Bench */}
       {(home?.bench?.length>0||away?.bench?.length>0)&&(
-        <div style={{display:"flex",gap:8,padding:"7px 12px 8px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.18)",alignItems:"flex-start"}}>
-          <BenchStrip lineup={home} colour={hc} align="left"/>
-          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
-          <BenchStrip lineup={away} colour={ac} align="right"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}}>
+          <BenchRow lineup={home} colour={hc} label={`${homeTeam?.name||""} Bench`}/>
+          <BenchRow lineup={away} colour={ac} label={`${awayTeam?.name||""} Bench`}/>
         </div>
       )}
 
-      {/* ── Unavailable ── */}
+      {/* Unavailable */}
       {allUnavail.length>0&&(
-        <div style={{margin:"0 12px 10px",padding:"7px 10px",
+        <div style={{marginTop:8,padding:"8px 10px",
           background:"rgba(248,113,113,.025)",border:"1px solid rgba(248,113,113,.08)",borderRadius:8}}>
           <div style={{fontSize:8,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
             color:"rgba(248,113,113,.3)",marginBottom:5}}>Unavailable</div>

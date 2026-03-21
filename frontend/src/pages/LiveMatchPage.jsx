@@ -108,37 +108,22 @@ function EventIcon({ type, detail }) {
   return <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>–</span>;
 }
 
-function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef4444", highlight = false }) {
+function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef4444" }) {
   const hNum  = parseFloat(String(home ?? "0").replace("%","")) || 0;
   const aNum  = parseFloat(String(away ?? "0").replace("%","")) || 0;
   const total = hNum + aNum || 1;
   const hPct  = (hNum / total) * 100;
-  const homeLeads = hNum > aNum;
-  const awayLeads = aNum > hNum;
 
   return (
-    <div style={{
-      display:"flex", flexDirection:"column", gap:5,
-      padding: highlight ? "8px 12px" : "7px 0",
-      borderRadius: highlight ? 8 : 0,
-      background: highlight ? "rgba(167,139,250,.06)" : "transparent",
-      border: highlight ? "1px solid rgba(167,139,250,.14)" : "none",
-      marginBottom: highlight ? 6 : 0,
-    }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{
-          fontSize:13, fontWeight:800, fontFamily:"'JetBrains Mono',monospace", minWidth:40,
-          color: homeLeads ? "#fff" : "rgba(255,255,255,.6)",
-        }}>{home ?? "–"}</span>
-        <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
-        <span style={{
-          fontSize:13, fontWeight:800, fontFamily:"'JetBrains Mono',monospace", minWidth:40, textAlign:"right",
-          color: awayLeads ? "#fff" : "rgba(255,255,255,.6)",
-        }}>{away ?? "–"}</span>
+        <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40 }}>{home ?? "–"}</span>
+        <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:800, color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace", minWidth:40, textAlign:"right" }}>{away ?? "–"}</span>
       </div>
       <div style={{ display:"flex", height:4, borderRadius:3, overflow:"hidden", background:"rgba(255,255,255,0.06)" }}>
-        <div className="lm-stat-bar" style={{ width:`${hPct}%`, "--w":`${hPct}%`, background:homeColor, borderRadius:"3px 0 0 3px" }} />
-        <div style={{ width:`${100-hPct}%`, background:awayColor, borderRadius:"0 3px 3px 0", transition:"width 0.6s ease" }} />
+        <div className="lm-stat-bar" style={{ width:`${hPct}%`, "--w":`${hPct}%`, background:homeColor }} />
+        <div style={{ width:`${100-hPct}%`, background:awayColor, transition:"width 0.6s ease" }} />
       </div>
     </div>
   );
@@ -400,43 +385,36 @@ const TEAM_COLOURS_MAP = {
 };
 function tColour(id,fb="#38bdf8"){return TEAM_COLOURS_MAP[id]||fb;}
 
-// ─── HORIZONTAL FORMATION SLOTS ──────────────────────────────────────────────
-// x = pitch length (0=left goal, 100=right goal)
-// y = pitch width  (0=top touchline, 100=bottom touchline)
-// LEFT TEAM  — GK near x≈10, attack near x≈45
-// RIGHT TEAM — GK near x≈90, attack near x≈55
-// Slot order: [GK, DEF L→R, MID L→R, FWD L→R]
-const HF = {
-  "4-3-3_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,66],[32,50],[34,34],[43,82],[45,50],[43,18]],
-  "4-3-3_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,34],[68,50],[66,66],[57,18],[55,50],[57,82]],
-  "4-2-3-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[31,61],[31,39],[39,82],[39,50],[39,18],[46,50]],
-  "4-2-3-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[69,39],[69,61],[61,18],[61,50],[61,82],[54,50]],
-  "4-4-2_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,61],[34,39],[34,18],[43,61],[43,39]],
-  "4-4-2_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,39],[66,61],[66,82],[57,39],[57,61]],
-  "4-5-1_left":    [[10,50],[23,82],[23,61],[23,39],[23,18],[34,82],[34,65],[33,50],[34,35],[34,18],[45,50]],
-  "4-5-1_right":   [[90,50],[77,18],[77,39],[77,61],[77,82],[66,18],[66,35],[67,50],[66,65],[66,82],[55,50]],
-  "4-1-4-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[30,50],[38,82],[38,61],[38,39],[38,18],[46,50]],
-  "4-1-4-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[70,50],[62,18],[62,39],[62,61],[62,82],[54,50]],
-  "3-5-2_left":    [[10,50],[22,68],[21,50],[22,32],[31,82],[33,65],[32,50],[33,35],[31,18],[44,62],[44,38]],
-  "3-5-2_right":   [[90,50],[78,32],[79,50],[78,68],[69,18],[67,35],[68,50],[67,65],[69,82],[56,38],[56,62]],
-  "3-4-3_left":    [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[43,82],[45,50],[43,18]],
-  "3-4-3_right":   [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[57,18],[55,50],[57,82]],
-  "5-3-2_left":    [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,66],[32,50],[33,34],[44,62],[44,38]],
-  "5-3-2_right":   [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,34],[68,50],[67,66],[56,38],[56,62]],
-  "5-4-1_left":    [[10,50],[22,82],[22,66],[21,50],[22,34],[22,18],[33,82],[33,61],[33,39],[33,18],[45,50]],
-  "5-4-1_right":   [[90,50],[78,18],[78,34],[79,50],[78,66],[78,82],[67,18],[67,39],[67,61],[67,82],[55,50]],
-  "4-3-2-1_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[31,66],[31,50],[31,34],[39,62],[39,38],[46,50]],
-  "4-3-2-1_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[69,34],[69,50],[69,66],[61,38],[61,62],[54,50]],
-  "4-2-2-2_left":  [[10,50],[23,82],[23,61],[23,39],[23,18],[30,62],[30,38],[38,62],[38,38],[45,62],[45,38]],
-  "4-2-2-2_right": [[90,50],[77,18],[77,39],[77,61],[77,82],[70,38],[70,62],[62,38],[62,62],[55,38],[55,62]],
-  "3-4-2-1_left":  [[10,50],[22,68],[21,50],[22,32],[31,82],[31,61],[31,39],[31,18],[39,62],[39,38],[46,50]],
-  "3-4-2-1_right": [[90,50],[78,32],[79,50],[78,68],[69,18],[69,39],[69,61],[69,82],[61,38],[61,62],[54,50]],
+// ─── FORMATION DATA ───────────────────────────────────────────────────────────
+// Vertical pitch (0,0)=top-left, (100,100)=bottom-right in SVG space.
+// Logical coords: x=0..100 (left→right pitch width), y=0..100 (GK at y=8, fwd at y=78).
+// HOME attacks upward → svgY = 100 - y  (GK at svgY=92, attack at svgY=22)
+// AWAY attacks downward → svgY = y       (GK at svgY=8, attack at svgY=78+)
+// Slot order matches API player order: [GK, DEF(L→R), MID(L→R), FWD(L→R)]
+const FDATA = {
+  "4-3-3":   [[50,8],[14,24],[38,24],[62,24],[86,24],[32,50],[50,38],[68,50],[14,78],[50,78],[86,78]],
+  "4-2-3-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[40,40],[60,40],[22,62],[50,58],[78,62],[50,78]],
+  "4-4-2":   [[50,8],[14,24],[38,24],[62,24],[86,24],[14,50],[38,50],[62,50],[86,50],[42,78],[58,78]],
+  "4-5-1":   [[50,8],[14,24],[38,24],[62,24],[86,24],[14,50],[34,50],[50,46],[66,50],[86,50],[50,78]],
+  "4-1-4-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[50,38],[14,52],[38,52],[62,52],[86,52],[50,78]],
+  "3-5-2":   [[50,8],[34,24],[50,22],[66,24],[12,52],[36,50],[50,42],[64,50],[88,52],[42,78],[58,78]],
+  "3-4-3":   [[50,8],[34,24],[50,22],[66,24],[12,50],[40,48],[60,48],[88,50],[16,78],[50,78],[84,78]],
+  "5-3-2":   [[50,8],[10,28],[30,24],[50,22],[70,24],[90,28],[36,50],[50,42],[64,50],[42,78],[58,78]],
+  "5-4-1":   [[50,8],[10,28],[30,24],[50,22],[70,24],[90,28],[14,50],[38,50],[62,50],[86,50],[50,78]],
+  "3-4-2-1": [[50,8],[34,24],[50,22],[66,24],[12,50],[40,46],[60,46],[88,50],[36,66],[64,66],[50,80]],
+  "4-3-2-1": [[50,8],[14,24],[38,24],[62,24],[86,24],[32,42],[50,38],[68,42],[38,62],[62,62],[50,78]],
+  "4-2-2-2": [[50,8],[14,24],[38,24],[62,24],[86,24],[40,40],[60,40],[34,60],[66,60],[42,78],[58,78]],
 };
-function getHSlots(formation,side){
-  return HF[`${formation}_${side}`]||HF[`4-3-3_${side}`];
+function getSlots(formation,side){
+  const slots=FDATA[formation]||FDATA["4-3-3"];
+  return slots.map(([x,y])=>({
+    x,
+    // svgY: home attacks up (svgY=100-y), away attacks down (svgY=y)
+    svgY: side==="home" ? 100-y : y,
+  }));
 }
 
-// ─── UNIFIED PITCH LINEUP (Horizontal) ───────────────────────────────────────
+// ─── UNIFIED PITCH LINEUP ────────────────────────────────────────────────────
 function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   if(!homeLineup&&!awayLineup) return null;
   const hc=tColour(homeTeam?.id,"#38bdf8");
@@ -459,9 +437,9 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
           photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null),
           confidence:p?.confidence??pl.confidence};
       }),
-      bench:bench.slice(0,9).map(p=>{
+      bench:bench.map(p=>{
         const pl=p?.player||p||{};
-        return{id:pl.id,name:pl.name||"",pos:pl.pos||pl.position||"",
+        return{id:pl.id,name:pl.name||"",
           photo:pl.photo||(pl.id?`https://media.api-sports.io/football/players/${pl.id}.png`:null)};
       }),
     };
@@ -471,42 +449,39 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   const away=norm(awayLineup);
   const isPredicted=home?.predicted||away?.predicted;
 
-  // Player token on horizontal pitch
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
-    const slots=getHSlots(lineup.formation,side);
+    const slots=getSlots(lineup.formation,side);
     return lineup.xi.slice(0,11).map((p,i)=>{
-      const [x,y]=slots[i]||[50,50];
+      const s=slots[i]||{x:50,svgY:50};
       const isGK=i===0;
-      const sz=isGK?36:30;
       const short=(p.name||"").split(" ").pop().slice(0,11);
       return(
         <div key={i} style={{
-          position:"absolute",left:`${x}%`,top:`${y}%`,
+          position:"absolute",left:`${s.x}%`,top:`${s.svgY}%`,
           transform:"translate(-50%,-50%)",
-          display:"flex",flexDirection:"column",alignItems:"center",gap:1.5,
-          zIndex:3,pointerEvents:"none",
+          display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+          zIndex:2,pointerEvents:"none",
         }}>
           <div style={{
-            width:sz,height:sz,borderRadius:"50%",
-            border:`${isGK?3:2.5}px solid ${colour}`,
-            boxShadow:isGK?`0 0 0 2px #0c2410,0 0 0 4.5px ${colour}55,0 2px 10px rgba(0,0,0,.8)`:`0 2px 8px rgba(0,0,0,.7)`,
-            background:"#0a1c0b",overflow:"hidden",flexShrink:0,
+            width:32,height:32,borderRadius:"50%",
+            border:`2.5px solid ${colour}`,
+            boxShadow:isGK?`0 0 0 2px #0f2a10,0 0 0 4.5px ${colour}`:"none",
+            background:"#0a1a0a",overflow:"hidden",flexShrink:0,
           }}>
-            {p.photo&&<img src={p.photo} alt="" width={sz} height={sz}
+            {p.photo&&<img src={p.photo} alt="" width="32" height="32"
               style={{objectFit:"cover",objectPosition:"top center",display:"block"}}
               onError={e=>{e.currentTarget.style.display="none";}}/>}
           </div>
           <div style={{
-            fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.93)",
-            textShadow:"0 1px 6px #000,0 0 12px rgba(0,0,0,.9)",
-            background:"rgba(0,0,0,.74)",padding:"1.5px 4px",borderRadius:3,
-            whiteSpace:"nowrap",maxWidth:58,overflow:"hidden",textOverflow:"ellipsis",
-            lineHeight:1.3,letterSpacing:"0.01em",fontFamily:"'Inter',sans-serif",
+            fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.92)",
+            textShadow:"0 1px 6px #000",background:"rgba(0,0,0,.68)",
+            padding:"1px 4px",borderRadius:3,whiteSpace:"nowrap",
+            maxWidth:58,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.35,
           }}>{short}</div>
           {p.confidence!==undefined&&(
-            <div style={{width:24,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
-              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.65}}/>
+            <div style={{width:26,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.5}}/>
             </div>
           )}
         </div>
@@ -514,213 +489,140 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
     });
   }
 
-  // Bench card strip
-  function BenchStrip({lineup,colour,align}){
+  function BenchRow({lineup,colour,label}){
     if(!lineup?.bench?.length) return null;
-    const isRight=align==="right";
-    const posColor=pos=>pos==="G"?"#f59e0b":pos==="D"?"#60a5fa":pos==="M"?"#34d399":"#f87171";
     return(
-      <div style={{flex:1,overflow:"hidden",minWidth:0}}>
-        <div style={{fontSize:"6.5px",fontWeight:900,color:`${colour}80`,letterSpacing:".12em",
-          textTransform:"uppercase",marginBottom:5,display:"flex",alignItems:"center",
-          justifyContent:isRight?"flex-end":"flex-start",gap:4}}>
-          <span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block"}}/>
-          BENCH
+      <div style={{flex:1}}>
+        <div style={{fontSize:"7.5px",fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
+          color:"rgba(255,255,255,.15)",marginBottom:6,display:"flex",alignItems:"center",gap:4}}>
+          <span style={{width:5,height:5,borderRadius:"50%",background:colour,display:"inline-block",flexShrink:0}}/>
+          {label}
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"nowrap",overflow:"hidden",
-          justifyContent:isRight?"flex-end":"flex-start"}}>
-          {lineup.bench.slice(0,7).map((p,i)=>{
-            const pos=(p.pos||"").slice(0,1).toUpperCase();
-            return(
-              <div key={i} style={{flexShrink:0,display:"flex",flexDirection:"column",
-                alignItems:"center",gap:3,padding:"5px 4px 4px",borderRadius:8,
-                background:`${colour}0a`,border:`1px solid ${colour}20`,minWidth:40}}>
-                <div style={{position:"relative"}}>
-                  <div style={{width:26,height:26,borderRadius:"50%",overflow:"hidden",
-                    background:"#111",border:`1.5px solid ${colour}44`,flexShrink:0}}>
-                    {p.photo&&<img src={p.photo} alt="" width="26" height="26"
-                      style={{objectFit:"cover",objectPosition:"top"}}
-                      onError={e=>e.currentTarget.style.display="none"}/>}
-                  </div>
-                  {pos&&<span style={{position:"absolute",bottom:-2,right:-3,
-                    fontSize:"6px",fontWeight:900,background:posColor(pos),color:"#000",
-                    borderRadius:3,padding:"0 2.5px",lineHeight:"10px",
-                    boxShadow:"0 1px 4px rgba(0,0,0,.7)"}}>{pos}</span>}
-                </div>
-                <span style={{fontSize:"7px",fontWeight:700,color:"rgba(255,255,255,.5)",
-                  whiteSpace:"nowrap",maxWidth:38,overflow:"hidden",textOverflow:"ellipsis",
-                  fontFamily:"'Inter',sans-serif",textAlign:"center"}}>
-                  {(p.name||"").split(" ").pop().slice(0,9)}
-                </span>
+        <div style={{display:"flex",gap:4,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
+          {lineup.bench.slice(0,7).map((p,i)=>(
+            <div key={i} style={{flexShrink:0,display:"flex",alignItems:"center",gap:4,
+              padding:"3px 7px 3px 3px",borderRadius:7,
+              borderLeft:`2px solid ${colour}`,background:"rgba(255,255,255,.02)",
+              border:`0.5px solid rgba(255,255,255,.05)`,
+              borderLeftWidth:"2px",borderLeftColor:colour}}>
+              <div style={{width:20,height:20,borderRadius:"50%",overflow:"hidden",
+                background:"#111",border:`1px solid ${colour}33`,flexShrink:0}}>
+                {p.photo&&<img src={p.photo} alt="" width="20" height="20"
+                  style={{objectFit:"cover",objectPosition:"top"}}
+                  onError={e=>e.currentTarget.style.display="none"}/>}
               </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Unavailable block — split by team
-  const homeUnavail=[...(home?.injuries||[]).map(p=>({...p,doubt:false})),...(home?.doubts||[]).map(p=>({...p,doubt:true}))];
-  const awayUnavail=[...(away?.injuries||[]).map(p=>({...p,doubt:false})),...(away?.doubts||[]).map(p=>({...p,doubt:true}))];
-
-  function UnavailBlock({players,colour}){
-    if(!players.length) return null;
-    return(
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
-          {players.slice(0,8).map((p,i)=>{
-            const reason=p.doubt?"Doubt":(p.type||p.reason||"Inj");
-            return(
-              <span key={i} style={{display:"inline-flex",alignItems:"center",gap:3,
-                padding:"2px 7px 2px 4px",borderRadius:5,
-                background:`${colour}0d`,border:`1px solid ${colour}25`}}>
-                <span style={{width:4,height:4,borderRadius:"50%",flexShrink:0,background:colour}}/>
-                <span style={{fontSize:8.5,fontWeight:700,color:"rgba(255,255,255,.7)"}}>
-                  {(p.name||p.player_name||"").split(" ").slice(-1)[0]}
-                </span>
-                <span style={{fontSize:7,fontWeight:700,color:`${colour}80`,
-                  fontFamily:"'JetBrains Mono',monospace"}}>{reason}</span>
+              <span style={{fontSize:"7.5px",fontWeight:700,color:"rgba(255,255,255,.42)",whiteSpace:"nowrap"}}>
+                {(p.name||"").split(" ").pop().slice(0,11)}
               </span>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     );
   }
+
+  const allUnavail=[
+    ...(home?.injuries||[]).map(p=>({...p,tm:"home"})),
+    ...(home?.doubts||[]).map(p=>({...p,tm:"home",doubt:true})),
+    ...(away?.injuries||[]).map(p=>({...p,tm:"away"})),
+    ...(away?.doubts||[]).map(p=>({...p,tm:"away",doubt:true})),
+  ];
 
   return(
-    <div style={{background:"#060f07",borderRadius:14,border:"1px solid rgba(255,255,255,.07)",
-      overflow:"hidden",margin:"14px 18px",fontFamily:"'Inter','Sora',sans-serif"}}>
+    <div style={{padding:"14px 18px",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
 
-      {/* ── Header ── */}
-      <div style={{display:"flex",alignItems:"center",padding:"10px 16px 8px",
-        borderBottom:"1px solid rgba(255,255,255,.05)",gap:12}}>
-
-        {/* Home */}
-        <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${hc}`,
-            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
-            justifyContent:"center",flexShrink:0}}>
-            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="22" height="22"
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:7}}>
+          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${hc}`,
+            overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {homeTeam?.logo&&<img src={homeTeam.logo} alt="" width="16" height="16"
               style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
           </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
-              {homeTeam?.name}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
-              {home?.formation&&<span style={{fontSize:8,fontWeight:800,color:hc,
-                background:`${hc}14`,border:`1px solid ${hc}30`,borderRadius:4,
-                padding:"1px 5px",letterSpacing:".04em"}}>{home.formation}</span>}
-              {home?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
-                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
-                {home.confidence}% conf</span>}
-            </div>
-          </div>
+          <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{homeTeam?.name}</span>
+          {home?.formation&&<span style={{fontSize:9,fontWeight:800,color:hc,
+            background:`${hc}12`,border:`1px solid ${hc}30`,borderRadius:4,padding:"1px 6px"}}>
+            {home.formation}</span>}
+          {home?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
+            color:"rgba(52,211,153,.75)",fontFamily:"'JetBrains Mono',monospace"}}>
+            {home.confidence}%</span>}
         </div>
-
-        {/* Centre */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,flexShrink:0}}>
-          {isPredicted&&<span style={{fontSize:7,fontWeight:900,color:"#f59e0b",
-            background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.22)",
-            borderRadius:4,padding:"2px 7px",letterSpacing:".08em"}}>PREDICTED</span>}
-          <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.2)",letterSpacing:".06em"}}>
-            LINEUP
-          </span>
-        </div>
-
-        {/* Away */}
-        <div style={{flex:1,display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.01em",lineHeight:1.1}}>
-              {awayTeam?.name}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2,justifyContent:"flex-end"}}>
-              {away?.confidence!==undefined&&<span style={{fontSize:7.5,fontWeight:700,
-                color:"rgba(52,211,153,.8)",fontFamily:"'JetBrains Mono',monospace"}}>
-                {away.confidence}% conf</span>}
-              {away?.formation&&<span style={{fontSize:8,fontWeight:800,color:ac,
-                background:`${ac}14`,border:`1px solid ${ac}30`,borderRadius:4,
-                padding:"1px 5px",letterSpacing:".04em"}}>{away.formation}</span>}
-            </div>
-          </div>
-          <div style={{width:30,height:30,borderRadius:"50%",border:`2px solid ${ac}`,
-            overflow:"hidden",background:"#111",display:"flex",alignItems:"center",
-            justifyContent:"center",flexShrink:0}}>
-            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="22" height="22"
+        {isPredicted&&<span style={{fontSize:8,fontWeight:900,color:"#f59e0b",
+          background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.2)",
+          borderRadius:4,padding:"2px 8px",letterSpacing:".06em"}}>PREDICTED</span>}
+        <div style={{display:"flex",alignItems:"center",gap:7,flexDirection:"row-reverse"}}>
+          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${ac}`,
+            overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {awayTeam?.logo&&<img src={awayTeam.logo} alt="" width="16" height="16"
               style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
           </div>
+          <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{awayTeam?.name}</span>
+          {away?.formation&&<span style={{fontSize:9,fontWeight:800,color:ac,
+            background:`${ac}12`,border:`1px solid ${ac}30`,borderRadius:4,padding:"1px 6px"}}>
+            {away.formation}</span>}
+          {away?.confidence!==undefined&&<span style={{fontSize:8,fontWeight:700,
+            color:"rgba(52,211,153,.75)",fontFamily:"'JetBrains Mono',monospace"}}>
+            {away.confidence}%</span>}
         </div>
       </div>
 
-      {/* ── Horizontal pitch — 2:1 landscape ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"52%",overflow:"hidden"}}>
+      {/* Vertical pitch — viewBox 0 0 100 100 */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"145%",
+        borderRadius:10,overflow:"hidden",border:"1px solid rgba(255,255,255,.05)"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
-          viewBox="0 0 200 104" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="hplTurf" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#0c2410"/>
-              <stop offset="50%" stopColor="#0f2d14"/>
-              <stop offset="100%" stopColor="#0c2410"/>
-            </linearGradient>
-            <pattern id="hplStripes" x="0" y="0" width="20" height="104" patternUnits="userSpaceOnUse">
-              <rect x="0" y="0" width="10" height="104" fill="rgba(255,255,255,0.02)"/>
-            </pattern>
-          </defs>
-          <rect width="200" height="104" fill="url(#hplTurf)"/>
-          <rect width="200" height="104" fill="url(#hplStripes)"/>
-          {/* Pitch outline */}
-          <rect x="4" y="4" width="192" height="96" rx="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
-          {/* Halfway */}
-          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
-          {/* Centre circle */}
-          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".45"/>
-          <circle cx="100" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
-          {/* Left penalty box */}
-          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
-          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
-          <circle cx="20" cy="52" r=".75" fill="rgba(255,255,255,.8)"/>
-          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
-          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
-          {/* Right penalty box */}
-          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
-          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
-          <circle cx="180" cy="52" r=".75" fill="rgba(255,255,255,.8)"/>
-          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
-          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <rect width="100" height="100" fill="#0f2a10"/>
+          {[0,10,20,30,40,50,60,70,80,90].map((y,i)=>(
+            <rect key={i} x="0" y={y} width="100" height="10"
+              fill={i%2===0?"rgba(255,255,255,.025)":"rgba(0,0,0,0)"}/>
+          ))}
+          <rect x="2" y="2" width="96" height="96" rx=".5" fill="none"
+            stroke="rgba(255,255,255,.7)" strokeWidth=".6"/>
+          <line x1="2" y1="50" x2="98" y2="50" stroke="rgba(255,255,255,.65)" strokeWidth=".5"/>
+          <circle cx="50" cy="50" r="10" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <circle cx="50" cy="50" r=".8" fill="rgba(255,255,255,.95)"/>
+          {/* Home penalty box — bottom */}
+          <rect x="21" y="78" width="58" height="20" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <rect x="33" y="88" width="34" height="10" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".35"/>
+          <circle cx="50" cy="90" r=".7" fill="rgba(255,255,255,.85)"/>
+          <path d="M28,78 A14,14 0 0,0 72,78" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".35"/>
+          {/* Away penalty box — top */}
+          <rect x="21" y="2" width="58" height="20" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <rect x="33" y="2" width="34" height="10" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".35"/>
+          <circle cx="50" cy="10" r=".7" fill="rgba(255,255,255,.85)"/>
+          <path d="M28,22 A14,14 0 0,1 72,22" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".35"/>
+          {/* Goals */}
+          <rect x="39" y="98" width="22" height="3" fill="rgba(255,255,255,.06)"
+            stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
+          <rect x="39" y="-1" width="22" height="3" fill="rgba(255,255,255,.06)"
+            stroke="rgba(255,255,255,.65)" strokeWidth=".45"/>
           {/* Corners */}
-          <path d="M4,4 Q6,4 6,6"           fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <path d="M196,4 Q194,4 194,6"     fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <path d="M4,100 Q6,100 6,98"       fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          {/* Half tints */}
-          <rect x="4" y="4" width="96" height="96" fill={`${hc}05`}/>
-          <rect x="100" y="4" width="96" height="96" fill={`${ac}05`}/>
-          {/* Attack arrows */}
-          <text x="26" y="9" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill={`${hc}60`} letterSpacing=".4">
-            {(homeTeam?.name||"").split(" ").pop().slice(0,7)} →
-          </text>
-          <text x="174" y="9" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill={`${ac}60`} letterSpacing=".4">
-            ← {(awayTeam?.name||"").split(" ").pop().slice(0,7)}
-          </text>
+          <path d="M2,2 Q4,2 4,4"      fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <path d="M98,2 Q96,2 96,4"   fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <path d="M2,98 Q4,98 4,96"   fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <path d="M98,98 Q96,98 96,96" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          {/* Formation watermarks */}
+          <text x="50" y="44" textAnchor="middle" fontSize="2.5" fill="rgba(255,255,255,.1)"
+            fontFamily="'JetBrains Mono',sans-serif" fontWeight="800" letterSpacing=".5">{away?.formation||""}</text>
+          <text x="50" y="58" textAnchor="middle" fontSize="2.5" fill="rgba(255,255,255,.1)"
+            fontFamily="'JetBrains Mono',sans-serif" fontWeight="800" letterSpacing=".5">{home?.formation||""}</text>
+          {/* Team colour direction strips */}
+          <rect x="2" y="2"  width="96" height="3" fill={`${ac}18`} rx=".5"/>
+          <rect x="2" y="95" width="96" height="3" fill={`${hc}18`} rx=".5"/>
         </svg>
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          <Tokens lineup={home} side="left"  colour={hc}/>
-          <Tokens lineup={away} side="right" colour={ac}/>
+          <Tokens lineup={home} side="home" colour={hc}/>
+          <Tokens lineup={away} side="away" colour={ac}/>
         </div>
       </div>
 
-      {/* ── Coach row ── */}
+      {/* Coach */}
       {(home?.coach||away?.coach)&&(
-        <div style={{display:"flex",justifyContent:"space-between",
-          padding:"6px 16px",borderTop:"1px solid rgba(255,255,255,.04)",
-          background:"rgba(0,0,0,.15)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:9,
+          padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
           {home?.coach&&(
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              {home.coach.photo&&<img src={home.coach.photo} alt="" width="18" height="18"
+              {home.coach.photo&&<img src={home.coach.photo} alt="" width="20" height="20"
                 style={{borderRadius:"50%",objectFit:"cover",objectPosition:"top",border:`1px solid ${hc}44`}}
                 onError={e=>e.currentTarget.style.display="none"}/>}
               <div>
@@ -731,7 +633,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
           )}
           {away?.coach&&(
             <div style={{display:"flex",alignItems:"center",gap:6,flexDirection:"row-reverse"}}>
-              {away.coach.photo&&<img src={away.coach.photo} alt="" width="18" height="18"
+              {away.coach.photo&&<img src={away.coach.photo} alt="" width="20" height="20"
                 style={{borderRadius:"50%",objectFit:"cover",objectPosition:"top",border:`1px solid ${ac}44`}}
                 onError={e=>e.currentTarget.style.display="none"}/>}
               <div style={{textAlign:"right"}}>
@@ -743,45 +645,31 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       )}
 
-      {/* ── Bench ── */}
+      {/* Bench */}
       {(home?.bench?.length>0||away?.bench?.length>0)&&(
-        <div style={{display:"flex",gap:8,padding:"8px 12px 9px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.18)",alignItems:"flex-start"}}>
-          <BenchStrip lineup={home} colour={hc} align="left"/>
-          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
-          <BenchStrip lineup={away} colour={ac} align="right"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}}>
+          <BenchRow lineup={home} colour={hc} label={`${homeTeam?.name||""} Bench`}/>
+          <BenchRow lineup={away} colour={ac} label={`${awayTeam?.name||""} Bench`}/>
         </div>
       )}
 
-      {/* ── Unavailable — split by team ── */}
-      {(homeUnavail.length>0||awayUnavail.length>0)&&(
-        <div style={{display:"flex",gap:10,padding:"7px 12px 9px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.22)",alignItems:"flex-start"}}>
-          <div style={{flex:1,minWidth:0}}>
-            {homeUnavail.length>0&&(
-              <>
-                <div style={{fontSize:"6.5px",fontWeight:900,color:`${hc}70`,letterSpacing:".12em",
-                  textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",gap:4}}>
-                  <span style={{width:5,height:5,borderRadius:"50%",background:hc,display:"inline-block"}}/>
-                  OUT
-                </div>
-                <UnavailBlock players={homeUnavail} colour={hc}/>
-              </>
-            )}
-          </div>
-          <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
-          <div style={{flex:1,minWidth:0}}>
-            {awayUnavail.length>0&&(
-              <>
-                <div style={{fontSize:"6.5px",fontWeight:900,color:`${ac}70`,letterSpacing:".12em",
-                  textTransform:"uppercase",marginBottom:4,display:"flex",alignItems:"center",
-                  justifyContent:"flex-end",gap:4}}>
-                  OUT
-                  <span style={{width:5,height:5,borderRadius:"50%",background:ac,display:"inline-block"}}/>
-                </div>
-                <UnavailBlock players={awayUnavail} colour={ac}/>
-              </>
-            )}
+      {/* Unavailable */}
+      {allUnavail.length>0&&(
+        <div style={{marginTop:8,padding:"8px 10px",
+          background:"rgba(248,113,113,.025)",border:"1px solid rgba(248,113,113,.08)",borderRadius:8}}>
+          <div style={{fontSize:8,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",
+            color:"rgba(248,113,113,.3)",marginBottom:5}}>Unavailable</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+            {allUnavail.slice(0,14).map((p,i)=>(
+              <span key={i} style={{display:"inline-flex",alignItems:"center",gap:3,
+                padding:"2px 7px",borderRadius:4,
+                background:"rgba(248,113,113,.05)",border:"1px solid rgba(248,113,113,.12)"}}>
+                <span style={{fontSize:8.5,fontWeight:700,color:"rgba(248,113,113,.7)"}}>{p.name}</span>
+                <span style={{fontSize:7.5,color:"rgba(248,113,113,.35)",fontFamily:"'JetBrains Mono',monospace"}}>
+                  {p.doubt?"Doubt":(p.type||p.reason||"Inj")}
+                </span>
+              </span>
+            ))}
           </div>
         </div>
       )}
@@ -906,118 +794,70 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
 }
 
 function MomentumGraph({ momentumData, events }) {
+  // Use backend momentum data if available, fall back to event-based
   const useBackend = !!momentumData?.home_momentum;
-  if (!useBackend && !events?.length) return null;
-
-  const home90  = useBackend ? (momentumData.home_momentum || []) : null;
-  const away90  = useBackend ? (momentumData.away_momentum || []) : null;
-  const len     = useBackend ? home90.length : 18;
-  const elapsed = momentumData?.elapsed || 0;
-
-  const goalEvents = (events||[]).filter(e =>
-    (e?.type||"").toLowerCase()==="goal" ||
-    (e?.detail||"").toLowerCase().includes("goal")
-  ).map(e => ({ min: e?.time?.elapsed||0, isHome: e?.team?.id === momentumData?.home_id }));
-
-  const cardEvents = (events||[]).filter(e =>
-    (e?.type||"").toLowerCase()==="card"
-  ).map(e => ({ min: e?.time?.elapsed||0, isYellow: !(e?.detail||"").toLowerCase().includes("red") }));
 
   const bins = useBackend ? null : (() => {
     const b = Array(18).fill(null).map(() => ({ home:0, away:0 }));
-    (events||[]).forEach(ev => {
-      const min = ev?.time?.elapsed||0;
-      const bin = Math.min(Math.floor(min/5), 17);
+    (events || []).forEach(ev => {
+      const min = ev?.time?.elapsed || 0;
+      const bin = Math.min(Math.floor(min / 5), 17);
       if (ev?.team?.id === ev?.homeTeamId) b[bin].home++;
       else b[bin].away++;
     });
     return b;
   })();
 
-  return (
-    <div style={{ padding:"14px 20px 10px", background:"rgba(255,255,255,0.012)", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+  const home90 = useBackend ? momentumData.home_momentum : null;
+  const away90 = useBackend ? momentumData.away_momentum : null;
 
+  return (
+    <div style={{ padding:"16px 24px", background:"rgba(255,255,255,0.012)", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
         <SectionLabel>Match Momentum</SectionLabel>
         {momentumData?.overall && (
-          <div style={{ display:"flex", gap:14, fontSize:10, fontWeight:700 }}>
-            <span style={{ color:"#60a5fa", display:"flex", alignItems:"center", gap:5 }}>
-              <span style={{ width:7, height:7, borderRadius:"50%", background:"#60a5fa", display:"inline-block" }}/>
+          <div style={{ display:"flex", gap:12, fontSize:10, fontWeight:700 }}>
+            <span style={{ color:"#60a5fa" }}>
               {momentumData.home_team?.split(" ").pop()} {momentumData.overall.home_pct}%
             </span>
-            <span style={{ color:"#f87171", display:"flex", alignItems:"center", gap:5 }}>
-              <span style={{ width:7, height:7, borderRadius:"50%", background:"#f87171", display:"inline-block" }}/>
+            <span style={{ color:"#f87171" }}>
               {momentumData.away_team?.split(" ").pop()} {momentumData.overall.away_pct}%
             </span>
           </div>
         )}
       </div>
 
-      {/* Waveform */}
-      <div style={{ position:"relative", height:64, borderRadius:7, overflow:"hidden", background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.05)" }}>
-        <div style={{ position:"absolute", left:0, right:0, top:"50%", height:"1px", background:"rgba(255,255,255,.1)", zIndex:1 }}/>
-        {elapsed > 0 && (
-          <div style={{ position:"absolute", top:0, bottom:0, left:`${(elapsed/90)*100}%`, width:"1.5px", background:"rgba(255,255,255,.45)", zIndex:4 }}>
-            <div style={{ position:"absolute", top:"-1px", left:"50%", transform:"translateX(-50%)", width:5, height:5, borderRadius:"50%", background:"#fff" }}/>
-            <div style={{ position:"absolute", bottom:3, left:3, fontSize:7, fontWeight:800, color:"rgba(255,255,255,.6)", fontFamily:"monospace", whiteSpace:"nowrap" }}>{elapsed}'</div>
-          </div>
-        )}
-        <div style={{ display:"flex", height:"100%", alignItems:"center", padding:"0 2px", gap:"1px" }}>
-          {Array.from({ length: len }).map((_, i) => {
-            const pct = i / len;
-            const isFuture = elapsed > 0 && pct > elapsed/90;
-            let h, a;
-            if (useBackend) {
-              h = home90[i] || 0; a = away90[i] || 0;
-            } else {
-              const bd = bins[i] || { home:0, away:0 };
-              h = bd.home || 0.2; a = bd.away || 0.2;
-            }
-            const total = Math.max(h+a, 0.01);
-            const hFrac = h/total;
-            const scale = Math.min((h+a)*0.8, 1);
-            const maxPx = 28;
-            const hPx   = Math.max(Math.round(hFrac*scale*maxPx), 2);
-            const aPx   = Math.max(Math.round((1-hFrac)*scale*maxPx), 2);
+      {useBackend ? (
+        <div style={{ display:"flex", height:48, gap:1, alignItems:"flex-end" }}>
+          {home90.map((h, i) => {
+            const a     = away90[i] || 0;
+            const total = Math.max(h + a, 0.1);
+            const hPct  = (h / total) * 100;
+            const barH  = Math.min(100, (total / 2) * 100);
             return (
-              <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", gap:"1px" }}>
-                <div style={{ height:`${hPx}px`, background:`rgba(59,130,246,${isFuture?.15:.58})`, borderRadius:"2px 2px 0 0" }}/>
-                <div style={{ height:`${aPx}px`, background:`rgba(239,68,68,${isFuture?.12:.5})`, borderRadius:"0 0 2px 2px" }}/>
+              <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
+                <div style={{ height:`${Math.max(hPct * barH / 100, 4)}%`, background:"rgba(59,130,246,0.55)", borderRadius:"2px 2px 0 0", transition:"height 0.4s" }} />
+                <div style={{ height:`${Math.max((100-hPct) * barH / 100, 4)}%`, background:"rgba(239,68,68,0.55)", borderRadius:"0 0 2px 2px" }} />
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* Phase dominance strip */}
-      {momentumData?.phases?.length > 0 && (
-        <div style={{ marginTop:5, display:"flex", height:5, borderRadius:3, overflow:"hidden" }}>
-          {momentumData.phases.map((ph, i) => {
-            const w = ((ph.end-ph.start)/90)*100;
-            return <div key={i} style={{ width:`${w}%`, background: ph.team==="home" ? "rgba(59,130,246,.5)" : "rgba(239,68,68,.45)" }}/>;
+      ) : (
+        <div style={{ display:"flex", height:36, gap:1, alignItems:"center" }}>
+          {(bins || []).map((b, i) => {
+            const total = b.home + b.away || 1;
+            const hPct  = (b.home / total) * 100;
+            return (
+              <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
+                <div style={{ height:`${Math.max(hPct, 8)}%`, background:"rgba(59,130,246,0.55)", borderRadius:"2px 2px 0 0" }} />
+                <div style={{ height:`${Math.max(100-hPct, 8)}%`, background:"rgba(239,68,68,0.55)", borderRadius:"0 0 2px 2px" }} />
+              </div>
+            );
           })}
         </div>
       )}
 
-      {/* Event markers */}
-      {(goalEvents.length > 0 || cardEvents.length > 0) && (
-        <div style={{ position:"relative", marginTop:6, height:20, background:"rgba(255,255,255,.02)", borderRadius:4 }}>
-          <div style={{ position:"absolute", top:"50%", left:0, right:0, height:"1px", background:"rgba(255,255,255,.07)" }}/>
-          {goalEvents.map((g,i) => (
-            <div key={`g${i}`} style={{ position:"absolute", left:`${(g.min/90)*100}%`, top:"50%", transform:"translate(-50%,-50%)", display:"flex", flexDirection:"column", alignItems:"center", gap:1, zIndex:3 }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:"#34d399", border:"1.5px solid #060f07" }}/>
-              <span style={{ fontSize:6.5, color:"#34d399", fontWeight:800, fontFamily:"monospace", whiteSpace:"nowrap" }}>{g.min}'</span>
-            </div>
-          ))}
-          {cardEvents.map((c,i) => (
-            <div key={`c${i}`} style={{ position:"absolute", left:`${(c.min/90)*100}%`, top:"50%", transform:"translate(-50%,-50%)", zIndex:3 }}>
-              <div style={{ width:6, height:8, borderRadius:1, background: c.isYellow?"#fbbf24":"#ef4444", border:"1.5px solid #060f07" }}/>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, padding:"0 1px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
         {["0'","15'","30'","45'","60'","75'","90'"].map(l => (
           <span key={l} style={{ fontSize:8, color:"rgba(255,255,255,0.18)" }}>{l}</span>
         ))}
@@ -1081,243 +921,36 @@ function Timeline({ events, homeTeam, awayTeam }) {
 }
 
 function StatsPanel({ stats, homeTeam, awayTeam }) {
-  const [view, setView] = useState("bars"); // "bars" | "cards" | "table"
   if (!stats?.length) return null;
-
   const hStats = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
   const aStats = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
-  const hc = "#3b82f6";
-  const ac = "#ef4444";
 
-  function gs(arr, key) { return arr.find(s => s.type === key)?.value ?? null; }
+  const KEY_STATS = [
+    "Ball Possession","Total Shots","Shots on Goal","Shots insidebox",
+    "Corner Kicks","Fouls","Offsides","Yellow Cards","Red Cards",
+    "Passes %","Blocked Shots","expected_goals",
+  ];
 
-  const hXG = gs(hStats,"expected_goals");
-  const aXG = gs(aStats,"expected_goals");
+  const rows = KEY_STATS.map(key => {
+    const hVal = hStats.find(s => s.type === key)?.value ?? null;
+    const aVal = aStats.find(s => s.type === key)?.value ?? null;
+    if (hVal === null && aVal === null) return null;
+    return {
+      label: key === "expected_goals" ? "xG" : key.replace("insidebox","inside box"),
+      home: hVal ?? 0, away: aVal ?? 0,
+    };
+  }).filter(Boolean);
 
-  // All stat rows
-  const ALL = [
-    { key:"Ball Possession",   label:"Possession",    group:"attack"  },
-    { key:"expected_goals",    label:"xG",            group:"attack"  },
-    { key:"Total Shots",       label:"Total Shots",   group:"attack"  },
-    { key:"Shots on Goal",     label:"On Target",     group:"attack"  },
-    { key:"Shots insidebox",   label:"Inside Box",    group:"attack"  },
-    { key:"Corner Kicks",      label:"Corners",       group:"attack"  },
-    { key:"Passes %",          label:"Pass Acc",      group:"passing" },
-    { key:"Total passes",      label:"Passes",        group:"passing" },
-    { key:"Fouls",             label:"Fouls",         group:"defence" },
-    { key:"Yellow Cards",      label:"Yellows",       group:"defence" },
-    { key:"Red Cards",         label:"Reds",          group:"defence" },
-    { key:"Offsides",          label:"Offsides",      group:"defence" },
-    { key:"Blocked Shots",     label:"Blocked",       group:"defence" },
-    { key:"Goalkeeper Saves",  label:"GK Saves",      group:"defence" },
-  ].map(r => ({
-    ...r,
-    home: gs(hStats, r.key),
-    away: gs(aStats, r.key),
-  })).filter(r => r.home != null || r.away != null);
-
-  if (!ALL.length) return null;
-
-  const hName = homeTeam?.name?.split(" ").pop() || "Home";
-  const aName = awayTeam?.name?.split(" ").pop() || "Away";
-
-  // ── Shared header ──────────────────────────────────────────────────
-  const Header = () => (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:8 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }}/>}
-        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.75)" }}>{hName}</span>
-      </div>
-
-      {/* View toggle */}
-      <div style={{ display:"flex", gap:2, background:"rgba(255,255,255,.05)", borderRadius:7, padding:2 }}>
-        {[
-          { id:"bars",  icon:"≡",  tip:"Bars"  },
-          { id:"cards", icon:"⊞",  tip:"Cards" },
-          { id:"table", icon:":::", tip:"Table" },
-        ].map(v => (
-          <button key={v.id} onClick={() => setView(v.id)} title={v.tip} style={{
-            padding:"4px 10px", borderRadius:5, border:"none", cursor:"pointer", fontSize:11,
-            fontWeight:900, letterSpacing:".04em",
-            background: view===v.id ? "rgba(255,255,255,.12)" : "transparent",
-            color: view===v.id ? "#fff" : "rgba(255,255,255,.35)",
-            transition:"all .15s",
-          }}>{v.icon}</button>
-        ))}
-      </div>
-
-      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        <span style={{ fontSize:12, fontWeight:800, color:"rgba(255,255,255,.75)" }}>{aName}</span>
-        {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }}/>}
-      </div>
-    </div>
-  );
-
-  // ── VIEW 1: Bars (existing, polished) ─────────────────────────────
-  if (view === "bars") {
-    const xgRow = ALL.find(r => r.key === "expected_goals");
-    const singles = ALL.filter(r => ["Ball Possession","Passes %","Total passes"].includes(r.key));
-    const pairedKeys = [
-      ["Total Shots","Shots on Goal"],["Corner Kicks","Fouls"],
-      ["Yellow Cards","Offsides"],["Goalkeeper Saves","Blocked Shots"],
-    ];
-    const pairs = pairedKeys.map(([k1,k2]) => [
-      ALL.find(r=>r.key===k1), ALL.find(r=>r.key===k2),
-    ]).filter(([a,b]) => a||b);
-
-    return (
-      <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-        <Header/>
-        {xgRow && <StatBar label="Expected Goals (xG)" home={xgRow.home} away={xgRow.away} homeColor={hc} awayColor={ac} highlight={true}/>}
-        <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-          {singles.map(r => r && (
-            <div key={r.key} style={{ borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
-              <StatBar label={r.label} home={r.home} away={r.away} homeColor={hc} awayColor={ac}/>
-            </div>
-          ))}
-        </div>
-        {pairs.map(([left,right], i) => (
-          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
-            {left  && <StatBar label={left.label}  home={left.home}  away={left.away}  homeColor={hc} awayColor={ac}/>}
-            {right && <StatBar label={right.label} home={right.home} away={right.away} homeColor={hc} awayColor={ac}/>}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // ── VIEW 2: Metric cards grid ──────────────────────────────────────
-  if (view === "cards") {
-    const groups = [
-      { label:"Attack",  keys:["Ball Possession","expected_goals","Total Shots","Shots on Goal","Shots insidebox","Corner Kicks"] },
-      { label:"Passing", keys:["Passes %","Total passes"] },
-      { label:"Defence", keys:["Fouls","Yellow Cards","Red Cards","Offsides","Blocked Shots","Goalkeeper Saves"] },
-    ];
-
-    return (
-      <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-        <Header/>
-        {groups.map(grp => {
-          const rows = grp.keys.map(k => ALL.find(r => r.key===k)).filter(Boolean);
-          if (!rows.length) return null;
-          return (
-            <div key={grp.label} style={{ marginBottom:14 }}>
-              <div style={{ fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
-                color:"rgba(255,255,255,.2)", marginBottom:8 }}>{grp.label}</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:6 }}>
-                {rows.map(r => {
-                  const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
-                  const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
-                  const hLeads = hN > aN;
-                  const aLeads = aN > hN;
-                  return (
-                    <div key={r.key} style={{
-                      padding:"10px 10px 8px",
-                      borderRadius:10,
-                      background:"rgba(255,255,255,.03)",
-                      border:`1px solid ${hLeads ? hc+"30" : aLeads ? ac+"30" : "rgba(255,255,255,.07)"}`,
-                    }}>
-                      <div style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,.3)",
-                        textTransform:"uppercase", letterSpacing:".06em", marginBottom:6, textAlign:"center" }}>
-                        {r.label}
-                      </div>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:4 }}>
-                        <span style={{ fontSize:15, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-                          color: hLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
-                          {r.home ?? "–"}
-                        </span>
-                        <span style={{ fontSize:8, color:"rgba(255,255,255,.18)", fontWeight:700 }}>vs</span>
-                        <span style={{ fontSize:15, fontWeight:900, fontFamily:"'JetBrains Mono',monospace",
-                          color: aLeads ? "#fff" : "rgba(255,255,255,.45)", textAlign:"right" }}>
-                          {r.away ?? "–"}
-                        </span>
-                      </div>
-                      {/* mini bar */}
-                      <div style={{ display:"flex", height:3, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.06)", marginTop:7 }}>
-                        <div style={{ width:`${(hN/(hN+aN||1))*100}%`, background:hc }}/>
-                        <div style={{ flex:1, background:ac }}/>
-                      </div>
-                      {/* winner dot */}
-                      {(hLeads||aLeads) && (
-                        <div style={{ display:"flex", justifyContent: hLeads ? "flex-start" : "flex-end", marginTop:4 }}>
-                          <span style={{ fontSize:7, fontWeight:800,
-                            color: hLeads ? hc : ac,
-                            background: hLeads ? `${hc}18` : `${ac}18`,
-                            borderRadius:3, padding:"1px 5px" }}>
-                            {hLeads ? hName : aName} ↑
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // ── VIEW 3: Compact table ──────────────────────────────────────────
+  if (!rows.length) return null;
   return (
-    <div style={{ padding:"18px 20px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-      <Header/>
-      <div style={{ overflowX:"auto" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ padding:"5px 10px", textAlign:"left", fontSize:10, fontWeight:800,
-                color:hc, fontFamily:"'JetBrains Mono',monospace", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
-                {hName}
-              </th>
-              <th style={{ padding:"5px 10px", textAlign:"center", fontSize:8, fontWeight:700,
-                color:"rgba(255,255,255,.25)", textTransform:"uppercase", letterSpacing:".08em",
-                borderBottom:"1px solid rgba(255,255,255,.06)" }}>
-                Stat
-              </th>
-              <th style={{ padding:"5px 10px", textAlign:"right", fontSize:10, fontWeight:800,
-                color:ac, fontFamily:"'JetBrains Mono',monospace", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
-                {aName}
-              </th>
-              <th style={{ width:80, padding:"5px 8px", borderBottom:"1px solid rgba(255,255,255,.06)" }}/>
-            </tr>
-          </thead>
-          <tbody>
-            {ALL.map((r, i) => {
-              const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
-              const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
-              const hLeads = hN > aN;
-              const aLeads = aN > hN;
-              const hPct = (hN/(hN+aN||1))*100;
-              return (
-                <tr key={r.key} style={{ borderBottom:"1px solid rgba(255,255,255,.03)",
-                  background: i%2===0 ? "rgba(255,255,255,.01)" : "transparent" }}>
-                  <td style={{ padding:"6px 10px", fontSize:12, fontWeight:800,
-                    fontFamily:"'JetBrains Mono',monospace",
-                    color: hLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
-                    {r.home ?? "–"}
-                  </td>
-                  <td style={{ padding:"6px 10px", textAlign:"center", fontSize:9, fontWeight:700,
-                    color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".05em" }}>
-                    {r.label}
-                  </td>
-                  <td style={{ padding:"6px 10px", textAlign:"right", fontSize:12, fontWeight:800,
-                    fontFamily:"'JetBrains Mono',monospace",
-                    color: aLeads ? "#fff" : "rgba(255,255,255,.45)" }}>
-                    {r.away ?? "–"}
-                  </td>
-                  <td style={{ padding:"6px 8px" }}>
-                    <div style={{ display:"flex", height:4, borderRadius:2, overflow:"hidden", background:"rgba(255,255,255,.05)" }}>
-                      <div style={{ width:`${hPct}%`, background:hc, borderRadius:"2px 0 0 2px" }}/>
-                      <div style={{ flex:1, background:ac, borderRadius:"0 2px 2px 0" }}/>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+    <div style={{ padding:"20px 24px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+        {homeTeam?.logo && <img src={homeTeam.logo} alt="" width={14} height={14} style={{ objectFit:"contain" }} />}
+        <SectionLabel>Match Statistics</SectionLabel>
+        {awayTeam?.logo && <img src={awayTeam.logo} alt="" width={14} height={14} style={{ objectFit:"contain" }} />}
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        {rows.map(r => <StatBar key={r.label} label={r.label} home={r.home} away={r.away} />)}
       </div>
     </div>
   );
@@ -1504,255 +1137,427 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
 
 // ─── Commentary helpers ───────────────────────────────────────────────────────
 
+/** Map match-intelligence statistics dict → flat "home-away" strings for the API */
 function buildStatStr(statsObj, key) {
   const h = statsObj?.[key]?.home;
   const a = statsObj?.[key]?.away;
   if (h == null && a == null) return null;
-  return `${String(h??0).replace("%","")}–${String(a??0).replace("%","")}`;
+  return `${h ?? 0}-${a ?? 0}`;
 }
 
-function buildCommentaryPayload({ d, fixture, events, stats, momentumData, lineups, predictedHome, predictedAway, winProb, mode }) {
+/** Build the full POST body for /api/commentary/{id} from all available state */
+function buildCommentaryPayload({
+  d,           // raw match-intelligence response
+  fixture,
+  events,
+  stats,
+  momentumData,
+  lineups,
+  predictedHome,
+  predictedAway,
+  winProb,
+  mode,
+}) {
   if (!d) return null;
-  const h = d.header || {};
-  const s = d.statistics || {};
+  const h   = d.header || {};
+  const s   = d.statistics || {};
+  const hf  = d.home_recent_form  || [];
+  const af  = d.away_recent_form  || [];
+  const hss = d.home_season_stats || {};
+  const ass = d.away_season_stats || {};
+  const h2h = d.h2h || {};
+  const inj = d.injuries || {};
+  const ven = d.venue || {};
+  const ins = d.insights || [];
+  const pred = d.prediction || {};
   const elapsed = h.elapsed || fixture?.fixture?.status?.elapsed || 0;
 
-  const evList = (d.events||[]).slice(-10).map(e => ({
-    minute: e.minute, type: e.type||"", detail: e.detail||"",
-    player: e.player_name||e.player||"",
-    team:   e.team_name||e.team||"",
-    assist: e.assist_name||e.assist||null,
+  // Events → commentary shape
+  const evList = (d.events || []).slice(-10).map(e => ({
+    minute: e.minute,
+    type:   e.type   || "",
+    detail: e.detail || "",
+    player: e.player_name || e.player || "",
+    team:   e.team_name   || e.team   || "",
+    assist: e.assist_name || e.assist || null,
   }));
 
-  const statsP = {
-    possession:        buildStatStr(s,"possession"),
-    shots_total:       buildStatStr(s,"shots_total"),
-    shots_on_target:   buildStatStr(s,"shots_on_target"),
-    shots_inside_box:  buildStatStr(s,"shots_inside_box"),
-    xg:                buildStatStr(s,"expected_goals"),
-    corners:           buildStatStr(s,"corner_kicks"),
-    pass_accuracy:     buildStatStr(s,"pass_accuracy"),
-    total_passes:      buildStatStr(s,"total_passes"),
-    fouls:             buildStatStr(s,"fouls"),
-    yellow_cards:      buildStatStr(s,"yellow_cards"),
-    goalkeeper_saves:  buildStatStr(s,"goalkeeper_saves"),
+  // Live stats from normalised statistics block
+  const statsPayload = {
+    possession:       buildStatStr(s, "possession"),
+    shots_total:      buildStatStr(s, "shots_total"),
+    shots_on_target:  buildStatStr(s, "shots_on_target"),
+    shots_inside_box: buildStatStr(s, "shots_inside_box"),
+    shots_outside_box:buildStatStr(s, "shots_outside_box"),
+    xg:               buildStatStr(s, "expected_goals"),
+    corners:          buildStatStr(s, "corner_kicks"),
+    pass_accuracy:    buildStatStr(s, "pass_accuracy"),
+    total_passes:     buildStatStr(s, "total_passes"),
+    fouls:            buildStatStr(s, "fouls"),
+    offsides:         buildStatStr(s, "offsides"),
+    yellow_cards:     buildStatStr(s, "yellow_cards"),
+    red_cards:        buildStatStr(s, "red_cards"),
+    goalkeeper_saves: buildStatStr(s, "goalkeeper_saves"),
   };
 
+  // Momentum from momentumData state
   const mom = momentumData
-    ? { home_pct: momentumData.home_pct, away_pct: momentumData.away_pct, dominant_period: momentumData.dominant_period||null }
+    ? { home_pct: momentumData.home_pct, away_pct: momentumData.away_pct, dominant_period: momentumData.dominant_period || null }
     : null;
 
-  const h2h = d.h2h||{};
-  const h2hP = h2h.count ? {
-    count: h2h.count, home_wins: h2h.home_wins, draws: h2h.draws, away_wins: h2h.away_wins,
-    avg_goals: h2h.results?.length ? parseFloat((h2h.results.reduce((a,r)=>a+(r.home_goals||0)+(r.away_goals||0),0)/h2h.results.length).toFixed(2)) : null,
-    results: (h2h.results||[]).slice(0,4).map(r=>({ date:r.date, home_team:r.home_team, away_team:r.away_team, home_goals:r.home_goals, away_goals:r.away_goals })),
+  // H2H
+  const h2hPayload = h2h.count ? {
+    count:     h2h.count,
+    home_wins: h2h.home_wins,
+    draws:     h2h.draws,
+    away_wins: h2h.away_wins,
+    avg_goals: h2h.results?.length
+      ? parseFloat(
+          (h2h.results.reduce((acc, r) => acc + (r.home_goals||0) + (r.away_goals||0), 0) / h2h.results.length).toFixed(2)
+        )
+      : null,
+    results: (h2h.results || []).slice(0, 5).map(r => ({
+      date: r.date, home_team: r.home_team, away_team: r.away_team,
+      home_goals: r.home_goals, away_goals: r.away_goals,
+    })),
   } : null;
 
-  const fmtForm = l => (l||[]).slice(0,5).map(f=>({ date:f.date, opponent:f.opponent, result:f.result, goals_for:f.goals_for, goals_against:f.goals_against, home_away:f.home_away }));
-  const fmtSeason = ss => ss?.played ? { played:ss.played, wins:ss.wins, draws:ss.draws, losses:ss.losses, goals_for_avg:ss.goals_for_avg?String(ss.goals_for_avg):null, goals_against_avg:ss.goals_against_avg?String(ss.goals_against_avg):null, clean_sheets:ss.clean_sheets, form:ss.form } : null;
-  const fmtInj = l => (l||[]).map(p=>({ player_name:p.player_name||p.name||"", type:p.type||p.reason||"Injury" }));
+  // Recent form
+  const fmtForm = (list) => (list || []).slice(0, 5).map(f => ({
+    date: f.date, opponent: f.opponent, result: f.result,
+    goals_for: f.goals_for, goals_against: f.goals_against, home_away: f.home_away,
+  }));
 
-  const inj = d.injuries||{}; const ven = d.venue||{}; const pred = d.prediction||{}; const ins = d.insights||[];
-  const homeLu = (lineups||[]).find(l=>l.team?.id===h.home_id)||null;
-  const awayLu = (lineups||[]).find(l=>l.team?.id===h.away_id)||null;
-  const predP  = (pred.p_home_win!=null||winProb?.pre_match) ? {
-    p_home_win: pred.p_home_win!=null ? pred.p_home_win*100 : winProb?.pre_match?.p_home_win,
-    p_draw:     pred.p_draw!=null     ? pred.p_draw*100     : winProb?.pre_match?.p_draw,
-    p_away_win: pred.p_away_win!=null ? pred.p_away_win*100 : winProb?.pre_match?.p_away_win,
-    xg_home: pred.xg_home??winProb?.pre_match?.xg_home??null,
-    xg_away: pred.xg_away??winProb?.pre_match?.xg_away??null,
-    btts: pred.btts??null, over_2_5: pred.over_2_5??null,
+  // Season stats
+  const fmtSeason = (ss) => ss?.played ? {
+    played:            ss.played,
+    wins:              ss.wins,
+    draws:             ss.draws,
+    losses:            ss.losses,
+    goals_for_avg:     ss.goals_for_avg   ? String(ss.goals_for_avg)   : null,
+    goals_against_avg: ss.goals_against_avg ? String(ss.goals_against_avg) : null,
+    clean_sheets:      ss.clean_sheets,
+    form:              ss.form,
   } : null;
+
+  // Injuries — normalise to {player_name, type}
+  const fmtInj = (list) => (list || []).map(p => ({
+    player_name: p.player_name || p.name || "",
+    type: p.type || p.reason || "Injury",
+  }));
+
+  // Player ratings from players state (live/FT only)
+  // players is [{player:{name}, teamLogo, isHome, statistics:[{games:{rating,minutes}}]}]
+  const ratingsPayload = (d.players_data || []).flatMap(teamBlock =>
+    (teamBlock.players || [])
+      .map(entry => {
+        const g = (entry.statistics || [{}])[0]?.games || {};
+        const r = parseFloat(g.rating);
+        if (!r) return null;
+        const teamName = teamBlock.team?.name || "";
+        return { name: entry.player?.name || "", team: teamName, rating: r, minutes: g.minutes || null };
+      })
+      .filter(Boolean)
+  ).slice(0, 12);
+
+  // Prediction from winProb state or d.prediction
+  const predPayload = (pred.p_home_win != null || winProb?.pre_match) ? {
+    p_home_win: pred.p_home_win  != null ? pred.p_home_win  * 100 : winProb?.pre_match?.p_home_win,
+    p_draw:     pred.p_draw      != null ? pred.p_draw      * 100 : winProb?.pre_match?.p_draw,
+    p_away_win: pred.p_away_win  != null ? pred.p_away_win  * 100 : winProb?.pre_match?.p_away_win,
+    xg_home:    pred.xg_home  ?? winProb?.pre_match?.xg_home ?? null,
+    xg_away:    pred.xg_away  ?? winProb?.pre_match?.xg_away ?? null,
+    btts:       pred.btts     ?? null,
+    over_2_5:   pred.over_2_5 ?? null,
+  } : null;
+
+  // Formations
+  const homeLu  = lineups?.find(l => l.team?.id === h.home_id) || null;
+  const awayLu  = lineups?.find(l => l.team?.id === h.away_id) || null;
+  const homeFm  = homeLu?.formation || predictedHome?.formation || null;
+  const awayFm  = awayLu?.formation || predictedAway?.formation || null;
+
+  // Insights
+  const insPayload = (ins || []).slice(0, 5).map(i => ({
+    type: i.type || "", title: i.title || "", body: i.body || "",
+  }));
 
   return {
-    home_team: h.home_team||"", away_team: h.away_team||"",
-    home_score: h.home_score??0, away_score: h.away_score??0,
-    elapsed, mode, events: evList, stats: statsP, momentum: mom,
-    h2h: h2hP,
-    home_form: fmtForm(d.home_recent_form), away_form: fmtForm(d.away_recent_form),
-    home_season_stats: fmtSeason(d.home_season_stats),
-    away_season_stats: fmtSeason(d.away_season_stats),
-    injuries: { home: fmtInj(inj.home||[]), away: fmtInj(inj.away||[]) },
-    venue: ven.name ? { name:ven.name, city:ven.city, capacity:ven.capacity, surface:ven.surface } : null,
-    referee: h.referee||null, league_round: h.round||null,
-    home_lineup_formation: homeLu?.formation||predictedHome?.formation||null,
-    away_lineup_formation: awayLu?.formation||predictedAway?.formation||null,
-    player_ratings: [], prediction: predP,
-    insights: ins.slice(0,4).map(i=>({ type:i.type||"", title:i.title||"", body:i.body||"" })),
+    home_team:  h.home_team  || "",
+    away_team:  h.away_team  || "",
+    home_score: h.home_score ?? 0,
+    away_score: h.away_score ?? 0,
+    elapsed:    elapsed,
+    mode:       mode,
+    events:     evList,
+    stats:      statsPayload,
+    momentum:   mom,
+    h2h:        h2hPayload,
+    home_form:  fmtForm(hf),
+    away_form:  fmtForm(af),
+    home_season_stats: fmtSeason(hss),
+    away_season_stats: fmtSeason(ass),
+    injuries: {
+      home: fmtInj(inj.home || []),
+      away: fmtInj(inj.away || []),
+    },
+    venue: ven.name ? {
+      name: ven.name, city: ven.city,
+      capacity: ven.capacity, surface: ven.surface,
+    } : null,
+    referee:               h.referee       || null,
+    league_round:          h.round         || null,
+    home_lineup_formation: homeFm,
+    away_lineup_formation: awayFm,
+    player_ratings:        ratingsPayload,
+    prediction:            predPayload,
+    insights:              insPayload,
   };
 }
 
+// ─── Commentary type config ───────────────────────────────────────────────────
 const COMM_TYPE_STYLE = {
-  goal:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.25)",  label:"GOAL"       },
-  chance:       { color:"#f87171", bg:"rgba(248,113,113,.12)", border:"rgba(248,113,113,.25)", label:"CHANCE"     },
-  pressure:     { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"PRESSURE"   },
-  tactical:     { color:"#60a5fa", bg:"rgba(96,165,250,.12)",  border:"rgba(96,165,250,.22)",  label:"TACTICAL"   },
-  insight:      { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"INSIGHT"    },
-  duel:         { color:"#fb923c", bg:"rgba(251,146,60,.12)",  border:"rgba(251,146,60,.22)",  label:"DUEL"       },
-  set_piece:    { color:"#e879f9", bg:"rgba(232,121,249,.12)", border:"rgba(232,121,249,.22)", label:"SET PIECE"  },
-  substitution: { color:"#4ade80", bg:"rgba(74,222,128,.12)",  border:"rgba(74,222,128,.22)",  label:"SUB"        },
-  preview:      { color:"#60a5fa", bg:"rgba(96,165,250,.12)",  border:"rgba(96,165,250,.22)",  label:"PREVIEW"    },
-  prediction:   { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"PREDICTION" },
-  h2h:          { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"H2H"        },
-  form:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.22)",  label:"FORM"       },
-  card:         { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"CARD"       },
+  goal:         { color:"#34d399", bg:"rgba(52,211,153,.1)",  border:"rgba(52,211,153,.2)",  label:"GOAL"       },
+  chance:       { color:"#f87171", bg:"rgba(248,113,113,.1)", border:"rgba(248,113,113,.22)", label:"CHANCE"    },
+  pressure:     { color:"#fbbf24", bg:"rgba(251,191,36,.1)",  border:"rgba(251,191,36,.22)",  label:"PRESSURE"  },
+  tactical:     { color:"#60a5fa", bg:"rgba(96,165,250,.1)",  border:"rgba(96,165,250,.2)",   label:"TACTICAL"  },
+  insight:      { color:"#a78bfa", bg:"rgba(167,139,250,.1)", border:"rgba(167,139,250,.2)",  label:"INSIGHT"   },
+  duel:         { color:"#fb923c", bg:"rgba(251,146,60,.1)",  border:"rgba(251,146,60,.2)",   label:"DUEL"      },
+  set_piece:    { color:"#e879f9", bg:"rgba(232,121,249,.1)", border:"rgba(232,121,249,.2)",  label:"SET PIECE" },
+  substitution: { color:"#4ade80", bg:"rgba(74,222,128,.1)",  border:"rgba(74,222,128,.2)",   label:"SUB"       },
+  preview:      { color:"#60a5fa", bg:"rgba(96,165,250,.1)",  border:"rgba(96,165,250,.2)",   label:"PREVIEW"   },
+  prediction:   { color:"#a78bfa", bg:"rgba(167,139,250,.1)", border:"rgba(167,139,250,.2)",  label:"PREDICTION"},
+  h2h:          { color:"#fbbf24", bg:"rgba(251,191,36,.1)",  border:"rgba(251,191,36,.22)",  label:"H2H"       },
+  form:         { color:"#34d399", bg:"rgba(52,211,153,.1)",  border:"rgba(52,211,153,.2)",   label:"FORM"      },
+  card:         { color:"#fbbf24", bg:"rgba(251,191,36,.1)",  border:"rgba(251,191,36,.22)",  label:"CARD"      },
 };
-function commStyle(t){ return COMM_TYPE_STYLE[(t||"").toLowerCase()]||COMM_TYPE_STYLE.insight; }
+function commStyle(type) {
+  return COMM_TYPE_STYLE[(type||"").toLowerCase()] || COMM_TYPE_STYLE.insight;
+}
 
+/** Renders **bold** markdown in text as <strong> */
 function CommText({ text }) {
+  const parts = (text || "").split(/\*\*(.+?)\*\*/g);
   return (
     <span>
-      {(text||"").split(/\*\*(.+?)\*\*/g).map((p,i)=>
-        i%2===1 ? <strong key={i} style={{color:"#fff",fontWeight:800}}>{p}</strong> : p
+      {parts.map((p, i) =>
+        i % 2 === 1
+          ? <strong key={i} style={{ color:"#fff", fontWeight:800 }}>{p}</strong>
+          : p
       )}
     </span>
   );
 }
 
+// ─── CommentaryPanel component ────────────────────────────────────────────────
 function CommentaryPanel({
   fixtureId, mode, fixture, events, stats, momentumData,
-  lineups, predictedHome, predictedAway, winProb, matchIntelRaw,
+  lineups, predictedHome, predictedAway, winProb,
+  matchIntelRaw,
   commentaryFeed, setCommentaryFeed,
   commLoading, setCommLoading,
-  commCooldown, setCommCooldown, commCoolRef, commAutoFired,
+  commCooldown, setCommCooldown, commCoolRef,
   homeTeam, awayTeam,
 }) {
-  const elapsed = fixture?.fixture?.status?.elapsed||0;
-  const hScore  = fixture?.score?.fulltime?.home??0;
-  const aScore  = fixture?.score?.fulltime?.away??0;
-  const isLive  = mode==="live";
-  const isFT    = mode==="fulltime";
-
-  function startCooldown(secs) {
-    setCommCooldown(secs);
-    if (commCoolRef.current) clearInterval(commCoolRef.current);
-    commCoolRef.current = setInterval(()=>{
-      setCommCooldown(prev=>{ if(prev<=1){clearInterval(commCoolRef.current);return 0;} return prev-1; });
-    },1000);
-  }
+  const elapsed  = fixture?.fixture?.status?.elapsed || 0;
+  const score    = fixture?.score;
+  const hScore   = score?.fulltime?.home ?? 0;
+  const aScore   = score?.fulltime?.away ?? 0;
+  const isLive   = mode === "live";
+  const isFT     = mode === "fulltime";
 
   async function generate() {
-    if (commLoading||commCooldown>0) return;
-    const payload = buildCommentaryPayload({ d:matchIntelRaw, fixture, events, stats, momentumData, lineups, predictedHome, predictedAway, winProb, mode });
+    if (commLoading || commCooldown > 0) return;
+    const payload = buildCommentaryPayload({
+      d: matchIntelRaw, fixture, events, stats, momentumData,
+      lineups, predictedHome, predictedAway, winProb, mode,
+    });
     if (!payload) return;
+
     setCommLoading(true);
     try {
-      const resp = await fetch(`${BACKEND}/api/commentary/${fixtureId}`,{
-        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),
+      const resp = await fetch(`${BACKEND}/api/commentary/${fixtureId}`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload),
       });
       if (resp.ok) {
         const entries = await resp.json();
-        if (Array.isArray(entries)&&entries.length) {
-          setCommentaryFeed(prev=>[...entries.slice().reverse(),...prev].slice(0,40));
+        if (Array.isArray(entries) && entries.length) {
+          setCommentaryFeed(prev => [...entries.reverse(), ...prev].slice(0, 30));
         }
-      } else if (resp.status===429) {
-        const body = await resp.json().catch(()=>({}));
-        startCooldown(parseInt((body.detail||"").match(/\d+/)?.[0]||"20"));
+      } else if (resp.status === 429) {
+        const { detail } = await resp.json().catch(() => ({}));
+        const wait = parseInt((detail || "").match(/\d+/)?.[0] || "20");
+        startCooldown(wait);
       }
-    } catch(e){ console.error("Commentary error",e); }
+    } catch(e) { console.error("Commentary error", e); }
     finally { setCommLoading(false); }
     startCooldown(20);
   }
 
-  // Auto-generate once when tab mounts and data is ready
-  useEffect(()=>{
-    if (commAutoFired.current) return;
-    if (!matchIntelRaw) return;
-    commAutoFired.current = true;
-    generate();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[matchIntelRaw]);
+  function startCooldown(secs) {
+    setCommCooldown(secs);
+    if (commCoolRef.current) clearInterval(commCoolRef.current);
+    commCoolRef.current = setInterval(() => {
+      setCommCooldown(prev => {
+        if (prev <= 1) { clearInterval(commCoolRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  }
 
-  const isReady = !commLoading&&commCooldown===0;
-  const st = matchIntelRaw?.statistics||{};
+  const isReady = !commLoading && commCooldown === 0;
+
+  // Live stat pills extracted from match-intelligence statistics
+  const st = matchIntelRaw?.statistics || {};
   const pills = [
-    ["Possession", buildStatStr(st,"possession")],
-    ["xG",         buildStatStr(st,"expected_goals")],
-    ["Shots",      buildStatStr(st,"shots_total")],
-    ["On target",  buildStatStr(st,"shots_on_target")],
-    ["Pass acc",   buildStatStr(st,"pass_accuracy")],
-    ["Corners",    buildStatStr(st,"corner_kicks")],
-  ].filter(([,v])=>v&&!v.includes("null")&&v!=="0–0"&&v!=="undefined–undefined");
+    ["Possession",  buildStatStr(st,"possession")],
+    ["xG",          buildStatStr(st,"expected_goals")],
+    ["Shots",       buildStatStr(st,"shots_total")],
+    ["On target",   buildStatStr(st,"shots_on_target")],
+    ["Pass acc",    buildStatStr(st,"pass_accuracy")],
+    ["Corners",     buildStatStr(st,"corner_kicks")],
+    ["Fouls",       buildStatStr(st,"fouls")],
+    ["GK saves",    buildStatStr(st,"goalkeeper_saves")],
+  ].filter(([,v]) => v && v !== "null-null" && v !== "0-0");
 
-  const insights = (matchIntelRaw?.insights||[]).slice(0,3);
+  // Pre-computed insights from match-intelligence
+  const insights = (matchIntelRaw?.insights || []).slice(0, 3);
 
   return (
-    <div style={{padding:"0 0 48px"}}>
-      {/* Status bar */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px 6px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {isLive&&<span style={{width:7,height:7,borderRadius:"50%",background:"#ef4444",display:"inline-block",flexShrink:0,animation:"livePulse 1.4s ease-in-out infinite"}}/>}
-          <span style={{fontSize:11,fontWeight:800,color:isLive?"#ef4444":isFT?"#a78bfa":"#60a5fa",letterSpacing:".07em"}}>
-            {isLive?`LIVE · ${elapsed}'`:isFT?"FULL TIME":"PRE-MATCH"}
+    <div style={{ padding:"0 0 40px" }}>
+
+      {/* ── Match status bar ── */}
+      <div style={{
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+        padding:"10px 20px 6px", borderBottom:"1px solid rgba(255,255,255,.05)",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {isLive && (
+            <span style={{
+              width:7, height:7, borderRadius:"50%", background:"#ef4444",
+              display:"inline-block", flexShrink:0,
+              animation:"livePulse 1.4s ease-in-out infinite",
+            }}/>
+          )}
+          <span style={{ fontSize:11, fontWeight:800,
+            color: isLive ? "#ef4444" : isFT ? "#a78bfa" : "#60a5fa",
+            letterSpacing:".07em",
+          }}>
+            {isLive ? `LIVE · ${elapsed}'` : isFT ? "FULL TIME" : "PRE-MATCH"}
           </span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>{homeTeam?.name} {hScore}–{aScore} {awayTeam?.name}</span>
+          <span style={{ fontSize:11, color:"rgba(255,255,255,.3)" }}>
+            {homeTeam?.name} {hScore}–{aScore} {awayTeam?.name}
+          </span>
         </div>
-        <span style={{fontSize:9,color:"rgba(255,255,255,.18)",fontFamily:"monospace"}}>OpenRouter · claude-haiku-4-5</span>
+        <span style={{ fontSize:9, color:"rgba(255,255,255,.18)", fontFamily:"monospace", letterSpacing:".04em" }}>
+          AI · claude-haiku-4-5
+        </span>
       </div>
 
-      {/* Stat pills */}
-      {pills.length>0&&(
-        <div style={{padding:"8px 20px 2px",display:"flex",flexWrap:"wrap",gap:4}}>
-          {pills.map(([label,val])=>(
-            <span key={label} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 8px",borderRadius:5,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",fontSize:10,fontWeight:700}}>
-              <span style={{color:"rgba(255,255,255,.35)"}}>{label}</span>
-              <span style={{color:"#e2e8f0",fontFamily:"'JetBrains Mono',monospace"}}>{val}</span>
+      {/* ── Generate button ── */}
+      <div style={{ padding:"10px 20px 4px" }}>
+        <button
+          onClick={generate}
+          disabled={!isReady}
+          style={{
+            display:"flex", alignItems:"center", gap:8,
+            padding:"8px 16px",
+            background: isReady ? "rgba(167,139,250,.1)" : "rgba(255,255,255,.03)",
+            border: `1px solid ${isReady ? "rgba(167,139,250,.3)" : "rgba(255,255,255,.08)"}`,
+            borderRadius:8, cursor: isReady ? "pointer" : "not-allowed",
+            fontSize:11, fontWeight:900, letterSpacing:".06em", textTransform:"uppercase",
+            color: isReady ? "#a78bfa" : "rgba(255,255,255,.22)",
+            transition:"all .15s", width:"100%", justifyContent:"center",
+          }}
+        >
+          {commLoading ? (
+            <>
+              <span style={{ width:12, height:12, borderRadius:"50%",
+                border:"1.5px solid rgba(167,139,250,.3)", borderTopColor:"#a78bfa",
+                animation:"livePulse .7s linear infinite", display:"inline-block",flexShrink:0 }}/>
+              Generating commentary…
+            </>
+          ) : commCooldown > 0 ? (
+            <>
+              <span style={{ fontFamily:"monospace" }}>{commCooldown}s</span>
+              · Next commentary available soon
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M6.5 1v3M6.5 9v3M1 6.5h3M9 6.5h3M2.9 2.9l2.1 2.1M7.9 7.9l2.1 2.1M2.9 10.1l2.1-2.1M7.9 5.1l2.1-2.1"
+                  stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              {commentaryFeed.length === 0 ? "Generate commentary" : "Refresh commentary"}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* ── Stat pills (live/FT only) ── */}
+      {pills.length > 0 && (
+        <div style={{ padding:"6px 20px 4px", display:"flex", flexWrap:"wrap", gap:4 }}>
+          {pills.map(([label, val]) => (
+            <span key={label} style={{
+              display:"inline-flex", alignItems:"center", gap:5,
+              padding:"3px 8px", borderRadius:5,
+              background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)",
+              fontSize:10, fontWeight:700,
+            }}>
+              <span style={{ color:"rgba(255,255,255,.4)" }}>{label}</span>
+              <span style={{ color:"#e2e8f0", fontFamily:"'JetBrains Mono',monospace" }}>{val}</span>
             </span>
           ))}
         </div>
       )}
 
-      {/* Refresh button */}
-      <div style={{padding:"8px 20px 2px"}}>
-        <button onClick={generate} disabled={!isReady} style={{
-          display:"flex",alignItems:"center",gap:8,padding:"8px 16px",width:"100%",justifyContent:"center",
-          background:isReady?"rgba(167,139,250,.1)":"rgba(255,255,255,.03)",
-          border:`1px solid ${isReady?"rgba(167,139,250,.28)":"rgba(255,255,255,.07)"}`,
-          borderRadius:8,cursor:isReady?"pointer":"not-allowed",fontSize:11,fontWeight:900,
-          letterSpacing:".06em",textTransform:"uppercase",color:isReady?"#a78bfa":"rgba(255,255,255,.22)",transition:"all .15s",
-        }}>
-          {commLoading?(
-            <><span style={{width:12,height:12,borderRadius:"50%",border:"1.5px solid rgba(167,139,250,.3)",borderTopColor:"#a78bfa",display:"inline-block",flexShrink:0,animation:"livePulse .7s linear infinite"}}/>Generating…</>
-          ):commCooldown>0?(
-            <span style={{fontFamily:"monospace",letterSpacing:".04em"}}>Refresh in {commCooldown}s</span>
-          ):(
-            <><svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{flexShrink:0}}><path d="M6.5 1v3M6.5 9v3M1 6.5h3M9 6.5h3M2.9 2.9l2.1 2.1M7.9 7.9l2.1 2.1M2.9 10.1l2.1-2.1M7.9 5.1l2.1-2.1" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round"/></svg>Refresh commentary</>
-          )}
-        </button>
-      </div>
-
-      {/* Loading skeleton */}
-      {commLoading&&commentaryFeed.length===0&&(
-        <div style={{padding:"14px 20px",display:"flex",flexDirection:"column",gap:14}}>
-          {[1,2,3].map(i=>(
-            <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-              <div style={{width:28,height:10,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,marginTop:3}}/>
-              <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{width:60,height:8,borderRadius:4,background:"rgba(167,139,250,.15)"}}/>
-                <div style={{width:"92%",height:8,borderRadius:4,background:"rgba(255,255,255,.05)"}}/>
-                <div style={{width:"78%",height:8,borderRadius:4,background:"rgba(255,255,255,.04)"}}/>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Feed */}
-      {commentaryFeed.length>0&&(
-        <div style={{margin:"8px 0 0"}}>
-          <div style={{fontSize:8,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.2)",padding:"0 20px 6px",display:"flex",alignItems:"center",gap:6}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:"#a78bfa",display:"inline-block"}}/>
-            AI Commentary
+      {/* ── Commentary feed ── */}
+      {commentaryFeed.length > 0 && (
+        <div style={{ margin:"10px 0 0" }}>
+          <div style={{
+            fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
+            color:"rgba(255,255,255,.22)", padding:"0 20px 6px",
+            display:"flex", alignItems:"center", gap:6,
+          }}>
+            <span style={{ width:5, height:5, borderRadius:"50%", background:"#a78bfa", display:"inline-block" }}/>
+            AI Commentary Feed
           </div>
-          {commentaryFeed.map((entry,i)=>{
-            const cs=commStyle(entry.type);
-            return(
-              <div key={i} style={{display:"flex",gap:12,padding:"11px 20px",borderBottom:"1px solid rgba(255,255,255,.04)",alignItems:"flex-start",animation:"fadeUp .3s ease both",animationDelay:`${Math.min(i*.05,.25)}s`}}>
-                <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,.28)",width:30,flexShrink:0,fontFamily:"'JetBrains Mono',monospace",paddingTop:2}}>{entry.minute||"–"}</div>
-                <div style={{flex:1}}>
-                  <span style={{display:"inline-block",fontSize:7,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",background:cs.bg,color:cs.color,border:`1px solid ${cs.border}`,borderRadius:4,padding:"2px 6px",marginBottom:6}}>{cs.label}</span>
-                  <div style={{fontSize:12.5,lineHeight:1.7,color:"rgba(255,255,255,.78)",fontFamily:"'Inter','Sora',sans-serif"}}><CommText text={entry.text}/></div>
+          {commentaryFeed.map((entry, i) => {
+            const cs = commStyle(entry.type);
+            return (
+              <div key={i} style={{
+                display:"flex", gap:12, padding:"11px 20px",
+                borderBottom:"1px solid rgba(255,255,255,.04)",
+                alignItems:"flex-start",
+                animation:"fadeUp .3s ease both",
+                animationDelay:`${i * 0.05}s`,
+              }}>
+                <div style={{
+                  fontSize:10, fontWeight:800, color:"rgba(255,255,255,.3)",
+                  width:30, flexShrink:0, fontFamily:"'JetBrains Mono',monospace",
+                  paddingTop:2,
+                }}>
+                  {entry.minute || "–"}
+                </div>
+                <div style={{ flex:1 }}>
+                  <span style={{
+                    display:"inline-block", fontSize:7, fontWeight:900,
+                    letterSpacing:".1em", textTransform:"uppercase",
+                    background:cs.bg, color:cs.color,
+                    border:`1px solid ${cs.border}`,
+                    borderRadius:4, padding:"2px 6px", marginBottom:5,
+                  }}>
+                    {cs.label}
+                  </span>
+                  <div style={{
+                    fontSize:12.5, lineHeight:1.65,
+                    color:"rgba(255,255,255,.78)",
+                    fontFamily:"'Inter','Sora',sans-serif",
+                  }}>
+                    <CommText text={entry.text} />
+                  </div>
                 </div>
               </div>
             );
@@ -1760,17 +1565,45 @@ function CommentaryPanel({
         </div>
       )}
 
-      {/* Match intelligence insights */}
-      {insights.length>0&&(
-        <div style={{margin:"12px 16px 0"}}>
-          <div style={{fontSize:8,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.2)",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:"#34d399",display:"inline-block"}}/>
+      {/* ── Empty state ── */}
+      {commentaryFeed.length === 0 && !commLoading && (
+        <div style={{
+          padding:"40px 20px", textAlign:"center",
+          color:"rgba(255,255,255,.18)", fontSize:13, lineHeight:1.7,
+        }}>
+          {mode === "prematch"
+            ? "Generate AI commentary for a pre-match preview using H2H records, form, injuries and model predictions."
+            : mode === "live"
+            ? "Generate live AI commentary using real-time stats, events and momentum data."
+            : "Generate a match report with key turning points and standout performers."}
+        </div>
+      )}
+
+      {/* ── Pre-computed insights from match-intelligence ── */}
+      {insights.length > 0 && (
+        <div style={{ margin:"12px 16px 0" }}>
+          <div style={{
+            fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
+            color:"rgba(255,255,255,.22)", marginBottom:6,
+            display:"flex", alignItems:"center", gap:6,
+          }}>
+            <span style={{ width:5, height:5, borderRadius:"50%", background:"#34d399", display:"inline-block" }}/>
             Match Intelligence
           </div>
-          {insights.map((ins,i)=>(
-            <div key={i} style={{padding:"9px 13px",borderRadius:9,marginBottom:6,background:"rgba(52,211,153,.05)",border:"1px solid rgba(52,211,153,.12)"}}>
-              <div style={{fontSize:9,fontWeight:800,color:"#34d399",letterSpacing:".06em",marginBottom:4}}>{(ins.title||"").toUpperCase()}</div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,.6)",lineHeight:1.6}}>{ins.body}</div>
+          {insights.map((ins, i) => (
+            <div key={i} style={{
+              padding:"10px 14px", borderRadius:10, marginBottom:6,
+              background:"rgba(52,211,153,.05)", border:"1px solid rgba(52,211,153,.12)",
+            }}>
+              <div style={{
+                fontSize:9, fontWeight:800, color:"#34d399",
+                letterSpacing:".06em", marginBottom:4,
+              }}>
+                {(ins.title || "").toUpperCase()}
+              </div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.62)", lineHeight:1.55 }}>
+                {ins.body}
+              </div>
             </div>
           ))}
         </div>
@@ -1811,13 +1644,12 @@ export default function LiveMatchPage() {
   const [error,         setError]        = useState(null);
   const pollRef = useRef(null);
 
-  // ── Commentary state ──────────────────────────────────────────────────────
+  // ── Commentary state (populated from match-intelligence response) ────────
   const [matchIntelRaw,  setMatchIntelRaw]  = useState(null);
   const [commentaryFeed, setCommentaryFeed] = useState([]);
   const [commLoading,    setCommLoading]    = useState(false);
   const [commCooldown,   setCommCooldown]   = useState(0);
-  const commCoolRef   = useRef(null);
-  const commAutoFired = useRef(false);
+  const commCoolRef = useRef(null);
 
   const mode = deriveMode(fixture?.fixture?.status?.short);
 
@@ -1915,6 +1747,8 @@ export default function LiveMatchPage() {
         st.push({ team: { id: h.away_id, name: h.away_team }, statistics: d.statistics.away || [] });
       }
       setStats(st);
+
+      // Save full match-intelligence payload for commentary tab
       setMatchIntelRaw(d);
 
       // Lineups from match-intelligence
@@ -2102,7 +1936,7 @@ export default function LiveMatchPage() {
                 commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
                 commLoading={commLoading} setCommLoading={setCommLoading}
                 commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
+                commCoolRef={commCoolRef}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}
@@ -2127,7 +1961,7 @@ export default function LiveMatchPage() {
                 commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
                 commLoading={commLoading} setCommLoading={setCommLoading}
                 commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
+                commCoolRef={commCoolRef}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}
@@ -2152,7 +1986,7 @@ export default function LiveMatchPage() {
                 commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
                 commLoading={commLoading} setCommLoading={setCommLoading}
                 commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
+                commCoolRef={commCoolRef}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}

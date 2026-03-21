@@ -1186,15 +1186,6 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
   );
 }
 
-function LineupsPanel({lineups,homeTeam,awayTeam,venueName}){
-  if(!lineups?.length) return null;
-  const tid = l => l.team?.id ?? l.team_id;
-  const home=lineups.find(l=>tid(l)===homeTeam?.id)||lineups[0];
-  const away=lineups.find(l=>tid(l)===awayTeam?.id)||lineups[1];
-  if(!home&&!away) return null;
-  return <PitchLineup homeLineup={home} awayLineup={away} homeTeam={homeTeam} awayTeam={awayTeam} venueName={venueName}/>;
-}
-
 
 function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
   // Use backend shot map data if available

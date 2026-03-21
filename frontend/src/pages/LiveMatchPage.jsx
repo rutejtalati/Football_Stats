@@ -474,7 +474,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
     const slots=getHSlots(lineup.formation,side);
-    const sz=42;
+    const sz=50;
     return lineup.xi.slice(0,11).map((p,i)=>{
       const [x,y]=slots[i]||[50,50];
       const isGK=i===0;

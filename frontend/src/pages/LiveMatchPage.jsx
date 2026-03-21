@@ -451,14 +451,28 @@ function PredictedLineupsPanel({ predictedHome, predictedAway, homeTeam, awayTea
   // Convert start_xi to startXI format for PredictedPitchPlayers
   function PredictedPitchPlayers({ prediction, color, side }) {
     if (!prediction?.start_xi?.length) return null;
-    const parts = (prediction.formation || "4-3-3").split("-").map(n => parseInt(n));
     const players = prediction.start_xi;
-    // Build rows: GK first, then by formation
-    const gk = players.filter(p => p.group === "GK");
-    const rest = players.filter(p => p.group !== "GK");
-    let idx = 0;
-    const rows = [gk, ...parts.map(n => { const r = rest.slice(idx, idx+n); idx+=n; return r; })];
-    if (side === "away") rows.reverse();
+    // Use grid field if available (e.g. "1:1", "2:1") — same as MatchIntelligencePage
+    const hasGrid = players.some(p => p.grid);
+    let rows;
+    if (hasGrid) {
+      const rowMap = {};
+      players.forEach(p => {
+        const row = p.grid?.split(":")[0] || "1";
+        if (!rowMap[row]) rowMap[row] = [];
+        rowMap[row].push(p);
+      });
+      rows = Object.keys(rowMap).sort((a,b) => Number(a)-Number(b)).map(k => rowMap[k]);
+      if (side === "away") rows.reverse();
+    } else {
+      // Fallback: use formation + group
+      const parts = (prediction.formation || "4-3-3").split("-").map(n => parseInt(n));
+      const gk = players.filter(p => p.group === "GK");
+      const rest = players.filter(p => p.group !== "GK");
+      let idx = 0;
+      rows = [gk, ...parts.map(n => { const r = rest.slice(idx, idx+n); idx+=n; return r; })];
+      if (side === "away") rows.reverse();
+    }
     const total = rows.length;
     const xStart = side === "home" ? 4 : 52;
     const xRange = 44;
@@ -1267,7 +1281,7 @@ export default function LiveMatchPage() {
 
       // For prematch with predicted lineups from match-intelligence
       // match_intelligence.py sets predicted:true when no official lineup exists
-      if (lu.length === 0 && d.lineups) {
+      if (d.lineups && (lu.length === 0 || lu.every(l => !l.startXI?.length))) {
         // Try to get predicted lineup from the intelligence response
         ["home","away"].forEach(side => {
           const raw = d.lineups?.[side];
@@ -1284,6 +1298,7 @@ export default function LiveMatchPage() {
           const wrap = p => ({
             id: p.id, name: p.name, number: p.number,
             pos: p.pos, group: posToGroup(p.pos),
+            grid: p.grid,
             confidence: p.confidence || 70,
           });
           const predicted = {

@@ -2,7 +2,6 @@
 // StatinSite — Match Detail Page
 // Mode-driven: prematch / live / fulltime
 // ═══════════════════════════════════════════════════════════════════
-import HorizontalPitchLineup from "../components/HorizontalPitchLineup";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
@@ -445,7 +444,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   function norm(raw){
     if(!raw) return null;
     const xi=raw.startXI||raw.starting_xi||raw.start_xi||[];
-    const bench=raw.substitutes||raw.bench||raw.subs||[];
+    const bench=raw.substitutes||raw.subs||raw.bench||[];
     return{
       formation:raw.formation||"4-3-3",
       predicted:raw.predicted||false,
@@ -1325,8 +1324,9 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
 
 function LineupsPanel({lineups,homeTeam,awayTeam}){
   if(!lineups?.length) return null;
-  const home=lineups.find(l=>l.team?.id===homeTeam?.id)||lineups[0];
-  const away=lineups.find(l=>l.team?.id===awayTeam?.id)||lineups[1];
+  const teamId = l => l.team?.id ?? l.team_id;
+  const home=lineups.find(l=>teamId(l)===homeTeam?.id)||lineups[0];
+  const away=lineups.find(l=>teamId(l)===awayTeam?.id)||lineups[1];
   if(!home&&!away) return null;
   return <PitchLineup homeLineup={home} awayLineup={away} homeTeam={homeTeam} awayTeam={awayTeam}/>;
 }
@@ -1918,7 +1918,35 @@ export default function LiveMatchPage() {
       setMatchIntelRaw(d);
 
       // Lineups from match-intelligence
-      if(d.lineups){const hp=d._meta?.has_official_lineups===false||d.lineups?.home?.predicted||d.lineups?.away?.predicted;applyLineup({mode:hp?"predicted":"official",home:d.lineups?.home||null,away:d.lineups?.away||null});}
+      // d.lineups is an array [{team_id, team_name, start_xi, subs, formation, ...}]
+      // NOT {home, away} — split by team_id to get each side
+      if (d.lineups?.length) {
+        const hId = h.home_id;
+        const aId = h.away_id;
+        const isPred = d._meta?.has_official_lineups === false;
+
+        // Each entry has start_xi (from _n_official_lineups) or start_xi (predicted)
+        // Normalise field names before passing to applyLineup
+        const normLu = (lu) => lu ? {
+          ...lu,
+          team_id:    lu.team_id   || lu.team?.id,
+          team_name:  lu.team_name || lu.team?.name,
+          logo:       lu.team_logo || lu.team?.logo || "",
+          // unify field names — backend uses start_xi, applyLineup checks starting_xi/start_xi/startXI
+          starting_xi: lu.start_xi || lu.startXI || lu.starting_xi || [],
+          bench:       lu.subs     || lu.substitutes || lu.bench    || [],
+        } : null;
+
+        const homeLu = d.lineups.find(l => (l.team_id || l.team?.id) === hId);
+        const awayLu = d.lineups.find(l => (l.team_id || l.team?.id) === aId)
+                    || d.lineups.find(l => (l.team_id || l.team?.id) !== hId);
+
+        applyLineup({
+          mode: isPred ? "predicted" : "official",
+          home: normLu(homeLu),
+          away: normLu(awayLu),
+        });
+      }
 
       // Win probability from prediction block
       if (d.prediction && !winProb) {

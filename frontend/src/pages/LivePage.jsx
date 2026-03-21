@@ -545,20 +545,43 @@ function LeagueSummaryWidget({ fixtures }) {
 
 export default function LivePage() {
   const navigate = useNavigate();
-  const [chips,   setChips]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
-  const [filter,  setFilter]  = useState("all");
-  const [lastUp,  setLastUp]  = useState(null);
+  const [chips,      setChips]      = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [filter,     setFilter]     = useState("all");
+  const [lastUp,     setLastUp]     = useState(null);
+  const [dayOffset,  setDayOffset]  = useState(0);   // 0=today/upcoming, -1=yesterday, …, -10
 
-  const fetchData = () => {
-    fetch(`${BACKEND}/api/matches/upcoming`)
+  const fetchData = (offset = dayOffset) => {
+    setLoading(true);
+    setError(null);
+    const url = offset < 0
+      ? `${BACKEND}/api/matches/results?days_ago=${Math.abs(offset)}`
+      : `${BACKEND}/api/matches/upcoming`;
+    fetch(url)
       .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(d => { setChips(d.matches||d.chips||[]); setLoading(false); setLastUp(new Date()); setError(null); })
       .catch(e => { setError(e.message); setLoading(false); });
   };
 
-  useEffect(() => { fetchData(); const id=setInterval(fetchData,30_000); return ()=>clearInterval(id); }, []);
+  // Re-fetch when offset changes
+  useEffect(() => {
+    fetchData(dayOffset);
+    // Auto-refresh only when on today/upcoming view
+    if (dayOffset === 0) {
+      const id = setInterval(() => fetchData(0), 30_000);
+      return () => clearInterval(id);
+    }
+  }, [dayOffset]);
+
+  // Date nav label helper
+  function dayLabel(offset) {
+    if (offset === 0)  return "Today & Upcoming";
+    if (offset === -1) return "Yesterday";
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d.toLocaleDateString([], { weekday:"short", day:"numeric", month:"short" });
+  }
 
   const fixtures = useMemo(() => chips.map(c => ({
     fixture_id:  c.fixture_id,
@@ -569,7 +592,6 @@ export default function LivePage() {
     status:      c.status,     minute:     c.minute,
     kickoff:     c.kickoff||c.date,
     xg_home:     c.xg_home??null,  xg_away:    c.xg_away??null,
-    // Pro enrichment — all optional
     p_home_win:  c.p_home_win??null, p_draw:     c.p_draw??null,    p_away_win: c.p_away_win??null,
     p_btts:      c.p_btts??null,     p_over25:   c.p_over25??null,
     insight:     c.insight??null,    latest_event: c.latest_event??null,
@@ -577,11 +599,18 @@ export default function LivePage() {
 
   const filtered = useMemo(() => filter==="all" ? fixtures : fixtures.filter(f=>f.league===filter), [fixtures,filter]);
 
-  const liveAll  = filtered.filter(f => LIVE_SET.has(f.status));
-  const todayFix = filtered.filter(f => !LIVE_SET.has(f.status) && dayBucket(f.kickoff)==="today");
-  const ftToday  = filtered.filter(f => FT_SET.has(f.status) && dayBucket(f.kickoff)==="today");
+  const isPastView = dayOffset < 0;
+
+  // Past view: all fixtures are results grouped by nothing (flat list)
+  const pastResults = isPastView ? filtered : [];
+
+  // Today/upcoming view — same as before
+  const liveAll  = !isPastView ? filtered.filter(f => LIVE_SET.has(f.status)) : [];
+  const todayFix = !isPastView ? filtered.filter(f => !LIVE_SET.has(f.status) && dayBucket(f.kickoff)==="today") : [];
+  const ftToday  = !isPastView ? filtered.filter(f => FT_SET.has(f.status) && dayBucket(f.kickoff)==="today") : [];
 
   const upcoming = useMemo(() => {
+    if (isPastView) return { groups:{}, order:[] };
     const groups={}, order=[];
     filtered
       .filter(f => !LIVE_SET.has(f.status) && !FT_SET.has(f.status) && dayBucket(f.kickoff)!=="today")
@@ -591,7 +620,7 @@ export default function LivePage() {
         groups[k].push(f);
       });
     return { groups, order };
-  }, [filtered]);
+  }, [filtered, isPastView]);
 
   const liveCount  = fixtures.filter(f=>LIVE_SET.has(f.status)).length;
   const todayCount = fixtures.filter(f=>dayBucket(f.kickoff)==="today").length;
@@ -614,7 +643,9 @@ export default function LivePage() {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
               <div>
                 <h1 style={{ fontSize:28, fontWeight:900, color:"#f0f6ff", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
-                <p style={{ color:"#fff", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>Next 7 days · Top 5 leagues</p>
+                <p style={{ color:"#fff", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
+                  {isPastView ? `Results · ${dayLabel(dayOffset)}` : "Next 7 days · Top 5 leagues"}
+                </p>
               </div>
               <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", justifyContent:"flex-end" }}>
                 {liveCount>0 && (
@@ -633,6 +664,41 @@ export default function LivePage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Date scrubber — ← up to 10 days back · Today & Upcoming · → */}
+            <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:12, overflowX:"auto", scrollbarWidth:"none" }}>
+              {/* Back arrow */}
+              <button
+                onClick={() => setDayOffset(o => Math.max(-10, o-1))}
+                disabled={dayOffset <= -10}
+                style={{ padding:"5px 10px", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)", color: dayOffset<=-10 ? "rgba(255,255,255,.15)" : "rgba(255,255,255,.5)", cursor: dayOffset<=-10 ? "not-allowed" : "pointer", fontSize:14, lineHeight:1, flexShrink:0 }}
+              >←</button>
+
+              {/* Day pills — show -2 … 0 … +1 */}
+              {[-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0].map(offset => {
+                const active = dayOffset === offset;
+                const isPast = offset < 0;
+                return (
+                  <button key={offset} onClick={() => setDayOffset(offset)} style={{
+                    padding:"5px 12px", borderRadius:8, cursor:"pointer", flexShrink:0,
+                    fontSize:11, fontWeight:700, whiteSpace:"nowrap",
+                    border: active ? "1px solid rgba(96,165,250,.45)" : "1px solid rgba(255,255,255,.06)",
+                    background: active ? "rgba(96,165,250,.12)" : "rgba(255,255,255,.02)",
+                    color: active ? "#60a5fa" : isPast ? "rgba(255,255,255,.3)" : "rgba(255,255,255,.22)",
+                    transition:"all .15s",
+                  }}>
+                    {offset === 0 ? "Today +" : dayLabel(offset)}
+                  </button>
+                );
+              })}
+
+              {/* Forward arrow — only useful to go back to today from past */}
+              <button
+                onClick={() => setDayOffset(o => Math.min(0, o+1))}
+                disabled={dayOffset >= 0}
+                style={{ padding:"5px 10px", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)", color: dayOffset>=0 ? "rgba(255,255,255,.15)" : "rgba(255,255,255,.5)", cursor: dayOffset>=0 ? "not-allowed" : "pointer", fontSize:14, lineHeight:1, flexShrink:0 }}
+              >→</button>
             </div>
 
             {/* League filter tabs */}
@@ -687,23 +753,35 @@ export default function LivePage() {
                     <div style={{ textAlign:"center", padding:"44px 0", color:"rgba(255,255,255,0.6)", fontSize:13 }}>No fixtures for this filter.</div>
                   )}
 
-                  {liveAll.length>0 && (
-                    <Section title="Live Now" count={liveAll.length} accent="#ff4444">
-                      {liveAll.map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
+                  {/* ── PAST RESULTS VIEW ── */}
+                  {isPastView && pastResults.length > 0 && (
+                    <Section title={`Results · ${dayLabel(dayOffset)}`} count={pastResults.length} accent="#a78bfa">
+                      {pastResults.map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
                     </Section>
                   )}
 
-                  {(todayFix.length>0||ftToday.length>0) && (
-                    <Section title="Today" count={todayFix.length+ftToday.length} accent="#60a5fa">
-                      {[...todayFix,...ftToday].map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
-                    </Section>
-                  )}
+                  {/* ── TODAY / UPCOMING VIEW ── */}
+                  {!isPastView && (
+                    <>
+                      {liveAll.length>0 && (
+                        <Section title="Live Now" count={liveAll.length} accent="#ff4444">
+                          {liveAll.map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
+                        </Section>
+                      )}
 
-                  {upcoming.order.map((day,i) => (
-                    <Section key={day} title={day} count={upcoming.groups[day].length} collapsible defaultOpen={i<2}>
-                      {upcoming.groups[day].map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
-                    </Section>
-                  ))}
+                      {(todayFix.length>0||ftToday.length>0) && (
+                        <Section title="Today" count={todayFix.length+ftToday.length} accent="#60a5fa">
+                          {[...todayFix,...ftToday].map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
+                        </Section>
+                      )}
+
+                      {upcoming.order.map((day,i) => (
+                        <Section key={day} title={day} count={upcoming.groups[day].length} collapsible defaultOpen={i<2}>
+                          {upcoming.groups[day].map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
+                        </Section>
+                      ))}
+                    </>
+                  )}
                 </div>
 
                 {/* Sidebar */}

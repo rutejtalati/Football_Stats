@@ -349,6 +349,44 @@ async def upcoming_matches():
     matches.sort(key=lambda m:(0 if m.get("status") in live_s else 1, m.get("kickoff") or "9999"))
     return {"matches":matches,"count":len(matches)}
 
+@app.get("/api/matches/results")
+async def past_results(days_ago: int = 1):
+    """Return completed fixtures for a specific past date (1–10 days ago)."""
+    days_ago = max(1, min(10, days_ago))
+    target = date.today() - timedelta(days=days_ago)
+    season = target.year if target.month >= 7 else target.year - 1
+
+    async def fetch_league(lid: int):
+        try:
+            data = await async_api_get("/fixtures", {
+                "league": lid, "season": season,
+                "from": target.isoformat(), "to": target.isoformat(),
+                "timezone": "UTC"
+            })
+            return data.get("response", [])
+        except Exception:
+            return []
+
+    all_results = await asyncio.gather(*[fetch_league(lid) for lid in TOP5_LEAGUES])
+    seen = set(); matches = []
+    for fl in all_results:
+        for f in fl:
+            fid = f.get("fixture", {}).get("id")
+            if not fid or fid in seen: continue
+            seen.add(fid)
+            fix = f.get("fixture", {}); teams = f.get("teams", {}); goals = f.get("goals", {}); lg = f.get("league", {})
+            matches.append({
+                "fixture_id": fid, "league": league_slug(lg.get("id")), "league_id": lg.get("id"),
+                "league_name": lg.get("name"), "home_team": teams.get("home", {}).get("name"),
+                "away_team": teams.get("away", {}).get("name"), "home_logo": teams.get("home", {}).get("logo"),
+                "away_logo": teams.get("away", {}).get("logo"), "home_score": goals.get("home"),
+                "away_score": goals.get("away"), "status": fix.get("status", {}).get("short"),
+                "minute": fix.get("status", {}).get("elapsed"), "kickoff": fix.get("date"),
+                "venue_name": fix.get("venue", {}).get("name")
+            })
+    matches.sort(key=lambda m: m.get("kickoff") or "")
+    return {"matches": matches, "count": len(matches), "date": target.isoformat()}
+
 @app.get("/api/match-intelligence/{fixture_id}")
 async def match_intelligence_endpoint(fixture_id: int):
     async def _get(path, params):

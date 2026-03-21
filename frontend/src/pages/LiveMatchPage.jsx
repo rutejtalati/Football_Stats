@@ -470,44 +470,42 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   const away=norm(awayLineup);
   const isPredicted=home?.predicted||away?.predicted;
 
-  // Player token on horizontal pitch — matches HTML preview
+  // All players same size — GK gets double ring, outfield gets single
   function Tokens({lineup,side,colour}){
     if(!lineup?.xi?.length) return null;
     const slots=getHSlots(lineup.formation,side);
+    const sz=42;
     return lineup.xi.slice(0,11).map((p,i)=>{
       const [x,y]=slots[i]||[50,50];
       const isGK=i===0;
-      const sz=isGK?42:36;
       const short=(p.name||"").split(" ").pop().slice(0,13);
       return(
         <div key={i} style={{
           position:"absolute",left:`${x}%`,top:`${y}%`,
           transform:"translate(-50%,-50%)",
-          display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+          display:"flex",flexDirection:"column",alignItems:"center",gap:3,
           zIndex:3,pointerEvents:"none",
         }}>
           <div style={{
             width:sz,height:sz,borderRadius:"50%",
-            border:`2.5px solid ${colour}`,
-            boxShadow:isGK?`0 0 0 2px #0c2410,0 0 0 4.5px ${colour}55`:"none",
-            background:"#0a1c0b",overflow:"hidden",flexShrink:0,
+            border:`3px solid ${colour}`,
+            boxShadow:isGK
+              ?`0 0 0 2px #000,0 0 0 5px ${colour}88,0 0 14px ${colour}44`
+              :`0 0 0 1px ${colour}33`,
+            background:"#000",overflow:"hidden",flexShrink:0,
           }}>
             {p.photo&&<img src={p.photo} alt="" width={sz} height={sz}
               style={{objectFit:"cover",objectPosition:"top center",display:"block"}}
               onError={e=>{e.currentTarget.style.display="none";}}/>}
           </div>
           <div style={{
-            fontSize:"8.5px",fontWeight:700,color:"rgba(255,255,255,.95)",
-            textShadow:"0 1px 5px #000,0 0 8px #000",background:"rgba(0,0,0,.78)",
-            padding:"1.5px 4px",borderRadius:3,whiteSpace:"nowrap",
-            maxWidth:72,overflow:"hidden",textOverflow:"ellipsis",
+            fontSize:"9.5px",fontWeight:800,color:"#fff",
+            textShadow:"0 1px 6px #000,0 0 12px #000",
+            background:"rgba(0,0,0,.85)",
+            padding:"2px 5px",borderRadius:4,whiteSpace:"nowrap",
+            maxWidth:76,overflow:"hidden",textOverflow:"ellipsis",
             lineHeight:1.3,letterSpacing:"0.01em",fontFamily:"'Inter',sans-serif",
           }}>{short}</div>
-          {p.confidence!==undefined&&(
-            <div style={{width:26,height:1.5,borderRadius:999,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
-              <div style={{width:`${p.confidence}%`,height:"100%",background:colour,opacity:.6}}/>
-            </div>
-          )}
         </div>
       );
     });
@@ -592,12 +590,12 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
   }
 
   return(
-    <div style={{background:"#060f07",borderRadius:10,border:"1px solid rgba(255,255,255,.07)",
+    <div style={{background:"#000",borderRadius:10,border:"1px solid rgba(255,255,255,.09)",
       overflow:"hidden",margin:"0",fontFamily:"'Inter','Sora',sans-serif"}}>
 
       {/* ── Header ── */}
       <div style={{display:"flex",alignItems:"center",padding:"10px 16px 8px",
-        borderBottom:"1px solid rgba(255,255,255,.05)",gap:12}}>
+        borderBottom:"1px solid rgba(255,255,255,.08)",background:"#000",gap:12}}>
 
         {/* Home */}
         <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
@@ -656,56 +654,46 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
         </div>
       </div>
 
-      {/* ── Horizontal pitch — reduced height, bigger tokens ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden"}}>
+      {/* ── Horizontal pitch — pitch black, crisp white markings ── */}
+      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden",background:"#000"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
           viewBox="0 0 200 104" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="hplTurf" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#0c2410"/>
-              <stop offset="50%" stopColor="#0f2d14"/>
-              <stop offset="100%" stopColor="#0c2410"/>
-            </linearGradient>
-            <pattern id="hplStripes" x="0" y="0" width="20" height="104" patternUnits="userSpaceOnUse">
-              <rect x="0" y="0" width="10" height="104" fill="rgba(255,255,255,0.02)"/>
-            </pattern>
-          </defs>
-          <rect width="200" height="104" fill="url(#hplTurf)"/>
-          <rect width="200" height="104" fill="url(#hplStripes)"/>
+          {/* Pitch black fill */}
+          <rect width="200" height="104" fill="#000"/>
+          {/* Subtle half tints */}
+          <rect x="4" y="4" width="96" height="96" fill={`${hc}07`}/>
+          <rect x="100" y="4" width="96" height="96" fill={`${ac}07`}/>
           {/* Pitch outline */}
-          <rect x="4" y="4" width="192" height="96" rx="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
-          {/* Halfway */}
-          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.5)" strokeWidth=".5"/>
+          <rect x="4" y="4" width="192" height="96" rx="1" fill="none" stroke="rgba(255,255,255,.75)" strokeWidth=".6"/>
+          {/* Halfway line */}
+          <line x1="100" y1="4" x2="100" y2="100" stroke="rgba(255,255,255,.75)" strokeWidth=".6"/>
           {/* Centre circle */}
-          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".45"/>
-          <circle cx="100" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
+          <circle cx="100" cy="52" r="16" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".6"/>
+          <circle cx="100" cy="52" r="1.1" fill="rgba(255,255,255,.95)"/>
           {/* Left penalty box */}
-          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
-          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
-          <circle cx="20" cy="52" r=".75" fill="rgba(255,255,255,.8)"/>
-          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
-          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <rect x="4" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".55"/>
+          <rect x="4" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
+          <circle cx="20" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
+          <path d="M29,39 A15,15 0 0,1 29,65" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".4"/>
+          <rect x="0" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
           {/* Right penalty box */}
-          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
-          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth=".35"/>
-          <circle cx="180" cy="52" r=".75" fill="rgba(255,255,255,.8)"/>
-          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth=".35"/>
-          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.55)" strokeWidth=".4"/>
+          <rect x="171" y="27" width="25" height="50" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth=".55"/>
+          <rect x="187" y="38" width="9" height="28" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".45"/>
+          <circle cx="180" cy="52" r=".9" fill="rgba(255,255,255,.9)"/>
+          <path d="M171,39 A15,15 0 0,0 171,65" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".4"/>
+          <rect x="196" y="43" width="4" height="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.7)" strokeWidth=".5"/>
           {/* Corners */}
-          <path d="M4,4 Q6,4 6,6"           fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <path d="M196,4 Q194,4 194,6"     fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <path d="M4,100 Q6,100 6,98"       fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".4"/>
-          {/* Half tints */}
-          <rect x="4" y="4" width="96" height="96" fill={`${hc}05`}/>
-          <rect x="100" y="4" width="96" height="96" fill={`${ac}05`}/>
-          {/* Attack arrows */}
-          <text x="26" y="9" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill={`${hc}60`} letterSpacing=".4">
+          <path d="M4,4 Q6,4 6,6"           fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <path d="M196,4 Q194,4 194,6"     fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <path d="M4,100 Q6,100 6,98"       fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          <path d="M196,100 Q194,100 194,98" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth=".45"/>
+          {/* Team name labels */}
+          <text x="26" y="9" textAnchor="middle" fontSize="3.5" fontFamily="Inter,sans-serif"
+            fontWeight="800" fill={`${hc}90`} letterSpacing=".4">
             {(homeTeam?.name||"").split(" ").pop().slice(0,7)} →
           </text>
-          <text x="174" y="9" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill={`${ac}60`} letterSpacing=".4">
+          <text x="174" y="9" textAnchor="middle" fontSize="3.5" fontFamily="Inter,sans-serif"
+            fontWeight="800" fill={`${ac}90`} letterSpacing=".4">
             ← {(awayTeam?.name||"").split(" ").pop().slice(0,7)}
           </text>
         </svg>
@@ -718,8 +706,8 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
       {/* ── Coach row ── */}
       {(home?.coach||away?.coach)&&(
         <div style={{display:"flex",justifyContent:"space-between",
-          padding:"6px 16px",borderTop:"1px solid rgba(255,255,255,.04)",
-          background:"rgba(0,0,0,.15)"}}>
+          padding:"6px 16px",borderTop:"1px solid rgba(255,255,255,.06)",
+          background:"#000"}}>
           {home?.coach&&(
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               {home.coach.photo&&<img src={home.coach.photo} alt="" width="18" height="18"
@@ -748,7 +736,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
       {/* ── Bench ── */}
       {(home?.bench?.length>0||away?.bench?.length>0)&&(
         <div style={{display:"flex",gap:8,padding:"8px 12px 9px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.18)",alignItems:"flex-start"}}>
+          borderTop:"1px solid rgba(255,255,255,.04)",background:"#050505",alignItems:"flex-start"}}>
           <BenchStrip lineup={home} colour={hc} align="left"/>
           <div style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.06)",flexShrink:0}}/>
           <BenchStrip lineup={away} colour={ac} align="right"/>
@@ -758,7 +746,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam}){
       {/* ── Unavailable — split by team ── */}
       {(homeUnavail.length>0||awayUnavail.length>0)&&(
         <div style={{display:"flex",gap:10,padding:"7px 12px 9px",
-          borderTop:"1px solid rgba(255,255,255,.04)",background:"rgba(0,0,0,.22)",alignItems:"flex-start"}}>
+          borderTop:"1px solid rgba(255,255,255,.04)",background:"#030303",alignItems:"flex-start"}}>
           <div style={{flex:1,minWidth:0}}>
             {homeUnavail.length>0&&(
               <>

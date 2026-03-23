@@ -153,6 +153,27 @@ function FeaturedCard({ f, onClick }) {
   const hasSc = hS!==null && aS!==null;
   const hw    = hasSc && hS>aS;
   const aw    = hasSc && aS>hS;
+  const col   = lg?.color || "#60a5fa";
+
+  // Win probability
+  const hWP = f.p_home_win ?? null;
+  const dWP = f.p_draw     ?? null;
+  const aWP = f.p_away_win ?? null;
+  const hasProb = hWP!=null && dWP!=null && aWP!=null;
+
+  // Derive simple form dots from insight string if present (W/D/L chars)
+  function formDots(str) {
+    if (!str) return null;
+    const chars = (str.match(/[WDL]/g)||[]).slice(-5);
+    if (chars.length < 3) return null;
+    return chars;
+  }
+  const hForm = formDots(f.insight);
+
+  function FormDot({ r }) {
+    const bg = r==="W" ? "#34d399" : r==="D" ? "rgba(255,255,255,.22)" : "#ef4444";
+    return <span style={{ width:13, height:13, borderRadius:3, background:bg, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:"7px", fontWeight:900, color: r==="D"?"rgba(255,255,255,.6)":"#000", flexShrink:0 }}>{r}</span>;
+  }
 
   return (
     <div
@@ -161,46 +182,92 @@ function FeaturedCard({ f, onClick }) {
       onMouseLeave={() => setHov(false)}
       style={{
         position:"relative", overflow:"hidden",
-        borderRadius:18, cursor:"pointer", flexShrink:0,
-        width:272, padding:"18px 18px 14px",
-        background: isL ? "linear-gradient(145deg,#170b0b,#0e0505)" : "linear-gradient(145deg,#0c1726,#070f1b)",
-        border:`1px solid ${isL ? `rgba(255,55,55,${hov?.28:.14})` : `rgba(255,255,255,${hov?.09:.045})`}`,
-        boxShadow: hov
-          ? `0 20px 50px rgba(0,0,0,0.55), inset 0 0 0 1px ${lg?.color||"#fff"}14`
-          : "0 4px 18px rgba(0,0,0,0.3)",
-        transform: hov ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
-        transition:"all 0.22s cubic-bezier(.22,.61,.36,1)",
+        borderRadius:16, cursor:"pointer", flexShrink:0,
+        width:272,
+        background: isL ? "#0e0505" : "#080f1a",
+        border:`1px solid ${hov ? col+"35" : "rgba(255,255,255,.06)"}`,
+        boxShadow: hov ? `0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px ${col}18` : "0 4px 16px rgba(0,0,0,0.28)",
+        transform: hov ? "translateY(-3px) scale(1.008)" : "translateY(0) scale(1)",
+        transition:"all 0.2s cubic-bezier(.22,.61,.36,1)",
       }}
     >
-      {/* Top color bar */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:lg?.color||"#333", opacity:hov?1:.5, transition:"opacity .2s" }} />
+      {/* League colour accent bar — top */}
+      <div style={{ height:3, background:col, opacity: hov?1:.7, transition:"opacity .2s", borderRadius:"16px 16px 0 0" }} />
 
-      {/* Ambient glow */}
-      {lg && <div style={{ position:"absolute", top:-50, right:-30, width:130, height:130, borderRadius:"50%", background:lg.glow, pointerEvents:"none", opacity:hov?1:.45, transition:"opacity .2s" }} />}
+      {/* Ambient glow blob */}
+      {lg && <div style={{ position:"absolute", top:-40, right:-20, width:110, height:110, borderRadius:"50%", background:lg.glow, pointerEvents:"none", opacity:hov?.9:.4, transition:"opacity .2s" }} />}
 
-      {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-        <LeagueLabel k={f.league} />
-        {isL && <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, fontWeight:900, color:"#ff4444" }}><LiveDot />{f.minute?`${f.minute}'`:"LIVE"}</span>}
-        {isFT && <span style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.22)", letterSpacing:".08em" }}>FT</span>}
-        {!isL && !isFT && <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.3)" }}>{fmtKickoffLabel(f.kickoff)}</span>}
-      </div>
+      <div style={{ padding:"13px 16px 14px" }}>
+        {/* Header: league + status */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+          <LeagueLabel k={f.league} />
+          {isL && <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, fontWeight:900, color:"#ff4444" }}><LiveDot />{f.minute?`${f.minute}'`:"LIVE"}</span>}
+          {isFT && <span style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.22)", letterSpacing:".08em" }}>FT</span>}
+          {!isL && !isFT && <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.3)" }}>{fmtKickoffLabel(f.kickoff)}</span>}
+        </div>
 
-      {/* Teams */}
-      <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:12 }}>
-        {[[f.home_logo,f.home_team,hS,hw],[f.away_logo,f.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
-          <div key={i} style={{ display:"flex", alignItems:"center", gap:9 }}>
-            <Logo src={logo} size={22} />
-            <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"#f0f6ff":"rgba(255,255,255,0.7)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-            {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"#2a3a4c", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
+        {/* Teams + scores */}
+        <div style={{ display:"flex", flexDirection:"column", gap:7, marginBottom:11 }}>
+          {[[f.home_logo,f.home_team,hS,hw],[f.away_logo,f.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:9 }}>
+              <Logo src={logo} size={22} />
+              <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"#f0f6ff":"rgba(255,255,255,0.68)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
+              {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"rgba(255,255,255,.2)", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* xG bar — when live/ft and xG available */}
+        {(isL||isFT) && f.xg_home!=null && (
+          <div style={{ marginBottom:9 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, fontWeight:700, color:"rgba(255,255,255,.28)", marginBottom:4 }}>
+              <span style={{ color:"#34d399" }}>xG {f.xg_home}</span>
+              <span style={{ letterSpacing:".06em" }}>EXPECTED GOALS</span>
+              <span>{f.xg_away}</span>
+            </div>
+            <div style={{ display:"flex", height:4, borderRadius:2, overflow:"hidden", gap:1 }}>
+              {(() => {
+                const h=parseFloat(f.xg_home)||0, a=parseFloat(f.xg_away)||0, tot=h+a||1;
+                return <>
+                  <div style={{ width:`${h/tot*100}%`, background:"#34d399", borderRadius:"2px 0 0 2px" }}/>
+                  <div style={{ flex:1, background:col+"66", borderRadius:"0 2px 2px 0" }}/>
+                </>;
+              })()}
+            </div>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Footer */}
-      <div style={{ borderTop:"1px solid rgba(255,255,255,.04)", paddingTop:10, minHeight:22 }}>
-        {f.xg_home!=null && <span style={{ fontSize:10, color:"rgba(255,255,255,.22)", marginRight:10 }}><span style={{ color:"#34d399", fontWeight:700 }}>xG</span> {f.xg_home}–{f.xg_away}</span>}
-        {!hasSc && insightLine(f) && <span style={{ fontSize:10, color:"rgba(255,255,255,.28)", fontStyle:"italic" }}>{insightLine(f)}</span>}
+        {/* Win probability bar — for scheduled/upcoming matches */}
+        {hasProb && !hasSc && (
+          <div style={{ marginBottom:9 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, fontWeight:800, marginBottom:4 }}>
+              <span style={{ color:col }}>{hWP}%</span>
+              <span style={{ color:"rgba(255,255,255,.22)", letterSpacing:".06em" }}>WIN PROBABILITY</span>
+              <span style={{ color:"rgba(255,255,255,.4)" }}>{aWP}%</span>
+            </div>
+            <div style={{ display:"flex", height:5, borderRadius:3, overflow:"hidden", gap:1 }}>
+              <div style={{ width:`${hWP}%`, background:col, borderRadius:"3px 0 0 3px" }}/>
+              <div style={{ width:`${dWP}%`, background:"rgba(255,255,255,.15)" }}/>
+              <div style={{ flex:1, background:"rgba(255,255,255,.28)", borderRadius:"0 3px 3px 0" }}/>
+            </div>
+            <div style={{ display:"flex", justifyContent:"center", fontSize:7.5, color:"rgba(255,255,255,.2)", marginTop:3 }}>Draw {dWP}%</div>
+          </div>
+        )}
+
+        {/* Form dots row (from insight) */}
+        {hForm && (
+          <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:8 }}>
+            <span style={{ fontSize:7.5, fontWeight:700, color:"rgba(255,255,255,.2)", marginRight:2, letterSpacing:".05em" }}>FORM</span>
+            {hForm.map((r,i) => <FormDot key={i} r={r}/>)}
+          </div>
+        )}
+
+        {/* Insight / market badge footer */}
+        <div style={{ borderTop:"1px solid rgba(255,255,255,.04)", paddingTop:8, minHeight:20, display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
+          {!hasSc && insightLine(f) && <span style={{ fontSize:9.5, color:"rgba(255,255,255,.26)", fontStyle:"italic", flex:1 }}>{insightLine(f)}</span>}
+          {hasSc && f.xg_home==null && <span style={{ fontSize:10, color:"rgba(255,255,255,.22)" }}><span style={{ color:"#34d399", fontWeight:700 }}>xG</span> –</span>}
+          {marketBadge(f) && <span style={{ fontSize:9, fontWeight:800, letterSpacing:".06em", color:"#34d399", background:"rgba(52,211,153,.07)", padding:"2px 7px", borderRadius:999 }}>{marketBadge(f)}</span>}
+        </div>
       </div>
     </div>
   );

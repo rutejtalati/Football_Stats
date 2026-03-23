@@ -37,65 +37,13 @@ from app.football_engine import EloRatings, TTLCache, predict_match, LEAGUE_AVG_
 # ── 5. THE ONE AND ONLY APP ───────────────────────────────────────────────────
 app = FastAPI(title="StatinSite API", version="4.0.0")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# STARTUP — seed DB path + run verification on boot
-# ══════════════════════════════════════════════════════════════════════════════
-import os as _os
-# Force predictions DB to /tmp so it survives Render restarts
-if not _os.getenv("PREDICTIONS_DB"):
-    _os.environ["PREDICTIONS_DB"] = "/tmp/predictions.db"
-
-@app.on_event("startup")
-async def _startup_tasks():
-    """Run after server starts: verify any unresolved predictions immediately."""
-    await asyncio.sleep(8)  # let other startup tasks finish first
-    try:
-        from app.routes.predictions import _verify_recent_results
-        await _verify_recent_results()
-        print("Startup verification complete.")
-    except Exception as exc:
-        print(f"Startup verification failed: {exc}")
-    # Seed predictions for all leagues so DB has data even after restart
-    await asyncio.sleep(2)
-    try:
-        for _code in ["epl", "laliga", "seriea", "bundesliga", "ligue1"]:
-            try:
-                await asyncio.get_event_loop().run_in_executor(
-                    None, lambda c=_code: __import__(
-                        "app.routes.main", fromlist=["get_league_predictions"]
-                    )
-                )
-            except Exception:
-                pass
-    except Exception:
-        pass
-
-@app.on_event("startup")
-async def _schedule_verification():
-    """Re-verify every 30 minutes in the background."""
-    async def _loop():
-        while True:
-            await asyncio.sleep(1800)
-            try:
-                from app.routes.predictions import _verify_recent_results
-                await _verify_recent_results()
-            except Exception as exc:
-                print(f"Scheduled verification failed: {exc}")
-    asyncio.create_task(_loop())
-
-
-
 # ── 6. Middleware ─────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", "http://localhost:5174",
-        "http://127.0.0.1:5173", "http://127.0.0.1:5174",
-        "https://statinsite.com", "https://www.statinsite.com",
-        "https://football-stats-lw4b.onrender.com",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ── 7. Routers (AFTER app is created) ────────────────────────────────────────
@@ -151,6 +99,12 @@ except ImportError:
 try:
     from app.routes.home import router as home_router
     app.include_router(home_router)
+except ImportError:
+    pass
+
+try:
+    from app.routes.commentary import router as commentary_router
+    app.include_router(commentary_router)
 except ImportError:
     pass
 
@@ -394,6 +348,80 @@ async def upcoming_matches():
     live_s={"1H","2H","HT","ET","BT","P"}
     matches.sort(key=lambda m:(0 if m.get("status") in live_s else 1, m.get("kickoff") or "9999"))
     return {"matches":matches,"count":len(matches)}
+
+@app.get("/api/matches/results")
+async def past_results(days_ago: int = 1):
+    """Completed fixtures for a specific past date (1–10 days ago)."""
+    days_ago = max(1, min(10, days_ago))
+    target = date.today() - timedelta(days=days_ago)
+    season = target.year if target.month >= 7 else target.year - 1
+
+    async def fetch_league(lid: int):
+        try:
+            data = await async_api_get("/fixtures", {
+                "league": lid, "season": season,
+                "from": target.isoformat(), "to": target.isoformat(), "timezone": "UTC"
+            })
+            return data.get("response", [])
+        except Exception:
+            return []
+
+    all_results = await asyncio.gather(*[fetch_league(lid) for lid in TOP5_LEAGUES])
+    seen = set(); matches = []
+    for fl in all_results:
+        for f in fl:
+            fid = f.get("fixture", {}).get("id")
+            if not fid or fid in seen: continue
+            seen.add(fid)
+            fix = f.get("fixture", {}); teams = f.get("teams", {}); goals = f.get("goals", {}); lg = f.get("league", {})
+            matches.append({
+                "fixture_id": fid, "league": league_slug(lg.get("id")), "league_id": lg.get("id"),
+                "league_name": lg.get("name"), "home_team": teams.get("home", {}).get("name"),
+                "away_team": teams.get("away", {}).get("name"), "home_logo": teams.get("home", {}).get("logo"),
+                "away_logo": teams.get("away", {}).get("logo"), "home_score": goals.get("home"),
+                "away_score": goals.get("away"), "status": fix.get("status", {}).get("short"),
+                "minute": fix.get("status", {}).get("elapsed"), "kickoff": fix.get("date"),
+                "venue_name": fix.get("venue", {}).get("name")
+            })
+    matches.sort(key=lambda m: m.get("kickoff") or "")
+    return {"matches": matches, "count": len(matches), "date": target.isoformat()}
+
+@app.get("/api/matches/future")
+async def future_matches(days_ahead: int = 1):
+    """Scheduled fixtures for a specific future date (1–10 days ahead)."""
+    days_ahead = max(1, min(10, days_ahead))
+    target = date.today() + timedelta(days=days_ahead)
+    season = target.year if target.month >= 7 else target.year - 1
+
+    async def fetch_league(lid: int):
+        try:
+            data = await async_api_get("/fixtures", {
+                "league": lid, "season": season,
+                "from": target.isoformat(), "to": target.isoformat(), "timezone": "UTC"
+            })
+            return data.get("response", [])
+        except Exception:
+            return []
+
+    all_results = await asyncio.gather(*[fetch_league(lid) for lid in TOP5_LEAGUES])
+    seen = set(); matches = []
+    for fl in all_results:
+        for f in fl:
+            fid = f.get("fixture", {}).get("id")
+            if not fid or fid in seen: continue
+            seen.add(fid)
+            fix = f.get("fixture", {}); teams = f.get("teams", {}); goals = f.get("goals", {}); lg = f.get("league", {})
+            matches.append({
+                "fixture_id": fid, "league": league_slug(lg.get("id")), "league_id": lg.get("id"),
+                "league_name": lg.get("name"), "home_team": teams.get("home", {}).get("name"),
+                "away_team": teams.get("away", {}).get("name"), "home_logo": teams.get("home", {}).get("logo"),
+                "away_logo": teams.get("away", {}).get("logo"), "home_score": goals.get("home"),
+                "away_score": goals.get("away"), "status": fix.get("status", {}).get("short"),
+                "minute": fix.get("status", {}).get("elapsed"), "kickoff": fix.get("date"),
+                "venue_name": fix.get("venue", {}).get("name")
+            })
+    matches.sort(key=lambda m: m.get("kickoff") or "")
+    return {"matches": matches, "count": len(matches), "date": target.isoformat()}
 
 @app.get("/api/match-intelligence/{fixture_id}")
 async def match_intelligence_endpoint(fixture_id: int):

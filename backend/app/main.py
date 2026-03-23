@@ -388,7 +388,7 @@ async def past_results(days_ago: int = 1):
 
 @app.get("/api/matches/future")
 async def future_matches(days_ahead: int = 1):
-    """Scheduled fixtures for a specific future date (1–10 days ahead)."""
+    """Fixtures for a specific future date (1–10 days ahead)."""
     days_ahead = max(1, min(10, days_ahead))
     target = date.today() + timedelta(days=days_ahead)
     season = target.year if target.month >= 7 else target.year - 1

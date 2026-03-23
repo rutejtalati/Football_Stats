@@ -153,27 +153,6 @@ function FeaturedCard({ f, onClick }) {
   const hasSc = hS!==null && aS!==null;
   const hw    = hasSc && hS>aS;
   const aw    = hasSc && aS>hS;
-  const col   = lg?.color || "#60a5fa";
-
-  // Win probability
-  const hWP = f.p_home_win ?? null;
-  const dWP = f.p_draw     ?? null;
-  const aWP = f.p_away_win ?? null;
-  const hasProb = hWP!=null && dWP!=null && aWP!=null;
-
-  // Derive simple form dots from insight string if present (W/D/L chars)
-  function formDots(str) {
-    if (!str) return null;
-    const chars = (str.match(/[WDL]/g)||[]).slice(-5);
-    if (chars.length < 3) return null;
-    return chars;
-  }
-  const hForm = formDots(f.insight);
-
-  function FormDot({ r }) {
-    const bg = r==="W" ? "#34d399" : r==="D" ? "rgba(255,255,255,.22)" : "#ef4444";
-    return <span style={{ width:13, height:13, borderRadius:3, background:bg, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:"7px", fontWeight:900, color: r==="D"?"rgba(255,255,255,.6)":"#000", flexShrink:0 }}>{r}</span>;
-  }
 
   return (
     <div
@@ -182,92 +161,46 @@ function FeaturedCard({ f, onClick }) {
       onMouseLeave={() => setHov(false)}
       style={{
         position:"relative", overflow:"hidden",
-        borderRadius:16, cursor:"pointer", flexShrink:0,
-        width:272,
-        background: isL ? "#0e0505" : "#080f1a",
-        border:`1px solid ${hov ? col+"35" : "rgba(255,255,255,.06)"}`,
-        boxShadow: hov ? `0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px ${col}18` : "0 4px 16px rgba(0,0,0,0.28)",
-        transform: hov ? "translateY(-3px) scale(1.008)" : "translateY(0) scale(1)",
-        transition:"all 0.2s cubic-bezier(.22,.61,.36,1)",
+        borderRadius:18, cursor:"pointer", flexShrink:0,
+        width:272, padding:"18px 18px 14px",
+        background: isL ? "linear-gradient(145deg,#170b0b,#0e0505)" : "linear-gradient(145deg,#0c1726,#070f1b)",
+        border:`1px solid ${isL ? `rgba(255,55,55,${hov?.28:.14})` : `rgba(255,255,255,${hov?.09:.045})`}`,
+        boxShadow: hov
+          ? `0 20px 50px rgba(0,0,0,0.55), inset 0 0 0 1px ${lg?.color||"#fff"}14`
+          : "0 4px 18px rgba(0,0,0,0.3)",
+        transform: hov ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
+        transition:"all 0.22s cubic-bezier(.22,.61,.36,1)",
       }}
     >
-      {/* League colour accent bar — top */}
-      <div style={{ height:3, background:col, opacity: hov?1:.7, transition:"opacity .2s", borderRadius:"16px 16px 0 0" }} />
+      {/* Top color bar */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:lg?.color||"#333", opacity:hov?1:.5, transition:"opacity .2s" }} />
 
-      {/* Ambient glow blob */}
-      {lg && <div style={{ position:"absolute", top:-40, right:-20, width:110, height:110, borderRadius:"50%", background:lg.glow, pointerEvents:"none", opacity:hov?.9:.4, transition:"opacity .2s" }} />}
+      {/* Ambient glow */}
+      {lg && <div style={{ position:"absolute", top:-50, right:-30, width:130, height:130, borderRadius:"50%", background:lg.glow, pointerEvents:"none", opacity:hov?1:.45, transition:"opacity .2s" }} />}
 
-      <div style={{ padding:"13px 16px 14px" }}>
-        {/* Header: league + status */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <LeagueLabel k={f.league} />
-          {isL && <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, fontWeight:900, color:"#ff4444" }}><LiveDot />{f.minute?`${f.minute}'`:"LIVE"}</span>}
-          {isFT && <span style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.22)", letterSpacing:".08em" }}>FT</span>}
-          {!isL && !isFT && <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.3)" }}>{fmtKickoffLabel(f.kickoff)}</span>}
-        </div>
+      {/* Header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+        <LeagueLabel k={f.league} />
+        {isL && <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, fontWeight:900, color:"#ff4444" }}><LiveDot />{f.minute?`${f.minute}'`:"LIVE"}</span>}
+        {isFT && <span style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.22)", letterSpacing:".08em" }}>FT</span>}
+        {!isL && !isFT && <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.3)" }}>{fmtKickoffLabel(f.kickoff)}</span>}
+      </div>
 
-        {/* Teams + scores */}
-        <div style={{ display:"flex", flexDirection:"column", gap:7, marginBottom:11 }}>
-          {[[f.home_logo,f.home_team,hS,hw],[f.away_logo,f.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:9 }}>
-              <Logo src={logo} size={22} />
-              <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"#f0f6ff":"rgba(255,255,255,0.68)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-              {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"rgba(255,255,255,.2)", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
-            </div>
-          ))}
-        </div>
-
-        {/* xG bar — when live/ft and xG available */}
-        {(isL||isFT) && f.xg_home!=null && (
-          <div style={{ marginBottom:9 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, fontWeight:700, color:"rgba(255,255,255,.28)", marginBottom:4 }}>
-              <span style={{ color:"#34d399" }}>xG {f.xg_home}</span>
-              <span style={{ letterSpacing:".06em" }}>EXPECTED GOALS</span>
-              <span>{f.xg_away}</span>
-            </div>
-            <div style={{ display:"flex", height:4, borderRadius:2, overflow:"hidden", gap:1 }}>
-              {(() => {
-                const h=parseFloat(f.xg_home)||0, a=parseFloat(f.xg_away)||0, tot=h+a||1;
-                return <>
-                  <div style={{ width:`${h/tot*100}%`, background:"#34d399", borderRadius:"2px 0 0 2px" }}/>
-                  <div style={{ flex:1, background:col+"66", borderRadius:"0 2px 2px 0" }}/>
-                </>;
-              })()}
-            </div>
+      {/* Teams */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:12 }}>
+        {[[f.home_logo,f.home_team,hS,hw],[f.away_logo,f.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <Logo src={logo} size={22} />
+            <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"#f0f6ff":"rgba(255,255,255,0.7)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
+            {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"#2a3a4c", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
           </div>
-        )}
+        ))}
+      </div>
 
-        {/* Win probability bar — for scheduled/upcoming matches */}
-        {hasProb && !hasSc && (
-          <div style={{ marginBottom:9 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, fontWeight:800, marginBottom:4 }}>
-              <span style={{ color:col }}>{hWP}%</span>
-              <span style={{ color:"rgba(255,255,255,.22)", letterSpacing:".06em" }}>WIN PROBABILITY</span>
-              <span style={{ color:"rgba(255,255,255,.4)" }}>{aWP}%</span>
-            </div>
-            <div style={{ display:"flex", height:5, borderRadius:3, overflow:"hidden", gap:1 }}>
-              <div style={{ width:`${hWP}%`, background:col, borderRadius:"3px 0 0 3px" }}/>
-              <div style={{ width:`${dWP}%`, background:"rgba(255,255,255,.15)" }}/>
-              <div style={{ flex:1, background:"rgba(255,255,255,.28)", borderRadius:"0 3px 3px 0" }}/>
-            </div>
-            <div style={{ display:"flex", justifyContent:"center", fontSize:7.5, color:"rgba(255,255,255,.2)", marginTop:3 }}>Draw {dWP}%</div>
-          </div>
-        )}
-
-        {/* Form dots row (from insight) */}
-        {hForm && (
-          <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:8 }}>
-            <span style={{ fontSize:7.5, fontWeight:700, color:"rgba(255,255,255,.2)", marginRight:2, letterSpacing:".05em" }}>FORM</span>
-            {hForm.map((r,i) => <FormDot key={i} r={r}/>)}
-          </div>
-        )}
-
-        {/* Insight / market badge footer */}
-        <div style={{ borderTop:"1px solid rgba(255,255,255,.04)", paddingTop:8, minHeight:20, display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-          {!hasSc && insightLine(f) && <span style={{ fontSize:9.5, color:"rgba(255,255,255,.26)", fontStyle:"italic", flex:1 }}>{insightLine(f)}</span>}
-          {hasSc && f.xg_home==null && <span style={{ fontSize:10, color:"rgba(255,255,255,.22)" }}><span style={{ color:"#34d399", fontWeight:700 }}>xG</span> –</span>}
-          {marketBadge(f) && <span style={{ fontSize:9, fontWeight:800, letterSpacing:".06em", color:"#34d399", background:"rgba(52,211,153,.07)", padding:"2px 7px", borderRadius:999 }}>{marketBadge(f)}</span>}
-        </div>
+      {/* Footer */}
+      <div style={{ borderTop:"1px solid rgba(255,255,255,.04)", paddingTop:10, minHeight:22 }}>
+        {f.xg_home!=null && <span style={{ fontSize:10, color:"rgba(255,255,255,.22)", marginRight:10 }}><span style={{ color:"#34d399", fontWeight:700 }}>xG</span> {f.xg_home}–{f.xg_away}</span>}
+        {!hasSc && insightLine(f) && <span style={{ fontSize:10, color:"rgba(255,255,255,.28)", fontStyle:"italic" }}>{insightLine(f)}</span>}
       </div>
     </div>
   );
@@ -617,37 +550,67 @@ export default function LivePage() {
   const [error,      setError]      = useState(null);
   const [filter,     setFilter]     = useState("all");
   const [lastUp,     setLastUp]     = useState(null);
-  const [dayOffset,  setDayOffset]  = useState(0);   // 0=today/upcoming, -1=yesterday, …, -10
+  const [dayOffset,  setDayOffset]  = useState(0);   // -10..0..+10: negative=past, 0=today/live, positive=future
 
   const fetchData = (offset = dayOffset) => {
     setLoading(true);
     setError(null);
-    const url = offset < 0
-      ? `${BACKEND}/api/matches/results?days_ago=${Math.abs(offset)}`
-      : `${BACKEND}/api/matches/upcoming`;
+    let url;
+    if (offset < 0) url = `${BACKEND}/api/matches/results?days_ago=${Math.abs(offset)}`;
+    else if (offset > 0) url = `${BACKEND}/api/matches/future?days_ahead=${offset}`;
+    else url = `${BACKEND}/api/matches/upcoming`;
     fetch(url)
       .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(d => { setChips(d.matches||d.chips||[]); setLoading(false); setLastUp(new Date()); setError(null); })
       .catch(e => { setError(e.message); setLoading(false); });
   };
 
-  // Re-fetch when offset changes
+  // Re-fetch when offset changes; auto-refresh only on today view
   useEffect(() => {
     fetchData(dayOffset);
-    // Auto-refresh only when on today/upcoming view
     if (dayOffset === 0) {
       const id = setInterval(() => fetchData(0), 30_000);
       return () => clearInterval(id);
     }
   }, [dayOffset]);
 
-  // Date nav label helper
+  // Week navigation: which Monday starts the visible 7-day window
+  const [weekStart, setWeekStart] = useState(() => {
+    const d = new Date();
+    const day = d.getDay(); // 0=Sun
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0,0,0,0);
+    return monday;
+  });
+
+  // Build 7 day cells for the current week window
+  const weekDays = Array.from({length:7}, (_,i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
   function dayLabel(offset) {
-    if (offset === 0)  return "Today & Upcoming";
+    if (offset === 0) return "Today & Live";
     if (offset === -1) return "Yesterday";
+    if (offset === 1) return "Tomorrow";
     const d = new Date();
     d.setDate(d.getDate() + offset);
     return d.toLocaleDateString([], { weekday:"short", day:"numeric", month:"short" });
+  }
+
+  function dateToOffset(d) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const target = new Date(d); target.setHours(0,0,0,0);
+    return Math.round((target - today) / 86400000);
+  }
+
+  function prevWeek() {
+    setWeekStart(ws => { const d=new Date(ws); d.setDate(d.getDate()-7); return d; });
+  }
+  function nextWeek() {
+    setWeekStart(ws => { const d=new Date(ws); d.setDate(d.getDate()+7); return d; });
   }
 
   const fixtures = useMemo(() => chips.map(c => ({
@@ -666,18 +629,19 @@ export default function LivePage() {
 
   const filtered = useMemo(() => filter==="all" ? fixtures : fixtures.filter(f=>f.league===filter), [fixtures,filter]);
 
-  const isPastView = dayOffset < 0;
+  const isPastView   = dayOffset < 0;
+  const isFutureView = dayOffset > 0;
+  const isTodayView  = dayOffset === 0;
 
-  // Past view: all fixtures are results grouped by nothing (flat list)
-  const pastResults = isPastView ? filtered : [];
+  const pastResults   = isPastView   ? filtered : [];
+  const futureResults = isFutureView ? filtered : [];
 
-  // Today/upcoming view — same as before
-  const liveAll  = !isPastView ? filtered.filter(f => LIVE_SET.has(f.status)) : [];
-  const todayFix = !isPastView ? filtered.filter(f => !LIVE_SET.has(f.status) && dayBucket(f.kickoff)==="today") : [];
-  const ftToday  = !isPastView ? filtered.filter(f => FT_SET.has(f.status) && dayBucket(f.kickoff)==="today") : [];
+  const liveAll  = isTodayView ? filtered.filter(f => LIVE_SET.has(f.status)) : [];
+  const todayFix = isTodayView ? filtered.filter(f => !LIVE_SET.has(f.status) && dayBucket(f.kickoff)==="today") : [];
+  const ftToday  = isTodayView ? filtered.filter(f => FT_SET.has(f.status) && dayBucket(f.kickoff)==="today") : [];
 
   const upcoming = useMemo(() => {
-    if (isPastView) return { groups:{}, order:[] };
+    if (!isTodayView) return { groups:{}, order:[] };
     const groups={}, order=[];
     filtered
       .filter(f => !LIVE_SET.has(f.status) && !FT_SET.has(f.status) && dayBucket(f.kickoff)!=="today")
@@ -687,7 +651,7 @@ export default function LivePage() {
         groups[k].push(f);
       });
     return { groups, order };
-  }, [filtered, isPastView]);
+  }, [filtered, isTodayView]);
 
   const liveCount  = fixtures.filter(f=>LIVE_SET.has(f.status)).length;
   const todayCount = fixtures.filter(f=>dayBucket(f.kickoff)==="today").length;
@@ -711,7 +675,7 @@ export default function LivePage() {
               <div>
                 <h1 style={{ fontSize:28, fontWeight:900, color:"#f0f6ff", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
                 <p style={{ color:"#fff", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
-                  {isPastView ? `Results · ${dayLabel(dayOffset)}` : "Next 7 days · Top 5 leagues"}
+                  {isPastView ? `Results · ${dayLabel(dayOffset)}` : isFutureView ? `Fixtures · ${dayLabel(dayOffset)}` : "Today & live · Top 5 leagues"}
                 </p>
               </div>
               <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", justifyContent:"flex-end" }}>
@@ -733,39 +697,81 @@ export default function LivePage() {
               </div>
             </div>
 
-            {/* Date scrubber — ← up to 10 days back · Today & Upcoming · → */}
-            <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:12, overflowX:"auto", scrollbarWidth:"none" }}>
-              {/* Back arrow */}
-              <button
-                onClick={() => setDayOffset(o => Math.max(-10, o-1))}
-                disabled={dayOffset <= -10}
-                style={{ padding:"5px 10px", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)", color: dayOffset<=-10 ? "rgba(255,255,255,.15)" : "rgba(255,255,255,.5)", cursor: dayOffset<=-10 ? "not-allowed" : "pointer", fontSize:14, lineHeight:1, flexShrink:0 }}
-              >←</button>
+            {/* ── Calendar week strip ── */}
+            <div style={{ marginBottom:14 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                {/* Prev week */}
+                <button onClick={prevWeek} style={{
+                  width:32, height:32, borderRadius:8, flexShrink:0,
+                  border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)",
+                  color:"rgba(255,255,255,.45)", fontSize:15, cursor:"pointer",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>‹</button>
 
-              {/* Day pills — show -2 … 0 … +1 */}
-              {[-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0].map(offset => {
-                const active = dayOffset === offset;
-                const isPast = offset < 0;
-                return (
-                  <button key={offset} onClick={() => setDayOffset(offset)} style={{
-                    padding:"5px 12px", borderRadius:8, cursor:"pointer", flexShrink:0,
-                    fontSize:11, fontWeight:700, whiteSpace:"nowrap",
-                    border: active ? "1px solid rgba(96,165,250,.45)" : "1px solid rgba(255,255,255,.06)",
-                    background: active ? "rgba(96,165,250,.12)" : "rgba(255,255,255,.02)",
-                    color: active ? "#60a5fa" : isPast ? "rgba(255,255,255,.3)" : "rgba(255,255,255,.22)",
-                    transition:"all .15s",
-                  }}>
-                    {offset === 0 ? "Today +" : dayLabel(offset)}
-                  </button>
-                );
-              })}
+                {/* 7 day cells */}
+                <div style={{ flex:1, display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", gap:4 }}>
+                  {weekDays.map((d,i) => {
+                    const offset  = dateToOffset(d);
+                    const isToday = offset === 0;
+                    const isPast  = offset < 0;
+                    const isFuture= offset > 0;
+                    const active  = dayOffset === offset;
+                    const inRange = offset >= -10 && offset <= 10;
+                    const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+                    const dayName = DAY_NAMES[d.getDay()];
+                    const dateNum = d.getDate();
 
-              {/* Forward arrow — only useful to go back to today from past */}
-              <button
-                onClick={() => setDayOffset(o => Math.min(0, o+1))}
-                disabled={dayOffset >= 0}
-                style={{ padding:"5px 10px", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)", color: dayOffset>=0 ? "rgba(255,255,255,.15)" : "rgba(255,255,255,.5)", cursor: dayOffset>=0 ? "not-allowed" : "pointer", fontSize:14, lineHeight:1, flexShrink:0 }}
-              >→</button>
+                    // colour scheme
+                    const col = isToday ? "#3b82f6" : isPast ? "#a78bfa" : "#34d399";
+                    const colFaint = isToday ? "rgba(59,130,246,.18)" : isPast ? "rgba(167,139,250,.1)" : "rgba(52,211,153,.07)";
+                    const colBorder = active
+                      ? (isToday ? "#3b82f6" : isPast ? "#a78bfa" : "#34d399")
+                      : (isToday ? "rgba(59,130,246,.35)" : isPast ? "rgba(167,139,250,.18)" : "rgba(52,211,153,.15)");
+                    const textCol = active ? "#fff" : isToday ? "#93c5fd" : isPast ? "rgba(167,139,250,.65)" : "rgba(52,211,153,.6)";
+                    const labelCol = active ? col : isToday ? "rgba(59,130,246,.6)" : isPast ? "rgba(167,139,250,.4)" : "rgba(52,211,153,.38)";
+
+                    return (
+                      <button key={i}
+                        onClick={() => inRange && setDayOffset(offset)}
+                        disabled={!inRange}
+                        style={{
+                          display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+                          padding:"6px 4px", borderRadius:9, cursor: inRange ? "pointer" : "not-allowed",
+                          border: active ? `2px solid ${colBorder}` : `1px solid ${colBorder}`,
+                          background: active ? (isToday?"rgba(59,130,246,.15)":isPast?"rgba(167,139,250,.1)":"rgba(52,211,153,.08)") : colFaint,
+                          transition:"all .15s",
+                          opacity: inRange ? 1 : 0.35,
+                        }}>
+                        <span style={{ fontSize:8.5, fontWeight:700, color:labelCol, letterSpacing:".03em" }}>{dayName}</span>
+                        <span style={{ fontSize:14, fontWeight:900, color:textCol, lineHeight:1, fontFamily:"monospace" }}>{dateNum}</span>
+                        {/* indicator dot */}
+                        <div style={{ width:5, height:5, borderRadius:"50%", background: active ? col : (isToday?"rgba(239,68,68,.9)":colBorder), flexShrink:0 }}/>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Next week */}
+                <button onClick={nextWeek} style={{
+                  width:32, height:32, borderRadius:8, flexShrink:0,
+                  border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)",
+                  color:"rgba(255,255,255,.45)", fontSize:15, cursor:"pointer",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>›</button>
+              </div>
+
+              {/* Zone legend */}
+              <div style={{ display:"flex", gap:16, marginTop:7, paddingLeft:40 }}>
+                <span style={{ fontSize:9, fontWeight:700, color:"rgba(167,139,250,.45)", letterSpacing:".06em", display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ width:6, height:2, background:"rgba(167,139,250,.4)", borderRadius:1, display:"inline-block" }}/>PAST RESULTS
+                </span>
+                <span style={{ fontSize:9, fontWeight:700, color:"rgba(59,130,246,.55)", letterSpacing:".06em", display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ width:6, height:2, background:"rgba(59,130,246,.55)", borderRadius:1, display:"inline-block" }}/>TODAY & LIVE
+                </span>
+                <span style={{ fontSize:9, fontWeight:700, color:"rgba(52,211,153,.45)", letterSpacing:".06em", display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ width:6, height:2, background:"rgba(52,211,153,.4)", borderRadius:1, display:"inline-block" }}/>UPCOMING
+                </span>
+              </div>
             </div>
 
             {/* League filter tabs */}
@@ -827,8 +833,15 @@ export default function LivePage() {
                     </Section>
                   )}
 
-                  {/* ── TODAY / UPCOMING VIEW ── */}
-                  {!isPastView && (
+                  {/* ── FUTURE FIXTURES VIEW ── */}
+                  {isFutureView && futureResults.length > 0 && (
+                    <Section title={`Fixtures · ${dayLabel(dayOffset)}`} count={futureResults.length} accent="#34d399">
+                      {futureResults.map(f => <CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)} />)}
+                    </Section>
+                  )}
+
+                  {/* ── TODAY / LIVE VIEW ── */}
+                  {isTodayView && (
                     <>
                       {liveAll.length>0 && (
                         <Section title="Live Now" count={liveAll.length} accent="#ff4444">

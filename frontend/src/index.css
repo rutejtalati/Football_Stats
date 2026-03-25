@@ -66,9 +66,9 @@
   /* ── Spacing ── */
   --page-px: 20px;
   --page-max: 1280px;
-  --nav-h:      56px;   /* fixed navbar height */
-  --ticker-h:   36px;   /* fixed live ticker height */
-  --bar-total:  92px;   /* --nav-h + --ticker-h — use this for page offsets */
+  --nav-h:      60px;   /* neo navbar: 56px height + 4px bottom border */
+  --ticker-h:   43px;   /* neo ticker: 40px height + 3px bottom border */
+  --bar-total:  103px;  /* --nav-h + --ticker-h — use this for page offsets */
 
   /* ── Transition ── */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);

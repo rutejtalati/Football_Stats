@@ -205,10 +205,10 @@ export default function LiveTicker() {
 
   const shell = {
     position: "fixed",
-    top: 60,          /* neo navbar height: 56px + 4px border = 60px effective */
+    top: 60,          /* neo navbar: 56px height + 4px bottom border */
     left: 0,
     right: 0,
-    height: 40,
+    height: 40,       /* ticker content height — add 3px border-bottom = 43px total */
     zIndex: 199,
     background: "#0a0a0a",
     borderBottom: "3px solid #e8ff47",
@@ -231,6 +231,11 @@ export default function LiveTicker() {
         @keyframes neoTkAccent {
           0%   { background-position: 0% 50%; }
           100% { background-position: 200% 50%; }
+        }
+        /* On mobile the bottom tab bar shows — ticker shifts up correctly
+           because --bar-total is already updated in index.css */
+        @media (max-width: 768px) {
+          .sn-live-ticker { top: 56px !important; }
         }
         .neo-tk-track {
           display: inline-flex;

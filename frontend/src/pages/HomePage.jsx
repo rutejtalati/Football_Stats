@@ -884,10 +884,14 @@ const LEAGUES = [
   {to:"/predictions/serie-a",name:"Serie A",col:"#00e09e",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#009246"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#CE2B37"/></svg>},
   {to:"/predictions/bundesliga",name:"Bundesliga",col:"#ff8c42",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#000"/><rect y="4.33" width="18" height="4.34" fill="#DD0000"/><rect y="8.67" width="18" height="4.33" fill="#FFCC00"/></svg>},
   {to:"/predictions/ligue-1",name:"Ligue 1",col:"#b388ff",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#002395"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>},
-  {to:"/predictions/champions-league",name:"UCL",col:"#1a2a6c",flag:<span style={{fontSize:14}}>🏆</span>},
-  {to:"/predictions/europa-league",name:"UEL",col:"#f57c00",flag:<span style={{fontSize:14}}>🥈</span>},
-  {to:"/predictions/conference-league",name:"UECL",col:"#2e7d32",flag:<span style={{fontSize:14}}>🥉</span>},
-  {to:"/predictions/fa-cup",name:"FA Cup",col:"#c62828",flag:<span style={{fontSize:14}}>🏆</span>},
+  {to:"/predictions/champions-league",name:"UCL",col:"#0e1e5b",
+    flag:<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/UEFA_Champions_League.svg/32px-UEFA_Champions_League.svg.png" alt="UCL" style={{width:32,height:32,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"⭐",style:"font-size:18px"}));}} />},
+  {to:"/predictions/europa-league",name:"UEL",col:"#e35f10",
+    flag:<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/UEFA_Europa_League_logo_%282024_version%29.svg/28px-UEFA_Europa_League_logo_%282024_version%29.svg.png" alt="UEL" style={{width:22,height:32,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"🟠",style:"font-size:18px"}));}} />},
+  {to:"/predictions/conference-league",name:"UECL",col:"#00843d",
+    flag:<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/UEFA_Europa_Conference_League_logo.svg/28px-UEFA_Europa_Conference_League_logo.svg.png" alt="UECL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"🟢",style:"font-size:18px"}));}} />},
+  {to:"/predictions/fa-cup",name:"FA Cup",col:"#001f5b",
+    flag:<img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/33/FA_Cup_logo.svg/32px-FA_Cup_logo.svg.png" alt="FA Cup" style={{width:32,height:32,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",style:"font-size:18px"}));}} />},
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -1131,7 +1135,7 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
             <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(232,255,71,.35)", marginBottom:6 }}>Covering {LEAGUES.length} competitions</div>
             <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, letterSpacing:2, color:"#e8ff47", marginBottom:20 }}>Pick Your League</div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {LEAGUES.map(({ to, name, flag }) => (
+              {LEAGUES.map(({ to, name, flag, col }) => (
                 <Link key={to} to={to} className="hp-btn" style={{
                   display:"flex", alignItems:"center", gap:8,
                   padding:"9px 16px", background:"transparent",
@@ -1143,7 +1147,8 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
                   onMouseEnter={e=>{e.currentTarget.style.background="#e8ff47";e.currentTarget.style.color="#0a0a0a";e.currentTarget.style.borderColor="#e8ff47";e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow="4px 4px 0 #0a0a0a";}}
                   onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#e8ff47";e.currentTarget.style.borderColor="rgba(232,255,71,.25)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
                 >
-                  <span style={{ display:"flex", alignItems:"center", flexShrink:0 }}>{flag}</span>{name}
+                  <span style={{ display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, width:32, height:26 }}>{flag}</span>
+                  {name}
                 </Link>
               ))}
             </div>

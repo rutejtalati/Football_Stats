@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ── Neobrutalist theme constants ── */
-const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB = { y:"#00fff0", k:"#000", r:"#ff2744" };
 const NB_CSS = `
   @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
@@ -11,10 +11,10 @@ const NB_CSS = `
   @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:#0a0a0a; }
-  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
-  ::selection { background:#e8ff47; color:#0a0a0a; }
-  input[type=range] { accent-color:#e8ff47; }
+  ::-webkit-scrollbar-track { background:#000; }
+  ::-webkit-scrollbar-thumb { background:rgba(0,255,240,.3); }
+  ::selection { background:#00fff0; color:#000; }
+  input[type=range] { accent-color:#00fff0; }
 `;
 
 
@@ -22,9 +22,9 @@ const NB_CSS = `
 const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
 const C = {
-  bg:"#0a0a0a",card:"#0a0a0a",border:"rgba(232,255,71,.15)",
-  text:"#e8ff47",muted:"rgba(232,255,71,.5)",dim:"rgba(232,255,71,.2)",soft:"rgba(232,255,71,.7)",
-  blue:"#38bdf8",green:"#34d399",amber:"#f59e0b",red:"#f87171",
+  bg:"#000",card:"#000",border:"rgba(0,255,240,.15)",
+  text:"#00fff0",muted:"rgba(0,255,240,.5)",dim:"rgba(0,255,240,.2)",soft:"rgba(0,255,240,.7)",
+  blue:"#00fff0",green:"#34d399",amber:"#f59e0b",red:"#f87171",
   purple:"#a78bfa",orange:"#fb923c",
 };
 
@@ -57,7 +57,7 @@ const TEAM_TABS=[
 
 function useReveal(){const ref=useRef(null);const[v,sv]=useState(false);useEffect(()=>{if(!ref.current)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){sv(true);io.disconnect();}},{threshold:0.04});io.observe(ref.current);return()=>io.disconnect();},[]);return[ref,v];}
 function Sk({h=52,r=10}){return <div style={{height:h,borderRadius:r,background:"linear-gradient(90deg,rgba(255,255,255,0.022) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.022) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.5s ease-in-out infinite",marginBottom:6}}/>;}
-function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,borderRadius:999,background:"rgba(232,255,71,.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,borderRadius:999,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
+function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,background:"rgba(0,255,240,.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
 function Form({f}){if(!f)return null;return <div style={{display:"flex",gap:2}}>{f.split("").slice(-5).map((c,i)=><span key={i} style={{width:13,height:13,borderRadius:3,fontSize:7,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",background:c==="W"?"rgba(52,211,153,0.22)":c==="D"?"rgba(245,158,11,0.18)":"rgba(248,113,113,0.18)",color:c==="W"?C.green:c==="D"?C.amber:C.red}}>{c}</span>)}</div>;}
 function Lbadge({slug,color}){if(!slug||slug==="all")return null;return <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:color||C.muted,background:(color||C.muted)+"10",border:"1px solid "+(color||C.muted)+"25",borderRadius:4,padding:"1px 5px",flexShrink:0}}>{LA[slug]||slug.toUpperCase()}</span>;}
 
@@ -161,7 +161,7 @@ function PDetail({p,onClose}){
               <span style={{fontSize:10,fontWeight:700,color:C.muted}}>{p.team}</span>
             </div>
           </div>
-          <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(232,255,71,.06)",border:"2px solid rgba(232,255,71,.2)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color=C.text;}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color=C.muted;}}>✕</button>
+          <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(0,255,240,.06)",border:"1px solid rgba(0,255,240,.2)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color=C.text;}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color=C.muted;}}>✕</button>
         </div>
         <div style={{padding:"11px 15px",display:"flex",gap:5,flexWrap:"wrap"}}>
           {[{l:"Goals",v:p.goals,c:C.red},{l:"Assists",v:p.assists,c:C.green},{l:"Apps",v:p.appearances,c:C.blue},{l:"Mins",v:p.minutes,c:C.muted},p.rating&&{l:"Rating",v:Number(p.rating).toFixed(1),c:C.amber}].filter(Boolean).map(s=>(
@@ -218,7 +218,7 @@ function TDetail({t,onClose}){
                 <Form f={t.form}/>
               </div>
             </div>
-            <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(232,255,71,.06)",border:"2px solid rgba(232,255,71,.2)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";}}>✕</button>
+            <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(0,255,240,.06)",border:"1px solid rgba(0,255,240,.2)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";}}>✕</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:13}}>
             {[{l:"W",v:t.wins,c:C.green},{l:"D",v:t.draws,c:C.amber},{l:"L",v:t.losses,c:C.red},{l:"PTS",v:t.points,c:C.blue}].map(s=>(
@@ -338,8 +338,8 @@ document.removeEventListener("mousedown",fn);
       backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      {/* Grid from index.css body::after */}
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(0,255,240,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
       <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
 
@@ -364,14 +364,14 @@ document.removeEventListener("mousedown",fn);
               <input value={search} onChange={e=>setSearch(e.target.value)}
                 placeholder="Search players or teams…"
                 style={{width:"100%",padding:"9px 32px 9px 30px",borderRadius:11,boxSizing:"border-box",
-                  background:"rgba(255,255,255,0.045)",border:"2px solid rgba(232,255,71,.2)",
+                  background:"rgba(255,255,255,0.045)",border:"1px solid rgba(0,255,240,.2)",
                   color:C.text,fontFamily:"'Space Grotesk',sans-serif",fontSize:12,outline:"none",transition:"border .15s"}}
                 onFocus={e=>{e.target.style.borderColor=C.blue+"55";setSrOpen(!!search);}}
                 onBlur={e=>e.target.style.borderColor="rgba(255,255,255,0.09)"}/>
               {search&&<button onClick={()=>{setSearch("");setSrRes([]);setSrOpen(false);}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",padding:0}}>✕</button>}
               {/* Search dropdown */}
               {srOpen&&(
-                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,borderRadius:0,background:"rgba(4,9,20,0.99)",border:"2px solid rgba(232,255,71,.2)",boxShadow:"3px 3px 0 rgba(232,255,71,.15)",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
+                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,borderRadius:0,background:"rgba(4,9,20,0.99)",border:"1px solid rgba(0,255,240,.2)",boxShadow:"none",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
                   <div style={{padding:"8px 12px 4px",fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Search Results</div>
                   {srLoading&&[1,2,3].map(i=><div key={i} style={{padding:"8px 12px"}}><Sk h={38} r={8}/></div>)}
                   {!srLoading&&srRes.length===0&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,color:C.dim,padding:"12px",margin:0}}>No results for "{search}"</p>}

@@ -11,7 +11,7 @@ import {
 } from "../api/api";
 
 /* ── Neobrutalist theme constants ── */
-const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB = { y:"#00fff0", k:"#000", r:"#ff2744" };
 const NB_CSS = `
   @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
@@ -20,10 +20,10 @@ const NB_CSS = `
   @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:#0a0a0a; }
-  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
-  ::selection { background:#e8ff47; color:#0a0a0a; }
-  input[type=range] { accent-color:#e8ff47; }
+  ::-webkit-scrollbar-track { background:#000; }
+  ::-webkit-scrollbar-thumb { background:rgba(0,255,240,.3); }
+  ::selection { background:#00fff0; color:#000; }
+  input[type=range] { accent-color:#00fff0; }
 `;
 
 
@@ -161,7 +161,7 @@ function ABar({pct,color="#28d97a",h=5,delay=0}) {
   const [w,setW] = useState(0);
   useEffect(()=>{ const t=setTimeout(()=>setW(Math.min(pct,100)),delay+60); return()=>clearTimeout(t); },[pct,delay]);
   return (
-    <div style={{flex:1,height:h,borderRadius:3,background:"rgba(255,255,255,.05)",overflow:"hidden"}}>
+    <div style={{flex:1,height:h,borderRadius:3,background:"rgba(0,255,240,.03)",overflow:"hidden"}}>
 
       <div style={{height:"100%",width:w+"%",background:color,borderRadius:3,
         transition:"width .85s cubic-bezier(.4,0,.2,1)",boxShadow:`0 0 6px ${color}55`}}/>
@@ -177,7 +177,7 @@ function Ring({pct,size=52,stroke=4.5,color="#28d97a",label,sub,delay=0}) {
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
       <div style={{position:"relative",width:size,height:size}}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{transform:"rotate(-90deg)"}}>
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={stroke}/>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,255,240,.03)" strokeWidth={stroke}/>
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
             strokeDasharray={`${dash} ${C}`} strokeLinecap="round"
             style={{transition:"stroke-dasharray 1.1s cubic-bezier(.4,0,.2,1)",filter:`drop-shadow(0 0 5px ${color}88)`}}/>
@@ -185,7 +185,7 @@ function Ring({pct,size=52,stroke=4.5,color="#28d97a",label,sub,delay=0}) {
         <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
           fontSize:size*.19,fontWeight:900,color,fontFamily:"DM Mono,monospace"}}>{Math.round(pct)}</div>
       </div>
-      {label&&<div style={{fontSize:8,fontWeight:900,color:"#3a6080",letterSpacing:".1em",textAlign:"center"}}>{label}</div>}
+      {label&&<div style={{fontSize:8,fontWeight:900,color:"rgba(0,255,240,.3)",letterSpacing:".1em",textAlign:"center"}}>{label}</div>}
       {sub&&<div style={{fontSize:7.5,color:"#2a4060",textAlign:"center"}}>{sub}</div>}
     </div>
   );
@@ -201,8 +201,8 @@ function Radar({data,size=150,color="#3b9eff",animated=true}) {
   const valPts = data.map((d,i)=>{ const p=pt(i,(drawn?d.value/100:0.05)*R); return `${p.x},${p.y}`; }).join(" ");
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{display:"block",overflow:"visible",animation:animated?"gwRadarIn .7s ease both":"none"}}>
-      {gridR.map(f=>(<polygon key={f} points={Array.from({length:n},(_,i)=>{const p=pt(i,R*f);return`${p.x},${p.y}`;}).join(" ")} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="1"/>))}
-      {Array.from({length:n},(_,i)=>{const a=pt(i,R);return <line key={i} x1={cx} y1={cy} x2={a.x} y2={a.y} stroke="rgba(255,255,255,.05)" strokeWidth="1"/>;} )}
+      {gridR.map(f=>(<polygon key={f} points={Array.from({length:n},(_,i)=>{const p=pt(i,R*f);return`${p.x},${p.y}`;}).join(" ")} fill="none" stroke="rgba(0,255,240,.03)" strokeWidth="1"/>))}
+      {Array.from({length:n},(_,i)=>{const a=pt(i,R);return <line key={i} x1={cx} y1={cy} x2={a.x} y2={a.y} stroke="rgba(0,255,240,.03)" strokeWidth="1"/>;} )}
       <polygon points={valPts} fill={`${color}18`} stroke={color} strokeWidth="1.5" style={{transition:"points 1.1s ease",filter:`drop-shadow(0 0 8px ${color}55)`}}/>
       {data.map((d,i)=>{ const p=pt(i,(drawn?d.value/100:0.05)*R); return <circle key={i} cx={p.x} cy={p.y} r="3" fill={colors[i%colors.length]} stroke="rgba(0,0,0,.6)" strokeWidth=".8" style={{transition:`cx 1.1s,cy 1.1s`}}/>; })}
       {data.map((d,i)=>{ const a=pt(i,R),dx=a.x-cx,dy=a.y-cy,nm=Math.sqrt(dx*dx+dy*dy)||1,lx=a.x+(dx/nm)*13,ly=a.y+(dy/nm)*13; return <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fontSize="8" fontWeight="800" fill="rgba(255,255,255,.45)" fontFamily="Outfit,sans-serif">{d.label}</text>; })}
@@ -231,20 +231,20 @@ function HeroCard({label,rawVal,dec=1,prefix="",suffix="",sub,color,pulse,rank,i
   const num=useCount(vis?parseFloat(rawVal)||0:0,1200,dec);
   const display = isNaN(parseFloat(rawVal)) ? rawVal : prefix+(dec===0?Math.round(num):num.toFixed(dec))+suffix;
   const [hov,setHov]=useState(false);
-  const hex = {green:"#28d97a",blue:"#3b9eff",gold:"#f2c94c",purple:"#b388ff",orange:"#ff6b35",red:"#ff4d6d"}[color]||"#67b1ff";
+  const hex = {green:"#28d97a",blue:"#3b9eff",gold:"#f2c94c",purple:"#b388ff",orange:"#ff6b35",red:"#ff4d6d"}[color]||"rgba(0,255,240,.7)";
   return (
     <div ref={ref} className="gw-hover-lift" onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{position:"relative",overflow:"hidden",borderRadius:0,padding:"15px 14px 13px",
-        background:hov?`${hex}0d`:"rgba(255,255,255,.025)",
-        border:`1px solid ${hov?`${hex}55`:"rgba(255,255,255,.07)"}`,
+        background:hov?"rgba(0,255,240,.05)":"transparent",
+        border:`1px solid ${hov?`${hex}55`:"rgba(0,255,240,.03)"}`,
         boxShadow:hov?`0 8px 28px rgba(0,0,0,.4),0 0 0 1px ${hex}33`:"none",
         animation:`gwPop ${.1+idx*.07}s ease both`,cursor:"default"}}>
       <div style={{position:"absolute",top:10,right:10,width:7,height:7,borderRadius:"50%",
         background:hex,boxShadow:`0 0 9px ${hex}`,animation:pulse?"gwPulse 2s ease-in-out infinite":"none"}}/>
       <div style={{position:"absolute",left:0,top:14,bottom:14,width:3,background:hex,borderRadius:"0 2px 2px 0",boxShadow:`0 0 7px ${hex}88`}}/>
-      <div style={{fontSize:7.5,fontWeight:900,color:"rgba(232,255,71,.35)",letterSpacing:".14em",paddingLeft:8,marginBottom:3}}>{label}</div>
+      <div style={{fontSize:7.5,fontWeight:900,color:"rgba(0,255,240,.35)",letterSpacing:".14em",paddingLeft:8,marginBottom:3}}>{label}</div>
       <div style={{fontSize:21,fontWeight:900,color:hex,fontFamily:"DM Mono,monospace",lineHeight:1.05,paddingLeft:8}}>{display}</div>
-      {sub&&<div style={{fontSize:9,color:"#3a6080",paddingLeft:8,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sub}</div>}
+      {sub&&<div style={{fontSize:9,color:"rgba(0,255,240,.3)",paddingLeft:8,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sub}</div>}
       {extra&&<div style={{paddingLeft:8,marginTop:5}}>{extra}</div>}
       {rank&&<div style={{position:"absolute",bottom:8,right:10,fontSize:8,color:"#1a3050",fontFamily:"DM Mono,monospace"}}>#{rank}</div>}
       <div style={{position:"absolute",inset:0,borderRadius:0,background:`radial-gradient(ellipse at 85% 15%,${hex}07,transparent 55%)`,pointerEvents:"none"}}/>
@@ -258,12 +258,12 @@ function ScoRow({rank,name,team,val,valLbl,sub,color="#28d97a",maxVal,idx}) {
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{display:"flex",alignItems:"center",gap:8,padding:"6px 9px",borderRadius:9,
-        background:hov?"rgba(255,255,255,.06)":"rgba(255,255,255,.025)",
-        border:`1px solid ${hov?"rgba(255,255,255,.1)":"rgba(255,255,255,.04)"}`,
+        background:hov?"rgba(0,255,240,.03)":"rgba(255,255,255,.025)",
+        border:`1px solid ${hov?"rgba(255,255,255,.1)":"rgba(0,255,240,.03)"}`,
         transform:hov?"translateX(4px)":"none",transition:"all .16s ease",animation:`gwIn ${.06+idx*.05}s ease both`}}>
-      <div style={{width:19,height:19,borderRadius:"50%",flexShrink:0,background:medals[rank-1]||"rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8.5,fontWeight:900,color:"#000"}}>{rank}</div>
+      <div style={{width:19,height:19,borderRadius:"50%",flexShrink:0,background:medals[rank-1]||"rgba(0,255,240,.03)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8.5,fontWeight:900,color:"#000"}}>{rank}</div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:11,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name}</div>
+        <div style={{fontSize:11,fontWeight:800,color:"#00fff0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name}</div>
         <div style={{fontSize:8.5,color:"#2a4060"}}>{team}{sub?` · ${sub}`:""}</div>
       </div>
       {maxVal&&<ABar pct={(val/maxVal)*100} color={color} h={3}/>}
@@ -276,7 +276,7 @@ function ScoRow({rank,name,team,val,valLbl,sub,color="#28d97a",maxVal,idx}) {
 }
 
 function Panel({children,style={}}) {
-  return (<div style={{background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.07)",borderRadius:0,padding:"15px 14px",display:"flex",flexDirection:"column",gap:10,...style}}>{children}</div>);
+  return (<div style={{background:"rgba(0,255,240,.03)",border:"1px solid rgba(0,255,240,.08)",borderRadius:0,padding:"15px 14px",display:"flex",flexDirection:"column",gap:10,...style}}>{children}</div>);
 }
 
 function SecLabel({text,sub,accent="#3b9eff",right}) {
@@ -285,7 +285,7 @@ function SecLabel({text,sub,accent="#3b9eff",right}) {
       <div style={{display:"flex",alignItems:"center",gap:7}}>
         <div style={{width:3,height:15,background:accent,borderRadius:2,boxShadow:`0 0 7px ${accent}`}}/>
         <div>
-          <div style={{fontSize:10.5,fontWeight:900,color:"#bcd4f0",letterSpacing:".07em"}}>{text}</div>
+          <div style={{fontSize:10.5,fontWeight:900,color:"rgba(0,255,240,.6)",letterSpacing:".07em"}}>{text}</div>
           {sub&&<div style={{fontSize:8.5,color:"#2a4060"}}>{sub}</div>}
         </div>
       </div>
@@ -295,13 +295,13 @@ function SecLabel({text,sub,accent="#3b9eff",right}) {
 }
 
 function InjPill({player,team,reason,status}) {
-  const col=status==="Injured"?"#ff4d6d":status==="Doubtful"?"#ffaa44":"#4a7a9a";
+  const col=status==="Injured"?"#ff4d6d":status==="Doubtful"?"#ffaa44":"rgba(0,255,240,.35)";
   return (
-    <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 9px",borderRadius:0,background:"rgba(255,255,255,.02)",border:`1px solid ${col}22`,transition:"background .15s"}}
-      onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
+    <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 9px",borderRadius:0,background:"rgba(0,255,240,.02)",border:`1px solid ${col}22`,transition:"background .15s"}}
+      onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(0,255,240,.03)"}>
       <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0,boxShadow:`0 0 5px ${col}`}}/>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:10.5,fontWeight:800,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{player}</div>
+        <div style={{fontSize:10.5,fontWeight:800,color:"rgba(0,255,240,.8)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{player}</div>
         <div style={{fontSize:8.5,color:"#2a4060"}}>{team}</div>
       </div>
       <div style={{fontSize:8.5,fontWeight:800,color:col,flexShrink:0}}>{(reason||status||"").slice(0,12)}</div>
@@ -310,7 +310,7 @@ function InjPill({player,team,reason,status}) {
 }
 
 function Tab({label,active,onClick}) {
-  return (<button onClick={onClick} style={{padding:"8px 15px",borderRadius:"8px 8px 0 0",fontSize:10.5,fontWeight:800,letterSpacing:".05em",background:active?"rgba(59,158,255,.12)":"transparent",border:`1px solid ${active?"rgba(59,158,255,.3)":"transparent"}`,borderBottom:"none",color:active?"#67b1ff":"#2a4a6a",cursor:"pointer",transition:"all .15s"}}>{label}</button>);
+  return (<button onClick={onClick} style={{padding:"8px 15px",borderRadius:"8px 8px 0 0",fontSize:10.5,fontWeight:800,letterSpacing:".05em",background:active?"rgba(59,158,255,.12)":"transparent",border:`1px solid ${active?"rgba(59,158,255,.3)":"transparent"}`,borderBottom:"none",color:active?"rgba(0,255,240,.7)":"rgba(0,255,240,.18)",cursor:"pointer",transition:"all .15s"}}>{label}</button>);
 }
 
 function StandRow({rank,team,pts,played,won,drawn,lost,gd,idx}) {
@@ -320,15 +320,15 @@ function StandRow({rank,team,pts,played,won,drawn,lost,gd,idx}) {
   const zL=rank<=4?"UCL":rank===5?"UEL":rank===6?"UECL":rank>=total-2?"REL":"";
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{display:"flex",alignItems:"center",gap:7,padding:"6px 9px",borderRadius:0,background:hov?"rgba(255,255,255,.05)":"rgba(255,255,255,.02)",borderLeft:`3px solid ${zone}`,transition:"background .15s",animation:`gwIn ${.04+idx*.03}s ease both`}}>
-      <span style={{fontSize:9.5,fontWeight:900,color:"#3a6080",width:18,flexShrink:0}}>{rank}</span>
+      style={{display:"flex",alignItems:"center",gap:7,padding:"6px 9px",borderRadius:0,background:hov?"rgba(0,255,240,.03)":"rgba(0,255,240,.03)",borderLeft:`3px solid ${zone}`,transition:"background .15s",animation:`gwIn ${.04+idx*.03}s ease both`}}>
+      <span style={{fontSize:9.5,fontWeight:900,color:"rgba(0,255,240,.3)",width:18,flexShrink:0}}>{rank}</span>
       <span style={{flex:1,fontSize:11,fontWeight:700,color:"#dce8f8",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
       {zL&&<span style={{fontSize:7,fontWeight:900,padding:"1px 4px",borderRadius:4,background:`${zone}20`,color:zone,flexShrink:0}}>{zL}</span>}
       <div style={{display:"flex",gap:10,flexShrink:0}}>
         {[{v:played,l:"P"},{v:won,l:"W"},{v:drawn,l:"D"},{v:lost,l:"L"}].map(({v,l})=>(
-          <span key={l} style={{fontSize:9.5,color:"#3a6080",width:16,textAlign:"center"}}>{v??0}</span>
+          <span key={l} style={{fontSize:9.5,color:"rgba(0,255,240,.3)",width:16,textAlign:"center"}}>{v??0}</span>
         ))}
-        <span style={{fontSize:10,fontWeight:700,color:gd>0?"#28d97a":gd<0?"#ff4d6d":"#4a7a9a",width:24,textAlign:"right",fontFamily:"DM Mono,monospace"}}>{gd>0?"+":""}{gd??0}</span>
+        <span style={{fontSize:10,fontWeight:700,color:gd>0?"#28d97a":gd<0?"#ff4d6d":"rgba(0,255,240,.35)",width:24,textAlign:"right",fontFamily:"DM Mono,monospace"}}>{gd>0?"+":""}{gd??0}</span>
         <span style={{fontSize:12,fontWeight:900,color:"#9ff1b4",width:24,textAlign:"right",fontFamily:"DM Mono,monospace"}}>{pts??0}</span>
       </div>
     </div>
@@ -342,14 +342,14 @@ function DiffHeatRow({name,team,vals,gwId,idx}) {
   const [hov,setHov]=useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",borderRadius:0,background:hov?"rgba(255,255,255,.04)":"transparent",transition:"background .15s",animation:`gwIn ${.04+idx*.04}s ease both`}}>
+      style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",borderRadius:0,background:hov?"rgba(0,255,240,.03)":"transparent",transition:"background .15s",animation:`gwIn ${.04+idx*.04}s ease both`}}>
       <div style={{minWidth:0,width:70,flexShrink:0}}>
-        <div style={{fontSize:9.5,fontWeight:800,color:"#bcd4f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(name)}</div>
+        <div style={{fontSize:9.5,fontWeight:800,color:"rgba(0,255,240,.6)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(name)}</div>
         <div style={{fontSize:7.5,color:"#2a4060"}}>{team}</div>
       </div>
       <div style={{display:"flex",gap:2,flex:1}}>
         {vals.map((d,i)=>(
-          <div key={i} style={{flex:1,height:20,borderRadius:4,background:COLS[d]||"rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7.5,fontWeight:900,color:"rgba(255,255,255,.7)",border:`1px solid rgba(255,255,255,.06)`,boxShadow:hov?`0 0 4px ${COLS[d]||"#333"}55`:"none",transition:"box-shadow .15s"}}>
+          <div key={i} style={{flex:1,height:20,borderRadius:4,background:COLS[d]||"rgba(0,255,240,.03)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7.5,fontWeight:900,color:"rgba(255,255,255,.7)",border:`1px solid rgba(255,255,255,.06)`,boxShadow:hov?`0 0 4px ${COLS[d]||"#333"}55`:"none",transition:"box-shadow .15s"}}>
             {LBLS[d]||"?"}
           </div>
         ))}
@@ -362,11 +362,11 @@ function PosRadarCard({pos,player,vals,color}) {
   const [hov,setHov]=useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{padding:"12px",borderRadius:13,background:hov?`${color}0d`:"rgba(255,255,255,.025)",border:`1px solid ${hov?color+"44":"rgba(255,255,255,.06)"}`,transition:"all .2s",boxShadow:hov?`0 6px 22px rgba(0,0,0,.35)`:""}}>
+      style={{padding:"12px",borderRadius:13,background:hov?`${color}0d`:"rgba(255,255,255,.025)",border:`1px solid ${hov?color+"44":"rgba(0,255,240,.03)"}`,transition:"all .2s",boxShadow:hov?`0 6px 22px rgba(0,0,0,.35)`:""}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
         <div>
           <div style={{fontSize:8,fontWeight:900,color,letterSpacing:".12em"}}>{pos}</div>
-          <div style={{fontSize:12,fontWeight:800,color:"#e8ff47"}}>{sn(player?.name||"—")}</div>
+          <div style={{fontSize:12,fontWeight:800,color:"#00fff0"}}>{sn(player?.name||"—")}</div>
           <div style={{fontSize:9,color:"#2a4060"}}>{player?.team} · £{player?.cost}m</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -379,9 +379,9 @@ function PosRadarCard({pos,player,vals,color}) {
         <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
           {vals.map((d,i)=>(
             <div key={d.label} style={{display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:7.5,fontWeight:800,color:"#3a6080",width:26,flexShrink:0}}>{d.label}</span>
+              <span style={{fontSize:7.5,fontWeight:800,color:"rgba(0,255,240,.3)",width:26,flexShrink:0}}>{d.label}</span>
               <ABar pct={d.value} color={color} h={3} delay={i*60}/>
-              <span style={{fontSize:8.5,fontWeight:900,color:"#bcd4f0",fontFamily:"DM Mono,monospace",width:22,textAlign:"right"}}>{Math.round(d.value)}</span>
+              <span style={{fontSize:8.5,fontWeight:900,color:"rgba(0,255,240,.6)",fontFamily:"DM Mono,monospace",width:22,textAlign:"right"}}>{Math.round(d.value)}</span>
             </div>
           ))}
         </div>
@@ -490,11 +490,11 @@ export default function GameweekInsightsPage() {
 
   // ── Loading ───────────────────────────────────────────────
   if(loading) return (
-    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"24px 20px"}}>
+    <div style={{minHeight:"100vh",background:"#000",padding:"24px 20px"}}>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      {/* Grid from index.css body::after */}
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(0,255,240,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
       <style>{GW_CSS}</style>
       <div style={{maxWidth:1440,margin:"0 auto",display:"flex",flexDirection:"column",gap:16}}>
@@ -508,28 +508,28 @@ export default function GameweekInsightsPage() {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"20px 20px 52px",fontFamily:"Outfit,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#000",padding:"20px 20px 52px",fontFamily:"Outfit,sans-serif"}}>
       <style>{GW_CSS}</style>
       <div style={{maxWidth:1440,margin:"0 auto",display:"flex",flexDirection:"column",gap:18}}>
 
         {/* HEADER */}
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
           <div style={{animation:"gwSlideL .25s ease both"}}>
-            <div style={{fontSize:8,fontWeight:900,letterSpacing:".22em",color:"rgba(232,255,71,.25)",marginBottom:5}}>STATPITCH · EPL INTELLIGENCE HUB</div>
-            <h1 style={{margin:0,fontSize:27,fontWeight:900,color:"#f0f8ff",letterSpacing:"-.02em"}}>
+            <div style={{fontSize:7.5,fontWeight:500,letterSpacing:".22em",color:"rgba(0,255,240,.2)",marginBottom:5,fontFamily:"'DM Mono',monospace"}}>STATPITCH · EPL INTELLIGENCE HUB</div>
+            <h1 style={{margin:0,fontSize:27,fontWeight:900,color:"#fff",letterSpacing:"-.02em"}}>
               Gameweek Insights
-              <span style={{marginLeft:12,fontSize:17,fontWeight:700,background:"linear-gradient(135deg,#3b9eff,#28d97a)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+              <span style={{marginLeft:12,fontSize:17,fontWeight:700,color:"rgba(0,255,240,.5)",WebkitTextFillColor:"initial"}}>
                 — {gwInfo.name}
               </span>
             </h1>
-            <div style={{fontSize:10.5,color:"rgba(232,255,71,.35)",marginTop:2}}>
+            <div style={{fontSize:10.5,color:"rgba(0,255,240,.35)",marginTop:2}}>
               {gwInfo.label} gameweek · Live FPL projections · EPL scorers & standings · Injury tracker
-              {gwInfo.deadline && <span style={{marginLeft:8,color:"#3b5060"}}>Deadline: {new Date(gwInfo.deadline).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>}
+              {gwInfo.deadline && <span style={{marginLeft:8,color:"rgba(0,255,240,.25)"}}>Deadline: {new Date(gwInfo.deadline).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>}
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 14px",background:"rgba(40,217,122,.07)",border:"1px solid rgba(40,217,122,.22)",borderRadius:999,animation:"gwGlow 2.8s ease-in-out infinite"}}>
-            <div style={{width:7,height:7,borderRadius:"50%",background:"#28d97a",boxShadow:"0 0 9px #28d97a",animation:"gwPulse 1.6s ease-in-out infinite"}}/>
-            <span style={{fontSize:9.5,fontWeight:800,color:"#28d97a",letterSpacing:".12em"}}>LIVE DATA</span>
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 14px",background:"rgba(40,217,122,.07)",border:"1px solid rgba(40,217,122,.22)",animation:"gwGlow 2.8s ease-in-out infinite"}}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:"#00fff0",animation:"gwPulse 1.6s ease-in-out infinite"}}/>
+            <span style={{fontSize:8,fontWeight:500,color:"#00fff0",letterSpacing:".16em",fontFamily:"'DM Mono',monospace"}}>LIVE DATA</span>
           </div>
         </div>
 
@@ -554,7 +554,7 @@ export default function GameweekInsightsPage() {
         </div>
 
         {/* TAB BAR */}
-        <div style={{display:"flex",gap:3,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+        <div style={{display:"flex",gap:3,borderBottom:"1px solid rgba(0,255,240,.1)"}}>
           {[{k:"overview",l:"Overview"},{k:"players",l:"Top Players"},{k:"league",l:"EPL League"},{k:"injuries",l:"Injuries & Risk"}].map(({k,l})=><Tab key={k} label={l} active={tab===k} onClick={()=>setTab(k)}/>)}
         </div>
 
@@ -575,10 +575,10 @@ export default function GameweekInsightsPage() {
                     {tag:"RISK",col:"#ff4d6d",text:atRisk[0]?`${atRisk[0].name} — ${Math.round((atRisk[0].appearance_prob||0)*100)}% appear prob`:"—"},
                     {tag:"DIFF",col:"#3b9eff",text:diffs[0]?`${diffs[0].name} — ${Number(diffs[0].selected_by_pct||0).toFixed(1)}% owned, ${Number(diffs[0].pts_this_gw||0).toFixed(1)} proj pts`:"—"},
                   ].map(({tag,col,text},i)=>(
-                    <div key={tag} style={{display:"flex",gap:8,padding:"9px 10px",borderRadius:9,background:"rgba(255,255,255,.02)",border:`1px solid rgba(255,255,255,.04)`,borderLeft:`3px solid ${col}`,animation:`gwSlideL ${.06+i*.05}s ease both`,transition:"background .15s"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.05)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
-                      <span style={{fontSize:7.5,fontWeight:900,padding:"2px 5px",borderRadius:999,background:`${col}18`,color:col,letterSpacing:".08em",flexShrink:0,alignSelf:"flex-start"}}>{tag}</span>
-                      <span style={{fontSize:10.5,fontWeight:700,color:"#bcd4f0",lineHeight:1.4}}>{text}</span>
+                    <div key={tag} style={{display:"flex",gap:8,padding:"9px 10px",borderRadius:9,background:"rgba(0,255,240,.02)",border:`1px solid rgba(255,255,255,.04)`,borderLeft:`3px solid ${col}`,animation:`gwSlideL ${.06+i*.05}s ease both`,transition:"background .15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(0,255,240,.03)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(0,255,240,.03)"}>
+                      <span style={{fontSize:7.5,fontWeight:900,padding:"2px 5px",background:`${col}18`,color:col,letterSpacing:".08em",flexShrink:0,alignSelf:"flex-start"}}>{tag}</span>
+                      <span style={{fontSize:10.5,fontWeight:700,color:"rgba(0,255,240,.6)",lineHeight:1.4}}>{text}</span>
                     </div>
                   ))}
                 </div>
@@ -592,11 +592,11 @@ export default function GameweekInsightsPage() {
                     const col=net>0?"#28d97a":"#ff4d6d";
                     const maxNet=Math.abs((byTransIn[0]?.transfers_in_gw||1)-(byTransIn[0]?.transfers_out_gw||0))||1;
                     return (
-                      <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:0,background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.04)",transition:"background .15s"}}
-                        onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.055)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
+                      <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:0,background:"rgba(0,255,240,.02)",border:"1px solid rgba(0,255,240,.05)",transition:"background .15s"}}
+                        onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.055)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(0,255,240,.03)"}>
                         <span style={{fontSize:11,color:col,fontWeight:900,flexShrink:0}}>{net>0?"▲":"▼"}</span>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:10.5,fontWeight:800,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
+                          <div style={{fontSize:10.5,fontWeight:800,color:"rgba(0,255,240,.8)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
                           <div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position} · £{p.cost}m</div>
                         </div>
                         <ABar pct={Math.abs(net)/maxNet*100} color={col} h={3}/>
@@ -618,7 +618,7 @@ export default function GameweekInsightsPage() {
                   {lbl:"BEST VALUE",p:topVal,color:"#b388ff",val:topVal?.value_rest_season?.toFixed(2),valSuf:"",meta:`£${topVal?.cost||0}m`},
                   {lbl:`HIGHEST PROJ`,p:sorted[0],color:"#3b9eff",val:sorted[0]?.pts_this_gw},
                   {lbl:"MOST TRANSFERRED IN",p:topTransIn,color:"#28d97a",val:Math.round((topTransIn?.transfers_in_gw||0)/1000),valSuf:"k buys",meta:topTransIn?.team},
-                  {lbl:"SAFEST STARTER",p:atRisk[atRisk.length-1],color:"#67b1ff",val:`${Math.round((atRisk[atRisk.length-1]?.appearance_prob||0)*100)}%`,meta:"Appear Prob"},
+                  {lbl:"SAFEST STARTER",p:atRisk[atRisk.length-1],color:"rgba(0,255,240,.7)",val:`${Math.round((atRisk[atRisk.length-1]?.appearance_prob||0)*100)}%`,meta:"Appear Prob"},
                 ].map(({lbl,p,color,val,valSuf,meta},i)=>(
                   <div key={lbl} style={{padding:"13px 12px",borderRadius:13,background:`${color}07`,border:`1px solid ${color}22`,display:"flex",alignItems:"flex-start",gap:9,animation:`gwPop ${.1+i*.08}s ease both`,transition:"all .2s",cursor:"default"}}
                     onMouseEnter={e=>{e.currentTarget.style.background=`${color}12`;e.currentTarget.style.borderColor=`${color}55`;e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,.4)";}}
@@ -642,11 +642,11 @@ export default function GameweekInsightsPage() {
                     const vals=sparkVals(p);
                     const maxV=Math.max(...sorted.slice(0,5).flatMap(sparkVals),1);
                     return (
-                      <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:9,background:i===0?"rgba(40,217,122,.05)":"rgba(255,255,255,.02)",border:`1px solid ${i===0?"rgba(40,217,122,.18)":"rgba(255,255,255,.04)"}`,transition:"all .15s",animation:`gwIn ${.06+i*.07}s ease both`}}
-                        onMouseEnter={e=>{e.currentTarget.style.background=`${col}0d`;}} onMouseLeave={e=>{e.currentTarget.style.background=i===0?"rgba(40,217,122,.05)":"rgba(255,255,255,.02)";}}>
+                      <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:9,background:i===0?"rgba(40,217,122,.05)":"rgba(0,255,240,.03)",border:`1px solid ${i===0?"rgba(40,217,122,.18)":"rgba(0,255,240,.03)"}`,transition:"all .15s",animation:`gwIn ${.06+i*.07}s ease both`}}
+                        onMouseEnter={e=>{e.currentTarget.style.background=`${col}0d`;}} onMouseLeave={e=>{e.currentTarget.style.background=i===0?"rgba(40,217,122,.05)":"rgba(0,255,240,.03)";}}>
                         <span style={{fontSize:9,fontWeight:900,color:col,fontFamily:"DM Mono,monospace",width:14,flexShrink:0}}>{i+1}</span>
                         <div style={{width:80,flexShrink:0}}>
-                          <div style={{fontSize:10.5,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
+                          <div style={{fontSize:10.5,fontWeight:800,color:"#00fff0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
                           <div style={{fontSize:8,color:"#2a4060"}}>{p.team} · {p.position}</div>
                         </div>
                         <Spark vals={vals} w={90} h={24} color={col}/>
@@ -685,7 +685,7 @@ export default function GameweekInsightsPage() {
               </Panel>
 
               {/* Squad composition rings */}
-              <Panel style={{background:"rgba(255,255,255,.015)"}}>
+              <Panel style={{background:"rgba(0,255,240,.015)"}}>
                 <SecLabel text="SQUAD POOL COMPOSITION" accent="#f2c94c"/>
                 <div style={{display:"flex",justifyContent:"space-around",padding:"4px 0 2px"}}>
                   {["GK","DEF","MID","FWD"].map(pos=>{
@@ -718,7 +718,7 @@ export default function GameweekInsightsPage() {
             <Panel>
               <div style={{display:"flex",gap:4,marginBottom:4}}>
                 {[{k:"goals",l:"Top Scorers"},{k:"assists",l:"Top Assists"}].map(({k,l})=>(
-                  <button key={k} onClick={()=>setScorerTab(k)} style={{flex:1,padding:"7px 0",borderRadius:7,fontSize:10,fontWeight:800,background:scorerTab===k?"rgba(40,217,122,.15)":"rgba(255,255,255,.03)",border:`1px solid ${scorerTab===k?"rgba(40,217,122,.35)":"rgba(255,255,255,.06)"}`,color:scorerTab===k?"#28d97a":"#2a4a6a",cursor:"pointer",transition:"all .15s"}}>{l}</button>
+                  <button key={k} onClick={()=>setScorerTab(k)} style={{flex:1,padding:"7px 0",borderRadius:7,fontSize:10,fontWeight:800,background:scorerTab===k?"rgba(40,217,122,.15)":"rgba(0,255,240,.03)",border:`1px solid ${scorerTab===k?"rgba(40,217,122,.35)":"rgba(0,255,240,.03)"}`,color:scorerTab===k?"#28d97a":"rgba(0,255,240,.18)",cursor:"pointer",transition:"all .15s"}}>{l}</button>
                 ))}
               </div>
               <SecLabel text={scorerTab==="goals"?"EPL TOP SCORERS — SEASON":"EPL TOP ASSISTS — SEASON"} accent="#28d97a"/>
@@ -736,14 +736,14 @@ export default function GameweekInsightsPage() {
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 {sorted.slice(0,14).map((p,i)=>{
                   const val=Number(p.pts_this_gw||0);
-                  const col=val>=9?"#28d97a":val>=7?"#3b9eff":val>=5.5?"#f2c94c":"#67b1ff";
+                  const col=val>=9?"#28d97a":val>=7?"#3b9eff":val>=5.5?"#f2c94c":"rgba(0,255,240,.7)";
                   const maxV=Number(sorted[0]?.pts_this_gw||1);
                   return (
-                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 9px",borderRadius:0,background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.05)",transition:"all .15s",animation:`gwIn ${.04+i*.03}s ease both`}}
-                      onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.07)";e.currentTarget.style.transform="translateX(3px)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,.025)";e.currentTarget.style.transform="none";}}>
+                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 9px",borderRadius:0,background:"rgba(0,255,240,.03)",border:"1px solid rgba(0,255,240,.06)",transition:"all .15s",animation:`gwIn ${.04+i*.03}s ease both`}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="rgba(0,255,240,.03)";e.currentTarget.style.transform="translateX(3px)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,.025)";e.currentTarget.style.transform="none";}}>
                       <span style={{fontSize:9.5,fontWeight:900,color:"#2a4060",fontFamily:"DM Mono,monospace",width:18,flexShrink:0}}>{i+1}</span>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                        <div style={{fontSize:11,fontWeight:800,color:"#00fff0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                         <div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position} · £{p.cost}m</div>
                       </div>
                       <div style={{width:60,flexShrink:0}}><ABar pct={(val/maxV)*100} color={col} h={3}/></div>
@@ -763,9 +763,9 @@ export default function GameweekInsightsPage() {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {byValue.slice(0,7).map((p,i)=>{
                     const maxV=Number(byValue[0]?.value_rest_season||1);
-                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:0,background:"rgba(255,255,255,.025)",border:"1px solid rgba(179,136,255,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(179,136,255,.09)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
+                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:0,background:"rgba(0,255,240,.03)",border:"1px solid rgba(179,136,255,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(179,136,255,.09)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
                       <span style={{fontSize:9,fontWeight:900,color:"#4a2a8a",width:14}}>{i+1}</span>
-                      <div style={{flex:1,minWidth:0}}><div style={{fontSize:10.5,fontWeight:700,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div><div style={{fontSize:8,color:"#2a4060"}}>{p.team} · £{p.cost}m</div></div>
+                      <div style={{flex:1,minWidth:0}}><div style={{fontSize:10.5,fontWeight:700,color:"rgba(0,255,240,.8)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div><div style={{fontSize:8,color:"#2a4060"}}>{p.team} · £{p.cost}m</div></div>
                       <ABar pct={(Number(p.value_rest_season||0)/maxV)*100} color="#b388ff" h={3}/>
                       <span style={{fontSize:12,fontWeight:900,color:"#b388ff",fontFamily:"DM Mono,monospace",minWidth:28,textAlign:"right"}}>{Number(p.value_rest_season||0).toFixed(1)}</span>
                     </div>);
@@ -777,9 +777,9 @@ export default function GameweekInsightsPage() {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {diffs.slice(0,6).map((p,i)=>{
                     const own=Number(p.selected_by_pct||0);
-                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:0,background:"rgba(255,255,255,.025)",border:"1px solid rgba(40,217,122,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(40,217,122,.07)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
+                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:0,background:"rgba(0,255,240,.03)",border:"1px solid rgba(40,217,122,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(40,217,122,.07)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
                       <span style={{fontSize:9,fontWeight:900,color:"#0a5a2a",width:14}}>{i+1}</span>
-                      <div style={{flex:1,minWidth:0}}><div style={{fontSize:10.5,fontWeight:700,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div><div style={{fontSize:8,color:"#2a4060"}}>{p.team} · {own.toFixed(1)}%</div></div>
+                      <div style={{flex:1,minWidth:0}}><div style={{fontSize:10.5,fontWeight:700,color:"rgba(0,255,240,.8)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div><div style={{fontSize:8,color:"#2a4060"}}>{p.team} · {own.toFixed(1)}%</div></div>
                       <span style={{fontSize:12,fontWeight:900,color:"#28d97a",fontFamily:"DM Mono,monospace",minWidth:28,textAlign:"right"}}>{Number(p.pts_this_gw||0).toFixed(1)}</span>
                     </div>);
                   })}
@@ -794,7 +794,7 @@ export default function GameweekInsightsPage() {
           <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:16}}>
             <Panel>
               <SecLabel text="EPL STANDINGS" accent="#3b9eff" right={<div style={{display:"flex",gap:8,fontSize:8,fontWeight:800}}>{[{c:"#3b9eff",l:"UCL"},{c:"#28d97a",l:"UEL"},{c:"#f2c94c",l:"UECL"},{c:"#ff4d6d",l:"REL"}].map(({c,l})=><span key={l} style={{padding:"1px 5px",borderRadius:4,background:`${c}20`,color:c}}>{l}</span>)}</div>}/>
-              <div style={{display:"flex",alignItems:"center",gap:7,padding:"4px 9px",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:7,padding:"4px 9px",borderBottom:"1px solid rgba(0,255,240,.1)"}}>
                 <span style={{fontSize:8.5,fontWeight:900,color:"#2a4060",width:18}}>#</span>
                 <span style={{flex:1,fontSize:8.5,fontWeight:900,color:"#2a4060"}}>CLUB</span>
                 {["P","W","D","L","GD","PTS"].map(h=><span key={h} style={{fontSize:8.5,fontWeight:900,color:"#2a4060",width:h==="PTS"||h==="GD"?28:16,textAlign:"center"}}>{h}</span>)}
@@ -836,8 +836,8 @@ export default function GameweekInsightsPage() {
                   const prob=Math.round((p.appearance_prob||0)*100);
                   const col=prob<60?"#ff4d6d":prob<80?"#ffaa44":"#28d97a";
                   return (
-                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:9,padding:"5px 8px",borderRadius:0,background:"rgba(255,255,255,.02)",border:`1px solid ${col}18`,transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
-                      <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:700,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div><div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position}</div></div>
+                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:9,padding:"5px 8px",borderRadius:0,background:"rgba(0,255,240,.02)",border:`1px solid ${col}18`,transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(0,255,240,.03)"}>
+                      <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:700,color:"rgba(0,255,240,.8)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div><div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position}</div></div>
                       <ABar pct={prob} color={col} h={4}/>
                       <Ring pct={prob} size={36} stroke={3} color={col} delay={i*40}/>
                     </div>

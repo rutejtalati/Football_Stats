@@ -6,7 +6,7 @@ const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onren
 const C = {
   bg:"#000",card:"rgba(6,6,10,0.98)",border:"rgba(255,255,255,0.09)",
   text:"#ffffff",muted:"rgba(220,230,245,0.9)",dim:"rgba(255,255,255,0.3)",soft:"#e8eeff",
-  blue:"#38bdf8",green:"#00ff9d",amber:"#ffd60a",red:"#ff4560",
+  blue:"#00fff0",green:"#00ff9d",amber:"#ffd60a",red:"#ff4560",
   purple:"#c084fc",orange:"#ff7c2a",teal:"#00e5ff",pink:"#ff3ea5",
 };
 
@@ -39,7 +39,7 @@ const TEAM_TABS=[
 
 function useReveal(){const ref=useRef(null);const[v,sv]=useState(false);useEffect(()=>{if(!ref.current)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){sv(true);io.disconnect();}},{threshold:0.04});io.observe(ref.current);return()=>io.disconnect();},[]);return[ref,v];}
 function Sk({h=52,r=10}){return <div style={{height:h,borderRadius:r,background:"linear-gradient(90deg,rgba(255,255,255,0.022) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.022) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.5s ease-in-out infinite",marginBottom:6}}/>;}
-function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,borderRadius:999,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,borderRadius:999,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
+function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
 function Form({f}){if(!f)return null;return <div style={{display:"flex",gap:2}}>{f.split("").slice(-5).map((c,i)=><span key={i} style={{width:13,height:13,borderRadius:3,fontSize:7,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",background:c==="W"?"rgba(52,211,153,0.22)":c==="D"?"rgba(245,158,11,0.18)":"rgba(248,113,113,0.18)",color:c==="W"?C.green:c==="D"?C.amber:C.red}}>{c}</span>)}</div>;}
 function Lbadge({slug,color}){if(!slug||slug==="all")return null;return <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:color||C.muted,background:(color||C.muted)+"10",border:"1px solid "+(color||C.muted)+"25",borderRadius:4,padding:"1px 5px",flexShrink:0}}>{LA[slug]||slug.toUpperCase()}</span>;}
 
@@ -236,7 +236,7 @@ function SHead({title,color,count,loading}){
 
 
 // ── League Donut (Viz 3) ──────────────────────────────────────────
-const LEAGUE_COLORS_BRIGHT={epl:"#38bdf8",laliga:"#ffd60a",seriea:"#00ff9d",bundesliga:"#ff7c2a",ligue1:"#c084fc",all:C.muted};
+const LEAGUE_COLORS_BRIGHT={epl:"#00fff0",laliga:"#ffd60a",seriea:"#00ff9d",bundesliga:"#ff7c2a",ligue1:"#c084fc",all:C.muted};
 function LeagueDonut({rows,sk,color,label}){
   if(!rows||rows.length===0)return null;
   const byLeague={};
@@ -268,7 +268,7 @@ function LeagueDonut({rows,sk,color,label}){
           <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
             <div style={{width:7,height:7,borderRadius:2,background:a.col,flexShrink:0}}/>
             <span style={{fontSize:9,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:"0.06em",width:30,flexShrink:0}}>{(a.lg||"?").slice(0,3).toUpperCase()}</span>
-            <div style={{flex:1,height:3,borderRadius:999,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
+            <div style={{flex:1,height:3,background:"rgba(255,255,255,0.06)",overflow:"hidden"}}>
               <div style={{height:"100%",width:Math.round(a.pct*100)+"%",background:a.col,borderRadius:999}}/>
             </div>
             <span style={{fontSize:9,fontWeight:700,color:a.col,fontFamily:"monospace",minWidth:22,textAlign:"right"}}>{Math.round(a.v)}</span>
@@ -415,7 +415,7 @@ export default function PlayerProfilePage(){
               {search&&<button onClick={()=>{setSearch("");setSrRes([]);setSrOpen(false);}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",padding:0}}>✕</button>}
               {/* Search dropdown */}
               {srOpen&&(
-                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,borderRadius:14,background:"rgba(4,9,20,0.99)",border:"1px solid rgba(255,255,255,0.1)",boxShadow:"0 24px 60px rgba(0,0,0,0.75)",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
+                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,background:"rgba(4,9,20,0.99)",border:"1px solid rgba(255,255,255,0.1)",boxShadow:"0 24px 60px rgba(0,0,0,0.75)",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
                   <div style={{padding:"8px 12px 4px",fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Search Results</div>
                   {srLoading&&[1,2,3].map(i=><div key={i} style={{padding:"8px 12px"}}><Sk h={38} r={8}/></div>)}
                   {!srLoading&&srRes.length===0&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:C.dim,padding:"12px",margin:0}}>No results for "{search}"</p>}
@@ -485,7 +485,7 @@ export default function PlayerProfilePage(){
             <SHead title={pCurrent.label} color={pCurrent.color} count={!pLoading?pRows.length:null} loading={pLoading}/>
             {pLoading&&[1,2,3,4,5,6,7].map(i=><Sk key={i}/>)}
             {!pLoading&&pRows.length===0&&(
-              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
+              <div style={{padding:"32px 16px",textAlign:"center",background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
                 <div style={{fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No data loaded yet</div>
                 <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Check that the backend is running at {B}</div>
               </div>
@@ -512,7 +512,7 @@ export default function PlayerProfilePage(){
             <SHead title={tCurrent.label} color={tCurrent.color} count={!tLoading?tRows.length:null} loading={tLoading}/>
             {tLoading&&[1,2,3,4,5,6,7].map(i=><Sk key={i}/>)}
             {!tLoading&&tRows.length===0&&(
-              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
+              <div style={{padding:"32px 16px",textAlign:"center",background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
                 <div style={{fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No team data loaded</div>
                 <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Standings load from API-Football. Check backend.</div>
               </div>

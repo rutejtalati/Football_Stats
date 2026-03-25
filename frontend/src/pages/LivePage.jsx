@@ -531,38 +531,162 @@ export default function LivePage() {
               </div>
             </div>
 
-            {/* ── Calendar week strip — neo colours ── */}
+            {/* ── Calendar week strip — Variant C: elevated cards with league pip row ── */}
             <div style={{marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <button onClick={prevWeek} style={{width:34,height:34,flexShrink:0,border:`2px solid rgba(232,255,71,.2)`,background:"transparent",color:"rgba(232,255,71,.45)",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+
+                {/* Prev week */}
+                <button onClick={prevWeek} style={{
+                  width:34,height:72,flexShrink:0,
+                  border:`1.5px solid rgba(232,255,71,.15)`,
+                  background:"transparent",color:"rgba(232,255,71,.4)",
+                  fontSize:18,cursor:"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  borderRadius:3,transition:"all .15s",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.45)";e.currentTarget.style.color="#e8ff47";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.15)";e.currentTarget.style.color="rgba(232,255,71,.4)";}}
+                >‹</button>
+
+                {/* Day cards */}
                 <div style={{flex:1,display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:4}}>
                   {weekDays.map((d,i)=>{
-                    const offset=dateToOffset(d);
-                    const isToday=offset===0, isPast=offset<0;
-                    const active=dayOffset===offset;
-                    const inRange=offset>=-10&&offset<=10;
-                    const col=isToday?Y:isPast?"rgba(232,255,71,.4)":"rgba(0,212,170,.8)";
+                    const off=dateToOffset(d);
+                    const isToday=off===0, isPast=off<0, isFuture=off>0;
+                    const active=dayOffset===off;
+                    const inRange=off>=-10&&off<=10;
+
+                    // Determine accent colour for this day's state
+                    const accentCol = isToday ? Y : isPast ? "rgba(232,255,71,.45)" : "rgba(0,212,170,.75)";
+
+                    // Gather which leagues have fixtures on this day from loaded chips
+                    const dayDate = new Date(d); dayDate.setHours(0,0,0,0);
+                    const dayChips = chips.filter(c=>{
+                      if(!c.kickoff&&!c.date) return false;
+                      const cd=new Date(c.kickoff||c.date); cd.setHours(0,0,0,0);
+                      return cd.getTime()===dayDate.getTime();
+                    });
+                    const leagueKeys=[...new Set(dayChips.map(c=>normalizeLeague(c.league||c.league_id)).filter(Boolean))];
+                    const hasLive=dayChips.some(c=>LIVE_SET.has(c.status));
+                    const total=dayChips.length;
+
+                    // Border & shadow styling
+                    const borderCol = active
+                      ? accentCol
+                      : "rgba(232,255,71,.09)";
+                    const shadowStyle = active
+                      ? (isToday
+                          ? `0 4px 0 ${Y}`
+                          : isFuture
+                            ? `0 4px 0 rgba(0,212,170,.45)`
+                            : `0 3px 0 rgba(232,255,71,.3)`)
+                      : "none";
+
                     return (
-                      <button key={i} onClick={()=>inRange&&setDayOffset(offset)} disabled={!inRange} style={{
-                        display:"flex",flexDirection:"column",alignItems:"center",gap:3,
-                        padding:"6px 4px", cursor:inRange?"pointer":"not-allowed",
-                        border:active?`2px solid ${col}`:`1px solid rgba(232,255,71,.1)`,
-                        background:active?`rgba(232,255,71,.1)`:"transparent",
-                        transition:"all .15s", opacity:inRange?1:.35,
-                      }}>
-                        <span style={{fontSize:8,fontWeight:700,color:"rgba(232,255,71,.4)",fontFamily:"'DM Mono',monospace"}}>{DAY_NAMES[d.getDay()]}</span>
-                        <span style={{fontSize:14,fontWeight:900,color:active?col:"rgba(232,255,71,.35)",lineHeight:1,fontFamily:"'Bebas Neue',sans-serif"}}>{d.getDate()}</span>
-                        <div style={{width:5,height:5,background:active?col:(isToday?"rgba(255,39,68,.9)":"rgba(232,255,71,.15)"),flexShrink:0}}/>
+                      <button
+                        key={i}
+                        onClick={()=>inRange&&setDayOffset(off)}
+                        disabled={!inRange}
+                        style={{
+                          display:"flex",flexDirection:"column",alignItems:"center",
+                          gap:3,padding:"8px 4px 7px",
+                          border:`1.5px solid ${borderCol}`,
+                          background:active?`rgba(232,255,71,.07)`:"transparent",
+                          cursor:inRange?"pointer":"not-allowed",
+                          borderRadius:3,
+                          transition:"all .15s",
+                          opacity:inRange?1:.3,
+                          boxShadow:shadowStyle,
+                          position:"relative",
+                          transform:active?"translateY(-2px)":"none",
+                        }}
+                        onMouseEnter={e=>{if(!active&&inRange){e.currentTarget.style.borderColor="rgba(232,255,71,.28)";e.currentTarget.style.transform="translateY(-2px)";}}}
+                        onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor=borderCol;e.currentTarget.style.transform="none";}}}
+                      >
+                        {/* Live pulse dot — top-right corner */}
+                        {hasLive&&(
+                          <div style={{
+                            position:"absolute",top:4,right:4,
+                            width:5,height:5,borderRadius:"50%",
+                            background:R,flexShrink:0,
+                            animation:"nb-pulse 1.4s ease-in-out infinite",
+                          }}/>
+                        )}
+
+                        {/* Day name */}
+                        <span style={{
+                          fontSize:8,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",
+                          color:"rgba(232,255,71,.3)",fontFamily:"'DM Mono',monospace",
+                        }}>{DAY_NAMES[d.getDay()]}</span>
+
+                        {/* Day number */}
+                        <span style={{
+                          fontSize:21,fontWeight:900,lineHeight:1,
+                          fontFamily:"'Bebas Neue',sans-serif",
+                          color:active ? accentCol : "rgba(232,255,71,.22)",
+                        }}>{d.getDate()}</span>
+
+                        {/* League pip row */}
+                        <div style={{display:"flex",gap:2,alignItems:"center",justifyContent:"center",flexWrap:"wrap",minHeight:7}}>
+                          {leagueKeys.length===0
+                            ? <div style={{width:16,height:1,background:"rgba(232,255,71,.1)",borderRadius:1}}/>
+                            : leagueKeys.slice(0,5).map(lk=>(
+                                <div key={lk} style={{
+                                  width:5,height:5,borderRadius:"50%",flexShrink:0,
+                                  background:LEAGUES[lk]?.color||Y,
+                                }}/>
+                              ))
+                          }
+                        </div>
+
+                        {/* Fixture count label */}
+                        <span style={{
+                          fontSize:8,fontWeight:700,letterSpacing:".04em",
+                          fontFamily:"'DM Mono',monospace",
+                          color: total>0
+                            ? (active
+                                ? (isToday ? Y : isFuture ? "rgba(0,212,170,.8)" : "rgba(232,255,71,.6)")
+                                : "rgba(0,212,170,.6)")
+                            : "rgba(232,255,71,.18)",
+                        }}>
+                          {total>0
+                            ? (hasLive ? `${total} live` : `${total} fix`)
+                            : "—"}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
-                <button onClick={nextWeek} style={{width:34,height:34,flexShrink:0,border:`2px solid rgba(232,255,71,.2)`,background:"transparent",color:"rgba(232,255,71,.45)",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+
+                {/* Next week */}
+                <button onClick={nextWeek} style={{
+                  width:34,height:72,flexShrink:0,
+                  border:`1.5px solid rgba(232,255,71,.15)`,
+                  background:"transparent",color:"rgba(232,255,71,.4)",
+                  fontSize:18,cursor:"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  borderRadius:3,transition:"all .15s",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.45)";e.currentTarget.style.color="#e8ff47";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.15)";e.currentTarget.style.color="rgba(232,255,71,.4)";}}
+                >›</button>
               </div>
-              <div style={{display:"flex",gap:16,marginTop:8,paddingLeft:42}}>
-                {[["rgba(232,255,71,.4)","PAST"],["#e8ff47","TODAY & LIVE"],["rgba(0,212,170,.8)","UPCOMING"]].map(([c,l])=>(
+
+              {/* Legend row */}
+              <div style={{display:"flex",gap:14,marginTop:10,paddingLeft:40,flexWrap:"wrap"}}>
+                {[
+                  ["rgba(232,255,71,.45)","PAST"],
+                  [Y,"TODAY & LIVE"],
+                  ["rgba(0,212,170,.8)","UPCOMING"],
+                ].map(([c,l])=>(
                   <span key={l} style={{fontSize:8,fontWeight:700,color:c,letterSpacing:".06em",display:"flex",alignItems:"center",gap:4,fontFamily:"'DM Mono',monospace"}}>
                     <span style={{width:6,height:2,background:c,display:"inline-block"}}/>{l}
+                  </span>
+                ))}
+                <span style={{width:1,height:10,background:"rgba(232,255,71,.1)",display:"inline-block",margin:"0 2px"}}/>
+                {Object.entries(LEAGUES).map(([k,v])=>(
+                  <span key={k} style={{fontSize:8,fontWeight:700,color:v.color,letterSpacing:".04em",display:"flex",alignItems:"center",gap:3,fontFamily:"'DM Mono',monospace"}}>
+                    <span style={{width:5,height:5,borderRadius:"50%",background:v.color,display:"inline-block",flexShrink:0}}/>{v.short}
                   </span>
                 ))}
               </div>

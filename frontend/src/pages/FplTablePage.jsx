@@ -3,6 +3,22 @@ import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFplPredictorTable } from "../api/api";
 
+/* ── Neobrutalist theme constants ── */
+const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB_CSS = `
+  @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
+  @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes nbBlink  { 50%{opacity:0} }
+  @keyframes nbStripes{ to{background-position:90px 0} }
+  @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:#0a0a0a; }
+  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
+  ::selection { background:#e8ff47; color:#0a0a0a; }
+  input[type=range] { accent-color:#e8ff47; }
+`;
+
 /* ── Responsive hook ── */
 function useIsMobile(bp = 768) {
   const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
@@ -431,7 +447,12 @@ export default function FplTablePage() {
 
   /* ── Loading ── */
   if (loading) return (
-    <div className="page-shell" style={{ color:"#4a7a9a", padding:24 }}>
+    <div className="page-shell" style={{ color:"rgba(232,255,71,.4)", padding:24 }}>
+      <style>{NB_CSS}</style>
+      {/* NB bg stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+
       Loading FPL table…
     </div>
   );
@@ -489,13 +510,13 @@ export default function FplTablePage() {
             <h1 className="page-title-left" style={{ marginBottom:2, fontSize:isMobile?20:26 }}>
               FPL Analytics Table
             </h1>
-            <div style={{ fontSize:10, color:"#2a4a6a", fontWeight:700 }}>
+            <div style={{ fontSize:10, color:"rgba(232,255,71,.35)", fontWeight:700 }}>
               {sorted.length} players · click headers to sort · hover cells for tooltips · click rows for full analytics
             </div>
           </div>
           {isMobile && (
             <button onClick={() => setShowFilters(v => !v)} style={{
-              padding:"7px 14px", borderRadius:10, fontSize:11, fontWeight:800,
+              padding:"7px 14px", borderRadius:0, fontSize:11, fontWeight:800,
               background:showFilters?"rgba(103,177,255,0.15)":"rgba(255,255,255,0.05)",
               border:"1px solid rgba(103,177,255,0.3)", color:"#67b1ff", cursor:"pointer", fontFamily:"inherit",
             }}>
@@ -506,8 +527,8 @@ export default function FplTablePage() {
 
         {/* ── Filters ── */}
         {(showFilters || !isMobile) && (
-          <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)",
-            borderRadius:14, padding:isMobile?"12px":"16px 20px", marginBottom:12 }}>
+          <div style={{ background:"rgba(232,255,71,.04)", border:"2px solid rgba(232,255,71,.15)",
+            borderRadius:0, padding:isMobile?"12px":"16px 20px", marginBottom:12 }}>
             {/* Position + Team pills */}
             <div style={{ display:"flex", gap:5, flexWrap:"nowrap", overflowX:"auto",
               WebkitOverflowScrolling:"touch", scrollbarWidth:"none", marginBottom:10, paddingBottom:2 }}>
@@ -515,7 +536,7 @@ export default function FplTablePage() {
                 <button key={p} className={`fpl-pill${position===p?" active":""}`}
                   onClick={() => setPosition(p)}>{p}</button>
               ))}
-              <div style={{ width:1, height:28, background:"rgba(255,255,255,0.08)", flexShrink:0, alignSelf:"center" }}/>
+              <div style={{ width:1, height:28, background:"rgba(232,255,71,.08)", flexShrink:0, alignSelf:"center" }}/>
               {allTeams.slice(0, isMobile ? 8 : allTeams.length).map(t => (
                 <button key={t} className={`fpl-pill${team===t?" active":""}`}
                   onClick={() => setTeam(t)}>{t}</button>
@@ -529,24 +550,24 @@ export default function FplTablePage() {
                 { label:"MIN PROB",  val:minProb,  set:setMinProb,  type:"number", step:0.01, min:0, max:1 },
               ].map(({ label, val, set, type, step, min, max }) => (
                 <div key={label} style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                  <label style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>{label}</label>
+                  <label style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.35)", letterSpacing:"0.08em" }}>{label}</label>
                   <input type={type} step={step} min={min} max={max} value={val}
                     onChange={e => set(Number(e.target.value))}
-                    style={{ padding:"7px 10px", borderRadius:8, fontSize:13, background:"rgba(255,255,255,0.05)",
-                      border:"1px solid rgba(255,255,255,0.1)", color:"#e8f0ff", outline:"none", minHeight:36 }}/>
+                    style={{ padding:"7px 10px", borderRadius:0, fontSize:13, background:"rgba(232,255,71,.05)",
+                      border:"2px solid rgba(232,255,71,.2)", color:"#e8ff47", outline:"none", minHeight:36 }}/>
                 </div>
               ))}
               <div style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:isMobile?"1/-1":"auto" }}>
-                <label style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>SEARCH</label>
+                <label style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.35)", letterSpacing:"0.08em" }}>SEARCH</label>
                 <input type="text" placeholder="Player, team, position…" value={search}
                   onChange={e => setSearch(e.target.value)}
-                  style={{ padding:"7px 10px", borderRadius:8, fontSize:14, background:"rgba(255,255,255,0.05)",
-                    border:"1px solid rgba(255,255,255,0.1)", color:"#e8f0ff", outline:"none", minHeight:36 }}/>
+                  style={{ padding:"7px 10px", borderRadius:0, fontSize:14, background:"rgba(232,255,71,.05)",
+                    border:"2px solid rgba(232,255,71,.2)", color:"#e8ff47", outline:"none", minHeight:36 }}/>
               </div>
               <button onClick={() => { setTeam("ALL"); setPosition("ALL"); setMaxCost(15.5); setMinProb(0); setStartGw(30); setSearch(""); }}
-                style={{ padding:"7px 14px", borderRadius:8, fontSize:11, fontWeight:800,
-                  background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)",
-                  color:"#4a7a9a", cursor:"pointer", fontFamily:"inherit", alignSelf:"flex-end",
+                style={{ padding:"7px 14px", borderRadius:0, fontSize:11, fontWeight:800,
+                  background:"rgba(232,255,71,.05)", border:"2px solid rgba(232,255,71,.2)",
+                  color:"rgba(232,255,71,.4)", cursor:"pointer", fontFamily:"inherit", alignSelf:"flex-end",
                   minHeight:36, gridColumn:isMobile?"1/-1":"auto" }}>
                 Clear
               </button>
@@ -555,8 +576,8 @@ export default function FplTablePage() {
         )}
 
         {/* ── Table ── */}
-        <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.07)",
-          borderRadius:14, overflow:"hidden" }}>
+        <div style={{ background:"rgba(232,255,71,.03)", border:"2px solid rgba(232,255,71,.15)",
+          borderRadius:0, overflow:"hidden" }}>
           <div className="fpl-tbl-wrap">
             <table className="fpl-tbl">
               <thead>
@@ -613,7 +634,7 @@ export default function FplTablePage() {
                         <img src={TEAM_BADGES[r.team]} alt={r.team}
                           style={{ width:16, height:16, objectFit:"contain", flexShrink:0 }}
                           onError={e => { e.currentTarget.style.display="none"; }}/>
-                        <span style={{ fontWeight:700, fontSize:isMobile?12:13, color:"#f0f6ff",
+                        <span style={{ fontWeight:700, fontSize:isMobile?12:13, color:"#e8ff47",
                           whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:isMobile?90:150 }}>
                           {r.player_display}
                         </span>
@@ -697,7 +718,7 @@ export default function FplTablePage() {
     {/* ── Tooltip ── */}
     {tooltip && (
       <div className="fpl-tip" style={{ left:tooltip.x, top:tooltip.y }}>
-        <div style={{ fontSize:9, fontWeight:800, color:"#4a7a9a", letterSpacing:"0.1em", marginBottom:6, textTransform:"uppercase" }}>
+        <div style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.4)", letterSpacing:"0.1em", marginBottom:6, textTransform:"uppercase" }}>
           {tooltip.key.replace(/_/g," ")}
         </div>
         <div style={{ fontSize:12, color:"#c8d8f0", lineHeight:1.65 }}>
@@ -711,39 +732,39 @@ export default function FplTablePage() {
       <div className="fpl-modal-bg" onClick={() => setModal(null)}>
         <div className="fpl-modal" onClick={e => e.stopPropagation()}>
           <button onClick={() => setModal(null)} style={{
-            position:"absolute", top:16, right:16, width:32, height:32, borderRadius:8,
-            background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)",
+            position:"absolute", top:16, right:16, width:32, height:32, borderRadius:0,
+            background:"rgba(232,255,71,.06)", border:"2px solid rgba(232,255,71,.2)",
             color:"#8ab8e0", cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center",
           }}>×</button>
 
           {/* Header */}
           <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
             <div style={{ width:52, height:52, borderRadius:"50%", overflow:"hidden",
-              border:`2px solid ${modal._posColor}33`, background:"rgba(255,255,255,0.05)", flexShrink:0 }}>
+              border:`2px solid ${modal._posColor}33`, background:"rgba(232,255,71,.05)", flexShrink:0 }}>
               <img src={`https://resources.premierleague.com/premierleague/photos/players/110x140/p${modal.code||0}.png`}
                 alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}
                 onError={e => { e.target.style.display="none"; }}/>
             </div>
             <div>
-              <div style={{ fontSize:18, fontWeight:900, color:"#f0f6ff", fontFamily:"'Sora',sans-serif", marginBottom:2 }}>
+              <div style={{ fontSize:18, fontWeight:900, color:"#e8ff47", fontFamily:"'Bebas Neue',sans-serif", marginBottom:2 }}>
                 {modal.player}
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                <span style={{ fontSize:10, fontWeight:800, color:"#4a7a9a" }}>{modal.team}</span>
+                <span style={{ fontSize:10, fontWeight:800, color:"rgba(232,255,71,.4)" }}>{modal.team}</span>
                 <span style={{ fontSize:10, fontWeight:700, padding:"1px 7px", borderRadius:999,
                   background:`${modal._posColor}18`, border:`1px solid ${modal._posColor}33`, color:modal._posColor }}>
                   {modal.position}
                 </span>
-                <span style={{ fontSize:10, color:"#3a5a7a", fontFamily:"DM Mono,monospace" }}>£{modal.cost}m</span>
+                <span style={{ fontSize:10, color:"rgba(232,255,71,.35)", fontFamily:"DM Mono,monospace" }}>£{modal.cost}m</span>
               </div>
             </div>
           </div>
 
           {/* Availability status */}
-          <div style={{ marginBottom:16, padding:"8px 12px", borderRadius:8,
+          <div style={{ marginBottom:16, padding:"8px 12px", borderRadius:0,
             background:`${modal.avail_color}14`, border:`1px solid ${modal.avail_color}33` }}>
             <span style={{ fontSize:12, fontWeight:700, color:modal.avail_color }}>{modal.avail_display}</span>
-            {modal.news && <span style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginLeft:8 }}>{modal.news}</span>}
+            {modal.news && <span style={{ fontSize:10, color:"rgba(232,255,71,.3)", marginLeft:8 }}>{modal.news}</span>}
           </div>
 
           {/* Key metrics grid */}
@@ -756,9 +777,9 @@ export default function FplTablePage() {
               { label:"Start %",       val:`${modal.avail_pct}%`,               color:modal.avail_color },
               { label:"Owned",         val:`${Number(modal.selected_by_pct||0).toFixed(1)}%`, color:"#b388ff" },
             ].map(m => (
-              <div key={m.label} style={{ padding:"10px 12px", borderRadius:10,
-                background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize:8, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.1em", marginBottom:4, textTransform:"uppercase" }}>
+              <div key={m.label} style={{ padding:"10px 12px", borderRadius:0,
+                background:"rgba(232,255,71,.04)", border:"1px solid rgba(232,255,71,.12)" }}>
+                <div style={{ fontSize:8, fontWeight:800, color:"rgba(232,255,71,.35)", letterSpacing:"0.1em", marginBottom:4, textTransform:"uppercase" }}>
                   {m.label}
                 </div>
                 <div style={{ fontSize:20, fontWeight:800, color:m.color, fontFamily:"DM Mono,monospace", lineHeight:1 }}>
@@ -780,9 +801,9 @@ export default function FplTablePage() {
               { label:"Yellows",  val:modal.yellow_cards },
               { label:"Season Pts",val:modal.points_so_far },
             ].map(m => (
-              <div key={m.label} style={{ padding:"8px 10px", borderRadius:8,
-                background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.05)", textAlign:"center" }}>
-                <div style={{ fontSize:8, fontWeight:700, color:"#2a4a6a", marginBottom:3, textTransform:"uppercase" }}>{m.label}</div>
+              <div key={m.label} style={{ padding:"8px 10px", borderRadius:0,
+                background:"rgba(232,255,71,.03)", border:"1px solid rgba(232,255,71,.1)", textAlign:"center" }}>
+                <div style={{ fontSize:8, fontWeight:700, color:"rgba(232,255,71,.35)", marginBottom:3, textTransform:"uppercase" }}>{m.label}</div>
                 <div style={{ fontSize:15, fontWeight:800, color:"#c8d8f0", fontFamily:"DM Mono,monospace" }}>{m.val ?? "—"}</div>
               </div>
             ))}
@@ -790,7 +811,7 @@ export default function FplTablePage() {
 
           {/* Action */}
           <button onClick={() => { setModal(null); navigate(`/player/${modal.player_id}`); }}
-            style={{ width:"100%", padding:"10px 16px", borderRadius:10,
+            style={{ width:"100%", padding:"10px 16px", borderRadius:0,
               background:"rgba(103,177,255,0.15)", border:"1px solid rgba(103,177,255,0.35)",
               color:"#67b1ff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
             Full Player Analysis →

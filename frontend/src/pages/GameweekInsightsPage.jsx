@@ -5,6 +5,11 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
 
+  getFplBootstrap, getFplPredictorTable,
+  getTopScorers, getTopAssists,
+  getLeagueInjuries, getStandings,
+} from "../api/api";
+
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
 const NB_CSS = `
@@ -20,10 +25,7 @@ const NB_CSS = `
   ::selection { background:#e8ff47; color:#0a0a0a; }
   input[type=range] { accent-color:#e8ff47; }
 `;
-  getFplBootstrap, getFplPredictorTable,
-  getTopScorers, getTopAssists,
-  getLeagueInjuries, getStandings,
-} from "../api/api";
+
 
 
 /* ── Responsive hook ─────────────────────────────────────── */

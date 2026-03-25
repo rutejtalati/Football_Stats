@@ -885,13 +885,13 @@ const LEAGUES = [
   {to:"/predictions/bundesliga",name:"Bundesliga",col:"#ff8c42",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#000"/><rect y="4.33" width="18" height="4.34" fill="#DD0000"/><rect y="8.67" width="18" height="4.33" fill="#FFCC00"/></svg>},
   {to:"/predictions/ligue-1",name:"Ligue 1",col:"#b388ff",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#002395"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>},
   {to:"/predictions/champions-league",name:"UCL",col:"#0e1e5b",
-    flag:<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/UEFA_Champions_League.svg/32px-UEFA_Champions_League.svg.png" alt="UCL" style={{width:32,height:32,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"⭐",style:"font-size:18px"}));}} />},
+    flag:<img src="https://media.api-sports.io/football/leagues/2.png" alt="UCL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
   {to:"/predictions/europa-league",name:"UEL",col:"#e35f10",
-    flag:<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/UEFA_Europa_League_logo_%282024_version%29.svg/28px-UEFA_Europa_League_logo_%282024_version%29.svg.png" alt="UEL" style={{width:22,height:32,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"🟠",style:"font-size:18px"}));}} />},
+    flag:<img src="https://media.api-sports.io/football/leagues/3.png" alt="UEL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
   {to:"/predictions/conference-league",name:"UECL",col:"#00843d",
-    flag:<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/UEFA_Europa_Conference_League_logo.svg/28px-UEFA_Europa_Conference_League_logo.svg.png" alt="UECL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"🟢",style:"font-size:18px"}));}} />},
-  {to:"/predictions/fa-cup",name:"FA Cup",col:"#001f5b",
-    flag:<img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/33/FA_Cup_logo.svg/32px-FA_Cup_logo.svg.png" alt="FA Cup" style={{width:32,height:32,objectFit:"contain",display:"block"}} onError={e=>{e.target.replaceWith(Object.assign(document.createElement("span"),{textContent:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",style:"font-size:18px"}));}} />},
+    flag:<img src="https://media.api-sports.io/football/leagues/848.png" alt="UECL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
+  {to:"/predictions/fa-cup",name:"FA Cup",col:"#c62828",
+    flag:<img src="https://media.api-sports.io/football/leagues/45.png" alt="FA Cup" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
 ];
 
 /* ═══════════════════════════════════════════════════════════

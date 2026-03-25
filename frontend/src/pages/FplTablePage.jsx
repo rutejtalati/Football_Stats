@@ -172,7 +172,7 @@ function heatText(bg) {
 /* ── Components ── */
 function SortArrow({ active, dir }) {
   if (!active) return <span style={{opacity:0.2,marginLeft:4,fontSize:10}}>↕</span>;
-  return <span style={{marginLeft:4,fontSize:10,color:"rgba(0,255,240,.7)"}}>{dir==="asc"?"↑":"↓"}</span>;
+  return <span style={{marginLeft:4,fontSize:10,color:"#67b1ff"}}>{dir==="asc"?"↑":"↓"}</span>;
 }
 function RankBadge({ rank }) {
   const gold=rank===1, silver=rank===2, bronze=rank===3;
@@ -191,7 +191,7 @@ function DiffPill({ label }) {
     Hard:{bg:"#8f2424",fg:"#fff0f0"},
   }[label] || {bg:"#2d2d2d",fg:"#fff"};
   return (
-    <span style={{display:"inline-block",marginLeft:6,padding:"2px 7px",
+    <span style={{display:"inline-block",marginLeft:6,padding:"2px 7px",borderRadius:999,
       background:cfg.bg,color:cfg.fg,fontSize:10,fontWeight:700}}>{label}</span>
   );
 }
@@ -431,7 +431,7 @@ export default function FplTablePage() {
 
   /* ── Loading ── */
   if (loading) return (
-    <div className="page-shell" style={{ color:"rgba(0,255,240,.35)", padding:24 }}>
+    <div className="page-shell" style={{ color:"#4a7a9a", padding:24 }}>
       Loading FPL table…
     </div>
   );
@@ -443,41 +443,41 @@ export default function FplTablePage() {
       <style>{`
         .fpl-tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
         .fpl-tbl-wrap::-webkit-scrollbar { height:4px; }
-        .fpl-tbl-wrap::-webkit-scrollbar-thumb { background:rgba(0,255,240,0.2); border-radius:4px; }
+        .fpl-tbl-wrap::-webkit-scrollbar-thumb { background:rgba(103,177,255,0.25); border-radius:4px; }
         .fpl-tbl { border-collapse:collapse; width:100%; min-width:${isMobile ? "900px" : "1400px"}; }
         .fpl-tbl th {
-          background:#040408; color:rgba(0,255,240,.4); font-size:11px; font-weight:800;
+          background:#060d18; color:#4a7a9a; font-size:11px; font-weight:800;
           padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.07);
           position:sticky; top:0; z-index:2; white-space:nowrap; letter-spacing:0.04em;
         }
-        .fpl-tbl td { padding:6px 10px; border-bottom:1px solid rgba(0,255,240,.04); font-size:12px; color:rgba(0,255,240,.7); }
-        .fpl-tbl tr:hover td { background:rgba(0,255,240,0.07); }
+        .fpl-tbl td { padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:#c8d8f0; }
+        .fpl-tbl tr:hover td { background:rgba(103,177,255,0.07); }
         .fpl-tbl tbody tr { transition:transform 160ms cubic-bezier(0.22,1,0.36,1),box-shadow 160ms ease; cursor:pointer; }
         .fpl-tbl tbody tr:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.4); position:relative; z-index:1; }
-        .sticky-player { position:sticky; left:0; z-index:1; background:#000; min-width:${isMobile ? "140px" : "190px"}; }
-        .sticky-player-head { background:#040408 !important; z-index:3 !important; }
+        .sticky-player { position:sticky; left:0; z-index:1; background:#060a14; min-width:${isMobile ? "140px" : "190px"}; }
+        .sticky-player-head { background:#060d18 !important; z-index:3 !important; }
         .team-badge-cell { font-size:11px; font-weight:800; text-align:center; padding:4px 6px !important; }
         /* col group separators */
-        .fpl-tbl th.col-sep, .fpl-tbl td.col-sep { border-left:1px solid rgba(0,255,240,0.12); }
+        .fpl-tbl th.col-sep, .fpl-tbl td.col-sep { border-left:1px solid rgba(103,177,255,0.12); }
         /* filter pills */
-        .fpl-pill { padding:5px 12px; border-radius:0; font-size:10px; font-weight:500;
-          cursor:pointer; border:1px solid rgba(0,255,240,.12);
-          background:transparent; color:rgba(0,255,240,.35); font-family:"DM Mono",monospace; letter-spacing:.1em; font-family:inherit; white-space:nowrap; min-height:36px; transition:all 0.15s; }
-        .fpl-pill.active { background:rgba(0,255,240,0.18); border-color:rgba(0,255,240,0.45); color:#67b1ff; }
-        .fpl-pill:hover { background:rgba(0,255,240,.06); color:#00fff0; }
+        .fpl-pill { padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800;
+          cursor:pointer; border:1px solid rgba(255,255,255,0.1);
+          background:rgba(255,255,255,0.05); color:#4a7a9a; font-family:inherit; white-space:nowrap; min-height:36px; transition:all 0.15s; }
+        .fpl-pill.active { background:rgba(103,177,255,0.18); border-color:rgba(103,177,255,0.45); color:#67b1ff; }
+        .fpl-pill:hover { background:rgba(255,255,255,0.09); }
         /* tooltip */
         .fpl-tip { position:fixed; z-index:9999; pointer-events:none; background:rgba(6,13,24,0.97);
-          border:1px solid rgba(0,255,240,0.3); border-radius:12px; padding:12px 16px;
+          border:1px solid rgba(103,177,255,0.3); border-radius:12px; padding:12px 16px;
           min-width:220px; box-shadow:0 8px 32px rgba(0,0,0,0.7);
           animation:fplTipIn 140ms cubic-bezier(0.22,1,0.36,1); }
         @keyframes fplTipIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         /* modal */
         .fpl-modal-bg { position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.72);
           backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
-        .fpl-modal { background:#08101e; border:1px solid rgba(0,255,240,0.2); border-radius:20px;
+        .fpl-modal { background:#08101e; border:1px solid rgba(103,177,255,0.2); border-radius:20px;
           padding:28px 28px 24px; width:min(560px,94vw); max-height:88vh; overflow-y:auto; position:relative; }
         .fpl-modal::-webkit-scrollbar{width:4px}
-        .fpl-modal::-webkit-scrollbar-thumb{background:rgba(0,255,240,0.2);border-radius:4px}
+        .fpl-modal::-webkit-scrollbar-thumb{background:rgba(103,177,255,0.2);border-radius:4px}
       `}</style>
 
       <div className="page-content-wide">
@@ -489,15 +489,15 @@ export default function FplTablePage() {
             <h1 className="page-title-left" style={{ marginBottom:2, fontSize:isMobile?20:26 }}>
               FPL Analytics Table
             </h1>
-            <div style={{ fontSize:10, color:"rgba(0,255,240,.18)", fontWeight:700 }}>
+            <div style={{ fontSize:10, color:"#2a4a6a", fontWeight:700 }}>
               {sorted.length} players · click headers to sort · hover cells for tooltips · click rows for full analytics
             </div>
           </div>
           {isMobile && (
             <button onClick={() => setShowFilters(v => !v)} style={{
               padding:"7px 14px", borderRadius:10, fontSize:11, fontWeight:800,
-              background:showFilters?"rgba(0,255,240,0.15)":"rgba(255,255,255,0.05)",
-              border:"1px solid rgba(0,255,240,0.3)", color:"rgba(0,255,240,.7)", cursor:"pointer", fontFamily:"inherit",
+              background:showFilters?"rgba(103,177,255,0.15)":"rgba(255,255,255,0.05)",
+              border:"1px solid rgba(103,177,255,0.3)", color:"#67b1ff", cursor:"pointer", fontFamily:"inherit",
             }}>
               {showFilters ? "▲ Filters" : "▼ Filters"}
             </button>
@@ -507,7 +507,7 @@ export default function FplTablePage() {
         {/* ── Filters ── */}
         {(showFilters || !isMobile) && (
           <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)",
-             padding:isMobile?"12px":"16px 20px", marginBottom:12 }}>
+            borderRadius:14, padding:isMobile?"12px":"16px 20px", marginBottom:12 }}>
             {/* Position + Team pills */}
             <div style={{ display:"flex", gap:5, flexWrap:"nowrap", overflowX:"auto",
               WebkitOverflowScrolling:"touch", scrollbarWidth:"none", marginBottom:10, paddingBottom:2 }}>
@@ -529,24 +529,24 @@ export default function FplTablePage() {
                 { label:"MIN PROB",  val:minProb,  set:setMinProb,  type:"number", step:0.01, min:0, max:1 },
               ].map(({ label, val, set, type, step, min, max }) => (
                 <div key={label} style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                  <label style={{ fontSize:9, fontWeight:800, color:"rgba(0,255,240,.18)", letterSpacing:"0.08em" }}>{label}</label>
+                  <label style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>{label}</label>
                   <input type={type} step={step} min={min} max={max} value={val}
                     onChange={e => set(Number(e.target.value))}
                     style={{ padding:"7px 10px", borderRadius:8, fontSize:13, background:"rgba(255,255,255,0.05)",
-                      border:"1px solid rgba(255,255,255,0.1)", color:"rgba(0,255,240,.85)", outline:"none", minHeight:36 }}/>
+                      border:"1px solid rgba(255,255,255,0.1)", color:"#e8f0ff", outline:"none", minHeight:36 }}/>
                 </div>
               ))}
               <div style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:isMobile?"1/-1":"auto" }}>
-                <label style={{ fontSize:9, fontWeight:800, color:"rgba(0,255,240,.18)", letterSpacing:"0.08em" }}>SEARCH</label>
+                <label style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>SEARCH</label>
                 <input type="text" placeholder="Player, team, position…" value={search}
                   onChange={e => setSearch(e.target.value)}
                   style={{ padding:"7px 10px", borderRadius:8, fontSize:14, background:"rgba(255,255,255,0.05)",
-                    border:"1px solid rgba(255,255,255,0.1)", color:"rgba(0,255,240,.85)", outline:"none", minHeight:36 }}/>
+                    border:"1px solid rgba(255,255,255,0.1)", color:"#e8f0ff", outline:"none", minHeight:36 }}/>
               </div>
               <button onClick={() => { setTeam("ALL"); setPosition("ALL"); setMaxCost(15.5); setMinProb(0); setStartGw(30); setSearch(""); }}
                 style={{ padding:"7px 14px", borderRadius:8, fontSize:11, fontWeight:800,
                   background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)",
-                  color:"rgba(0,255,240,.35)", cursor:"pointer", fontFamily:"inherit", alignSelf:"flex-end",
+                  color:"#4a7a9a", cursor:"pointer", fontFamily:"inherit", alignSelf:"flex-end",
                   minHeight:36, gridColumn:isMobile?"1/-1":"auto" }}>
                 Clear
               </button>
@@ -556,7 +556,7 @@ export default function FplTablePage() {
 
         {/* ── Table ── */}
         <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.07)",
-           overflow:"hidden" }}>
+          borderRadius:14, overflow:"hidden" }}>
           <div className="fpl-tbl-wrap">
             <table className="fpl-tbl">
               <thead>
@@ -613,7 +613,7 @@ export default function FplTablePage() {
                         <img src={TEAM_BADGES[r.team]} alt={r.team}
                           style={{ width:16, height:16, objectFit:"contain", flexShrink:0 }}
                           onError={e => { e.currentTarget.style.display="none"; }}/>
-                        <span style={{ fontWeight:700, fontSize:isMobile?12:13, color:"rgba(0,255,240,.9)",
+                        <span style={{ fontWeight:700, fontSize:isMobile?12:13, color:"#f0f6ff",
                           whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:isMobile?90:150 }}>
                           {r.player_display}
                         </span>
@@ -697,10 +697,10 @@ export default function FplTablePage() {
     {/* ── Tooltip ── */}
     {tooltip && (
       <div className="fpl-tip" style={{ left:tooltip.x, top:tooltip.y }}>
-        <div style={{ fontSize:9, fontWeight:800, color:"rgba(0,255,240,.35)", letterSpacing:"0.1em", marginBottom:6, textTransform:"uppercase" }}>
+        <div style={{ fontSize:9, fontWeight:800, color:"#4a7a9a", letterSpacing:"0.1em", marginBottom:6, textTransform:"uppercase" }}>
           {tooltip.key.replace(/_/g," ")}
         </div>
-        <div style={{ fontSize:12, color:"rgba(0,255,240,.8)", lineHeight:1.65 }}>
+        <div style={{ fontSize:12, color:"#c8d8f0", lineHeight:1.65 }}>
           {TIPS[tooltip.key] || ""}
         </div>
       </div>
@@ -725,12 +725,12 @@ export default function FplTablePage() {
                 onError={e => { e.target.style.display="none"; }}/>
             </div>
             <div>
-              <div style={{ fontSize:18, fontWeight:900, color:"rgba(0,255,240,.9)", fontFamily:"'Sora',sans-serif", marginBottom:2 }}>
+              <div style={{ fontSize:18, fontWeight:900, color:"#f0f6ff", fontFamily:"'Sora',sans-serif", marginBottom:2 }}>
                 {modal.player}
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                <span style={{ fontSize:10, fontWeight:800, color:"rgba(0,255,240,.35)" }}>{modal.team}</span>
-                <span style={{ fontSize:10, fontWeight:700, padding:"1px 7px", 
+                <span style={{ fontSize:10, fontWeight:800, color:"#4a7a9a" }}>{modal.team}</span>
+                <span style={{ fontSize:10, fontWeight:700, padding:"1px 7px", borderRadius:999,
                   background:`${modal._posColor}18`, border:`1px solid ${modal._posColor}33`, color:modal._posColor }}>
                   {modal.position}
                 </span>
@@ -749,7 +749,7 @@ export default function FplTablePage() {
           {/* Key metrics grid */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16 }}>
             {[
-              { label:"Next GW",       val:(modal.pts_gw_1||0).toFixed(1),      color:"rgba(0,255,240,.7)" },
+              { label:"Next GW",       val:(modal.pts_gw_1||0).toFixed(1),      color:"#67b1ff" },
               { label:"Next 5 GWs",    val:(modal.next5_points||0).toFixed(1),  color:"#9ff1b4" },
               { label:"Form",          val:(modal.form||0).toFixed(1),           color:"#f2c94c" },
               { label:"Captain Score", val:(modal.captain_score||0).toFixed(1), color:"#ffa94d" },
@@ -758,7 +758,7 @@ export default function FplTablePage() {
             ].map(m => (
               <div key={m.label} style={{ padding:"10px 12px", borderRadius:10,
                 background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize:8, fontWeight:800, color:"rgba(0,255,240,.18)", letterSpacing:"0.1em", marginBottom:4, textTransform:"uppercase" }}>
+                <div style={{ fontSize:8, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.1em", marginBottom:4, textTransform:"uppercase" }}>
                   {m.label}
                 </div>
                 <div style={{ fontSize:20, fontWeight:800, color:m.color, fontFamily:"DM Mono,monospace", lineHeight:1 }}>
@@ -782,8 +782,8 @@ export default function FplTablePage() {
             ].map(m => (
               <div key={m.label} style={{ padding:"8px 10px", borderRadius:8,
                 background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.05)", textAlign:"center" }}>
-                <div style={{ fontSize:8, fontWeight:700, color:"rgba(0,255,240,.18)", marginBottom:3, textTransform:"uppercase" }}>{m.label}</div>
-                <div style={{ fontSize:15, fontWeight:800, color:"rgba(0,255,240,.8)", fontFamily:"DM Mono,monospace" }}>{m.val ?? "—"}</div>
+                <div style={{ fontSize:8, fontWeight:700, color:"#2a4a6a", marginBottom:3, textTransform:"uppercase" }}>{m.label}</div>
+                <div style={{ fontSize:15, fontWeight:800, color:"#c8d8f0", fontFamily:"DM Mono,monospace" }}>{m.val ?? "—"}</div>
               </div>
             ))}
           </div>
@@ -791,8 +791,8 @@ export default function FplTablePage() {
           {/* Action */}
           <button onClick={() => { setModal(null); navigate(`/player/${modal.player_id}`); }}
             style={{ width:"100%", padding:"10px 16px", borderRadius:10,
-              background:"rgba(0,255,240,0.15)", border:"1px solid rgba(0,255,240,0.35)",
-              color:"rgba(0,255,240,.7)", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+              background:"rgba(103,177,255,0.15)", border:"1px solid rgba(103,177,255,0.35)",
+              color:"#67b1ff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
             Full Player Analysis →
           </button>
         </div>

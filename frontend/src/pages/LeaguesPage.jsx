@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";
-const Y = #00fff0";
+const Y = "#00fff0";
 const K = "#000";
 const R = "#ff2744";
 

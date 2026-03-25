@@ -293,7 +293,7 @@ function Section({ title, count, accent, collapsible, defaultOpen=true, children
     <div style={{marginBottom:24}}>
       <div onClick={collapsible?()=>setOpen(o=>!o):undefined}
         style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,cursor:collapsible?"pointer":"default",userSelect:"none",borderBottom:`2px solid ${accent||"rgba(0,255,240,.1)"}`,paddingBottom:8}}>
-        <span style={{fontWeight:900,letterSpacing:".18em",color:accent||Y,textTransform:"uppercase",fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontFamily:"'DM Mono',monospace",letterSpacing:'.14em'}}>{title}</span>
+        <span style={{fontWeight:900,color:accent||'#00fff0',textTransform:"uppercase",fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:'.14em'}}>{title}</span>
         {count!=null&&<span style={{fontSize:8,fontWeight:900,color:K,background:accent||Y,padding:"1px 8px",fontFamily:"'DM Mono',monospace"}}>{count}</span>}
         {collapsible&&<span style={{marginLeft:"auto",fontSize:11,color:"rgba(0,255,240,.3)",display:"inline-block",transition:"transform .2s",transform:open?"rotate(0)":"rotate(-90deg)"}}>▾</span>}
       </div>
@@ -314,7 +314,7 @@ function CardRouter({ f, onNavigate }) {
 function WidgetShell({ title, children, accent=Y }) {
   return (
     <div style={{background:"#000",border:`1px solid ${accent||"rgba(0,255,240,.2)"}`,padding:"14px 16px",marginBottom:10,boxShadow:`4px 4px 0 rgba(0,255,240,.2)`}}>
-      <div style={{fontWeight:900,letterSpacing:".18em",color:accent,textTransform:"uppercase",marginBottom:12,fontFamily:"'Bebas Neue',sans-serif",fontSize:10,fontFamily:"'DM Mono',monospace",letterSpacing:".14em",borderBottom:`1px solid ${accent||"rgba(0,255,240,.2)"}`,paddingBottom:5}}>{title}</div>
+      <div style={{fontWeight:900,color:accent,textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:".14em",borderBottom:`1px solid ${accent||"rgba(0,255,240,.2)"}`,paddingBottom:5}}>{title}</div>
       {children}
     </div>
   );

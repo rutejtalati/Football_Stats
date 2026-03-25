@@ -293,7 +293,7 @@ function Section({ title, count, accent, collapsible, defaultOpen=true, children
     <div style={{marginBottom:24}}>
       <div onClick={collapsible?()=>setOpen(o=>!o):undefined}
         style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,cursor:collapsible?"pointer":"default",userSelect:"none",borderBottom:`2px solid ${accent||"rgba(232,255,71,.1)"}`,paddingBottom:8}}>
-        <span style={{fontSize:10,fontWeight:900,letterSpacing:".18em",color:accent||Y,textTransform:"uppercase",fontFamily:"'Bebas Neue',sans-serif",fontSize:16}}>{title}</span>
+        <span style={{fontWeight:900,letterSpacing:".18em",color:accent||Y,textTransform:"uppercase",fontFamily:"'Bebas Neue',sans-serif",fontSize:16}}>{title}</span>
         {count!=null&&<span style={{fontSize:8,fontWeight:900,color:K,background:accent||Y,padding:"1px 8px",fontFamily:"'DM Mono',monospace"}}>{count}</span>}
         {collapsible&&<span style={{marginLeft:"auto",fontSize:11,color:"rgba(232,255,71,.3)",display:"inline-block",transition:"transform .2s",transform:open?"rotate(0)":"rotate(-90deg)"}}>▾</span>}
       </div>
@@ -314,7 +314,7 @@ function CardRouter({ f, onNavigate }) {
 function WidgetShell({ title, children, accent=Y }) {
   return (
     <div style={{background:K,border:`3px solid ${accent}`,padding:"14px 16px",marginBottom:10,boxShadow:`4px 4px 0 rgba(232,255,71,.2)`}}>
-      <div style={{fontSize:10,fontWeight:900,letterSpacing:".18em",color:accent,textTransform:"uppercase",marginBottom:12,fontFamily:"'Bebas Neue',sans-serif",fontSize:14,borderBottom:`2px solid ${accent}`,paddingBottom:6}}>{title}</div>
+      <div style={{fontWeight:900,letterSpacing:".18em",color:accent,textTransform:"uppercase",marginBottom:12,fontFamily:"'Bebas Neue',sans-serif",fontSize:14,borderBottom:`2px solid ${accent}`,paddingBottom:6}}>{title}</div>
       {children}
     </div>
   );

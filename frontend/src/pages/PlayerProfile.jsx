@@ -70,10 +70,6 @@ function PRow({p,rank,sk,sl,sc,max,onClick}){
   const ac=PC(p.position);const lc=LC[p.league_slug]||C.muted;const val=p[sk];
   return(
     <div ref={ref} onClick={()=>
-      <style>{NB_CSS}</style>
-      {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
       style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:0,cursor:"pointer",
         background:hov?"rgba(12,20,40,0.99)":C.card,
@@ -326,7 +322,8 @@ export default function PlayerProfilePage(){
 
   useEffect(()=>{
     const fn=e=>{if(searchRef.current&&!searchRef.current.contains(e.target)){setSrOpen(false);}};
-    document.addEventListener("mousedown",fn);return()=>document.removeEventListener("mousedown",fn);
+    document.addEventListener("mousedown",fn);return()=>
+document.removeEventListener("mousedown",fn);
   },[]);
 
   const openPlayer=p=>{setSel(p);setSelType("player");setSrOpen(false);setSearch("");};
@@ -339,6 +336,11 @@ export default function PlayerProfilePage(){
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Bebas Neue',sans-serif",
       backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
       backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
+      <style>{NB_CSS}</style>
+      {/* NB bg stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+
       <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
 
       {sel&&selType==="player"&&<PDetail p={sel} onClose={()=>setSel(null)}/>}

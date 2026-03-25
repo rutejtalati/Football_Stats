@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 /* ── Neobrutalist theme constants ── */
-const NB = { y:"#00fff0", k:"#000", r:"#ff2744" };
+const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
 const NB_CSS = `
   @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
@@ -11,10 +11,10 @@ const NB_CSS = `
   @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:"#000"; }
-  ::-webkit-scrollbar-thumb { background:rgba(0,255,240,.3); }
-  ::selection { background:#00fff0; color:#000; }
-  input[type=range] { accent-color:#00fff0; }
+  ::-webkit-scrollbar-track { background:"#0a0a0a"; }
+  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
+  ::selection { background:#e8ff47; color:#0a0a0a; }
+  input[type=range] { accent-color:#e8ff47; }
 `;
 
 
@@ -31,22 +31,22 @@ function normalise(a) {
 }
 
 const LM = {
-  epl:        { label:"Premier League",   abbr:"EPL", color:"#00fff0", bg:"rgba(0,255,240,0.07)"  },
-  laliga:     { label:"La Liga",          abbr:"LAL", color:"rgba(0,255,240,.6)", bg:"rgba(245,158,11,0.07)"  },
-  seriea:     { label:"Serie A",          abbr:"SA",  color:"rgba(0,255,240,.8)", bg:"rgba(52,211,153,0.07)"  },
-  bundesliga: { label:"Bundesliga",       abbr:"BUN", color:"rgba(0,255,240,.6)", bg:"rgba(251,146,60,0.07)"  },
-  ligue1:     { label:"Ligue 1",          abbr:"L1",  color:"rgba(0,255,240,.5)", bg:"rgba(167,139,250,0.07)" },
+  epl:        { label:"Premier League",   abbr:"EPL", color:"#38bdf8", bg:"rgba(56,189,248,0.07)"  },
+  laliga:     { label:"La Liga",          abbr:"LAL", color:"#f59e0b", bg:"rgba(245,158,11,0.07)"  },
+  seriea:     { label:"Serie A",          abbr:"SA",  color:"#34d399", bg:"rgba(52,211,153,0.07)"  },
+  bundesliga: { label:"Bundesliga",       abbr:"BUN", color:"#fb923c", bg:"rgba(251,146,60,0.07)"  },
+  ligue1:     { label:"Ligue 1",          abbr:"L1",  color:"#a78bfa", bg:"rgba(167,139,250,0.07)" },
   ucl:        { label:"Champions League", abbr:"UCL", color:"#fbbf24", bg:"rgba(251,191,36,0.07)"  },
   general:    { label:"Football",         abbr:"NEWS",color:"#64748b", bg:"rgba(100,116,139,0.05)" },
 };
 const TM = {
-  match_preview: { label:"Preview",    color:"#00fff0", fb:"preview"  },
-  model_insight: { label:"Insight",    color:"rgba(0,255,240,.8)", fb:"insight"  },
+  match_preview: { label:"Preview",    color:"#38bdf8", fb:"preview"  },
+  model_insight: { label:"Insight",    color:"#34d399", fb:"insight"  },
   title_race:    { label:"Title Race", color:"#fbbf24", fb:"insight"  },
-  transfer:      { label:"Transfer",   color:"rgba(0,255,240,.6)", fb:"transfer" },
+  transfer:      { label:"Transfer",   color:"#f59e0b", fb:"transfer" },
   injury:        { label:"Injury",     color:"#f87171", fb:"injury"   },
   manager:       { label:"Manager",    color:"#c084fc", fb:"manager"  },
-  analysis:      { label:"Analysis",   color:"rgba(0,255,240,.8)", fb:"analysis" },
+  analysis:      { label:"Analysis",   color:"#34d399", fb:"analysis" },
   news:          { label:"News",       color:"#64748b", fb:"news"     },
   headline:      { label:"News",       color:"#64748b", fb:"news"     },
 };
@@ -61,7 +61,7 @@ const TEAM_COLOURS = {
   barcelona:["#A50044","#004D98"], atletico:["#CB3524","#272361"], bayern:["#DC052D","#0066B2"],
   dortmund:["#FDE100","#000000"], juventus:["#1d1d1b","#2d2d2d"], inter:["#003DA5","#000000"],
   milan:["#FB090B","#000000"], psg:["#004170","#DA291C"], napoli:["#12A0C7","#003078"],
-  default:["rgba(0,255,240,.1)","#0a1a2a"],
+  default:["#1a3a5a","#0a1a2a"],
 };
 function tc(n=""){ const l=n.toLowerCase(); for(const[k,v]of Object.entries(TEAM_COLOURS)){if(l.includes(k))return v;} return TEAM_COLOURS.default; }
 function gl(a){ return LM[(a.league||"").toLowerCase()]||LM.general; }
@@ -73,11 +73,11 @@ const NOISE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 // SVG fallback patterns — no emojis, CSS-drawn football visuals
 const FBP = {
-  transfer: { bg:"#000", accent:"#f59e0b" },
-  injury:   { bg:"#000", accent:"#f87171" },
-  manager:  { bg:"#000", accent:"#c084fc" },
+  transfer: { bg:"#0a0a0a", accent:"#f59e0b" },
+  injury:   { bg:"#0a0a0a", accent:"#f87171" },
+  manager:  { bg:"#0a0a0a", accent:"#c084fc" },
   analysis: { bg:"#010a05", accent:"#34d399" },
-  preview:  { bg:"#020a14", accent:"#00fff0" },
+  preview:  { bg:"#020a14", accent:"#38bdf8" },
   insight:  { bg:"#010a04", accent:"#34d399" },
   news:     { bg:"#030608", accent:"#64748b" },
 };
@@ -88,7 +88,7 @@ function fbBg(fb){
   if(fb===FBP.injury)   return fbSvg(fb,"<circle cx='200' cy='110' r='55' fill='none' stroke='rgba(248,113,113,.08)'/><circle cx='200' cy='110' r='90' fill='none' stroke='rgba(248,113,113,.05)'/><circle cx='200' cy='110' r='130' fill='none' stroke='rgba(248,113,113,.03)'/>");
   if(fb===FBP.manager)  return fbSvg(fb,"<rect x='60' y='44' width='280' height='132' fill='none' stroke='rgba(192,132,252,.07)' rx='6'/><rect x='100' y='66' width='200' height='88' fill='none' stroke='rgba(192,132,252,.05)' rx='3'/>");
   if(fb===FBP.analysis) return fbSvg(fb,"<rect x='36' y='22' width='328' height='176' fill='none' stroke='rgba(52,211,153,.08)' rx='5'/><line x1='200' y1='22' x2='200' y2='198' stroke='rgba(52,211,153,.06)'/><circle cx='200' cy='110' r='42' fill='none' stroke='rgba(52,211,153,.07)'/><rect x='36' y='73' width='42' height='74' fill='none' stroke='rgba(52,211,153,.06)'/><rect x='322' y='73' width='42' height='74' fill='none' stroke='rgba(52,211,153,.06)'/>");
-  if(fb===FBP.preview)  return fbSvg(fb,"<rect x='36' y='22' width='328' height='176' fill='none' stroke='rgba(0,255,240,.07)' rx='5'/><line x1='200' y1='22' x2='200' y2='198' stroke='rgba(0,255,240,.05)'/><circle cx='200' cy='110' r='38' fill='none' stroke='rgba(0,255,240,.07)'/>");
+  if(fb===FBP.preview)  return fbSvg(fb,"<rect x='36' y='22' width='328' height='176' fill='none' stroke='rgba(56,189,248,.07)' rx='5'/><line x1='200' y1='22' x2='200' y2='198' stroke='rgba(56,189,248,.05)'/><circle cx='200' cy='110' r='38' fill='none' stroke='rgba(56,189,248,.07)'/>");
   if(fb===FBP.insight)  return fbSvg(fb,"<polyline points='36,180 100,126 166,148 230,80 296,96 364,44' fill='none' stroke='rgba(52,211,153,.15)' stroke-width='2'/><polyline points='36,196 100,162 166,174 230,132 296,148 364,112' fill='none' stroke='rgba(52,211,153,.06)'/>");
   return fbSvg(fb,"<line x1='40' y1='62' x2='360' y2='62' stroke='rgba(100,116,139,.07)'/><line x1='40' y1='95' x2='290' y2='95' stroke='rgba(100,116,139,.05)'/><line x1='40' y1='122' x2='320' y2='122' stroke='rgba(100,116,139,.05)'/><line x1='40' y1='148' x2='210' y2='148' stroke='rgba(100,116,139,.04)'/>");
 }
@@ -105,8 +105,8 @@ const SOURCE_BRANDS={
   "sports illustrated": {bg:"#c8102e",   fg:"#fff",   abbr:"SI"   },
   "marca":              {bg:"#003580",   fg:"#fff",   abbr:"MCA"  },
   "fabrizio romano":    {bg:"#1a0a2e",   fg:"#a78bfa",abbr:"FAB"  },
-  "statinsite":         {bg:"#0a1628",   fg:"#00fff0",abbr:"SSI"  },
-  "statinsite intelligence engine":{bg:"#0a1628",fg:"#00fff0",abbr:"SSI"},
+  "statinsite":         {bg:"#0a1628",   fg:"#38bdf8",abbr:"SSI"  },
+  "statinsite intelligence engine":{bg:"#0a1628",fg:"#38bdf8",abbr:"SSI"},
 };
 function getSrcBrand(src=""){ return SOURCE_BRANDS[(src||"").toLowerCase().trim()]||null; }
 
@@ -122,6 +122,10 @@ function CardImage({src,type,style={},zoom=false,source=""}){
     const sz=Math.min(parseInt(style.height||style.minHeight||60)/2.2,28);
     return(
       <div style={{position:"relative",overflow:"hidden",...style,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <style>{NB_CSS}</style>
+      {/* NB bg stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
         <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover",opacity:brand?0.12:1}}/>
         {abbr&&<span style={{position:"relative",zIndex:1,fontSize:sz,fontWeight:900,fontFamily:"'Bebas Neue',sans-serif",color:accent,opacity:0.22,letterSpacing:"-0.04em",userSelect:"none"}}>{abbr}</span>}
@@ -148,17 +152,17 @@ function WinProbBar({home,draw,away,homeTeam,awayTeam,large}){
   const fs=large?13:11, fsMono=large?14:11;
   return(<div style={{width:"100%"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:large?10:5}}>
-      <span style={{fontSize:fs,fontWeight:800,color:win==="home"?"rgba(0,255,240,.9)":"#3a5a7a",maxWidth:"36%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{homeTeam}</span>
+      <span style={{fontSize:fs,fontWeight:800,color:win==="home"?"#f0f6ff":"#3a5a7a",maxWidth:"36%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{homeTeam}</span>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <span style={{fontFamily:"'DM Mono',monospace",fontSize:fsMono,fontWeight:900,color:win==="home"?"#00fff0":"rgba(0,255,240,.1)"}}>{h}%</span>
-        <span style={{fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700}}>{d}%</span>
-        <span style={{fontFamily:"'DM Mono',monospace",fontSize:fsMono,fontWeight:900,color:win==="away"?"#f87171":"rgba(0,255,240,.1)"}}>{a}%</span>
+        <span style={{fontFamily:"'DM Mono',monospace",fontSize:fsMono,fontWeight:900,color:win==="home"?"#38bdf8":"#1a3a5a"}}>{h}%</span>
+        <span style={{fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700}}>{d}%</span>
+        <span style={{fontFamily:"'DM Mono',monospace",fontSize:fsMono,fontWeight:900,color:win==="away"?"#f87171":"#1a3a5a"}}>{a}%</span>
       </div>
-      <span style={{fontSize:fs,fontWeight:800,color:win==="away"?"rgba(0,255,240,.9)":"#3a5a7a",maxWidth:"36%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>{awayTeam}</span>
+      <span style={{fontSize:fs,fontWeight:800,color:win==="away"?"#f0f6ff":"#3a5a7a",maxWidth:"36%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>{awayTeam}</span>
     </div>
-    <div style={{display:"flex",height:large?6:3,overflow:"hidden",gap:1}}>
+    <div style={{display:"flex",height:large?6:3,borderRadius:999,overflow:"hidden",gap:1}}>
       <div style={{width:h+"%",background:"linear-gradient(90deg,#155e8a,#38bdf8)",borderRadius:"999px 0 0 999px",transition:"width 0.6s ease"}}/>
-      <div style={{width:d+"%",background:"rgba(0,255,240,.07)"}}/>
+      <div style={{width:d+"%",background:"rgba(232,255,71,.07)"}}/>
       <div style={{width:a+"%",background:"linear-gradient(90deg,#8b2020,#f87171)",borderRadius:"0 999px 999px 0",transition:"width 0.6s ease"}}/>
     </div>
   </div>);
@@ -179,8 +183,8 @@ function MatchInfoBar({article}){
     <div style={{display:"flex",flexWrap:"wrap",gap:0,marginBottom:16}}>
       {cells.map((c,i)=>(
         <div key={i} style={{flex:"1 1 130px",padding:"0 20px 8px 0",minWidth:100}}>
-          <div style={{fontSize:9,fontWeight:900,color:"rgba(0,255,240,.25)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:4}}>{c.l}</div>
-          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:13,fontWeight:700,color:"rgba(0,255,240,.8)"}}>{c.v}</div>
+          <div style={{fontSize:9,fontWeight:900,color:"rgba(232,255,71,.25)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:4}}>{c.l}</div>
+          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:13,fontWeight:700,color:"#c8d8f0"}}>{c.v}</div>
         </div>))}
     </div>
     <WinProbBar home={hp} draw={dp} away={ap} homeTeam={ht} awayTeam={at} large/>
@@ -196,20 +200,20 @@ function CatBadge({type,league,small}){
   </div>);
 }
 
-function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,ap=0,leagueColor="#00fff0"}){
+function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,ap=0,leagueColor="#38bdf8"}){
   const[hc1,hc2]=tc(homeTeam); const[ac1,ac2]=tc(awayTeam);
   const hPct=Math.round(hp*100); const dPct=Math.round(dp*100); const aPct=Math.round(ap*100);
   const hasPct=hPct+dPct+aPct>0;
   const pitchSvg="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='170'%3E%3Crect x='30' y='12' width='340' height='146' fill='none' stroke='white' stroke-width='1' opacity='.13'/%3E%3Cline x1='200' y1='12' x2='200' y2='158' stroke='white' stroke-width='1' opacity='.13'/%3E%3Ccircle cx='200' cy='85' r='34' fill='none' stroke='white' stroke-width='1' opacity='.13'/%3E%3Crect x='30' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/%3E%3Crect x='318' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/%3E%3C/svg%3E";
   return(
-    <div style={{position:"relative",height,overflow:"hidden",flexShrink:0,background:"#000"}}>
+    <div style={{position:"relative",height,overflow:"hidden",flexShrink:0,background:"#0a0a0a"}}>
       {/* Team colour wedges */}
       <div style={{position:"absolute",left:0,top:0,width:"54%",height:"100%",background:"linear-gradient(140deg,"+hc1+"cc,"+hc2+"88)",clipPath:"polygon(0 0,65% 0,48% 100%,0 100%)"}}/>
       <div style={{position:"absolute",right:0,top:0,width:"54%",height:"100%",background:"linear-gradient(220deg,"+ac1+"cc,"+ac2+"88)",clipPath:"polygon(52% 0,100% 0,100% 100%,35% 100%)"}}/>
       {/* Pitch overlay */}
       <div style={{position:"absolute",inset:0,backgroundImage:`url("${pitchSvg}")`,backgroundSize:"100% 100%"}}/>
       {/* Dark overlay */}
-      <div style={{position:"absolute",inset:0,background:"#000"}}/>
+      <div style={{position:"absolute",inset:0,background:"#0a0a0a"}}/>
       {/* HUD corner brackets */}
       {[{t:6,l:6,bt:"top",bl:"left"},{t:6,r:6,bt:"top",bl:"right"},{b:2,l:6,bt:"bottom",bl:"left"},{b:2,r:6,bt:"bottom",bl:"right"}].map((c,i)=>(
         <div key={i} style={{position:"absolute",width:10,height:10,zIndex:6,
@@ -225,23 +229,23 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
       {/* Teams */}
       {[{team:homeTeam,logo:homeLogo,c1:hc1,c2:hc2,pos:"17%"},{team:awayTeam,logo:awayLogo,c1:ac1,c2:ac2,pos:"83%"}].map(({team,logo,c1,c2,pos})=>(
         <div key={team} style={{position:"absolute",left:pos,top:"50%",transform:"translate(-50%,-50%)",display:"flex",flexDirection:"column",alignItems:"center",gap:6,zIndex:4}}>
-          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:"#000",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:"none"}}>
+          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:"#0a0a0a",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:"3px 3px 0 rgba(232,255,71,.15)"}}>
             {logo
               ?<img src={logo} alt={team} style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentNode.style.background="linear-gradient(135deg,"+c1+","+c2+")";}}/>
-              :<div style={{fontSize:11,fontWeight:900,color:"#00fff0",fontFamily:"'Bebas Neue',sans-serif"}}>{(team||"?").slice(0,3).toUpperCase()}</div>}
+              :<div style={{fontSize:11,fontWeight:900,color:"#e8ff47",fontFamily:"'Bebas Neue',sans-serif"}}>{(team||"?").slice(0,3).toUpperCase()}</div>}
           </div>
-          <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:10,fontWeight:900,color:"#00fff0",textShadow:"0 1px 8px rgba(0,0,0,.95)",textAlign:"center",maxWidth:72,lineHeight:1.2}}>{team}</span>
+          <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:10,fontWeight:900,color:"#e8ff47",textShadow:"0 1px 8px rgba(0,0,0,.95)",textAlign:"center",maxWidth:72,lineHeight:1.2}}>{team}</span>
         </div>
       ))}
       {/* VS badge */}
-      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:"#000",border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
+      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:"#0a0a0a",border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
         <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,fontWeight:900,color:"rgba(255,255,255,.6)",letterSpacing:"0.05em"}}>VS</span>
       </div>
       {/* Probability strip fused to base */}
       {hasPct&&(
         <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:6}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 10px 2px",zIndex:7,position:"relative"}}>
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,fontWeight:900,color:hPct>aPct?"#00fff0":"rgba(255,255,255,.4)"}}>{hPct}%</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,fontWeight:900,color:hPct>aPct?"#60a5fa":"rgba(255,255,255,.4)"}}>{hPct}%</span>
             <span style={{fontSize:9,color:"rgba(255,255,255,.3)",fontWeight:700}}>{dPct}%</span>
             <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,fontWeight:900,color:aPct>hPct?"#f87171":"rgba(255,255,255,.4)"}}>{aPct}%</span>
           </div>
@@ -270,7 +274,7 @@ function MatchPreviewCard({article,featured=false,onClick}){
   const score=article.meta?.most_likely_score;
   const btts=article.meta?.p_btts;const over=article.meta?.p_over25;
   return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{borderRadius:0,overflow:"hidden",cursor:"pointer",background:"#000",
+    style={{borderRadius:0,overflow:"hidden",cursor:"pointer",background:"#0a0a0a",
       border:hov?"1px solid "+league.color+"55":"1px solid rgba(255,255,255,0.09)",
       boxShadow:hov?"0 0 36px "+league.color+"18,0 24px 56px rgba(0,0,0,.65)":"0 8px 28px rgba(0,0,0,0.45)",
       transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
@@ -280,33 +284,33 @@ function MatchPreviewCard({article,featured=false,onClick}){
       awayLogo={article.away_logo||article.meta?.away_logo}
       height={featured?190:160}
       hp={hp} dp={dp} ap={ap} leagueColor={league.color}/>
-    <div style={{padding:"11px 14px 13px",background:"#000"}}>
+    <div style={{padding:"11px 14px 13px",background:"#0a0a0a"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        {kickoff&&<span style={{marginLeft:"auto",fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700}}>{fmtKO(kickoff)||timeAgo(kickoff)}</span>}
+        {kickoff&&<span style={{marginLeft:"auto",fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700}}>{fmtKO(kickoff)||timeAgo(kickoff)}</span>}
       </div>
       {/* xG + markets row */}
       {(xgH||xgA||score||btts||over)&&(
-        <div style={{display:"flex",gap:0,marginBottom:9,background:"rgba(255,255,255,0.025)",borderRadius:0,overflow:"hidden",border:"1px solid rgba(0,255,240,.15)"}}>
+        <div style={{display:"flex",gap:0,marginBottom:9,background:"rgba(255,255,255,0.025)",borderRadius:0,overflow:"hidden",border:"2px solid rgba(232,255,71,.15)"}}>
           {xgH&&<div style={{flex:1,padding:"6px 10px",borderRight:"1px solid rgba(255,255,255,0.06)"}}>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#00fff0",lineHeight:1}}>{Number(xgH).toFixed(2)}</div>
-            <div style={{fontSize:7,fontWeight:700,color:"rgba(0,255,240,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>xG</div>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#60a5fa",lineHeight:1}}>{Number(xgH).toFixed(2)}</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(232,255,71,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>xG</div>
           </div>}
           {score&&<div style={{flex:1.2,padding:"6px 10px",borderRight:"1px solid rgba(255,255,255,0.06)",textAlign:"center"}}>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#00fff0",lineHeight:1}}>{score}</div>
-            <div style={{fontSize:7,fontWeight:700,color:"rgba(0,255,240,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>Projected</div>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#e8ff47",lineHeight:1}}>{score}</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(232,255,71,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>Projected</div>
           </div>}
           {xgA&&<div style={{flex:1,padding:"6px 10px",borderRight:btts||over?"1px solid rgba(255,255,255,0.06)":undefined}}>
             <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#f87171",lineHeight:1,textAlign:"right"}}>{Number(xgA).toFixed(2)}</div>
-            <div style={{fontSize:7,fontWeight:700,color:"rgba(0,255,240,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2,textAlign:"right"}}>xG</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(232,255,71,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2,textAlign:"right"}}>xG</div>
           </div>}
           {over!=null&&<div style={{flex:1,padding:"6px 10px",borderRight:btts?"1px solid rgba(255,255,255,0.06)":undefined}}>
             <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#fbbf24",lineHeight:1}}>{Math.round(over>1?over:over*100)}%</div>
-            <div style={{fontSize:7,fontWeight:700,color:"rgba(0,255,240,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>O2.5</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(232,255,71,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>O2.5</div>
           </div>}
           {btts!=null&&<div style={{flex:1,padding:"6px 10px"}}>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"rgba(0,255,240,.8)",lineHeight:1}}>{Math.round(btts>1?btts:btts*100)}%</div>
-            <div style={{fontSize:7,fontWeight:700,color:"rgba(0,255,240,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>BTTS</div>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:"#34d399",lineHeight:1}}>{Math.round(btts>1?btts:btts*100)}%</div>
+            <div style={{fontSize:7,fontWeight:700,color:"rgba(232,255,71,.25)",letterSpacing:"0.09em",textTransform:"uppercase",marginTop:2}}>BTTS</div>
           </div>}
         </div>
       )}
@@ -321,7 +325,7 @@ function MatchPreviewCard({article,featured=false,onClick}){
 function InsightCard({article,featured=false,onClick,idx=0}){
   const[hov,setHov]=useState(false); const[ref,vis]=useReveal();
   const isTitle=article.type==="title_race";
-  const leaguePalette={epl:["#00fff0","#0c4a6e"],laliga:["#fbbf24","#78350f"],seriea:["#34d399","#064e3b"],bundesliga:["#ff7c2a","#7c2d12"],ligue1:["#c084fc","#4c1d95"],ucl:["#fbbf24","#78350f"]};
+  const leaguePalette={epl:["#38bdf8","#0c4a6e"],laliga:["#fbbf24","#78350f"],seriea:["#34d399","#064e3b"],bundesliga:["#ff7c2a","#7c2d12"],ligue1:["#c084fc","#4c1d95"],ucl:["#fbbf24","#78350f"]};
   const [accent,accentDark]=leaguePalette[article.league]||(isTitle?["#fbbf24","#92400e"]:["#34d399","#065f46"]);
   const gap=article.meta?.gap;
   const leader=article.meta?.leader;
@@ -356,7 +360,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
           {leader&&<>
             <div style={{width:1,height:44,background:"rgba(255,255,255,.1)"}}/>
             <div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:13,fontWeight:900,color:"#00fff0"}}>{leader}</div>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:13,fontWeight:900,color:"#e8ff47"}}>{leader}</div>
               <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:2}}>Leader</div>
             </div>
           </>}
@@ -374,11 +378,11 @@ function InsightCard({article,featured=false,onClick,idx=0}){
     <div style={{padding:"11px 13px 13px"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        <span style={{marginLeft:"auto",fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+        <span style={{marginLeft:"auto",fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
       </div>
-      <h3 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontWeight:900,color:"#00fff0",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
+      <h3 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontWeight:900,color:"#e8ff47",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
       {standings.length>0?(
-        <div style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(0,255,240,.15)",borderRadius:9,overflow:"hidden",marginBottom:10}}>
+        <div style={{background:"rgba(255,255,255,0.025)",border:"2px solid rgba(232,255,71,.15)",borderRadius:9,overflow:"hidden",marginBottom:10}}>
           {standings.slice(0,3).map((s,i)=>{
             const isLeader=i===0;
             const form=(s.form||"").split("").slice(-3);
@@ -402,7 +406,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
           })}
         </div>
       ):(
-        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(0,255,240,.4)",lineHeight:1.55,margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
+        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(232,255,71,.4)",lineHeight:1.55,margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
       )}
       <div style={{display:"flex",justifyContent:"flex-end"}}>
         <span style={{fontSize:11,fontWeight:800,color:accent}}>Full analysis →</span>
@@ -415,9 +419,9 @@ function InsightCard({article,featured=false,onClick,idx=0}){
     <div style={{padding:"11px 13px 13px"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        <span style={{marginLeft:"auto",fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+        <span style={{marginLeft:"auto",fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
       </div>
-      <h3 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontWeight:900,color:"#00fff0",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
+      <h3 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontWeight:900,color:"#e8ff47",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
       {standings.length>0?(
         <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
           {standings.slice(0,3).map((s,i)=>{
@@ -428,8 +432,8 @@ function InsightCard({article,featured=false,onClick,idx=0}){
             return(
               <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
                 <span style={{fontSize:9,fontWeight:600,color:isLeader?accent:"rgba(255,255,255,0.45)",width:70,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.team||s.name}</span>
-                <div style={{flex:1,height:6,background:"rgba(0,255,240,.06)",overflow:"hidden"}}>
-                  <div style={{height:"100%",width:pct+"%",
+                <div style={{flex:1,height:6,background:"rgba(232,255,71,.06)",borderRadius:999,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:pct+"%",borderRadius:999,
                     background:isLeader?"linear-gradient(90deg,"+accentDark+","+accent+")"
                       :"rgba(255,255,255,0.2)"}}/>
                 </div>
@@ -439,7 +443,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
           })}
         </div>
       ):(
-        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(0,255,240,.4)",lineHeight:1.55,margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
+        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(232,255,71,.4)",lineHeight:1.55,margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst||article.summary}</p>
       )}
       <div style={{display:"flex",justifyContent:"flex-end"}}>
         <span style={{fontSize:11,fontWeight:800,color:accent}}>Full analysis →</span>
@@ -448,7 +452,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
   );
 
   return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{borderRadius:0,overflow:"hidden",cursor:"pointer",background:"#000",
+    style={{borderRadius:0,overflow:"hidden",cursor:"pointer",background:"#0a0a0a",
       border:hov?"1px solid "+accent+"50":"1px solid rgba(255,255,255,0.09)",
       boxShadow:hov?"0 0 32px "+accent+"18,0 20px 52px rgba(0,0,0,.65)":"0 8px 28px rgba(0,0,0,0.4)",
       transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
@@ -475,8 +479,8 @@ function EditorialNewsCard({article,onClick}){
     <div style={{flex:1,padding:"11px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,overflow:"hidden"}}>
         <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:tm.color+"0e",border:"1px solid "+tm.color+"20",borderRadius:4,padding:"2px 6px",flexShrink:0}}>{tm.label}</span>
-        {article.source&&<span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:9,color:"rgba(0,255,240,.35)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{article.source}</span>}
-        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700,flexShrink:0}}>{timeAgo(article.published_at)}</span>
+        {article.source&&<span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:9,color:"rgba(232,255,71,.35)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{article.source}</span>}
+        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700,flexShrink:0}}>{timeAgo(article.published_at)}</span>
       </div>
       <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12.5,fontWeight:700,lineHeight:1.38,color:hov?"#e0ecff":"#6a8aa8",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
     </div>
@@ -502,14 +506,14 @@ function MagHeroCard({article,onClick}){
       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:accent}}/>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"16px 18px"}}>
         <div style={{display:"flex",gap:6,marginBottom:7}}>
-          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:"#000",border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
-          {article.source&&<span style={{fontSize:8,fontWeight:700,color:"rgba(0,255,240,.45)",background:"#000",borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
+          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:"#0a0a0a",border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
+          {article.source&&<span style={{fontSize:8,fontWeight:700,color:"rgba(232,255,71,.45)",background:"#0a0a0a",borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
         </div>
-        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:17,fontWeight:900,color:"#00fff0",lineHeight:1.28,margin:"0 0 7px",letterSpacing:"-0.02em"}}>{article.title}</h2>
-        {article.standfirst&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(0,255,240,.45)",lineHeight:1.5,margin:"0 0 9px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst}</p>}
+        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:17,fontWeight:900,color:"#e8ff47",lineHeight:1.28,margin:"0 0 7px",letterSpacing:"-0.02em"}}>{article.title}</h2>
+        {article.standfirst&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(232,255,71,.45)",lineHeight:1.5,margin:"0 0 9px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst}</p>}
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:10,fontWeight:700,color:accent}}>Read more →</span>
-          <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",marginLeft:"auto"}}>{timeAgo(article.published_at)}</span>
+          <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",marginLeft:"auto"}}>{timeAgo(article.published_at)}</span>
         </div>
       </div>
     </div>
@@ -539,7 +543,7 @@ function MagSmallCard({article,onClick}){
         </div>
         <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:700,lineHeight:1.35,color:hov?"#fff":"rgba(255,255,255,0.85)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
         <div style={{display:"flex",alignItems:"center",gap:4,marginTop:"auto"}}>
-          {article.source&&<span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:8,color:"rgba(0,255,240,.3)",fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{article.source}</span>}
+          {article.source&&<span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:8,color:"rgba(232,255,71,.3)",fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{article.source}</span>}
           <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:"rgba(255,255,255,0.25)",flexShrink:0}}>{timeAgo(article.published_at)}</span>
         </div>
       </div>
@@ -576,11 +580,11 @@ function FeaturedCard({article,onClick}){
       <CatBadge type={article.type} league={article.league}/>
     </div>
     <div style={{position:"relative",zIndex:1}}>
-      <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,fontWeight:900,color:"#00fff0",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 10px"}}>{article.title}</h2>
-      <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:14,color:"rgba(0,255,240,.7)",lineHeight:1.6,margin:"0 0 20px",maxWidth:580}}>{article.standfirst||article.summary}</p>
+      <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,fontWeight:900,color:"#e8ff47",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 10px"}}>{article.title}</h2>
+      <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:14,color:"rgba(232,255,71,.7)",lineHeight:1.6,margin:"0 0 20px",maxWidth:580}}>{article.standfirst||article.summary}</p>
       <div style={{display:"flex",alignItems:"center",gap:18}}>
         <span style={{fontSize:12,fontWeight:800,color:accent}}>Read full analysis →</span>
-        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
       </div>
     </div>
   </div>);
@@ -604,7 +608,7 @@ function RelatedCard({article,onClick}){
         <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:tm.color+"10",borderRadius:4,padding:"1px 5px"}}>{tm.label}</span>
         {article.league&&article.league!=="general"&&<span style={{fontSize:7,fontWeight:900,letterSpacing:"0.08em",textTransform:"uppercase",color:league.color,background:league.bg,borderRadius:4,padding:"1px 5px"}}>{league.abbr}</span>}
       </div>
-      <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:700,color:hov?"rgba(0,255,240,.85)":"#7a9ab8",lineHeight:1.35,margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.title}</p>
+      <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:700,color:hov?"#e8f0ff":"#7a9ab8",lineHeight:1.35,margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.title}</p>
     </div>
   </div>);
 }
@@ -628,10 +632,10 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
   const ms=article.meta?.match_stats;
   const related=allArticles.filter(a=>a.id!==article.id&&(a.league===article.league||a.type===article.type||[ht,at].filter(Boolean).some(t=>a.home_team===t||a.away_team===t))).slice(0,5);
   return(<>
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1100,background:"#000",animation:"apBack .22s ease both"}}/>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1100,background:"#0a0a0a",animation:"apBack .22s ease both"}}/>
     <div ref={pageRef} style={{position:"fixed",inset:0,zIndex:1101,overflowY:"auto",overflowX:"hidden",background:"linear-gradient(170deg,rgba(5,10,22,0.995),rgba(2,5,12,0.995))",scrollbarWidth:"thin",scrollbarColor:"rgba(255,255,255,0.05) transparent",animation:"apUp .3s cubic-bezier(.22,1,.36,1) both"}}>
       <div style={{height:2,background:"linear-gradient(90deg,"+accent+",transparent)",position:"sticky",top:0,zIndex:10}}/>
-      <button onClick={onClose} style={{position:"fixed",top:16,right:20,zIndex:1200,width:40,height:40,borderRadius:"50%",background:"rgba(0,255,240,.07)",border:"1px solid rgba(255,255,255,0.14)",color:"#6a8aa8",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.14)";e.currentTarget.style.color="rgba(0,255,240,.9)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="#6a8aa8";}}>&#x2715;</button>
+      <button onClick={onClose} style={{position:"fixed",top:16,right:20,zIndex:1200,width:40,height:40,borderRadius:"50%",background:"rgba(232,255,71,.07)",border:"1px solid rgba(255,255,255,0.14)",color:"#6a8aa8",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.14)";e.currentTarget.style.color="#f0f6ff";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="#6a8aa8";}}>&#x2715;</button>
       <div style={{maxWidth:1080,margin:"0 auto",padding:"0 24px 80px"}}>
         {isPreview&&ht&&at
           ?<HeroVSBanner homeTeam={ht} awayTeam={at} homeLogo={article.home_logo||article.meta?.home_logo} awayLogo={article.away_logo||article.meta?.away_logo} height={220}/>
@@ -644,24 +648,24 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
           <div>
             <div style={{display:"flex",gap:10,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
               {!article.image&&!isPreview&&<CatBadge type={article.type} league={article.league}/>}
-              {article.author&&<span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:800,color:"rgba(0,255,240,.8)"}}>{article.author}</span>}
-              {article.source&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.35)",fontWeight:700}}>{article.source_type==="external"?"via "+article.source:"StatinSite Intelligence Desk"}</span>}
-              <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+              {article.author&&<span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:800,color:"#c8d8f0"}}>{article.author}</span>}
+              {article.source&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.35)",fontWeight:700}}>{article.source_type==="external"?"via "+article.source:"StatinSite Intelligence Desk"}</span>}
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(232,255,71,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
             </div>
-            <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,fontWeight:900,color:"#00fff0",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 14px"}}>{article.title}</h1>
+            <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,fontWeight:900,color:"#e8ff47",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 14px"}}>{article.title}</h1>
             {article.standfirst&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,lineHeight:1.7,color:"#7a9ab8",margin:"0 0 24px",borderLeft:"3px solid "+accent+"40",paddingLeft:16}}>{article.standfirst}</p>}
             {isPreview&&<MatchInfoBar article={article}/>}
             {!isExt&&paras.length>0&&(
               <div style={{display:"flex",flexDirection:"column",gap:18,marginBottom:32}}>
                 {paras.map((p,i)=>(
-                  <p key={i} style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"rgba(0,255,240,.8)":"rgba(200,215,230,0.85)",margin:0,fontWeight:i===paras.length-1?600:400,...(i===paras.length-1?{borderTop:"1px solid rgba(255,255,255,0.05)",paddingTop:18}:{})}}>{p}</p>
+                  <p key={i} style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"rgba(200,215,230,0.85)",margin:0,fontWeight:i===paras.length-1?600:400,...(i===paras.length-1?{borderTop:"1px solid rgba(255,255,255,0.05)",paddingTop:18}:{})}}>{p}</p>
                 ))}
               </div>)}
             {isExt&&(<div style={{display:"flex",flexDirection:"column",gap:18,marginBottom:32}}>
               {paras.length>0
-                ?paras.map((p,i)=><p key={i} style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"rgba(0,255,240,.8)":"rgba(200,215,230,0.85)",margin:0}}>{p}</p>)
-                :<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15,lineHeight:1.75,color:"rgba(0,255,240,.7)",margin:0}}>{article.standfirst||article.summary}</p>}
-              {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",background:accent,color:"#000",fontFamily:"'Space Grotesk',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
+                ?paras.map((p,i)=><p key={i} style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"#c8d8f0":"rgba(200,215,230,0.85)",margin:0}}>{p}</p>)
+                :<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15,lineHeight:1.75,color:"rgba(232,255,71,.7)",margin:0}}>{article.standfirst||article.summary}</p>}
+              {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#000",fontFamily:"'Space Grotesk',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
             </div>)}
             {ms&&(<div style={{marginTop:32,padding:"18px 20px",borderRadius:0,background:"rgba(255,255,255,0.018)",border:"1px solid "+accent+"14"}}>
               <div style={{fontSize:9,fontWeight:900,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:16}}>Key Statistics</div>
@@ -673,7 +677,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
                   {l:"Projected",v:ms.most_likely_score}].filter(s=>s.v!=null).map((s,i)=>(
                   <div key={i}>
                     <div style={{fontFamily:"'DM Mono',monospace",fontSize:17,fontWeight:900,color:accent}}>{s.v}</div>
-                    <div style={{fontSize:9,fontWeight:800,color:"rgba(0,255,240,.25)",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:2}}>{s.l}</div>
+                    <div style={{fontSize:9,fontWeight:800,color:"rgba(232,255,71,.25)",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:2}}>{s.l}</div>
                   </div>))}
               </div>
             </div>)}
@@ -687,7 +691,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
             {related.length>0&&(<div>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
                 <div style={{width:2,height:18,borderRadius:2,background:"linear-gradient(180deg,"+accent+",transparent)"}}/>
-                <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:13,fontWeight:900,color:"#00fff0"}}>Related</span>
+                <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:13,fontWeight:900,color:"#e8ff47"}}>Related</span>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 {related.map(a=><RelatedCard key={a.id} article={a} onClick={a2=>{onNavigate(a2);if(pageRef.current)pageRef.current.scrollTop=0;}}/>)}
@@ -703,30 +707,30 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
 function TrendingBar({clubs,activeClub,onSelect}){
   if(!clubs?.length)return null;
   return(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
-    <span style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(0,255,240,.25)",textTransform:"uppercase",flexShrink:0}}>Trending</span>
+    <span style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(232,255,71,.25)",textTransform:"uppercase",flexShrink:0}}>Trending</span>
     {clubs.map(club=>(<button key={club} onClick={()=>onSelect(club===activeClub?null:club)}
-      style={{fontSize:10,fontWeight:800,color:club===activeClub?"rgba(0,255,240,.9)":"#6a8aa8",
-        background:club===activeClub?"rgba(0,255,240,0.12)":"rgba(255,255,255,0.035)",
-        border:club===activeClub?"1px solid rgba(0,255,240,0.38)":"1px solid rgba(255,255,255,0.07)",
-        padding:"5px 12px",flexShrink:0,cursor:"pointer",transition:"all .17s ease",
-        boxShadow:club===activeClub?"0 0 12px rgba(0,255,240,0.14)":"none",fontFamily:"'Space Grotesk',sans-serif"}}>{club}</button>))}
+      style={{fontSize:10,fontWeight:800,color:club===activeClub?"#f0f6ff":"#6a8aa8",
+        background:club===activeClub?"rgba(56,189,248,0.12)":"rgba(255,255,255,0.035)",
+        border:club===activeClub?"1px solid rgba(56,189,248,0.38)":"1px solid rgba(255,255,255,0.07)",
+        borderRadius:999,padding:"5px 12px",flexShrink:0,cursor:"pointer",transition:"all .17s ease",
+        boxShadow:club===activeClub?"0 0 12px rgba(56,189,248,0.14)":"none",fontFamily:"'Space Grotesk',sans-serif"}}>{club}</button>))}
   </div>);
 }
 
-function Chip({label,active,color="#00fff0",onClick,count}){
+function Chip({label,active,color="#38bdf8",onClick,count}){
   const[hov,setHov]=useState(false);
   return(<button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
     style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 16px",borderRadius:0,
       border:active?"1.5px solid "+color+"60":hov?"1.5px solid rgba(255,255,255,0.14)":"1.5px solid rgba(255,255,255,0.07)",
       background:active?color+"12":hov?"rgba(255,255,255,0.055)":"rgba(255,255,255,0.025)",
       
-      color:active?color:hov?"rgba(0,255,240,.8)":"#3a5a7a",
+      color:active?color:hov?"#c8d8f0":"#3a5a7a",
       fontFamily:"'Space Grotesk',sans-serif",fontSize:11,fontWeight:800,letterSpacing:"0.04em",
       cursor:"pointer",transition:"all .17s ease",whiteSpace:"nowrap",flexShrink:0,
       boxShadow:active?"0 0 16px "+color+"18":"none"}}>
     {active&&<span style={{width:5,height:5,borderRadius:"50%",background:color,boxShadow:"0 0 7px "+color,flexShrink:0}}/>}
     {label}
-    {count!=null&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:9,fontWeight:900,color:active?color:"rgba(0,255,240,.25)",background:active?color+"18":"rgba(255,255,255,0.035)",padding:"1px 5px"}}>{count}</span>}
+    {count!=null&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:9,fontWeight:900,color:active?color:"rgba(232,255,71,.25)",background:active?color+"18":"rgba(255,255,255,0.035)",borderRadius:999,padding:"1px 5px"}}>{count}</span>}
   </button>);
 }
 
@@ -734,14 +738,14 @@ function Skeleton({h=200}){
   return(<div style={{borderRadius:18,height:h,background:"linear-gradient(90deg,rgba(255,255,255,0.025) 0%,rgba(255,255,255,0.055) 50%,rgba(255,255,255,0.025) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.6s ease-in-out infinite",border:"1px solid rgba(255,255,255,0.04)"}}/>);
 }
 
-function SectionHead({title,sub,accent="#00fff0",count}){
+function SectionHead({title,sub,accent="#38bdf8",count}){
   return(<div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:20}}>
     <div style={{width:3,height:36,borderRadius:2,background:"linear-gradient(180deg,"+accent+",transparent)",flexShrink:0,marginTop:2}}/>
     <div style={{flex:1}}>
-      <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,fontWeight:900,color:"#00fff0",margin:0,letterSpacing:"-0.02em"}}>{title}</h2>
-      {sub&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(0,255,240,.25)",margin:"2px 0 0",fontWeight:600}}>{sub}</p>}
+      <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,fontWeight:900,color:"#e8ff47",margin:0,letterSpacing:"-0.02em"}}>{title}</h2>
+      {sub&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(232,255,71,.25)",margin:"2px 0 0",fontWeight:600}}>{sub}</p>}
     </div>
-    {count!=null&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(0,255,240,.25)",fontWeight:700,marginTop:6}}>{count}</span>}
+    {count!=null&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(232,255,71,.25)",fontWeight:700,marginTop:6}}>{count}</span>}
   </div>);
 }
 
@@ -758,11 +762,11 @@ function IntelligenceTicker(){
     return()=>clearInterval(t);
   },[items.length]);
   if(!items.length)return null;
-  const COLORS={green:"#34d399",red:"#f87171",blue:"#00fff0",amber:"#f59e0b"};
-  return(<div style={{width:"100%",background:"rgba(0,255,240,.03)",borderBottom:"2px solid rgba(0,255,240,.12)",borderTop:"2px solid rgba(0,255,240,.12)",padding:"8px 0",overflow:"hidden",position:"relative",marginBottom:24}}>
+  const COLORS={green:"#34d399",red:"#f87171",blue:"#38bdf8",amber:"#f59e0b"};
+  return(<div style={{width:"100%",background:"rgba(232,255,71,.03)",borderBottom:"2px solid rgba(232,255,71,.12)",borderTop:"2px solid rgba(232,255,71,.12)",padding:"8px 0",overflow:"hidden",position:"relative",marginBottom:24}}>
     <div style={{display:"flex",alignItems:"center",gap:0}}>
       <div style={{flexShrink:0,padding:"0 16px",borderRight:"1px solid rgba(255,255,255,0.08)",marginRight:16}}>
-        <span style={{fontSize:8,fontWeight:900,color:"#00fff0",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Space Grotesk',sans-serif"}}>Live</span>
+        <span style={{fontSize:8,fontWeight:900,color:"#38bdf8",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Space Grotesk',sans-serif"}}>Live</span>
       </div>
       <div style={{flex:1,overflow:"hidden"}}>
         <div style={{display:"flex",gap:40,animation:"tickerScroll 40s linear infinite",whiteSpace:"nowrap"}}>
@@ -787,8 +791,8 @@ function TransferHub({items}){
   return(<div style={{background:"rgba(10,16,30,0.98)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:0,overflow:"hidden"}}>
     <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(245,158,11,0.12)",display:"flex",alignItems:"center",gap:10}}>
       <div style={{width:3,height:20,borderRadius:2,background:"linear-gradient(180deg,#f59e0b,transparent)",flexShrink:0}}/>
-      <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontWeight:900,color:"#00fff0"}}>Transfer Hub</span>
-      <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,240,.6)",fontWeight:700,marginLeft:"auto"}}>{items.length}</span>
+      <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontWeight:900,color:"#e8ff47"}}>Transfer Hub</span>
+      <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"#f59e0b",fontWeight:700,marginLeft:"auto"}}>{items.length}</span>
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:0}}>
       {items.slice(0,8).map((t,i)=>(
@@ -800,10 +804,10 @@ function TransferHub({items}){
             ?<img src={t.image} alt="" style={{width:44,height:36,objectFit:"cover",borderRadius:6,flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
             :<div style={{width:44,height:36,borderRadius:6,flexShrink:0,background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg></div>}
           <div style={{flex:1,minWidth:0}}>
-            <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:700,color:"rgba(0,255,240,.5)",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.35}}>{t.headline||t.title}</p>
+            <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,fontWeight:700,color:"#8aabb8",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.35}}>{t.headline||t.title}</p>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
-              <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:8,color:"rgba(0,255,240,.35)",fontWeight:700}}>{t.source}</span>
-              <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:"rgba(0,255,240,.25)",fontWeight:700}}>{timeAgo(t.published_at)}</span>
+              <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:8,color:"rgba(232,255,71,.35)",fontWeight:700}}>{t.source}</span>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:"rgba(232,255,71,.25)",fontWeight:700}}>{timeAgo(t.published_at)}</span>
             </div>
           </div>
         </a>
@@ -888,20 +892,15 @@ export default function NewsTrackerPage(){
     insight:articles.filter(a=>["model_insight","title_race"].includes(a.type)).length,
     news:articles.filter(a=>["news","headline","transfer","injury","manager","analysis"].includes(a.type)).length};
 
-  const TF=[{key:"all",label:"All",color:"#64748b"},{key:"preview",label:"Previews",color:"#00fff0"},{key:"insight",label:"Insights",color:"rgba(0,255,240,.8)"},{key:"news",label:"News",color:"rgba(0,255,240,.6)"}];
-  const LF=[{key:"all",label:"All Leagues",color:"#64748b"},{key:"epl",label:"Premier League",color:"#00fff0"},{key:"laliga",label:"La Liga",color:"rgba(0,255,240,.6)"},{key:"seriea",label:"Serie A",color:"rgba(0,255,240,.8)"},{key:"bundesliga",label:"Bundesliga",color:"rgba(0,255,240,.6)"},{key:"ligue1",label:"Ligue 1",color:"rgba(0,255,240,.5)"}];
+  const TF=[{key:"all",label:"All",color:"#64748b"},{key:"preview",label:"Previews",color:"#38bdf8"},{key:"insight",label:"Insights",color:"#34d399"},{key:"news",label:"News",color:"#f59e0b"}];
+  const LF=[{key:"all",label:"All Leagues",color:"#64748b"},{key:"epl",label:"Premier League",color:"#38bdf8"},{key:"laliga",label:"La Liga",color:"#f59e0b"},{key:"seriea",label:"Serie A",color:"#34d399"},{key:"bundesliga",label:"Bundesliga",color:"#fb923c"},{key:"ligue1",label:"Ligue 1",color:"#a78bfa"}];
   const SF=[{key:"matchday",label:"Matchday"},{key:"latest",label:"Latest"},{key:"trending",label:"Trending"}];
 
-  return(<div style={{minHeight:"100vh",background:"#000",fontFamily:"'Space Grotesk',sans-serif",position:"relative"}}>
-      <style>{NB_CSS}</style>
-      {/* NB bg stripes */}
-      {/* Grid from index.css body::after */}
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(0,255,240,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
-
+  return(<div style={{minHeight:"100vh",background:"#0a0a0a",fontFamily:"'Bebas Neue',sans-serif",position:"relative"}}>
     <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,opacity:0.016,
       backgroundImage:"linear-gradient(rgba(255,255,255,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.6) 1px,transparent 1px)",
       backgroundSize:"80px 80px"}}/>
-    <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:800,height:300,background:"radial-gradient(ellipse at center top,rgba(0,255,240,0.04) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}}/>
+    <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:800,height:300,background:"radial-gradient(ellipse at center top,rgba(56,189,248,0.04) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}}/>
 
     <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}@keyframes apBack{from{opacity:0}to{opacity:1}}@keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}@keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}@keyframes snLivePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.55)}}"}</style>
 
@@ -914,17 +913,17 @@ export default function NewsTrackerPage(){
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <div style={{width:4,height:48,borderRadius:2,background:"linear-gradient(180deg,#38bdf8,#34d399)",flexShrink:0}}/>
             <div>
-              <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:30,fontWeight:900,color:"#00fff0",margin:0,letterSpacing:"-0.03em",lineHeight:1.1}}>Football Intelligence</h1>
-              <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,color:"rgba(0,255,240,.25)",margin:"4px 0 0",fontWeight:600}}>
+              <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:30,fontWeight:900,color:"#e8ff47",margin:0,letterSpacing:"-0.03em",lineHeight:1.1}}>Football Intelligence</h1>
+              <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,color:"rgba(232,255,71,.25)",margin:"4px 0 0",fontWeight:600}}>
                 Model previews · Transfer hub · Tactical insights · Live signals
                 {lastUpdated&&<span style={{marginLeft:10,fontFamily:"'DM Mono',monospace",fontSize:9,color:"#0f2a3a"}}>· Updated {timeAgo(lastUpdated)}</span>}
               </p>
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",background:"rgba(52,211,153,0.05)",border:"1px solid rgba(52,211,153,0.18)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",borderRadius:999,background:"rgba(52,211,153,0.05)",border:"1px solid rgba(52,211,153,0.18)"}}>
               <span style={{width:6,height:6,borderRadius:"50%",background:"#34d399",boxShadow:"0 0 9px rgba(52,211,153,0.8)",animation:"nbPulse 2.2s ease-in-out infinite",display:"inline-block"}}/>
-              <span style={{fontSize:9,fontWeight:900,color:"rgba(0,255,240,.8)",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Space Grotesk',sans-serif"}}>Live feed</span>
+              <span style={{fontSize:9,fontWeight:900,color:"#34d399",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Space Grotesk',sans-serif"}}>Live feed</span>
             </div>
           </div>
         </div>
@@ -938,9 +937,9 @@ export default function NewsTrackerPage(){
       <div style={{marginBottom:24}}>
         <div style={{display:"flex",gap:6,flexWrap:"nowrap",overflowX:"auto",paddingBottom:8,scrollbarWidth:"none",alignItems:"center"}}>
           {TF.map(f=><Chip key={f.key} label={f.label} active={activeType===f.key} color={f.color} count={counts[f.key]} onClick={()=>setActiveType(f.key)}/>)}
-          <div style={{width:1,height:22,background:"rgba(0,255,240,.06)",flexShrink:0,margin:"0 4px"}}/>
+          <div style={{width:1,height:22,background:"rgba(232,255,71,.06)",flexShrink:0,margin:"0 4px"}}/>
           {LF.map(f=><Chip key={f.key} label={f.label} active={activeLeague===f.key} color={f.color} onClick={()=>setActiveLeague(f.key)}/>)}
-          <div style={{width:1,height:22,background:"rgba(0,255,240,.06)",flexShrink:0,margin:"0 4px"}}/>
+          <div style={{width:1,height:22,background:"rgba(232,255,71,.06)",flexShrink:0,margin:"0 4px"}}/>
           {SF.map(s=><Chip key={s.key} label={s.label} active={sortMode===s.key} color="#64748b" onClick={()=>setSortMode(s.key)}/>)}
         </div>
       </div>
@@ -993,7 +992,7 @@ export default function NewsTrackerPage(){
 
             {/* ── Match Previews ── */}
             {previews.length>0&&(<section style={{marginBottom:32}}>
-              <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="#00fff0" count={previews.length}/>
+              <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="#38bdf8" count={previews.length}/>
               <div style={{display:"grid",gridTemplateColumns:previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",gap:12}}>
                 {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
               </div>
@@ -1008,7 +1007,7 @@ export default function NewsTrackerPage(){
             </section>)}
 
             {sorted.length===0&&newsFeed.length===0&&previews.length===0&&insights.length===0&&(
-              <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(0,255,240,.25)",fontSize:14}}>No articles match the current filters</div>
+              <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(232,255,71,.25)",fontSize:14}}>No articles match the current filters</div>
             )}
 
 
@@ -1023,7 +1022,7 @@ export default function NewsTrackerPage(){
         {/* Footer attribution */}
         <div style={{borderTop:"1px solid rgba(255,255,255,0.045)",paddingTop:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
           <div>
-            <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,fontWeight:700,color:"rgba(0,255,240,.25)"}}>StatinSite Intelligence Engine</span>
+            <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,fontWeight:700,color:"rgba(232,255,71,.25)"}}>StatinSite Intelligence Engine</span>
             <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"#0f2238",marginLeft:10}}>Built by Rutej Talati</span>
           </div>
           <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"#0a1828",fontWeight:700}}>statinsite.com</span>

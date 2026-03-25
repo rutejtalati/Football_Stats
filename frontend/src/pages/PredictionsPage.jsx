@@ -2233,6 +2233,63 @@ const BACKEND_LEAGUE = {
   facup:      "facup",
 };
 
+
+// ── Intricate animated background ───────────────────────────────────────────
+function IntricateBg() {
+  return (
+    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      {/* Deep black base with layered radial glows */}
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+
+      {/* Subtle radial glows */}
+      <div style={{position:"absolute",top:"-10%",left:"10%",width:"60vw",height:"60vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.028) 0%,transparent 65%)",
+        transform:"rotate(-15deg)"}}/>
+      <div style={{position:"absolute",bottom:"-5%",right:"5%",width:"50vw",height:"50vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.018) 0%,transparent 60%)"}}/>
+
+      {/* Fine grid */}
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px)",
+        backgroundSize:"48px 48px"}}/>
+
+      {/* Coarser accent grid on top */}
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
+        backgroundSize:"192px 192px"}}/>
+
+      {/* Diagonal slash lines */}
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <defs>
+          <pattern id="pred-slash" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="120" x2="120" y2="0" stroke="rgba(255,255,255,.018)" strokeWidth="0.8"/>
+          </pattern>
+          <pattern id="pred-dots" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+            <circle cx="24" cy="24" r="0.8" fill="rgba(255,255,255,.07)"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#pred-slash)"/>
+        <rect width="100%" height="100%" fill="url(#pred-dots)"/>
+      </svg>
+
+      {/* Corner bracket decorations */}
+      <svg style={{position:"absolute",top:0,left:0,width:160,height:160,opacity:.12}} viewBox="0 0 160 160">
+        <polyline points="10,60 10,10 60,10" fill="none" stroke="white" strokeWidth="1"/>
+        <polyline points="10,80 10,10 80,10" fill="none" stroke="white" strokeWidth=".4"/>
+      </svg>
+      <svg style={{position:"absolute",top:0,right:0,width:160,height:160,opacity:.12}} viewBox="0 0 160 160">
+        <polyline points="150,60 150,10 100,10" fill="none" stroke="white" strokeWidth="1"/>
+        <polyline points="150,80 150,10 80,10" fill="none" stroke="white" strokeWidth=".4"/>
+      </svg>
+
+      {/* Giant ghost text */}
+      <div style={{position:"absolute",top:"6vh",left:"-2%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(90px,14vw,180px)",fontWeight:900,color:"rgba(255,255,255,.022)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>xG</div>
+      <div style={{position:"absolute",top:"45vh",right:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(60px,10vw,140px)",fontWeight:900,color:"rgba(255,255,255,.018)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>ELO</div>
+      <div style={{position:"absolute",bottom:"8vh",left:"3%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(50px,8vw,110px)",fontWeight:900,color:"rgba(255,255,255,.015)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>1–0</div>
+    </div>
+  );
+}
+
 export default function PredictionsPage({league:propLeague,slugMap}){
   const isMobile = useWindowWidth() < 640;
   const{league:paramLeague}=useParams();
@@ -2417,30 +2474,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         {tab==="predictions"&&(
           <div style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
 
-            {/* ── KPI ROW ─────────────────────────────────────── */}
-            {!predLoad&&matches.length>0&&(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:0,"borderTop":"1px solid rgba(255,255,255,0.15)","borderLeft":"1px solid rgba(255,255,255,0.15)","borderRadius":"12px","overflow":"hidden"}}>
-                <KPITile label="Fixtures" value={matches.length} color={NB.y} icon={
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="0" stroke="currentColor" strokeWidth="1.5"/><path d="M1 5h12" stroke="currentColor" strokeWidth="1.5"/><path d="M4 1v3M10 1v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                } sublabel={`${avgConf}% avg confidence`} spark={[55,60,58,65,62,70,68,72,avgConf]}/>
 
-                <KPITile label="High Conf" value={matches.filter(m=>m.confidence>=65).length} color={NB.y} icon={
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3 3.5.5-2.5 2.5.6 3.5L7 9.2 3.9 10.5l.6-3.5L2 4.5 5.5 4 7 1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-                } delta={8}/>
-
-                <KPITile label="Model Edges" value={matches.filter(m=>m.model_edge!=null&&Math.abs(m.model_edge)>=3).length} color={NB.y} icon={
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11l3-4 2.5 1.5 2.5-4 3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                }/>
-
-                <KPITile label="BTTS" value={bttsCount} color={NB.y} icon={
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M4.5 5L7 7l-2.5 2M9.5 5L7 7l2.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                } spark={[40,45,42,55,50,58,bttsCount]}/>
-
-                <KPITile label="Avg xG" value={`${avgXgH}–${avgXgA}`} color={NB.y} icon={
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="4" width="11" height="7" rx="0" stroke="currentColor" strokeWidth="1.5"/><path d="M4 4V3a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.5"/></svg>
-                }/>
-              </div>
-            )}
 
             {/* ── MAIN GRID ─────────────────────────────────────── */}
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 260px",gap:16,alignItems:"start"}}>

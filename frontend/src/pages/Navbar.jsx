@@ -255,10 +255,10 @@ export default function Navbar() {
           top: 0; left: 0; right: 0;
           height: 48px;
           z-index: 200;
-          background: rgba(3, 6, 14, 0.82);
-          backdrop-filter: blur(40px) saturate(180%) brightness(0.9);
-          -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(0.9);
-          border-bottom: 1px solid rgba(255,255,255,0.055);
+          background: rgba(3, 7, 18, 0.88);
+          backdrop-filter: blur(48px) saturate(200%) brightness(0.85);
+          -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(0.85);
+          border-bottom: 1px solid rgba(56,189,248,0.08);
           box-shadow:
             inset 0 1px 0 rgba(255,255,255,0.04),
             0 12px 48px rgba(0,0,0,0.55);
@@ -424,7 +424,7 @@ export default function Navbar() {
           position: absolute; top: calc(100% + 8px);
           left: 50%; transform: translateX(-50%);
           min-width: 260px; z-index: 300;
-          background: rgba(4,7,15,0.98);
+          background: rgba(3,7,18,0.98);
           backdrop-filter: blur(32px) saturate(200%);
           -webkit-backdrop-filter: blur(32px) saturate(200%);
           border: 1px solid rgba(40,217,122,0.15);
@@ -490,7 +490,7 @@ export default function Navbar() {
         .sn-mobile-drawer {
           position: fixed; top: 86px; left: 0; bottom: 0;
           width: min(268px, 80vw); z-index: 203;
-          background: rgba(3,6,14,0.98);
+          background: rgba(3,7,18,0.98);
           backdrop-filter: blur(32px);
           -webkit-backdrop-filter: blur(32px);
           border-right: 1px solid rgba(255,255,255,0.07);
@@ -544,10 +544,10 @@ export default function Navbar() {
           .sn-bottom-tabs {
             display: flex;
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
-            background: rgba(3,6,14,0.97);
+            background: rgba(3,7,18,0.97);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border-top: 1px solid rgba(255,255,255,0.07);
+            border-top: 1px solid rgba(56,189,248,0.08);
             padding: 4px 0 max(6px, env(safe-area-inset-bottom));
             justify-content: space-around;
           }

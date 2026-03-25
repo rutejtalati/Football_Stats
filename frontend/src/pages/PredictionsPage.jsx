@@ -730,11 +730,20 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
   // Outcome colour for left border
   const outCol = fav==="home"?NB.y:fav==="away"?NB.r:`rgba(56,189,248,.3)`;
 
-  const LogoBadge = ({src,size=34})=>(
-    <div style={{width:size,height:size,background:hov?"rgba(0,0,0,.1)":"rgba(56,189,248,.06)",border:`2px solid ${hov?"rgba(0,0,0,.2)":NB.y}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:4}}>
+  const LogoBadge = ({src,size=52})=>(
+    <div style={{
+      width:size,height:size,
+      background:hov?"rgba(56,189,248,.1)":"rgba(255,255,255,.04)",
+      border:`1px solid ${hov?"rgba(56,189,248,.35)":"rgba(255,255,255,.08)"}`,
+      borderRadius:10,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      flexShrink:0,padding:6,
+      boxShadow:hov?`0 4px 16px rgba(56,189,248,.2)`:"0 2px 8px rgba(0,0,0,.3)",
+      transition:"all 0.15s ease",
+    }}>
       {src
-        ? <img src={src} style={{width:size-10,height:size-10,objectFit:"contain"}} onError={e=>e.currentTarget.style.opacity="0"}/>
-        : <div style={{width:size-12,height:size-12,background:hov?"rgba(0,0,0,.15)":"rgba(56,189,248,.1)"}}/>
+        ? <img src={src} style={{width:size-14,height:size-14,objectFit:"contain",filter:"drop-shadow(0 1px 3px rgba(0,0,0,.4))"}} onError={e=>e.currentTarget.style.opacity="0"}/>
+        : <div style={{width:size-16,height:size-16,background:"rgba(56,189,248,.12)",borderRadius:6}}/>
       }
     </div>
   );
@@ -770,10 +779,10 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1px auto 1px 1fr auto",alignItems:"center"}}>
 
           {/* HOME SIDE */}
-          <div style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,minWidth:0}}>
             <LogoBadge src={match.home_logo}/>
             <div style={{minWidth:0,flex:1}}>
-              <div style={{fontSize:13,fontWeight:fav==="home"?900:700,color:hov?NB.k:NB.y,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif",transition:"color 0.12s"}}>
+              <div style={{fontSize:14,fontWeight:fav==="home"?900:700,color:hov?NB.k:NB.y,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif",transition:"color 0.12s"}}>
                 {match.home_team}
                 {fav==="home"&&<span style={{marginLeft:6,fontSize:8,fontWeight:900,color:hov?NB.k:NB.k,background:hov?NB.r:NB.y,padding:"2px 6px",fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>FAV</span>}
               </div>
@@ -789,7 +798,7 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
           <div style={{width:1,background:hov?"rgba(56,189,248,.3)":"rgba(56,189,248,.12)",alignSelf:"stretch",transition:"background 0.12s"}}/>
 
           {/* CENTRE SCORE + BAR */}
-          <div style={{padding:"10px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:130}}>
+          <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:140}}>
             <div style={{fontSize:18,fontWeight:900,color:hov?NB.k:NB.y,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:"0.05em",transition:"color 0.12s"}}>{topScore}</div>
             {/* Three-segment bar — hard edges, no radius */}
             <div style={{display:"flex",height:6,overflow:"hidden",gap:2,width:"100%"}}>
@@ -809,13 +818,13 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
           <div style={{width:1,background:hov?"rgba(56,189,248,.3)":"rgba(56,189,248,.12)",alignSelf:"stretch",transition:"background 0.12s"}}/>
 
           {/* AWAY SIDE */}
-          <div style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,minWidth:0,justifyContent:"flex-end"}}>
+          <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,minWidth:0,justifyContent:"flex-end"}}>
             <div style={{textAlign:"left",flexShrink:0}}>
               <div style={{fontSize:20,fontWeight:900,color:NB.r,fontFamily:"'Bebas Neue',sans-serif",lineHeight:1,letterSpacing:".02em"}}>{aPct}%</div>
               {xgA>0&&<div style={{fontSize:9,color:hov?"rgba(0,0,0,.5)":"rgba(56,189,248,.5)",marginTop:2,fontFamily:"'DM Mono',monospace",transition:"color 0.12s"}}>xG {xgA.toFixed(1)}</div>}
             </div>
             <div style={{minWidth:0,flex:1,textAlign:"right"}}>
-              <div style={{fontSize:13,fontWeight:fav==="away"?900:700,color:hov?NB.k:NB.y,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif",transition:"color 0.12s"}}>
+              <div style={{fontSize:14,fontWeight:fav==="away"?900:700,color:hov?NB.k:NB.y,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif",transition:"color 0.12s"}}>
                 {fav==="away"&&<span style={{marginRight:6,fontSize:8,fontWeight:900,color:NB.k,background:NB.r,padding:"2px 6px",fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>FAV</span>}
                 {match.away_team}
               </div>

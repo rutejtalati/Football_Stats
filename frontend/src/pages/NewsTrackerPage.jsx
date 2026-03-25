@@ -11,7 +11,7 @@ const NB_CSS = `
   @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:#0a0a0a; }
+  ::-webkit-scrollbar-track { background:"#0a0a0a"; }
   ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
   ::selection { background:#e8ff47; color:#0a0a0a; }
   input[type=range] { accent-color:#e8ff47; }
@@ -213,7 +213,7 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
       {/* Pitch overlay */}
       <div style={{position:"absolute",inset:0,backgroundImage:`url("${pitchSvg}")`,backgroundSize:"100% 100%"}}/>
       {/* Dark overlay */}
-      <div style={{position:"absolute",inset:0,background:#0a0a0a}}/>
+      <div style={{position:"absolute",inset:0,background:"#0a0a0a"}}/>
       {/* HUD corner brackets */}
       {[{t:6,l:6,bt:"top",bl:"left"},{t:6,r:6,bt:"top",bl:"right"},{b:2,l:6,bt:"bottom",bl:"left"},{b:2,r:6,bt:"bottom",bl:"right"}].map((c,i)=>(
         <div key={i} style={{position:"absolute",width:10,height:10,zIndex:6,
@@ -229,7 +229,7 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
       {/* Teams */}
       {[{team:homeTeam,logo:homeLogo,c1:hc1,c2:hc2,pos:"17%"},{team:awayTeam,logo:awayLogo,c1:ac1,c2:ac2,pos:"83%"}].map(({team,logo,c1,c2,pos})=>(
         <div key={team} style={{position:"absolute",left:pos,top:"50%",transform:"translate(-50%,-50%)",display:"flex",flexDirection:"column",alignItems:"center",gap:6,zIndex:4}}>
-          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:#0a0a0a,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:3px 3px 0 rgba(232,255,71,.15)}}>
+          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:"#0a0a0a",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:"3px 3px 0 rgba(232,255,71,.15)"}}>
             {logo
               ?<img src={logo} alt={team} style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentNode.style.background="linear-gradient(135deg,"+c1+","+c2+")";}}/>
               :<div style={{fontSize:11,fontWeight:900,color:"#e8ff47",fontFamily:"'Bebas Neue',sans-serif"}}>{(team||"?").slice(0,3).toUpperCase()}</div>}
@@ -238,7 +238,7 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
         </div>
       ))}
       {/* VS badge */}
-      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:#0a0a0a,border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
+      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:"#0a0a0a",border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
         <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,fontWeight:900,color:"rgba(255,255,255,.6)",letterSpacing:"0.05em"}}>VS</span>
       </div>
       {/* Probability strip fused to base */}
@@ -506,8 +506,8 @@ function MagHeroCard({article,onClick}){
       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:accent}}/>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"16px 18px"}}>
         <div style={{display:"flex",gap:6,marginBottom:7}}>
-          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:#0a0a0a,border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
-          {article.source&&<span style={{fontSize:8,fontWeight:700,color:"rgba(232,255,71,.45)",background:#0a0a0a,borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
+          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:"#0a0a0a",border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
+          {article.source&&<span style={{fontSize:8,fontWeight:700,color:"rgba(232,255,71,.45)",background:"#0a0a0a",borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
         </div>
         <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:17,fontWeight:900,color:"#e8ff47",lineHeight:1.28,margin:"0 0 7px",letterSpacing:"-0.02em"}}>{article.title}</h2>
         {article.standfirst&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:"rgba(232,255,71,.45)",lineHeight:1.5,margin:"0 0 9px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst}</p>}
@@ -632,7 +632,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
   const ms=article.meta?.match_stats;
   const related=allArticles.filter(a=>a.id!==article.id&&(a.league===article.league||a.type===article.type||[ht,at].filter(Boolean).some(t=>a.home_team===t||a.away_team===t))).slice(0,5);
   return(<>
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1100,background:#0a0a0a,animation:"apBack .22s ease both"}}/>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1100,background:"#0a0a0a",animation:"apBack .22s ease both"}}/>
     <div ref={pageRef} style={{position:"fixed",inset:0,zIndex:1101,overflowY:"auto",overflowX:"hidden",background:"linear-gradient(170deg,rgba(5,10,22,0.995),rgba(2,5,12,0.995))",scrollbarWidth:"thin",scrollbarColor:"rgba(255,255,255,0.05) transparent",animation:"apUp .3s cubic-bezier(.22,1,.36,1) both"}}>
       <div style={{height:2,background:"linear-gradient(90deg,"+accent+",transparent)",position:"sticky",top:0,zIndex:10}}/>
       <button onClick={onClose} style={{position:"fixed",top:16,right:20,zIndex:1200,width:40,height:40,borderRadius:"50%",background:"rgba(232,255,71,.07)",border:"1px solid rgba(255,255,255,0.14)",color:"#6a8aa8",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.14)";e.currentTarget.style.color="#f0f6ff";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="#6a8aa8";}}>&#x2715;</button>

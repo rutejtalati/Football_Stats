@@ -670,7 +670,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
                 fontSize:"6px",fontWeight:900,lineHeight:"11px",
                 background:posCol(pos),color:"#000",
                 borderRadius:3,padding:"0 2.5px",
-                boxShadow:3px 3px 0 rgba(232,255,71,.15),
+                boxShadow:"3px 3px 0 rgba(232,255,71,.15)",
               }}>{pos}</span>
             )}
             {isOut&&(
@@ -945,7 +945,7 @@ function SquadCard({lineup,team,colour,isRight}){
               right:isRight?"auto":-2,left:isRight?-2:"auto",
               fontSize:"6px",fontWeight:900,lineHeight:"11px",
               background:pos.bg,color:"#000",borderRadius:3,
-              padding:"0 3px",boxShadow:3px 3px 0 rgba(232,255,71,.15),
+              padding:"0 3px",boxShadow:"3px 3px 0 rgba(232,255,71,.15)",
             }}>{pos.label}</span>
           )}
           {isOut&&<span style={{
@@ -2305,7 +2305,7 @@ export default function LiveMatchPage() {
         .lm-tab { background:none; border:none; cursor:pointer; font-family:'Space Grotesk','Space Grotesk',sans-serif; transition:all 0.15s; letter-spacing:0.08em; text-transform:uppercase; }
         .lm-tab:hover { color:#e8ff47 !important; }
         .lm-stat-bar { animation: lmBarIn 0.7s cubic-bezier(.22,1,.36,1) both; }
-        .lm-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.08); border-radius:12px; transition:border-color .2s, box-shadow .2s; }
+        .lm-card { background:rgba(232,255,71,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; transition:border-color .2s, box-shadow .2s; }
         .lm-card:hover { border-color:rgba(255,255,255,.16); box-shadow:0 8px 28px rgba(0,0,0,.5); }
       `}</style>
 
@@ -2350,7 +2350,7 @@ export default function LiveMatchPage() {
           {/* ── Sticky tabs ── */}
           <div style={{
             position:"sticky", top:0, zIndex:100,
-            background:#0a0a0a, 
+            background:"#0a0a0a",
             borderBottom:"2px solid rgba(232,255,71,.18)",
             display:"flex", padding:"0 20px", overflowX:"auto",
           }}>

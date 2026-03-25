@@ -1036,8 +1036,8 @@ function ProbTooltip({ label, value, sub, color, visible }) {
       <div style={{fontSize:11,fontWeight:800,color,marginBottom:3}}>{label}</div>
       <div style={{fontSize:16,fontWeight:900,color:NB.y,fontFamily:"'DM Mono',monospace"}}>{value}</div>
       {sub && <div style={{fontSize:10,color:NB.y,marginTop:2}}>{sub}</div>}
-      <div style={{position:"absolute",bottom:-5,left:"50%",transform:"translateX(-50%)",
-        width:8,height:8,background:"rgba(5,8,16,0.98)",border:`1px solid ${color}40`,
+      <div style={{position:"absolute",bottom:-5,left:"50%",
+        width:8,height:8,background:"#0a0a0a",border:`1px solid ${color}40`,
         borderTop:"none",borderLeft:"none",transform:"translateX(-50%) rotate(45deg)"}}/>
     </div>
   );

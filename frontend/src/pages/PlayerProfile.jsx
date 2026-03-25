@@ -1,11 +1,29 @@
 // pages/PlayerProfile.jsx — StatinSite Stats Hub v2
 import { useState, useEffect, useRef, useCallback } from "react";
 
+/* ── Neobrutalist theme constants ── */
+const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB_CSS = `
+  @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
+  @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes nbBlink  { 50%{opacity:0} }
+  @keyframes nbStripes{ to{background-position:90px 0} }
+  @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:#0a0a0a; }
+  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
+  ::selection { background:#e8ff47; color:#0a0a0a; }
+  input[type=range] { accent-color:#e8ff47; }
+`;
+
+
+
 const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
 const C = {
-  bg:"#000",card:"rgba(0,0,0,0.98)",border:"rgba(255,255,255,0.065)",
-  text:"#f0f6ff",muted:"rgba(200,215,230,0.85)",dim:"#1a3a5a",soft:"#c8d8f0",
+  bg:"#0a0a0a",card:"#0a0a0a",border:"rgba(232,255,71,.15)",
+  text:"#e8ff47",muted:"rgba(232,255,71,.5)",dim:"rgba(232,255,71,.2)",soft:"rgba(232,255,71,.7)",
   blue:"#38bdf8",green:"#34d399",amber:"#f59e0b",red:"#f87171",
   purple:"#a78bfa",orange:"#fb923c",
 };
@@ -39,20 +57,25 @@ const TEAM_TABS=[
 
 function useReveal(){const ref=useRef(null);const[v,sv]=useState(false);useEffect(()=>{if(!ref.current)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){sv(true);io.disconnect();}},{threshold:0.04});io.observe(ref.current);return()=>io.disconnect();},[]);return[ref,v];}
 function Sk({h=52,r=10}){return <div style={{height:h,borderRadius:r,background:"linear-gradient(90deg,rgba(255,255,255,0.022) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.022) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.5s ease-in-out infinite",marginBottom:6}}/>;}
-function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,borderRadius:999,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,borderRadius:999,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
+function Bar({v=0,max=1,color=C.blue}){const p=Math.min(100,max>0?Math.round(v/max*100):0);return <div style={{flex:1,height:4,borderRadius:999,background:"rgba(232,255,71,.07)",overflow:"hidden"}}><div style={{height:"100%",width:p+"%",background:color,borderRadius:999,transition:"width 0.65s cubic-bezier(.22,1,.36,1)"}}/></div>;}
 function Form({f}){if(!f)return null;return <div style={{display:"flex",gap:2}}>{f.split("").slice(-5).map((c,i)=><span key={i} style={{width:13,height:13,borderRadius:3,fontSize:7,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",background:c==="W"?"rgba(52,211,153,0.22)":c==="D"?"rgba(245,158,11,0.18)":"rgba(248,113,113,0.18)",color:c==="W"?C.green:c==="D"?C.amber:C.red}}>{c}</span>)}</div>;}
 function Lbadge({slug,color}){if(!slug||slug==="all")return null;return <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:color||C.muted,background:(color||C.muted)+"10",border:"1px solid "+(color||C.muted)+"25",borderRadius:4,padding:"1px 5px",flexShrink:0}}>{LA[slug]||slug.toUpperCase()}</span>;}
 
 // ── Rank medal ────────────────────────────────────────────────
-function Rnk({n}){const mc=["#f2c94c","#94a3b8","#fb923c"];const c=n<=3?mc[n-1]:C.dim;return <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:c,width:20,textAlign:"right",flexShrink:0}}>{n}</span>;}
+function Rnk({n}){const mc=["#f2c94c","#94a3b8","#fb923c"];const c=n<=3?mc[n-1]:C.dim;return <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:900,color:c,width:20,textAlign:"right",flexShrink:0}}>{n}</span>;}
 
 // ── Player row ─────────────────────────────────────────────────
 function PRow({p,rank,sk,sl,sc,max,onClick}){
   const[hov,sh]=useState(false);const[ref,vis]=useReveal();
   const ac=PC(p.position);const lc=LC[p.league_slug]||C.muted;const val=p[sk];
   return(
-    <div ref={ref} onClick={()=>onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
-      style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:12,cursor:"pointer",
+    <div ref={ref} onClick={()=>
+      <style>{NB_CSS}</style>
+      {/* NB bg stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
+      style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:0,cursor:"pointer",
         background:hov?"rgba(12,20,40,0.99)":C.card,
         border:hov?"1px solid "+ac+"40":"1px solid "+C.border,
         transform:hov?"translateY(-1px)":vis?"translateY(0)":"translateY(8px)",
@@ -66,16 +89,16 @@ function PRow({p,rank,sk,sl,sc,max,onClick}){
           <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:ac,background:ac+"0e",border:"1px solid "+ac+"20",borderRadius:4,padding:"1px 4px",flexShrink:0}}>{p.position||"—"}</span>
           <Lbadge slug={p.league_slug} color={lc}/>
         </div>
-        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+        <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
         <div style={{display:"flex",gap:4,alignItems:"center",marginTop:1}}>
           {p.team_logo&&<img src={p.team_logo} alt="" style={{width:10,height:10,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.team}</span>
+          <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:9,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.team}</span>
         </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:7,minWidth:100,flexShrink:0}}>
         <Bar v={val||0} max={max} color={sc}/>
         <div style={{textAlign:"right",minWidth:32}}>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
           <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{sl}</div>
         </div>
       </div>
@@ -89,7 +112,7 @@ function TRow({t,rank,sk,sl,sc,max,onClick}){
   const lc=LC[t.league_slug]||C.muted;const val=t[sk];
   return(
     <div ref={ref} onClick={()=>onClick(t)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
-      style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:12,cursor:"pointer",
+      style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:0,cursor:"pointer",
         background:hov?"rgba(12,20,40,0.99)":C.card,
         border:hov?"1px solid "+lc+"35":"1px solid "+C.border,
         transform:hov?"translateY(-1px)":vis?"translateY(0)":"translateY(8px)",
@@ -103,13 +126,13 @@ function TRow({t,rank,sk,sl,sc,max,onClick}){
           <Lbadge slug={t.league_slug} color={lc}/>
           <Form f={t.form}/>
         </div>
-        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.team}</p>
-        <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>{t.played}PL · {t.wins}W {t.draws}D {t.losses}L</span>
+        <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.team}</p>
+        <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:9,color:C.dim}}>{t.played}PL · {t.wins}W {t.draws}D {t.losses}L</span>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:7,minWidth:100,flexShrink:0}}>
         <Bar v={val||0} max={max} color={sc}/>
         <div style={{textAlign:"right",minWidth:32}}>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
           <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{sl}</div>
         </div>
       </div>
@@ -123,14 +146,14 @@ function PDetail({p,onClose}){
   const bars=[{l:"Goals",v:p.goals||0,max:35,c:C.red},{l:"Assists",v:p.assists||0,max:25,c:C.green},{l:"Shots",v:p.shots_total||0,max:200,c:C.blue},{l:"On Target",v:p.shots_on||0,max:100,c:C.blue},{l:"Key Passes",v:p.passes_key||0,max:100,c:C.amber},{l:"Dribbles",v:p.dribbles_success||0,max:100,c:C.purple},{l:"Tackles",v:p.tackles_total||0,max:150,c:C.green}];
   return(
     <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",padding:16,pointerEvents:"none"}}>
-      <div style={{width:330,maxHeight:"calc(100vh - 32px)",overflowY:"auto",pointerEvents:"auto",borderRadius:20,background:"rgba(4,9,20,0.99)",border:"1px solid "+ac+"28",boxShadow:"0 0 40px "+ac+"14,0 32px 80px rgba(0,0,0,0.85)",animation:"slideIn 0.22s cubic-bezier(.22,1,.36,1)",scrollbarWidth:"thin",scrollbarColor:ac+"18 transparent"}}>
+      <div style={{width:330,maxHeight:"calc(100vh - 32px)",overflowY:"auto",pointerEvents:"auto",borderRadius:0,background:"rgba(4,9,20,0.99)",border:"1px solid "+ac+"28",boxShadow:"0 0 40px "+ac+"14,0 32px 80px rgba(0,0,0,0.85)",animation:"slideIn 0.22s cubic-bezier(.22,1,.36,1)",scrollbarWidth:"thin",scrollbarColor:ac+"18 transparent"}}>
         <div style={{height:2,background:"linear-gradient(90deg,"+ac+",transparent)"}}/>
         <div style={{padding:"15px 15px 0",display:"flex",gap:10,alignItems:"flex-start"}}>
           <div style={{width:52,height:52,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid "+ac+"35",background:ac+"0e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:900,color:ac}}>
             {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
           </div>
           <div style={{flex:1,minWidth:0}}>
-            <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px",lineHeight:1.2}}>{p.name}</h2>
+            <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px",lineHeight:1.2}}>{p.name}</h2>
             <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
               <span style={{fontSize:7,fontWeight:900,textTransform:"uppercase",color:ac,background:ac+"10",border:"1px solid "+ac+"22",borderRadius:4,padding:"2px 5px"}}>{p.position}</span>
               <Lbadge slug={p.league_slug} color={lc}/>
@@ -142,12 +165,12 @@ function PDetail({p,onClose}){
               <span style={{fontSize:10,fontWeight:700,color:C.muted}}>{p.team}</span>
             </div>
           </div>
-          <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color=C.text;}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color=C.muted;}}>✕</button>
+          <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(232,255,71,.06)",border:"2px solid rgba(232,255,71,.2)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color=C.text;}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color=C.muted;}}>✕</button>
         </div>
         <div style={{padding:"11px 15px",display:"flex",gap:5,flexWrap:"wrap"}}>
           {[{l:"Goals",v:p.goals,c:C.red},{l:"Assists",v:p.assists,c:C.green},{l:"Apps",v:p.appearances,c:C.blue},{l:"Mins",v:p.minutes,c:C.muted},p.rating&&{l:"Rating",v:Number(p.rating).toFixed(1),c:C.amber}].filter(Boolean).map(s=>(
             <div key={s.l} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"7px 9px",borderRadius:9,background:"rgba(255,255,255,0.022)",border:"1px solid "+s.c+"18",minWidth:50}}>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:s.c,lineHeight:1}}>{s.v??0}</span>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:900,color:s.c,lineHeight:1}}>{s.v??0}</span>
               <span style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>{s.l}</span>
             </div>
           ))}
@@ -158,7 +181,7 @@ function PDetail({p,onClose}){
             <div key={r.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}>
               <span style={{fontSize:10,color:C.muted,width:76,flexShrink:0,textAlign:"right"}}>{r.l}</span>
               <Bar v={r.v} max={r.max} color={r.c}/>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:r.c,width:22,textAlign:"right",fontWeight:700,flexShrink:0}}>{r.v}</span>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:r.c,width:22,textAlign:"right",fontWeight:700,flexShrink:0}}>{r.v}</span>
             </div>
           ))}
         </div>
@@ -167,14 +190,14 @@ function PDetail({p,onClose}){
             <div style={{fontSize:7,fontWeight:900,color:ac,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9}}>Per 90 Minutes</div>
             <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
               {[{l:"Goals",v:(p.goals_per90||0).toFixed(2)},{l:"Assists",v:(p.assists_per90||0).toFixed(2)},{l:"Shots",v:(p.shots_per90||0).toFixed(2)}].map(s=>(
-                <div key={s.l}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:ac}}>{s.v}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.l}</div></div>
+                <div key={s.l}><div style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:900,color:ac}}>{s.v}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.l}</div></div>
               ))}
             </div>
           </div>
         )}
         <div style={{margin:"0 15px 15px",display:"flex",gap:7}}>
-          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(245,158,11,0.07)",border:"1px solid rgba(245,158,11,0.18)",textAlign:"center"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:900,color:C.amber}}>{p.yellow_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Yellow</div></div>
-          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(248,113,113,0.07)",border:"1px solid rgba(248,113,113,0.18)",textAlign:"center"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:900,color:C.red}}>{p.red_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Red</div></div>
+          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(245,158,11,0.07)",border:"1px solid rgba(245,158,11,0.18)",textAlign:"center"}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:900,color:C.amber}}>{p.yellow_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Yellow</div></div>
+          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(248,113,113,0.07)",border:"1px solid rgba(248,113,113,0.18)",textAlign:"center"}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:900,color:C.red}}>{p.red_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Red</div></div>
         </div>
       </div>
     </div>
@@ -186,25 +209,25 @@ function TDetail({t,onClose}){
   const lc=LC[t.league_slug]||C.muted;
   return(
     <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",padding:16,pointerEvents:"none"}}>
-      <div style={{width:300,maxHeight:"calc(100vh - 32px)",overflowY:"auto",pointerEvents:"auto",borderRadius:20,background:"rgba(4,9,20,0.99)",border:"1px solid "+lc+"28",boxShadow:"0 0 40px "+lc+"14,0 32px 80px rgba(0,0,0,0.85)",animation:"slideIn 0.22s cubic-bezier(.22,1,.36,1)"}}>
+      <div style={{width:300,maxHeight:"calc(100vh - 32px)",overflowY:"auto",pointerEvents:"auto",borderRadius:0,background:"rgba(4,9,20,0.99)",border:"1px solid "+lc+"28",boxShadow:"0 0 40px "+lc+"14,0 32px 80px rgba(0,0,0,0.85)",animation:"slideIn 0.22s cubic-bezier(.22,1,.36,1)"}}>
         <div style={{height:2,background:"linear-gradient(90deg,"+lc+",transparent)"}}/>
         <div style={{padding:"15px"}}>
           <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:13}}>
             {t.team_logo&&<img src={t.team_logo} alt="" style={{width:40,height:40,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
             <div style={{flex:1,minWidth:0}}>
-              <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px"}}>{t.team}</h2>
+              <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px"}}>{t.team}</h2>
               <div style={{display:"flex",gap:5,alignItems:"center"}}>
                 <Lbadge slug={t.league_slug} color={lc}/>
                 <span style={{fontSize:9,color:C.dim}}>#{t.rank}</span>
                 <Form f={t.form}/>
               </div>
             </div>
-            <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";}}>✕</button>
+            <button onClick={onClose} style={{width:26,height:26,borderRadius:"50%",background:"rgba(232,255,71,.06)",border:"2px solid rgba(232,255,71,.2)",color:C.muted,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";}}>✕</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:13}}>
             {[{l:"W",v:t.wins,c:C.green},{l:"D",v:t.draws,c:C.amber},{l:"L",v:t.losses,c:C.red},{l:"PTS",v:t.points,c:C.blue}].map(s=>(
               <div key={s.l} style={{textAlign:"center",padding:"7px 4px",borderRadius:9,background:"rgba(255,255,255,0.022)",border:"1px solid "+s.c+"18"}}>
-                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:s.c}}>{s.v}</div>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:900,color:s.c}}>{s.v}</div>
                 <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>{s.l}</div>
               </div>
             ))}
@@ -213,7 +236,7 @@ function TDetail({t,onClose}){
             <div key={s.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}>
               <span style={{fontSize:9,color:C.muted,width:90,flexShrink:0,textAlign:"right"}}>{s.l}</span>
               <Bar v={parseFloat(s.v)||0} max={s.max} color={s.c}/>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:s.c,width:30,textAlign:"right",fontWeight:700,flexShrink:0}}>{typeof s.v==="number"?s.v.toFixed?s.v.toFixed(1):s.v:s.v||0}</span>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:s.c,width:30,textAlign:"right",fontWeight:700,flexShrink:0}}>{typeof s.v==="number"?s.v.toFixed?s.v.toFixed(1):s.v:s.v||0}</span>
             </div>
           ))}
         </div>
@@ -227,9 +250,9 @@ function SHead({title,color,count,loading}){
   return(
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
       <div style={{width:3,height:28,borderRadius:2,background:"linear-gradient(180deg,"+color+",transparent)",flexShrink:0}}/>
-      <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:0,flex:1,letterSpacing:"-0.02em"}}>{title}</h2>
-      {loading&&<span style={{fontSize:9,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Loading…</span>}
-      {!loading&&count!=null&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:C.dim,fontWeight:700}}>{count}</span>}
+      <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:0,flex:1,letterSpacing:"-0.02em"}}>{title}</h2>
+      {loading&&<span style={{fontSize:9,color:C.dim,fontFamily:"'Space Grotesk',sans-serif"}}>Loading…</span>}
+      {!loading&&count!=null&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:C.dim,fontWeight:700}}>{count}</span>}
     </div>
   );
 }
@@ -313,7 +336,7 @@ export default function PlayerProfilePage(){
   const onLeague=lg=>{setLeague(lg);cacheRef.current={};setCache({});};
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Sora',sans-serif",
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Bebas Neue',sans-serif",
       backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
       backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
       <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
@@ -329,8 +352,8 @@ export default function PlayerProfilePage(){
             <div style={{display:"flex",alignItems:"center",gap:14}}>
               <div style={{width:4,height:46,borderRadius:2,background:"linear-gradient(180deg,#38bdf8,#34d399)",flexShrink:0}}/>
               <div>
-                <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:26,fontWeight:900,color:C.text,margin:0,letterSpacing:"-0.03em"}}>Stats Hub</h1>
-                <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:C.dim,margin:"3px 0 0",fontWeight:600}}>Goals · Assists · Clean sheets · Team form across all 5 European leagues</p>
+                <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,fontWeight:900,color:C.text,margin:0,letterSpacing:"-0.03em"}}>Stats Hub</h1>
+                <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:11,color:C.dim,margin:"3px 0 0",fontWeight:600}}>Goals · Assists · Clean sheets · Team form across all 5 European leagues</p>
               </div>
             </div>
             {/* Search */}
@@ -339,17 +362,17 @@ export default function PlayerProfilePage(){
               <input value={search} onChange={e=>setSearch(e.target.value)}
                 placeholder="Search players or teams…"
                 style={{width:"100%",padding:"9px 32px 9px 30px",borderRadius:11,boxSizing:"border-box",
-                  background:"rgba(255,255,255,0.045)",border:"1px solid rgba(255,255,255,0.09)",
-                  color:C.text,fontFamily:"'Inter',sans-serif",fontSize:12,outline:"none",transition:"border .15s"}}
+                  background:"rgba(255,255,255,0.045)",border:"2px solid rgba(232,255,71,.2)",
+                  color:C.text,fontFamily:"'Space Grotesk',sans-serif",fontSize:12,outline:"none",transition:"border .15s"}}
                 onFocus={e=>{e.target.style.borderColor=C.blue+"55";setSrOpen(!!search);}}
                 onBlur={e=>e.target.style.borderColor="rgba(255,255,255,0.09)"}/>
               {search&&<button onClick={()=>{setSearch("");setSrRes([]);setSrOpen(false);}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",padding:0}}>✕</button>}
               {/* Search dropdown */}
               {srOpen&&(
-                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,borderRadius:14,background:"rgba(4,9,20,0.99)",border:"1px solid rgba(255,255,255,0.1)",boxShadow:"0 24px 60px rgba(0,0,0,0.75)",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
+                <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,zIndex:900,borderRadius:0,background:"rgba(4,9,20,0.99)",border:"2px solid rgba(232,255,71,.2)",boxShadow:"3px 3px 0 rgba(232,255,71,.15)",overflow:"hidden",maxHeight:340,overflowY:"auto"}}>
                   <div style={{padding:"8px 12px 4px",fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Search Results</div>
                   {srLoading&&[1,2,3].map(i=><div key={i} style={{padding:"8px 12px"}}><Sk h={38} r={8}/></div>)}
-                  {!srLoading&&srRes.length===0&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:C.dim,padding:"12px",margin:0}}>No results for "{search}"</p>}
+                  {!srLoading&&srRes.length===0&&<p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,color:C.dim,padding:"12px",margin:0}}>No results for "{search}"</p>}
                   {!srLoading&&srRes.map(p=>(
                     <div key={p.id} onClick={()=>openPlayer(p)}
                       style={{display:"flex",gap:10,alignItems:"center",padding:"9px 12px",cursor:"pointer",transition:"background .12s",borderTop:"1px solid rgba(255,255,255,0.04)"}}
@@ -359,12 +382,12 @@ export default function PlayerProfilePage(){
                         {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:700,color:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
-                        <p style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted,margin:0}}>{p.team} · {p.position} · {p.league}</p>
+                        <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,fontWeight:700,color:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+                        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:9,color:C.muted,margin:0}}>{p.team} · {p.position} · {p.league}</p>
                       </div>
                       <div style={{display:"flex",gap:8,flexShrink:0}}>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:C.red}}>{p.goals}G</span>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:C.green}}>{p.assists}A</span>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:900,color:C.red}}>{p.goals}G</span>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:900,color:C.green}}>{p.assists}A</span>
                       </div>
                     </div>
                   ))}
@@ -378,10 +401,10 @@ export default function PlayerProfilePage(){
         <div style={{display:"flex",gap:6,marginBottom:22,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
           {LEAGUES.map(l=>(
             <button key={l.key} onClick={()=>onLeague(l.key)}
-              style={{padding:"7px 14px",borderRadius:20,
+              style={{padding:"7px 14px",borderRadius:0,
                 border:league===l.key?"1.5px solid "+l.color+"55":"1.5px solid rgba(255,255,255,0.07)",
                 background:league===l.key?l.color+"12":"rgba(255,255,255,0.025)",
-                color:league===l.key?l.color:C.muted,fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,
+                color:league===l.key?l.color:C.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:11,fontWeight:800,
                 cursor:"pointer",transition:"all .16s",flexShrink:0,whiteSpace:"nowrap",
                 boxShadow:league===l.key?"0 0 14px "+l.color+"18":"none"}}>
               {league===l.key&&<span style={{width:5,height:5,borderRadius:"50%",background:l.color,display:"inline-block",marginRight:5,verticalAlign:"middle"}}/>}
@@ -397,11 +420,11 @@ export default function PlayerProfilePage(){
           <div>
             {/* Tab row */}
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Inter',sans-serif"}}>Player Rankings</div>
+              <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Space Grotesk',sans-serif"}}>Player Rankings</div>
               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 {PLAYER_TABS.map(t=>(
                   <button key={t.key} onClick={()=>setPTab(t.key)}
-                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
+                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Space Grotesk',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
                       border:pTab===t.key?"1.5px solid "+t.color+"50":"1.5px solid rgba(255,255,255,0.07)",
                       background:pTab===t.key?t.color+"12":"rgba(255,255,255,0.022)",
                       color:pTab===t.key?t.color:C.muted,
@@ -414,9 +437,9 @@ export default function PlayerProfilePage(){
             <SHead title={pCurrent.label} color={pCurrent.color} count={!pLoading?pRows.length:null} loading={pLoading}/>
             {pLoading&&[1,2,3,4,5,6,7].map(i=><Sk key={i}/>)}
             {!pLoading&&pRows.length===0&&(
-              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
-                <div style={{fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No data loaded yet</div>
-                <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Check that the backend is running at {B}</div>
+              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:0,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
+                <div style={{fontSize:11,color:C.muted,fontFamily:"'Space Grotesk',sans-serif",marginBottom:6}}>No data loaded yet</div>
+                <div style={{fontSize:10,color:C.dim,fontFamily:"'Space Grotesk',sans-serif"}}>Check that the backend is running at {B}</div>
               </div>
             )}
             {!pLoading&&pRows.map((p,i)=><PRow key={p.id||i} p={p} rank={i+1} sk={pCurrent.sk} sl={pCurrent.sl} sc={pCurrent.sc} max={pMax} onClick={openPlayer}/>)}
@@ -425,11 +448,11 @@ export default function PlayerProfilePage(){
           {/* RIGHT — Team rankings */}
           <div>
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Inter',sans-serif"}}>Team Rankings</div>
+              <div style={{fontSize:8,fontWeight:900,color:C.dim,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9,fontFamily:"'Space Grotesk',sans-serif"}}>Team Rankings</div>
               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 {TEAM_TABS.map(t=>(
                   <button key={t.key} onClick={()=>setTTab(t.key)}
-                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
+                    style={{padding:"6px 12px",borderRadius:18,fontSize:10,fontWeight:800,fontFamily:"'Space Grotesk',sans-serif",cursor:"pointer",transition:"all .15s",flexShrink:0,
                       border:tTab===t.key?"1.5px solid "+t.color+"50":"1.5px solid rgba(255,255,255,0.07)",
                       background:tTab===t.key?t.color+"12":"rgba(255,255,255,0.022)",
                       color:tTab===t.key?t.color:C.muted,
@@ -442,9 +465,9 @@ export default function PlayerProfilePage(){
             <SHead title={tCurrent.label} color={tCurrent.color} count={!tLoading?tRows.length:null} loading={tLoading}/>
             {tLoading&&[1,2,3,4,5,6,7].map(i=><Sk key={i}/>)}
             {!tLoading&&tRows.length===0&&(
-              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:14,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
-                <div style={{fontSize:11,color:C.muted,fontFamily:"'Inter',sans-serif",marginBottom:6}}>No team data loaded</div>
-                <div style={{fontSize:10,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Standings load from API-Football. Check backend.</div>
+              <div style={{padding:"32px 16px",textAlign:"center",borderRadius:0,background:"rgba(255,255,255,0.018)",border:"1px solid rgba(255,255,255,0.045)"}}>
+                <div style={{fontSize:11,color:C.muted,fontFamily:"'Space Grotesk',sans-serif",marginBottom:6}}>No team data loaded</div>
+                <div style={{fontSize:10,color:C.dim,fontFamily:"'Space Grotesk',sans-serif"}}>Standings load from API-Football. Check backend.</div>
               </div>
             )}
             {!tLoading&&tRows.map((t,i)=><TRow key={t.team_id||i} t={t} rank={i+1} sk={tCurrent.sk} sl={tCurrent.sl} sc={tCurrent.sc} max={tMax} onClick={openTeam}/>)}

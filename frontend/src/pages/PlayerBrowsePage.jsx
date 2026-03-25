@@ -5,6 +5,24 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFplBootstrap, getFplPredictorTable } from "../api/api";
 
+/* ── Neobrutalist theme constants ── */
+const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB_CSS = `
+  @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
+  @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes nbBlink  { 50%{opacity:0} }
+  @keyframes nbStripes{ to{background-position:90px 0} }
+  @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:#0a0a0a; }
+  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
+  ::selection { background:#e8ff47; color:#0a0a0a; }
+  input[type=range] { accent-color:#e8ff47; }
+`;
+
+
+
 /* ── Responsive hook ── */
 function useIsMobile(bp = 640) {
   const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
@@ -60,7 +78,7 @@ function normalizePlayer(row, codeMap = {}) {
 
 function Skel({ h=20, w="100%", r=8 }) {
   return <div style={{ height:h, width:w, borderRadius:r,
-    background:"rgba(255,255,255,0.06)", animation:"piSkeletonPulse 1.4s ease-in-out infinite" }}/>;
+    background:"rgba(232,255,71,.06)", animation:"piSkeletonPulse 1.4s ease-in-out infinite" }}/>;
 }
 
 export default function PlayerBrowsePage() {
@@ -124,7 +142,12 @@ export default function PlayerBrowsePage() {
     : "1fr 60px 60px 60px 60px";
 
   return (
-    <div style={{ background:"#000", minHeight:"100vh", padding: isMobile ? "14px 0 80px" : "20px 0 40px" }}>
+    <div style={{ background:"#0a0a0a", minHeight:"100vh", padding: isMobile ? "14px 0 80px" : "20px 0 40px" }}>
+      <style>{NB_CSS}</style>
+      {/* NB bg stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+
       <style>{`
         @keyframes piSkeletonPulse{0%,100%{opacity:1}50%{opacity:0.4}}
         .pbp-row:active { background:rgba(103,177,255,0.1) !important; }
@@ -133,11 +156,11 @@ export default function PlayerBrowsePage() {
 
         {/* Header */}
         <div style={{ marginBottom:16 }}>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight:900, color:"#f0f6ff",
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight:900, color:"#e8ff47",
             letterSpacing:"-0.02em", margin:0 }}>
             Player Insight
           </h1>
-          <div style={{ color:"#2a4a6a", fontSize:11, fontWeight:700, marginTop:4 }}>
+          <div style={{ color:"rgba(232,255,71,.35)", fontSize:11, fontWeight:700, marginTop:4 }}>
             {loading ? "Loading..." : `${players.length} players · GW${gw} · Tap any player for full analysis`}
           </div>
         </div>
@@ -172,17 +195,17 @@ export default function PlayerBrowsePage() {
             placeholder="Search player or team…"
             style={{
               flex:1, minWidth: isMobile ? "100%" : 160,
-              padding:"8px 12px", borderRadius:10, fontSize:14,
-              background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)",
-              color:"#e8f0ff", outline:"none", fontFamily:"inherit",
+              padding:"8px 12px", borderRadius:0, fontSize:14,
+              background:"rgba(232,255,71,.05)", border:"2px solid rgba(232,255,71,.2)",
+              color:"#e8ff47", outline:"none", fontFamily:"inherit",
             }}
           />
 
           {/* Sort */}
           <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{
             padding: isMobile ? "8px 10px" : "6px 10px",
-            borderRadius:10, fontSize:11, background:"#000",
-            border:"1px solid rgba(255,255,255,0.1)", color:"#c8d8f0",
+            borderRadius:0, fontSize:11, background:"#0a0a0a",
+            border:"2px solid rgba(232,255,71,.2)", color:"#c8d8f0",
             outline:"none", cursor:"pointer", fontFamily:"inherit",
             minHeight:36, flexShrink:0,
           }}>
@@ -197,11 +220,11 @@ export default function PlayerBrowsePage() {
         {!loading && (
           <div style={{ display:"grid", gridTemplateColumns:cols,
             gap:8, padding:"4px 14px", marginBottom:4 }}>
-            <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em" }}>PLAYER</span>
-            <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>PROJ</span>
-            {!isMobile && <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>FORM</span>}
-            <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>COST</span>
-            {!isMobile && <span style={{ fontSize:9, fontWeight:800, color:"#1a3a5a", letterSpacing:"0.1em", textAlign:"right" }}>OWN%</span>}
+            <span style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em" }}>PLAYER</span>
+            <span style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em", textAlign:"right" }}>PROJ</span>
+            {!isMobile && <span style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em", textAlign:"right" }}>FORM</span>}
+            <span style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em", textAlign:"right" }}>COST</span>
+            {!isMobile && <span style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em", textAlign:"right" }}>OWN%</span>}
           </div>
         )}
 
@@ -211,7 +234,7 @@ export default function PlayerBrowsePage() {
             {Array.from({length:10}).map((_,i) => <Skel key={i} h={58} r={12} />)}
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ color:"#2a4a6a", textAlign:"center", padding:"40px 0", fontSize:14 }}>
+          <div style={{ color:"rgba(232,255,71,.35)", textAlign:"center", padding:"40px 0", fontSize:14 }}>
             No players match your search
           </div>
         ) : (
@@ -233,9 +256,9 @@ export default function PlayerBrowsePage() {
                     display:"grid", gridTemplateColumns:cols,
                     gap:8, alignItems:"center",
                     padding: isMobile ? "8px 10px" : "10px 14px",
-                    borderRadius:12, cursor:"pointer",
+                    borderRadius:0, cursor:"pointer",
                     background: i%2===0 ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.018)",
-                    border:"1px solid rgba(255,255,255,0.05)",
+                    border:"1px solid rgba(232,255,71,.1)",
                     transition:"all 0.13s ease",
                     WebkitTapHighlightColor:"rgba(103,177,255,0.15)",
                   }}
@@ -254,7 +277,7 @@ export default function PlayerBrowsePage() {
                   <div style={{ display:"flex", alignItems:"center", gap: isMobile ? 8 : 10, minWidth:0 }}>
                     {/* Rank */}
                     {!isMobile && (
-                      <span style={{ fontSize:10, fontWeight:800, color:"#1a3a5a", minWidth:20,
+                      <span style={{ fontSize:10, fontWeight:800, color:"rgba(232,255,71,.25)", minWidth:20,
                         fontFamily:"DM Mono, monospace" }}>{i+1}</span>
                     )}
 
@@ -265,7 +288,7 @@ export default function PlayerBrowsePage() {
                           style={{ width:isMobile?28:34, height:isMobile?28:34, borderRadius:"50%",
                             objectFit:"cover", objectPosition:"top",
                             border:"1.5px solid rgba(255,255,255,0.12)",
-                            background:"rgba(0,0,0,0.5)" }}
+                            background:"#0a0a0a" }}
                           onError={e => {
                             e.currentTarget.style.display="none";
                             if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display="block";
@@ -286,18 +309,18 @@ export default function PlayerBrowsePage() {
 
                     {/* Name + meta */}
                     <div style={{ minWidth:0 }}>
-                      <div style={{ fontSize: isMobile ? 12 : 13, fontWeight:800, color:"#e8f0ff",
+                      <div style={{ fontSize: isMobile ? 12 : 13, fontWeight:800, color:"#e8ff47",
                         whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                         {p.name}
                       </div>
                       <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:1, flexWrap:"nowrap" }}>
-                        <span style={{ fontSize:9, color:"#2a4a6a", fontWeight:700 }}>{p.team}</span>
+                        <span style={{ fontSize:9, color:"rgba(232,255,71,.35)", fontWeight:700 }}>{p.team}</span>
                         <span style={{ fontSize:8, fontWeight:900, color:posColor,
                           background:`${posColor}22`, padding:"0 4px", borderRadius:3 }}>
                           {p.position}
                         </span>
                         {!isMobile && (
-                          <span style={{ fontSize:9, color:"#1a3a5a" }}>{p.next_opp}</span>
+                          <span style={{ fontSize:9, color:"rgba(232,255,71,.25)" }}>{p.next_opp}</span>
                         )}
                       </div>
                     </div>
@@ -328,7 +351,7 @@ export default function PlayerBrowsePage() {
               );
             })}
             {filtered.length > 100 && (
-              <div style={{ textAlign:"center", color:"#1a3a5a", fontSize:11, padding:"12px 0" }}>
+              <div style={{ textAlign:"center", color:"rgba(232,255,71,.25)", fontSize:11, padding:"12px 0" }}>
                 Showing top 100 of {filtered.length} — refine your search
               </div>
             )}

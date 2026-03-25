@@ -592,14 +592,14 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
   const maxAcc = Math.max(...trend.map(d => d.acc), 1);
   return (
     <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}} ref={ref}>
-      <div style={{display:"grid",gridTemplateColumns:byMarket.length > 0 ? "1fr 340px" : "1fr",gap:16,alignItems:"stretch"}}>
+      <div style={{display:"grid",gridTemplateColumns:byMarket.length > 0 ? "1fr 340px" : "1fr",gap:0,alignItems:"stretch",border:"3px solid #0a0a0a",boxShadow:"6px 6px 0 rgba(0,0,0,.2)"}}>
         {/* Bar chart */}
         {trend.length > 0 && (
-          <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,borderRadius:20,padding:"24px 28px"}}>
+          <div style={{background:"#0a0a0a",padding:"24px 28px"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
               <div>
-                <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:4}}>MODEL ACCURACY</div>
-                <div style={{fontSize:18,fontWeight:900,color:C.text,fontFamily:"'Sora',sans-serif"}}>Rolling Gameweeks</div>
+                <div style={{fontSize:9,fontWeight:900,color:"rgba(232,255,71,.5)",letterSpacing:"0.14em",marginBottom:4}}>MODEL ACCURACY</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#e8ff47",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>Rolling Gameweeks</div>
               </div>
               {overallAccuracy > 0 && (
                 <div style={{textAlign:"right"}}>
@@ -619,7 +619,7 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
                     height:visible?`${(d.acc/maxAcc)*90}%`:"0%",
                     opacity:d.acc>=70?.85:.6,
                     transition:`height 700ms ${i*80}ms cubic-bezier(0.22,1,0.36,1)`}}/>
-                  <span style={{fontSize:8,color:C.muted}}>{d.gw}</span>
+                  <span style={{fontSize:8,color:"rgba(232,255,71,.35)"}}>{d.gw}</span>
                 </div>
               ))}
             </div>
@@ -627,13 +627,13 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
         )}
         {/* By market breakdown */}
         {byMarket.length > 0 && (
-          <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.line}`,
-            borderRadius:20,padding:"24px 24px",display:"flex",flexDirection:"column",gap:14,justifyContent:"center"}}>
-            <div style={{fontSize:9,fontWeight:900,color:C.muted,letterSpacing:"0.14em",marginBottom:2}}>BY MARKET</div>
+          <div style={{background:"#111",borderLeft:"3px solid #0a0a0a",
+            padding:"24px 24px",display:"flex",flexDirection:"column",gap:14,justifyContent:"center"}}>
+            <div style={{fontSize:9,fontWeight:900,color:"rgba(232,255,71,.5)",letterSpacing:"0.14em",marginBottom:2}}>BY MARKET</div>
             {byMarket.map((m,i)=>(
               <div key={m.label}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                  <span style={{fontSize:12,fontWeight:700,color:C.text}}>{m.label}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#e8ff47"}}>{m.label}</span>
                   <span style={{fontSize:16,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:m.col,
                     textShadow:`0 0 10px ${m.col}44`}}>{m.value}%</span>
                 </div>
@@ -730,9 +730,10 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
   return (
     <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 64px" }}>
       <div style={{
-        background: "rgba(255,255,255,0.02)",
-        border: `1px solid ${C.line}`,
-        borderRadius: 20, padding: "24px 28px",
+        background: "#0a0a0a",
+        border: "3px solid #0a0a0a",
+        boxShadow: "6px 6px 0 rgba(0,0,0,.25)",
+        padding: "24px 28px",
       }}>
         {/* Header */}
         <div style={{
@@ -741,12 +742,12 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
         }}>
           <div>
             <div style={{
-              fontSize: 9, fontWeight: 900, color: C.muted,
-              letterSpacing: "0.14em", marginBottom: 5,
+              fontSize: 9, fontWeight: 900, color: "rgba(232,255,71,.5)",
+              letterSpacing: "0.18em", marginBottom: 5, fontFamily:"'DM Mono',monospace",
             }}>ACCOUNTABILITY</div>
             <div style={{
-              fontSize: 18, fontWeight: 900, color: C.text,
-              fontFamily: "'Sora', sans-serif",
+              fontSize: 22, fontWeight: 900, color: "#e8ff47",
+              fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1,
             }}>Recent Predictions</div>
           </div>
  
@@ -760,7 +761,7 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
                   color: pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange,
                   textShadow: `0 0 18px ${pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange}55`,
                 }}>{pct}%</div>
-                <div style={{ fontSize: 9, color: C.muted, letterSpacing: "0.08em", marginTop: 2 }}>
+                <div style={{ fontSize: 9, color: "rgba(232,255,71,.4)", letterSpacing: "0.08em", marginTop: 2 }}>
                   {correct}/{total} correct
                 </div>
               </div>
@@ -773,7 +774,7 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
           {results.map((r, i) => {
             const ok = r.correct === true;
             const bad = r.correct === false;
-            const borderCol = ok ? C.green : bad ? C.red : C.muted;
+            const borderCol = ok ? C.green : bad ? C.red : "rgba(232,255,71,0.3)";
             const icon = ok ? "✓" : bad ? "✗" : "·";
  
             return (
@@ -822,16 +823,17 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
                   {/* Match info */}
                   <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <span style={{
-                      fontSize: 13, fontWeight: 700, color: C.text, minWidth: 130,
+                      fontSize: 13, fontWeight: 700, color: "#e8ff47", minWidth: 130,
+                      fontFamily: "'Space Grotesk',sans-serif",
                     }}>
                       {r.home} vs {r.away}
                     </span>
-                    <span style={{ fontSize: 11, color: C.muted }}>
-                      Predicted: <b style={{ color: C.text, fontFamily: "'JetBrains Mono', monospace" }}>{r.pred}</b>
+                    <span style={{ fontSize: 11, color: "rgba(232,255,71,.4)", fontFamily:"'DM Mono',monospace" }}>
+                      Predicted: <b style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>{r.pred}</b>
                     </span>
                     {r.actual && r.actual !== "Pending" && (
-                      <span style={{ fontSize: 11, color: C.muted }}>
-                        Result: <b style={{ color: C.text, fontFamily: "'JetBrains Mono', monospace" }}>{r.actual}</b>
+                      <span style={{ fontSize: 11, color: "rgba(232,255,71,.4)", fontFamily:"'DM Mono',monospace" }}>
+                        Result: <b style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>{r.actual}</b>
                       </span>
                     )}
                   </div>
@@ -839,6 +841,20 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
               </Link>
             );
           })}
+        </div>
+        {/* Footer link */}
+        <div style={{ marginTop:18, paddingTop:16, borderTop:"1px solid rgba(232,255,71,.12)", display:"flex", justifyContent:"flex-end" }}>
+          <Link to="/predictions/premier-league" style={{
+            fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".18em",
+            textTransform:"uppercase", color:"#ff2744", textDecoration:"none",
+            display:"flex", alignItems:"center", gap:6,
+            transition:"letter-spacing 160ms",
+          }}
+            onMouseEnter={e=>e.currentTarget.style.letterSpacing=".22em"}
+            onMouseLeave={e=>e.currentTarget.style.letterSpacing=".18em"}
+          >
+            Full predictions log →
+          </Link>
         </div>
       </div>
     </section>
@@ -850,11 +866,14 @@ const FEATURES = [
   { to:"/predictions/premier-league", color:C.blue,   title:"Match Predictions",    subtitle:"This week's fixtures →",  description:"Win probabilities, expected scorelines, and model confidence across 9 competitions.", graphic:PitchGraphic,    badge:"LIVE" },
   { to:"/best-team",                  color:C.green,  title:"Best XI Builder",       subtitle:"Build your squad →",      description:"Optimal fantasy XI using composite scoring: fixtures, form, ICT index and season PPG.", graphic:FormationGraphic, badge:"FPL"  },
   { to:"/squad-builder",              color:C.gold,   title:"Squad Builder",         subtitle:"Plan transfers →",         description:"Full FPL squads with budget constraints. Best value picks, differentials and captain options.", graphic:BarGraphic,       badge:"FPL"  },
-  { to:"/player",                     color:C.purple, title:"Player Insight",        subtitle:"Analyse any player →",     description:"Deep statistical profiles with form trends and fixture difficulty across the season.", graphic:RadarGraphic,     badge:"STATS"},
+  { to:"/player",                     color:C.purple, title:"Player Profiles",       subtitle:"Analyse any player →",     description:"Deep statistical profiles with form trends and fixture difficulty across the season.", graphic:RadarGraphic,     badge:"STATS"},
   { to:"/gameweek-insights",          color:C.orange, title:"GW Insights",           subtitle:"This gameweek →",          description:"FDR, captain picks, differential watchlist and injury news all in one place.", graphic:TrendGraphic,     badge:"FPL"  },
   { to:"/fpl-table",                  color:C.red,    title:"Player Stats Table",    subtitle:"Full stats table →",       description:"Sortable stats for all players. Filter by position, team, price. Find hidden gems.", graphic:HeatmapGraphic,  badge:"STATS"},
-  { to:"/games",                      color:C.teal,   title:"Sports Arcade",         subtitle:"Play games →",             description:"Penalty shootouts, analytics quizzes, 2048 and more. Learn stats through play.", graphic:GameGraphic,      badge:"NEW"  },
-  { to:"/learn",                      color:C.pink,   title:"Ground Zero",           subtitle:"Explore methodology →",    description:"How the platform thinks. Research lab, model transparency, and the science behind forecasting.", graphic:LearnGraphic,    badge:"LAB"  },
+  { to:"/live",                       color:C.teal,   title:"Live Scores",           subtitle:"Watch now →",              description:"Real-time scores and live match intelligence across 9 competitions — updated every 30 seconds.", graphic:PitchGraphic,    badge:"LIVE" },
+  { to:"/news",                       color:"#ff2744", title:"News Tracker",          subtitle:"Latest updates →",         description:"Transfer rumours, injury alerts, and squad news. Stay ahead of your FPL rivals.", graphic:TrendGraphic,    badge:"NEW"  },
+  { to:"/predictions/premier-league", color:C.gold,   title:"Prediction Tracker",    subtitle:"Check the model →",        description:"Full accountability log. Every prediction we've made, verified against real results with accuracy stats.", graphic:BarGraphic,      badge:"DATA" },
+  { to:"/games",                      color:C.pink,   title:"Sports Arcade",         subtitle:"Play games →",             description:"Penalty shootouts, analytics quizzes, 2048 and more. Learn stats through play.", graphic:GameGraphic,      badge:"FUN"  },
+  { to:"/learn",                      color:"#b388ff", title:"Ground Zero",           subtitle:"Explore methodology →",    description:"How the platform thinks. Research lab, model transparency, and the science behind forecasting.", graphic:LearnGraphic,    badge:"LAB"  },
 ];
 
 /* ─── Leagues data ───────────────────────────────────────── */

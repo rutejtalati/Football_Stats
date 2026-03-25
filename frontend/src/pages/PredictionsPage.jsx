@@ -776,7 +776,7 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
         onClick={()=>onSelect&&onSelect()}
       >
         {/* ── MAIN ROW ─────────────────────────── */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1px auto 1px 1fr auto",alignItems:"center"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr auto":"1fr 1px auto 1px 1fr auto",alignItems:"center"}}>
 
           {/* HOME SIDE */}
           <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,minWidth:0}}>
@@ -2237,110 +2237,9 @@ const BACKEND_LEAGUE = {
 // ── Intricate animated background ───────────────────────────────────────────
 function IntricateBg() {
   return (
-    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-      {/* Deep black base with layered radial glows */}
-      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
-
-      {/* Subtle radial glows */}
-      <div style={{position:"absolute",top:"-10%",left:"10%",width:"60vw",height:"60vw",
-        background:"radial-gradient(ellipse,rgba(255,255,255,.028) 0%,transparent 65%)",
-        transform:"rotate(-15deg)"}}/>
-      <div style={{position:"absolute",bottom:"-5%",right:"5%",width:"50vw",height:"50vw",
-        background:"radial-gradient(ellipse,rgba(255,255,255,.018) 0%,transparent 60%)"}}/>
-
-      {/* Fine grid */}
-      <div style={{position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px)",
-        backgroundSize:"48px 48px"}}/>
-
-      {/* Coarser accent grid on top */}
-      <div style={{position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
-        backgroundSize:"192px 192px"}}/>
-
-      {/* Diagonal slash lines */}
-      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-        <defs>
-          <pattern id="pred-slash" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="120" x2="120" y2="0" stroke="rgba(255,255,255,.018)" strokeWidth="0.8"/>
-          </pattern>
-          <pattern id="pred-dots" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
-            <circle cx="24" cy="24" r="0.8" fill="rgba(255,255,255,.07)"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#pred-slash)"/>
-        <rect width="100%" height="100%" fill="url(#pred-dots)"/>
-      </svg>
-
-      {/* Corner bracket decorations */}
-      <svg style={{position:"absolute",top:0,left:0,width:160,height:160,opacity:.12}} viewBox="0 0 160 160">
-        <polyline points="10,60 10,10 60,10" fill="none" stroke="white" strokeWidth="1"/>
-        <polyline points="10,80 10,10 80,10" fill="none" stroke="white" strokeWidth=".4"/>
-      </svg>
-      <svg style={{position:"absolute",top:0,right:0,width:160,height:160,opacity:.12}} viewBox="0 0 160 160">
-        <polyline points="150,60 150,10 100,10" fill="none" stroke="white" strokeWidth="1"/>
-        <polyline points="150,80 150,10 80,10" fill="none" stroke="white" strokeWidth=".4"/>
-      </svg>
-
-      {/* Giant ghost text */}
-      <div style={{position:"absolute",top:"6vh",left:"-2%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(90px,14vw,180px)",fontWeight:900,color:"rgba(255,255,255,.022)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>xG</div>
-      <div style={{position:"absolute",top:"45vh",right:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(60px,10vw,140px)",fontWeight:900,color:"rgba(255,255,255,.018)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>ELO</div>
-      <div style={{position:"absolute",bottom:"8vh",left:"3%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(50px,8vw,110px)",fontWeight:900,color:"rgba(255,255,255,.015)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>1–0</div>
-    </div>
-  );
-}
-
-
-// ── Shared page footer ───────────────────────────────────────────────────────
-function PageFooter() {
-  return (
-    <footer style={{
-      borderTop:"1px solid rgba(255,255,255,0.08)",
-      marginTop:64,
-      paddingTop:32,
-      paddingBottom:40,
-      position:"relative",
-      zIndex:2,
-    }}>
-      <div style={{
-        maxWidth:1440,margin:"0 auto",
-        padding:"0 24px",
-        display:"flex",
-        alignItems:"center",
-        justifyContent:"space-between",
-        flexWrap:"wrap",
-        gap:16,
-      }}>
-        {/* Left — branding */}
-        <div style={{display:"flex",flexDirection:"column",gap:4}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:3,height:24,background:"#ffffff",borderRadius:2,opacity:.6}}/>
-            <span style={{fontSize:18,fontWeight:900,color:"#ffffff",letterSpacing:"-.03em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
-          </div>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.35)",fontFamily:"'Inter',sans-serif",letterSpacing:".02em"}}>Football Intelligence · ELO · Dixon-Coles · xG · Poisson</span>
-        </div>
-        {/* Centre — built by */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-          <div style={{fontSize:10,color:"rgba(255,255,255,.25)",letterSpacing:".12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</div>
-          <div style={{fontSize:16,fontWeight:800,color:"#ffffff",letterSpacing:"-.02em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</div>
-        </div>
-        {/* Right — links */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-          <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.5)",fontFamily:"'Inter',sans-serif",letterSpacing:".04em"}}>statinsite.com</span>
-          <span style={{fontSize:10,color:"rgba(255,255,255,.2)",fontFamily:"'Inter',sans-serif"}}>© {new Date().getFullYear()} StatinSite</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-// ── Intricate background for Predictions page ────────────────────────────────
-function IntricateBg() {
-  return (
     <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-      {/* Base */}
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
-      {/* Soft radial glows */}
+      {/* Radial glows */}
       <div style={{position:"absolute",top:"-20%",left:"20%",width:"70vw",height:"70vw",
         background:"radial-gradient(ellipse,rgba(255,255,255,.018) 0%,transparent 60%)",transform:"rotate(-12deg)"}}/>
       <div style={{position:"absolute",bottom:"-10%",right:"10%",width:"55vw",height:"55vw",
@@ -2349,29 +2248,32 @@ function IntricateBg() {
       <div style={{position:"absolute",inset:0,
         backgroundImage:"linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px)",
         backgroundSize:"40px 40px"}}/>
-      {/* Bold grid overlay */}
+      {/* Bold grid */}
       <div style={{position:"absolute",inset:0,
         backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)",
         backgroundSize:"160px 160px"}}/>
       {/* SVG patterns */}
       <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="p-slash" width="100" height="100" patternUnits="userSpaceOnUse">
+          <pattern id="pr-slash" width="100" height="100" patternUnits="userSpaceOnUse">
             <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,.012)" strokeWidth="0.7"/>
           </pattern>
-          <pattern id="p-dot" width="40" height="40" patternUnits="userSpaceOnUse">
+          <pattern id="pr-dot" width="40" height="40" patternUnits="userSpaceOnUse">
             <circle cx="20" cy="20" r="0.7" fill="rgba(255,255,255,.07)"/>
           </pattern>
-          <pattern id="p-diamond" width="60" height="60" patternUnits="userSpaceOnUse">
+          <pattern id="pr-diamond" width="60" height="60" patternUnits="userSpaceOnUse">
             <polygon points="30,2 58,30 30,58 2,30" fill="none" stroke="rgba(255,255,255,.016)" strokeWidth="0.6"/>
           </pattern>
+          <pattern id="pr-hex" width="52" height="44" patternUnits="userSpaceOnUse">
+            <polygon points="26,2 50,12 50,32 26,42 2,32 2,12" fill="none" stroke="rgba(255,255,255,.018)" strokeWidth="0.5"/>
+          </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#p-slash)"/>
-        <rect width="100%" height="100%" fill="url(#p-dot)"/>
-        <rect x="0" y="0" width="35%" height="50%" fill="url(#p-diamond)" opacity="0.7"/>
-        <rect x="65%" y="55%" width="35%" height="45%" fill="url(#p-diamond)" opacity="0.5"/>
+        <rect width="100%" height="100%" fill="url(#pr-slash)"/>
+        <rect width="100%" height="100%" fill="url(#pr-dot)"/>
+        <rect x="0" y="0" width="40%" height="55%" fill="url(#pr-diamond)" opacity="0.7"/>
+        <rect x="62%" y="50%" width="38%" height="50%" fill="url(#pr-hex)" opacity="0.6"/>
       </svg>
-      {/* Corner HUD brackets */}
+      {/* HUD corner brackets — all 4 */}
       <svg style={{position:"absolute",top:0,left:0,width:180,height:180,opacity:.1}} viewBox="0 0 180 180">
         <polyline points="12,70 12,12 70,12" fill="none" stroke="white" strokeWidth="1.2"/>
         <polyline points="12,90 12,12 90,12" fill="none" stroke="white" strokeWidth=".4"/>
@@ -2379,6 +2281,7 @@ function IntricateBg() {
       </svg>
       <svg style={{position:"absolute",top:0,right:0,width:180,height:180,opacity:.08}} viewBox="0 0 180 180">
         <polyline points="168,70 168,12 110,12" fill="none" stroke="white" strokeWidth="1.2"/>
+        <polyline points="168,90 168,12 90,12" fill="none" stroke="white" strokeWidth=".4"/>
       </svg>
       <svg style={{position:"absolute",bottom:0,left:0,width:180,height:180,opacity:.07}} viewBox="0 0 180 180">
         <polyline points="12,110 12,168 70,168" fill="none" stroke="white" strokeWidth="1"/>
@@ -2396,6 +2299,47 @@ function IntricateBg() {
     </div>
   );
 }
+
+
+// ── Page Footer ──────────────────────────────────────────────────────────────
+function PageFooter({isMobile}) {
+  return (
+    <footer style={{
+      borderTop:"1px solid rgba(255,255,255,0.08)",
+      marginTop:48,paddingTop:32,paddingBottom:max_pb,
+      position:"relative",zIndex:2,
+    }}>
+      <div style={{
+        display:"flex",flexDirection:isMobile?"column":"row",
+        alignItems:isMobile?"flex-start":"center",
+        justifyContent:"space-between",gap:isMobile?20:24,
+      }}>
+        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:3,height:22,background:"rgba(255,255,255,.7)",borderRadius:2}}/>
+            <span style={{fontSize:20,fontWeight:900,color:"#ffffff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
+          </div>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.35)",fontFamily:"'Inter',sans-serif",letterSpacing:".03em",paddingLeft:13}}>
+            Football Intelligence · ELO · Dixon-Coles · xG
+          </span>
+        </div>
+        <div style={{
+          display:"flex",flexDirection:"column",alignItems:isMobile?"flex-start":"center",gap:4,
+          padding:"14px 28px",border:"1px solid rgba(255,255,255,0.1)",
+          borderRadius:10,background:"rgba(255,255,255,0.03)",
+        }}>
+          <div style={{fontSize:10,color:"rgba(255,255,255,.3)",letterSpacing:".14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</div>
+          <div style={{fontSize:17,fontWeight:800,color:"#ffffff",letterSpacing:"-.02em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:isMobile?"flex-start":"flex-end",gap:5}}>
+          <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.55)",fontFamily:"'Inter',sans-serif"}}>statinsite.com</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,.2)",fontFamily:"'Inter',sans-serif"}}>© 2025 StatinSite</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+const max_pb = 40;
 
 export default function PredictionsPage({league:propLeague,slugMap}){
   const isMobile = useWindowWidth() < 640;
@@ -2451,20 +2395,16 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const avgXgA=matches.length?(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length).toFixed(2):"0.00";
 
   return(
-    <div className="sn-page-wrap" style={{background:"#080808",position:"relative",fontFamily:"'Inter',sans-serif",color:"#e2e8f0"}}>
+    <div className="sn-page-wrap" style={{background:"#080808",position:"relative",fontFamily:"'Inter',sans-serif",color:"#ffffff"}}>
 
-      {/* -- Neobrutalist BG stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,
-        background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",
-        animation:"nbStripes 25s linear infinite"}}/>
-      {/* BG floater text */}
-      <div style={{position:"fixed",top:"8vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(100px,16vw,200px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      {/* ── Intricate Background ────────────────── */}
+      <IntricateBg/>
       <div style={{position:"fixed",top:"50vh",right:"0%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(70px,12vw,150px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>2–1</div>
 
-      <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:isMobile?"0 12px 80px":"0 28px 64px"}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:isMobile?"0 12px 80px":"0 24px 64px"}}>
 
         {/* -- HEADER ------------------------------------------ */}
-        <div style={{padding:isMobile?"12px 0 10px":"28px 0 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16,borderBottom:'1px solid rgba(255,255,255,0.2)'}}>
+        <div style={{padding:isMobile?"16px 0 14px":"28px 0 24px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16,borderBottom:'1px solid rgba(255,255,255,0.2)'}}>
 
           {/* Title block */}
           <div style={{display:"flex",alignItems:"center",gap:0}}>
@@ -2491,7 +2431,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
           </div>
 
           {/* League nav pills */}
-          <nav style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",overflowX:"auto",paddingBottom:4,scrollbarWidth:"none"}}>
+          <nav style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             {[
               {group:"domestic", label:"Domestic"},
               {group:"european", label:"European"},
@@ -2553,7 +2493,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
           ].map(({key,label,badge})=>(
             <button key={key} onClick={()=>setTab(key)} style={{
               display:"flex",alignItems:"center",gap:6,
-              padding:isMobile?"10px 14px":"12px 22px",fontSize:isMobile?11:12,fontWeight:600,
+              padding:"12px 22px",fontSize:12,fontWeight:600,
               cursor:"pointer",border:"none",whiteSpace:"nowrap",
               fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase",
               color:tab===key?"#0a0a0a":"rgba(255,255,255,0.7)",
@@ -2579,12 +2519,12 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
         {/* -- PREDICTIONS TAB -------------------------------- */}
         {tab==="predictions"&&(
-          <div style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
+          <div style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20,minWidth:0}}>
 
 
 
             {/* ── MAIN GRID ─────────────────────────────────────── */}
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 280px",gap:isMobile?12:16,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 260px",gap:16,alignItems:"start"}}>
 
               {/* LEFT: filters + prediction rows ─────────────── */}
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -2683,7 +2623,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               </div>
 
               {/* RIGHT SIDEBAR ──────────────────────────────── */}
-              <div style={{position:isMobile?"relative":"sticky",top:isMobile?"auto":"calc(var(--bar-total,84px) + 16px)",display:"flex",flexDirection:"column",gap:12}}>
+              <div style={{position:"sticky",top:"calc(var(--bar-total,84px) + 16px)",display:"flex",flexDirection:"column",gap:12}}>
 
                 {/* Scenario simulator */}
                 <ScenarioSimulator match={selectedMatch||sorted[0]} T={T}/>
@@ -2769,6 +2709,8 @@ export default function PredictionsPage({league:propLeague,slugMap}){
             )}
           </div>
         )}
+
+      <PageFooter isMobile={isMobile}/>
 
       {/* -- Page-specific CSS --------------------------------------- */}
       <style>{`

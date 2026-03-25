@@ -874,6 +874,7 @@ const FEATURES = [
   { to:"/predictions/premier-league", color:C.gold,   title:"Prediction Tracker",    subtitle:"Check the model →",        description:"Full accountability log. Every prediction we've made, verified against real results with accuracy stats.", graphic:BarGraphic,      badge:"DATA" },
   { to:"/games",                      color:C.pink,   title:"Sports Arcade",         subtitle:"Play games →",             description:"Penalty shootouts, analytics quizzes, 2048 and more. Learn stats through play.", graphic:GameGraphic,      badge:"FUN"  },
   { to:"/learn",                      color:"#b388ff", title:"Ground Zero",           subtitle:"Explore methodology →",    description:"How the platform thinks. Research lab, model transparency, and the science behind forecasting.", graphic:LearnGraphic,    badge:"LAB"  },
+  { to:"/about",                      color:"#ff2744", title:"About Me",               subtitle:"Meet the builder →",       description:"The person behind StatinSite. Football obsessive, data nerd, building tools that actually work.", graphic:LearnGraphic,    badge:"👋"   },
 ];
 
 /* ─── Leagues data ───────────────────────────────────────── */
@@ -1096,6 +1097,25 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
         {/* ══════════════════════════════════════════
             MODEL PERFORMANCE
         ══════════════════════════════════════════ */}
+
+        {/* ── ACCOUNTABILITY DIVIDER ── */}
+        <div style={{ background:"#e8ff47", borderTop:"4px solid #0a0a0a", borderBottom:"4px solid #0a0a0a", padding:"40px 24px 36px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+          {/* faint watermark */}
+          <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,0,0,.04)", lineHeight:1, pointerEvents:"none", userSelect:"none", whiteSpace:"nowrap" }}>PREDICTION LOG</div>
+          <div style={{ position:"relative", zIndex:1 }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:10, background:"#0a0a0a", padding:"4px 14px", marginBottom:14 }}>
+              <span style={{ width:6, height:6, background:"#ff2744", display:"inline-block", animation:"hpPulse 1.6s ease infinite", flexShrink:0 }}/>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(232,255,71,.6)" }}>MODEL ACCOUNTABILITY</span>
+            </div>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(38px,6vw,72px)", lineHeight:.9, color:"#0a0a0a", letterSpacing:".02em", marginBottom:10 }}>
+              EVERY PREDICTION.<br/><span style={{ WebkitTextStroke:"2px #0a0a0a", WebkitTextFillColor:"transparent" }}>VERIFIED.</span>
+            </div>
+            <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, color:"rgba(0,0,0,.5)", maxWidth:440, margin:"0 auto", lineHeight:1.7 }}>
+              No cherry-picking. No hiding misses. Full log of every match predicted by the model — wins, draws, losses and scorelines — tracked against real results.
+            </p>
+          </div>
+        </div>
+
         <ModelPerformance trend={trend} byMarket={byMarket} overallAccuracy={overallAcc}/>
 
         {/* ══════════════════════════════════════════

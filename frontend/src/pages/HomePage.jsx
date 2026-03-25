@@ -36,28 +36,33 @@ const C = {
 
 /* ─── Global styles ─────────────────────────────────────── */
 const HOME_CSS = `
-  body, #root { background: #e8ff47 !important; }
-  @keyframes fadeDown  { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes fadeUp    { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes cardIn    { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes livePulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(79,158,255,0.5)} 50%{opacity:.7;box-shadow:0 0 0 6px transparent} }
-  @keyframes floatP    { 0%{transform:translateY(0)} 50%{transform:translateY(-20px)} 100%{transform:translateY(0)} }
-  @keyframes tickerMove{ 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-  @keyframes orbFloat  { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(24px,-16px) scale(1.06)} 66%{transform:translate(-12px,20px) scale(.95)} 100%{transform:translate(0,0) scale(1)} }
-  @keyframes pitchPulse{ 0%,100%{opacity:.04} 50%{opacity:.08} }
-  @keyframes barGrow   { from{height:0} to{height:var(--h)} }
-  @keyframes radarSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes countUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes shimmer   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  @keyframes glow      { 0%,100%{box-shadow:0 0 12px currentColor} 50%{box-shadow:0 0 28px currentColor} }
-  @keyframes ballMove  { 0%{cx:30} 50%{cx:90} 100%{cx:30} }
-  @keyframes dashDraw  { to{stroke-dashoffset:0} }
-  .hp-card { transition:all 220ms cubic-bezier(0.22,1,0.36,1); }
-  .hp-card:hover { transform:translateY(-5px) !important; }
-  .hp-btn  { transition:all 160ms ease; cursor:pointer; }
-  .hp-btn:hover  { filter:brightness(1.15); transform:translateY(-2px); }
-  .hp-tag:hover  { transform:translateY(-1px); }
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+  /* ── Neo bg stripes (like concept) ── */
+  .hp-bg-stripes {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(92deg, transparent 0, transparent 44px, rgba(0,0,0,.03) 44px, rgba(0,0,0,.03) 45px);
+    animation: hpStripes 25s linear infinite;
+  }
+  @keyframes hpStripes { to { background-position: 90px 0; } }
+
+  /* ── Animations ── */
+  @keyframes hpFadeDown  { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes hpFadeUp    { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes hpCardIn    { from{opacity:0;transform:translateY(18px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes hpPulse     { 0%,100%{opacity:1;transform:scale(1)}      50%{opacity:.3;transform:scale(.55)} }
+  @keyframes hpBarGrow   { from{width:0} to{width:var(--w)} }
+  @keyframes hpHeightGrow{ from{height:0} to{height:var(--h)} }
+  @keyframes hpMarquee   { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  @keyframes hpBlink     { 50%{opacity:0} }
+
+  /* ── Interactive ── */
+  .hp-card { transition: all 180ms cubic-bezier(.22,1,.36,1); }
+  .hp-card:hover { transform: translateY(-4px) !important; }
+  .hp-btn  { transition: all 140ms ease; cursor: pointer; }
+  .hp-btn:hover { transform: translate(-2px,-2px); }
 `;
+
 
 /* ─── Animated count-up ─────────────────────────────────── */
 function useCountUp(target, duration=1800, delay=0) {
@@ -83,11 +88,11 @@ function useCountUp(target, duration=1800, delay=0) {
   return [val, ref];
 }
 
-/* ─── Dynamic stat tile ─────────────────────────────────── */
+/* ─── Stat tile — neobrutalist ─────────────────────────── */
 function StatTile({ value, suffix = "", label, sublabel, color, delay = 0, svg, trend }) {
   const [v, ref] = useCountUp(value, 1600, delay);
   const [hov, setHov] = useState(false);
- 
+
   return (
     <div
       ref={ref}
@@ -95,15 +100,13 @@ function StatTile({ value, suffix = "", label, sublabel, color, delay = 0, svg, 
       onMouseLeave={() => setHov(false)}
       style={{
         display: "flex", flexDirection: "column", gap: 10,
-        padding: "22px 24px", borderRadius: 18,
-        background: hov
-          ? `linear-gradient(135deg, rgba(12,18,30,0.98), ${color}18)`
-          : "rgba(255,255,255,0.025)",
-        border: `1px solid ${hov ? color + "66" : "rgba(255,255,255,0.07)"}`,
+        padding: "22px 24px",
+        background: hov ? "#0a0a0a" : "#e8ff47",
+        border: "3px solid #0a0a0a",
+        boxShadow: hov ? "6px 6px 0 #0a0a0a" : "3px 3px 0 rgba(0,0,0,.2)",
         flex: 1, minWidth: 0, position: "relative", overflow: "hidden",
-        transition: "all 260ms cubic-bezier(0.22,1,0.36,1)",
-        transform: hov ? "translateY(-5px)" : "translateY(0)",
-        boxShadow: hov ? `0 16px 40px ${color}20, 0 0 0 1px ${color}22` : "none",
+        transition: "all 160ms cubic-bezier(.22,1,.36,1)",
+        transform: hov ? "translate(-2px,-2px)" : "none",
         cursor: "default",
       }}
     >
@@ -138,9 +141,9 @@ function StatTile({ value, suffix = "", label, sublabel, color, delay = 0, svg, 
       <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
         <span style={{
           fontSize: 40, fontWeight: 900,
-          fontFamily: "'JetBrains Mono', monospace",
-          color, lineHeight: 1, letterSpacing: "-0.04em",
-          textShadow: hov ? `0 0 32px ${color}99` : `0 0 16px ${color}44`,
+          fontFamily: "'Bebas Neue', sans-serif",
+          color: hov ? "#e8ff47" : "#0a0a0a", lineHeight: 1, letterSpacing: "0.02em",
+          textShadow: "none",
           transition: "text-shadow 260ms",
         }}>{v.toLocaleString()}</span>
         <span style={{ fontSize: 18, fontWeight: 700, color, opacity: 0.8 }}>{suffix}</span>
@@ -387,51 +390,38 @@ function LearnGraphic({ color, hov }) {
   );
 }
 
-/* ─── Feature card ──────────────────────────────────────── */
-function FeatureCard({ to, color, title, subtitle, description, graphic: GraphicComp, badge, delay=0 }) {
+/* ─── Feature card — neobrutalist ───────────────────────── */
+function FeatureCard({ to, color, title, subtitle, description, badge, delay = 0, index = 1 }) {
   const [hov, setHov] = useState(false);
   return (
-    <Link to={to} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} className="hp-card"
+    <Link to={to} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      className="hp-card"
       style={{
-        display:"flex", flexDirection:"column",
-        background: hov ? `linear-gradient(135deg,rgba(12,18,30,0.98) 0%,${color}0d 100%)` : C.panel,
-        border:`1px solid ${hov ? color+"50" : C.line}`,
-        borderRadius:20, overflow:"hidden", textDecoration:"none",
-        boxShadow: hov ? `0 20px 52px rgba(0,0,0,0.55), 0 0 0 1px ${color}22` : "none",
-        animationDelay:delay+"ms", animation:"cardIn 500ms ease both",
-        position:"relative",
+        display: "flex", flexDirection: "column",
+        background: hov ? "#0a0a0a" : "#e8ff47",
+        border: "3px solid #0a0a0a", borderRight: "none",
+        textDecoration: "none",
+        boxShadow: hov ? "6px 6px 0 #0a0a0a" : "none",
+        animationDelay: delay + "ms", animation: "hpCardIn 500ms ease both",
+        position: "relative", overflow: "hidden",
+        transition: "background 160ms, box-shadow 160ms",
       }}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:1,
-        background:`linear-gradient(90deg,transparent,${color}${hov?"88":"33"},transparent)`,transition:"opacity 220ms"}}/>
-      <div style={{
-        height:130, display:"flex", alignItems:"center", justifyContent:"center",
-        background:`linear-gradient(135deg,${color}0d 0%,rgba(0,0,0,0) 60%)`,
-        borderBottom:`1px solid ${hov ? color+"30" : C.line}`,transition:"border-color 220ms", position:"relative",
-      }}>
-        <div style={{position:"absolute",top:0,right:0,width:100,height:100,
-          background:`radial-gradient(circle at 100% 0%,${color}1a 0%,transparent 65%)`,pointerEvents:"none"}}/>
-        <div style={{position:"relative",zIndex:1,transition:"transform 300ms",transform:hov?"scale(1.04)":"scale(1)"}}>
-          <GraphicComp color={color} hov={hov}/>
+      {/* Corner number — concept .feat-n */}
+      <div style={{ position:"absolute", top:8, right:10, fontFamily:"'Bebas Neue',sans-serif", fontSize:72, color: hov ? "rgba(255,255,255,.05)" : "rgba(0,0,0,.04)", lineHeight:1, pointerEvents:"none", userSelect:"none" }}>{String(index).padStart(2,"0")}</div>
+      {/* Accent top on hover */}
+      <div style={{ height:3, background: hov ? "#e8ff47" : "#0a0a0a", transition:"background 160ms" }}/>
+      <div style={{ padding:"24px 26px 26px", flex:1, display:"flex", flexDirection:"column", gap:8 }}>
+        {/* Icon */}
+        <div style={{ width:42, height:42, background: hov ? "#ff2744" : "#0a0a0a", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, boxShadow: hov ? "4px 4px 0 #0a0a0a" : "3px 3px 0 rgba(0,0,0,.2)", transition:"background .15s,box-shadow .15s", flexShrink:0 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8ff47" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14 14 0 0 1 0 20M2 12h20"/></svg>
         </div>
-        {badge && (
-          <div style={{position:"absolute",top:10,right:10,padding:"3px 9px",borderRadius:999,
-            background:color+"22",border:`1px solid ${color}44`,fontSize:9,fontWeight:800,color,
-            fontFamily:"'Inter',sans-serif",letterSpacing:"0.07em"}}>{badge}</div>
-        )}
-      </div>
-      <div style={{padding:"18px 20px 20px",flex:1,display:"flex",flexDirection:"column",gap:6}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:3,height:18,borderRadius:2,background:color,
-            boxShadow:hov?`0 0 12px ${color}88`:`0 0 6px ${color}44`,transition:"box-shadow 220ms",flexShrink:0}}/>
-          <span style={{fontSize:16,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif",letterSpacing:"-0.01em"}}>{title}</span>
-        </div>
-        <p style={{fontSize:12,color:C.muted,margin:0,lineHeight:1.65,fontFamily:"'Inter',sans-serif"}}>{description}</p>
-        <div style={{marginTop:"auto",paddingTop:12,display:"flex",alignItems:"center",gap:6}}>
-          <span style={{fontSize:11,fontWeight:700,color,fontFamily:"'Inter',sans-serif"}}>{subtitle}</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-            style={{transform:hov?"translateX(4px)":"translateX(0)",transition:"transform 180ms"}}>
-            <path d="M2 6h8M7 3l3 3-3 3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+        {/* Title */}
+        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:26, letterSpacing:1, color: hov ? "#e8ff47" : "#0a0a0a", lineHeight:1.1, transition:"color 160ms" }}>{title}</div>
+        {/* Description */}
+        <p style={{ fontSize:12, lineHeight:1.7, color: hov ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.5)", margin:0, fontFamily:"'Space Grotesk',sans-serif", transition:"color 160ms" }}>{description}</p>
+        {/* CTA link */}
+        <div style={{ marginTop:"auto", paddingTop:10, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".18em", textTransform:"uppercase", color: hov ? "#ff2744" : "rgba(0,0,0,.35)", display:"flex", alignItems:"center", gap:6, opacity: hov ? 1 : 0, transform: hov ? "translateX(0)" : "translateX(-6px)", transition:"all .2s" }}>
+          {subtitle} →
         </div>
       </div>
     </Link>
@@ -490,22 +480,16 @@ function PredictionStrip({ predictions = [] }) {
               className="hp-card"
             >
               <div style={{
-                background: "rgba(255,255,255,0.025)",
-                border: `1px solid rgba(255,255,255,0.07)`,
-                borderRadius: 16,
+                background: "#e8ff47",
+                border: "3px solid #0a0a0a",
+                borderRadius: 0,
                 padding: "16px 18px",
                 position: "relative",
                 overflow: "hidden",
                 transition: "border-color 220ms, box-shadow 220ms",
               }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = accentCol + "44";
-                  e.currentTarget.style.boxShadow = `0 8px 32px ${accentCol}18`;
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
+                onMouseEnter={e=>{e.currentTarget.style.background="#0a0a0a";e.currentTarget.style.boxShadow="5px 5px 0 #0a0a0a";e.currentTarget.style.transform="translate(-2px,-2px)";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="#e8ff47";e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}
               >
                 {/* Top accent stripe */}
                 <div style={{
@@ -977,324 +961,177 @@ export default function HomePage() {
 const compsCount = hs.competitionsCount || LEAGUES.length;
 const fixturesPred = hs.fixturesPredicted || 0;
 const verifiedAcc = hs.verifiedAccuracy || 0;
+
   return (
-    <div style={{minHeight:"100vh",background:"#e8ff47",overflow:"hidden",color:"#0a0a0a"}}>
+    <div style={{ minHeight:"100vh", background:"#e8ff47", color:"#0a0a0a", overflow:"hidden", position:"relative" }}>
       <style>{HOME_CSS}</style>
 
-      {/* ── HERO ── */}
-      <section style={{position:"relative",padding:"80px 20px 60px",maxWidth:1200,margin:"0 auto",textAlign:"center",overflow:"hidden"}}>
-        <PitchGridBg/>
-        <div style={{position:"relative",zIndex:1}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"5px 14px",borderRadius:999,
-            background:"rgba(79,158,255,0.1)",border:"1px solid rgba(79,158,255,0.25)",marginBottom:24,
-            animation:"fadeDown 600ms ease both"}}>
-            <span style={{width:6,height:6,borderRadius:"50%",background:C.blue,animation:"livePulse 2s ease infinite"}}/>
-            <span style={{fontSize:11,fontWeight:700,color:C.blue,letterSpacing:"0.1em",fontFamily:"'Inter',sans-serif"}}>FOOTBALL INTELLIGENCE PLATFORM</span>
+      {/* Animated bg stripes — matches concept exactly */}
+      <div className="hp-bg-stripes"/>
+
+      {/* ── BG FLOATERS (concept decorative text) ── */}
+      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(120px,18vw,220px)", color:"rgba(0,0,0,.04)", pointerEvents:"none", zIndex:0, top:"8vh", left:"-2%", lineHeight:1, userSelect:"none" }}>xG</div>
+      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,0,0,.04)", pointerEvents:"none", zIndex:0, top:"52vh", right:"0%", lineHeight:1, userSelect:"none" }}>2–1</div>
+      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(60px,11vw,130px)", color:"rgba(0,0,0,.04)", pointerEvents:"none", zIndex:0, bottom:"8vh", left:"35%", lineHeight:1, userSelect:"none" }}>89%</div>
+
+      <div style={{ position:"relative", zIndex:1 }}>
+
+        {/* ── 3-ROW LIVE TICKER ── */}
+        <LiveTicker3Row/>
+
+        {/* ══════════════════════════════════════════
+            HERO — centered, Bebas Neue, concept style
+        ══════════════════════════════════════════ */}
+        <section style={{ padding:"clamp(48px,7vh,80px) 20px clamp(40px,6vh,64px)", textAlign:"center", position:"relative", overflow:"hidden" }}>
+
+          {/* Kicker */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"#0a0a0a", color:"#e8ff47", padding:"4px 14px", fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", marginBottom:24, animation:"hpFadeDown .5s ease both" }}>
+            <span style={{ width:6, height:6, background:"#ff2744", animation:"hpPulse 1.6s ease infinite", flexShrink:0 }}/>
+            ◈ SEASON 2025/26 · LIVE DATA ENGINE
           </div>
-          <h1 style={{fontSize:"clamp(38px,6vw,74px)",fontWeight:900,color:"#f4f8ff",margin:"0 0 6px",
-            fontFamily:"'Sora',sans-serif",letterSpacing:"-0.03em",lineHeight:1.06,animation:"fadeDown 600ms 100ms ease both"}}>
-            Read the<br/>
-            <span style={{background:"linear-gradient(135deg,#4f9eff 0%,#00e09e 55%,#f2c94c 100%)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Game</span>
+
+          {/* H1 — Bebas Neue, giant, centered */}
+          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,13vw,180px)", lineHeight:.88, letterSpacing:".02em", margin:"0 0 20px", animation:"hpFadeDown .55s .08s ease both" }}>
+            <span style={{ display:"block", color:"#0a0a0a" }}>READ THE</span>
+            <span style={{ display:"block", WebkitTextStroke:"2.5px #0a0a0a", WebkitTextFillColor:"transparent" }}>GAME</span>
           </h1>
-          <p style={{fontSize:"clamp(14px,2vw,18px)",color:C.muted,maxWidth:560,margin:"18px auto 0",
-            lineHeight:1.7,fontFamily:"'Inter',sans-serif",animation:"fadeDown 600ms 200ms ease both"}}>
-            Football intelligence for predictions, FPL decisions, and deeper match insight.
+
+          {/* Sub */}
+          <p style={{ fontSize:"clamp(13px,1.8vw,15px)", color:"rgba(0,0,0,.55)", maxWidth:480, margin:"0 auto 36px", lineHeight:1.8, fontFamily:"'Space Grotesk',sans-serif", animation:"hpFadeDown .55s .16s ease both" }}>
+            <strong style={{ color:"#0a0a0a", fontWeight:700 }}>Raw stats. No spin.</strong> Football intelligence for predictions, FPL decisions, and deeper match insight.
           </p>
-          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",
-            marginTop:36,animation:"fadeDown 600ms 300ms ease both"}}>
+
+          {/* CTA buttons — concept style */}
+          <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap", animation:"hpFadeDown .55s .24s ease both" }}>
             {[
-              {to:"/predictions/premier-league",label:"Predictions",col:"#3b7fd4",bg:"linear-gradient(135deg,#3b7fd4,#1a5fad)",shadow:"rgba(79,158,255,0.3)"},
-              {to:"/best-team",label:"Build FPL Team",col:C.green,bg:`${C.green}18`,border:`${C.green}40`},
-              {to:"/live",label:"Live Matches",col:C.red,bg:`${C.red}14`,border:`${C.red}38`},
-              {to:"/learn",label:"Ground Zero",col:C.pink,bg:`${C.pink}14`,border:`${C.pink}38`},
-            ].map(({to,label,col,bg,border,shadow},i)=>(
+              { to:"/predictions/premier-league", label:"Explore Live Data →", primary:true },
+              { to:"/best-team",                  label:"Build FPL Team",      primary:false },
+              { to:"/live",                       label:"Live Scores",          live:true },
+              { to:"/learn",                      label:"Ground Zero",          primary:false },
+            ].map(({ to, label, primary, live }, i) => (
               <Link key={i} to={to} className="hp-btn" style={{
-                display:"inline-flex",alignItems:"center",gap:8,padding:"13px 26px",borderRadius:12,
-                background:bg,border:`1px solid ${border||"transparent"}`,color:i===0?"#fff":col,
-                fontSize:14,fontWeight:700,textDecoration:"none",fontFamily:"'Inter',sans-serif",
-                boxShadow:shadow?`0 4px 24px ${shadow}`:"none",
+                display:"inline-flex", alignItems:"center", gap:8,
+                padding:"13px 26px",
+                background: primary ? "#0a0a0a" : live ? "#ff2744" : "transparent",
+                border: `3px solid ${primary ? "#0a0a0a" : live ? "#ff2744" : "#0a0a0a"}`,
+                color: primary ? "#e8ff47" : live ? "#fff" : "#0a0a0a",
+                boxShadow: primary ? "4px 4px 0 #0a0a0a" : live ? "4px 4px 0 rgba(255,39,68,.4)" : "4px 4px 0 rgba(0,0,0,.2)",
+                fontSize:11, fontWeight:700, textDecoration:"none",
+                fontFamily:"'Space Grotesk',sans-serif", letterSpacing:".12em", textTransform:"uppercase",
               }}>{label}</Link>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ── 3-ROW LIVE TICKER ── */}
-      <LiveTicker3Row />
-
-      {/* ── STAT TILES (backend-driven) ── */}
-      <section style={{maxWidth:1100,margin:"0 auto",padding:"40px 20px 48px"}}>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",animation:"fadeUp 600ms 400ms ease both"}}>
-          {fixturesPred > 0 && (
-            <StatTile
-              value={fixturesPred} suffix="+"
-              label="Fixtures Predicted"
-              sublabel="across 5 leagues this season"
-              color={C.green} delay={0}
-              svg={<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 14l4-5 3 3 4-6 3 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.2" opacity="0.3"/></svg>}
-            />
-          )}
-          {verifiedAcc > 0 && (
-            <StatTile
-              value={verifiedAcc} suffix="%"
-              label="Verified Accuracy"
-              sublabel="predictions matched final result"
-              color={C.teal} delay={100}
-              svg={<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.2" opacity="0.3"/></svg>}
-            />
-          )}
-          {predictions.length > 0 && (
-            <StatTile
-              value={predictions.length} suffix=""
-              label="Live Predictions"
-              sublabel="upcoming fixtures modelled now"
-              color={C.blue} delay={200}
-              svg={<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" fill="currentColor"/><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.2" opacity="0.4"/><circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1" opacity="0.2"/></svg>}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* ── PREDICTIONS STRIP (backend) ── */}
-      <PredictionStrip predictions={predictions}/>
-
-      {/* ── STAT OF THE DAY (backend tactical insight) ── */}
-      <StatOfMoment insight={insight}/>
-
-      {/* ── DIVIDER ── */}
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 48px"}}>
-        <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(79,158,255,0.3),rgba(0,224,158,0.3),transparent)"}}/>
-      </div>
-
-      {/* ── WHAT IS THIS ── */}
-     <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 64px" }}>
-        <div style={{
-          borderRadius: 24,
-          background: "rgba(255,255,255,0.02)",
-          border: `1px solid ${C.line}`,
-          position: "relative", overflow: "hidden",
-        }}>
-          {/* Top gradient accent bar */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 2,
-            background: `linear-gradient(90deg, ${C.blue}, ${C.green}, ${C.gold}, ${C.purple})`,
-            opacity: 0.6,
-          }} />
- 
-          {/* Background corner glow */}
-          <div style={{
-            position: "absolute", top: 0, right: 0, width: 300, height: 200,
-            background: `radial-gradient(circle at 100% 0%, rgba(79,158,255,0.08), transparent 70%)`,
-            pointerEvents: "none",
-          }} />
- 
-          {/* Header */}
-          <div style={{ padding: "28px 36px 20px" }}>
-            <h2 style={{
-              fontSize: 22, fontWeight: 900, color: "#f4f8ff",
-              margin: "0 0 4px", fontFamily: "'Sora', sans-serif",
-              letterSpacing: "-0.02em",
-            }}>
-              Built for football fans who love numbers
-            </h2>
-            <p style={{
-              fontSize: 12, color: C.muted, margin: 0,
-              fontFamily: "'Inter', sans-serif",
-            }}>
-              Pick a question. We've got the answer.
-            </p>
-          </div>
- 
-          {/* Divider */}
-          <div style={{ height: 1, background: C.line, margin: "0 36px" }} />
- 
-          {/* 2×2 grid */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-            fontFamily: "'Inter', sans-serif",
-          }}>
-            {[
-              ["Planning FPL transfers?", C.blue, "Get data driven squad recommendations with FDR, form ratings and projected points for the next 6 gameweeks.",
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/><path d="M4 7h6M7 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>],
-              ["Want smarter predictions?", C.gold, "Model generated win probabilities and expected scorelines for every fixture across 9 competitions.",
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 10l3-4 2 2 3-5 2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>],
-              ["Is Saturday worth watching?", C.green, "Predicted scorelines, expected goal totals and match style indicators tell you whether it will be a thriller or bore draw.",
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M7 4v3.5l2 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>],
-              ["Just love football stats?", C.purple, "Deep player profiles, scoring patterns, passing accuracy and head to head records across Europe's top leagues.",
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="6" width="2.5" height="6.5" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="5.5" y="3.5" width="2.5" height="9" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="9.5" y="1" width="2.5" height="11.5" rx="1" stroke="currentColor" strokeWidth="1.5"/></svg>],
-            ].map(([title, col, body, svgIcon], i) => (
-              <div
-                key={i}
-                style={{
-                  padding: "22px 32px",
-                  borderRight: !isMobile && i % 2 === 0 ? `1px solid ${C.line}` : "none",
-                  borderBottom: i < 2 ? `1px solid ${C.line}` : "none",
-                  display: "flex", flexDirection: "column", gap: 8,
-                  transition: "background 200ms",
-                  cursor: "default",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = `${col}06`}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {/* Coloured accent dot */}
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                    background: `${col}15`, border: `1px solid ${col}35`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: col,
-                  }}>
-                    {svgIcon}
-                  </div>
-                  <span style={{
-                    fontSize: 13, fontWeight: 800, color: C.text,
-                  }}>
-                    {title}
-                  </span>
+          {/* Stat strip — concept hss style */}
+          {(fixturesPred > 0 || verifiedAcc > 0) && (
+            <div style={{ display:"inline-flex", marginTop:48, borderTop:"3px solid #0a0a0a", borderLeft:"3px solid #0a0a0a", borderRight:"3px solid #0a0a0a", animation:"hpFadeUp .6s .3s ease both" }}>
+              {[
+                fixturesPred > 0 && { n: `${fixturesPred}+`, l:"Fixtures Predicted" },
+                verifiedAcc > 0  && { n: `${verifiedAcc}%`,  l:"Verified Accuracy"  },
+                predictions.length > 0 && { n: predictions.length, l:"Live Predictions" },
+              ].filter(Boolean).map((s, i, arr) => (
+                <div key={i} style={{ padding:"16px 28px", borderRight: i < arr.length-1 ? "2px solid #0a0a0a" : "none", textAlign:"center" }}>
+                  <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:52, lineHeight:1, color:"#0a0a0a" }}>{s.n}</div>
+                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.4)", marginTop:4 }}>{s.l}</div>
                 </div>
-                <p style={{
-                  margin: 0, fontSize: 12, color: C.muted,
-                  lineHeight: 1.7, paddingLeft: 38,
-                }}>{body}</p>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ══════════════════════════════════════════
+            PREDICTIONS STRIP
+        ══════════════════════════════════════════ */}
+        <PredictionStrip predictions={predictions}/>
+
+        {/* ══════════════════════════════════════════
+            STAT SPOTLIGHT
+        ══════════════════════════════════════════ */}
+        <StatOfMoment insight={insight}/>
+
+        {/* ══════════════════════════════════════════
+            DIVIDER MARQUEE (concept style — black bg)
+        ══════════════════════════════════════════ */}
+        <div style={{ background:"#0a0a0a", borderTop:"4px solid #e8ff47", borderBottom:"4px solid #e8ff47", height:52, overflow:"hidden", display:"flex", alignItems:"center" }}>
+          <div style={{ display:"flex", animation:"hpMarquee 28s linear infinite", whiteSpace:"nowrap" }}>
+            {["Premier League","La Liga","Bundesliga","Serie A","Champions League","Ligue 1","Eredivisie","Copa Libertadores","MLS","FA Cup","Europa League","World Cup",
+              "Premier League","La Liga","Bundesliga","Serie A","Champions League","Ligue 1","Eredivisie","Copa Libertadores","MLS","FA Cup","Europa League","World Cup",
+            ].map((name, i) => (
+              <div key={i} style={{ padding:"0 34px", fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:3, textTransform:"uppercase", color: i%3===0 ? "#e8ff47" : "rgba(232,255,71,.18)", display:"flex", alignItems:"center", gap:14, flexShrink:0 }}>
+                <span style={{ width:4, height:4, borderRadius:"50%", background:"#ff2744", boxShadow: i%3===0 ? "0 0 6px #ff2744" : "none", flexShrink:0 }}/>
+                {name}
               </div>
             ))}
           </div>
         </div>
-      </section>
- 
- 
 
-      {/* ── FEATURE CARDS ── */}
-      <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}}>
-        <div style={{marginBottom:28,textAlign:"center"}}>
-          <h2 style={{fontSize:24,fontWeight:900,color:"#f4f8ff",margin:"0 0 8px",
-            fontFamily:"'Sora',sans-serif",letterSpacing:"-0.02em"}}>Everything you need, in one place</h2>
-          <p style={{fontSize:13,color:C.muted,margin:0,fontFamily:"'Inter',sans-serif"}}>8 tools. One platform. Pick where to start.</p>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:14}}>
-          {FEATURES.map((f,i) => <FeatureCard key={f.to} {...f} delay={i*55}/>)}
-        </div>
-      </section>
-
-      {/* ── MODEL PERFORMANCE (backend) ── */}
-      <ModelPerformance trend={trend} byMarket={byMarket} overallAccuracy={overallAcc}/>
-
-      {/* ── RECENT RESULTS (backend) ── */}
-      <RecentResults results={results} correct={resCorrect} total={resTotal}/>
-
-      {/* ── LEAGUES STRIP (9 competitions) ── */}
-       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 80px" }}>
-        <div style={{
-          padding: "28px 32px 32px",
-          borderRadius: 20,
-          background: "rgba(255,255,255,0.02)",
-          border: `1px solid ${C.line}`,
-          position: "relative", overflow: "hidden",
-        }}>
-          {/* Background glow */}
-          <div style={{
-            position: "absolute", bottom: -60, right: -60,
-            width: 300, height: 300, borderRadius: "50%",
-            background: `radial-gradient(circle, rgba(79,158,255,0.06), transparent 70%)`,
-            pointerEvents: "none",
-          }} />
- 
-          {/* Header row */}
-          <div style={{ marginBottom: 20 }}>
-            <p style={{
-              margin: "0 0 4px", fontSize: 10, color: C.muted,
-              fontFamily: "'Inter', sans-serif",
-              letterSpacing: "0.12em", textTransform: "uppercase",
-            }}>
-              Covering {LEAGUES.length} competitions
-            </p>
-            <h3 style={{
-              margin: 0, fontSize: 20, fontWeight: 900,
-              color: C.text, fontFamily: "'Sora', sans-serif",
-              letterSpacing: "-0.02em",
-            }}>
-              Pick your league
-            </h3>
+        {/* ══════════════════════════════════════════
+            FEATURE CARDS — concept grid style
+        ══════════════════════════════════════════ */}
+        <section style={{ borderTop:"4px solid #0a0a0a", borderBottom:"4px solid #0a0a0a" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))" }}>
+            {FEATURES.map((f, i) => <FeatureCard key={f.to} {...f} index={i+1} delay={i*55}/>)}
           </div>
- 
-          {/* League buttons */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {LEAGUES.map(({ to, name, col, flag }) => (
-              <Link
-                key={to}
-                to={to}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "10px 18px", borderRadius: 12,
-                  background: `${col}10`,
-                  border: `1.5px solid ${col}30`,
-                  color: col,
-                  fontSize: 13, fontWeight: 700,
-                  textDecoration: "none",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 180ms cubic-bezier(0.22,1,0.36,1)",
-                  position: "relative", overflow: "hidden",
+        </section>
+
+        {/* ══════════════════════════════════════════
+            MODEL PERFORMANCE
+        ══════════════════════════════════════════ */}
+        <ModelPerformance trend={trend} byMarket={byMarket} overallAccuracy={overallAcc}/>
+
+        {/* ══════════════════════════════════════════
+            RECENT RESULTS
+        ══════════════════════════════════════════ */}
+        <RecentResults results={results} correct={resCorrect} total={resTotal}/>
+
+        {/* ══════════════════════════════════════════
+            LEAGUES STRIP
+        ══════════════════════════════════════════ */}
+        <section style={{ padding:"0 20px 60px", maxWidth:1200, margin:"0 auto" }}>
+          <div style={{ background:"#0a0a0a", border:"3px solid #0a0a0a", padding:"28px 32px", boxShadow:"6px 6px 0 rgba(0,0,0,.2)" }}>
+            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(232,255,71,.35)", marginBottom:6 }}>Covering {LEAGUES.length} competitions</div>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, letterSpacing:2, color:"#e8ff47", marginBottom:20 }}>Pick Your League</div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {LEAGUES.map(({ to, name, flag }) => (
+                <Link key={to} to={to} className="hp-btn" style={{
+                  display:"flex", alignItems:"center", gap:8,
+                  padding:"9px 16px", background:"transparent",
+                  border:"2px solid rgba(232,255,71,.25)", color:"#e8ff47",
+                  fontSize:12, fontWeight:700, textDecoration:"none",
+                  fontFamily:"'Space Grotesk',sans-serif",
+                  boxShadow:"none",
                 }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = `${col}20`;
-                  e.currentTarget.style.borderColor = `${col}60`;
-                  e.currentTarget.style.transform = "translateY(-3px)";
-                  e.currentTarget.style.boxShadow = `0 8px 20px ${col}25`;
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = `${col}10`;
-                  e.currentTarget.style.borderColor = `${col}30`;
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                <span style={{
-                  display: "flex", alignItems: "center",
-                  borderRadius: 3, overflow: "hidden",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
-                  flexShrink: 0,
-                }}>
-                  {flag}
-                </span>
-                {name}
-              </Link>
-            ))}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#e8ff47";e.currentTarget.style.color="#0a0a0a";e.currentTarget.style.borderColor="#e8ff47";e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow="4px 4px 0 #0a0a0a";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#e8ff47";e.currentTarget.style.borderColor="rgba(232,255,71,.25)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
+                >
+                  <span style={{ display:"flex", alignItems:"center", flexShrink:0 }}>{flag}</span>{name}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
- 
-      {/* ── HOW IT WORKS (points to Ground Zero) ── */}
-      <section style={{maxWidth:900,margin:"0 auto",padding:"0 20px 80px"}}>
-        <div style={{padding:"28px 36px",borderRadius:20,background:"rgba(255,255,255,0.02)",
-          border:`1px solid ${C.line}`,display:"flex",gap:24,alignItems:"flex-start",flexWrap:"wrap"}}>
-          <div style={{flex:"0 0 auto"}}>
-            <svg width="120" height="68" viewBox="0 0 120 68" fill="none" style={{display:"block"}}>
-              <rect x="1" y="1" width="118" height="66" rx="5" fill="#0a2a10" stroke="rgba(255,255,255,0.1)" strokeWidth=".8"/>
-              <line x1="60" y1="1" x2="60" y2="67" stroke="rgba(255,255,255,0.1)" strokeWidth=".6"/>
-              <circle cx="60" cy="34" r="12" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth=".6"/>
-              <rect x="1" y="22" width="16" height="24" rx="1" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth=".6"/>
-              <rect x="103" y="22" width="16" height="24" rx="1" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth=".6"/>
-              <path d="M30 34 C48 20 74 20 95 34" stroke="#4f9eff" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" opacity=".7"/>
-              <circle cx="95" cy="34" r="4" fill="#4f9eff" opacity=".9">
-                <animate attributeName="r" values="4;6;4" dur="1.2s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values=".9;.4;.9" dur="1.2s" repeatCount="indefinite"/>
-              </circle>
-            </svg>
-          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            HOW IT WORKS / BOTTOM CTA
+        ══════════════════════════════════════════ */}
+        <section style={{ background:"#0a0a0a", borderTop:"4px solid #e8ff47", padding:"72px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:40, flexWrap:"wrap" }}>
           <div>
-            <h3 style={{margin:"0 0 8px",fontSize:15,fontWeight:800,color:C.text,fontFamily:"'Sora',sans-serif"}}>How do our predictions work?</h3>
-            <p style={{margin:"0 0 10px",fontSize:12,color:C.muted,lineHeight:1.65,fontFamily:"'Inter',sans-serif",maxWidth:520}}>
-              Every prediction is generated by combining multiple statistical models with real match data. The deeper methodology, model details, and research are all documented in Ground Zero.
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(52px,5vw,84px)", lineHeight:.88, color:"#fff", marginBottom:14 }}>
+              EVERY STAT.<br/><span style={{ color:"#e8ff47" }}>NO PAYWALLS.</span>
+            </div>
+            <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, lineHeight:1.75, color:"rgba(255,255,255,.35)", maxWidth:340, margin:0 }}>
+              Full access to all leagues, all players, all advanced metrics. Free forever — no credit card required.
             </p>
-            <Link to="/learn" style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:4,
-              fontSize:12,fontWeight:700,color:C.pink,textDecoration:"none",fontFamily:"'Inter',sans-serif"}}>
-              Explore Ground Zero →
-            </Link>
           </div>
-        </div>
-      </section>
+          <Link to="/predictions/premier-league" className="hp-btn" style={{
+            padding:"18px 48px", background:"#e8ff47", color:"#0a0a0a",
+            border:"3px solid #e8ff47", boxShadow:"5px 5px 0 #e8ff47",
+            fontFamily:"'Bebas Neue',sans-serif", fontSize:22, letterSpacing:2,
+            textDecoration:"none", flexShrink:0,
+          }}>Start For Free →</Link>
+        </section>
+
+      </div>
     </div>
   );
 }

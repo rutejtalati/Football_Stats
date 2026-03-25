@@ -122,9 +122,7 @@ function CardImage({src,type,style={},zoom=false,source=""}){
     return(
       <div style={{position:"relative",overflow:"hidden",...style,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <style>{NB_CSS}</style>
-      {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+
 
         <div style={{position:"absolute",inset:0,backgroundImage:fbBg(fb),backgroundSize:"cover",opacity:brand?0.12:1}}/>
         {abbr&&<span style={{position:"relative",zIndex:1,fontSize:sz,fontWeight:900,fontFamily:"'Inter',sans-serif",color:accent,opacity:0.22,letterSpacing:"-0.04em",userSelect:"none"}}>{abbr}</span>}
@@ -154,7 +152,7 @@ function WinProbBar({home,draw,away,homeTeam,awayTeam,large}){
       <span style={{fontSize:fs,fontWeight:800,color:win==="home"?"#ffffff":"rgba(255,255,255,.4)",maxWidth:"36%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{homeTeam}</span>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
         <span style={{fontFamily:"'Inter',sans-serif",fontSize:fsMono,fontWeight:900,color:win==="home"?"#ffffff":"rgba(255,255,255,.35)"}}>{h}%</span>
-        <span style={{fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>{d}%</span>
+        <span style={{fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700}}>{d}%</span>
         <span style={{fontFamily:"'Inter',sans-serif",fontSize:fsMono,fontWeight:900,color:win==="away"?"rgba(255,255,255,.8)":"rgba(255,255,255,.35)"}}>{a}%</span>
       </div>
       <span style={{fontSize:fs,fontWeight:800,color:win==="away"?"#ffffff":"rgba(255,255,255,.4)",maxWidth:"36%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>{awayTeam}</span>
@@ -182,7 +180,7 @@ function MatchInfoBar({article}){
     <div style={{display:"flex",flexWrap:"wrap",gap:0,marginBottom:16}}>
       {cells.map((c,i)=>(
         <div key={i} style={{flex:"1 1 130px",padding:"0 20px 8px 0",minWidth:100}}>
-          <div style={{fontSize:9,fontWeight:900,color:"rgba(255,255,255,.25)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:4}}>{c.l}</div>
+          <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.25)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:4}}>{c.l}</div>
           <div style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:700,color:"#ffffff"}}>{c.v}</div>
         </div>))}
     </div>
@@ -205,7 +203,7 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
   const hasPct=hPct+dPct+aPct>0;
   const pitchSvg="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='170'%3E%3Crect x='30' y='12' width='340' height='146' fill='none' stroke='white' stroke-width='1' opacity='.13'/%3E%3Cline x1='200' y1='12' x2='200' y2='158' stroke='white' stroke-width='1' opacity='.13'/%3E%3Ccircle cx='200' cy='85' r='34' fill='none' stroke='white' stroke-width='1' opacity='.13'/%3E%3Crect x='30' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/%3E%3Crect x='318' y='38' width='52' height='64' fill='none' stroke='white' stroke-width='1' opacity='.1'/%3E%3C/svg%3E";
   return(
-    <div style={{position:"relative",height,overflow:"hidden",flexShrink:0,background:"#0a0a0a"}}>
+    <div style={{position:"relative",height,overflow:"hidden",flexShrink:0,background:"rgba(18,18,18,0.98)"}}>
       {/* Team colour wedges */}
       <div style={{position:"absolute",left:0,top:0,width:"54%",height:"100%",background:"linear-gradient(140deg,"+hc1+"cc,"+hc2+"88)",clipPath:"polygon(0 0,65% 0,48% 100%,0 100%)"}}/>
       <div style={{position:"absolute",right:0,top:0,width:"54%",height:"100%",background:"linear-gradient(220deg,"+ac1+"cc,"+ac2+"88)",clipPath:"polygon(52% 0,100% 0,100% 100%,35% 100%)"}}/>
@@ -228,7 +226,7 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
       {/* Teams */}
       {[{team:homeTeam,logo:homeLogo,c1:hc1,c2:hc2,pos:"17%"},{team:awayTeam,logo:awayLogo,c1:ac1,c2:ac2,pos:"83%"}].map(({team,logo,c1,c2,pos})=>(
         <div key={team} style={{position:"absolute",left:pos,top:"50%",transform:"translate(-50%,-50%)",display:"flex",flexDirection:"column",alignItems:"center",gap:6,zIndex:4}}>
-          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:"#0a0a0a",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:"3px 3px 0 rgba(255,255,255,.15)"}}>
+          <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.18)",background:"rgba(18,18,18,0.98)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",boxShadow:"3px 3px 0 rgba(255,255,255,.15)"}}>
             {logo
               ?<img src={logo} alt={team} style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentNode.style.background="linear-gradient(135deg,"+c1+","+c2+")";}}/>
               :<div style={{fontSize:11,fontWeight:900,color:"#ffffff",fontFamily:"'Inter',sans-serif"}}>{(team||"?").slice(0,3).toUpperCase()}</div>}
@@ -237,15 +235,15 @@ function HeroVSBanner({homeTeam,awayTeam,homeLogo,awayLogo,height=165,hp=0,dp=0,
         </div>
       ))}
       {/* VS badge */}
-      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:"#0a0a0a",border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
-        <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,fontWeight:900,color:"rgba(255,255,255,.6)",letterSpacing:"0.05em"}}>VS</span>
+      <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:38,height:38,borderRadius:"50%",background:"rgba(18,18,18,0.98)",border:"1.5px solid rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,boxShadow:"0 0 20px rgba(0,0,0,.9)"}}>
+        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.6)",letterSpacing:"0.05em"}}>VS</span>
       </div>
       {/* Probability strip fused to base */}
       {hasPct&&(
         <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:6}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 10px 2px",zIndex:7,position:"relative"}}>
             <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:900,color:hPct>aPct?"#60a5fa":"rgba(255,255,255,.4)"}}>{hPct}%</span>
-            <span style={{fontSize:9,color:"rgba(255,255,255,.3)",fontWeight:700}}>{dPct}%</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:700}}>{dPct}%</span>
             <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:900,color:aPct>hPct?"rgba(255,255,255,.65)":"rgba(255,255,255,.4)"}}>{aPct}%</span>
           </div>
           <div style={{display:"flex",height:5}}>
@@ -273,7 +271,7 @@ function MatchPreviewCard({article,featured=false,onClick}){
   const score=article.meta?.most_likely_score;
   const btts=article.meta?.p_btts;const over=article.meta?.p_over25;
   return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{borderRadius:0,overflow:"hidden",cursor:"pointer",background:"#0a0a0a",
+    style={{borderRadius:8,overflow:"hidden",cursor:"pointer",background:"rgba(16,16,16,0.98)",
       border:hov?"1px solid "+league.color+"55":"1px solid rgba(255,255,255,0.09)",
       boxShadow:hov?"0 0 36px "+league.color+"18,0 24px 56px rgba(0,0,0,.65)":"0 8px 28px rgba(0,0,0,0.45)",
       transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
@@ -283,10 +281,10 @@ function MatchPreviewCard({article,featured=false,onClick}){
       awayLogo={article.away_logo||article.meta?.away_logo}
       height={featured?190:160}
       hp={hp} dp={dp} ap={ap} leagueColor={league.color}/>
-    <div style={{padding:"11px 14px 13px",background:"#0a0a0a"}}>
+    <div style={{padding:"11px 14px 13px",background:"rgba(18,18,18,0.98)"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        {kickoff&&<span style={{marginLeft:"auto",fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>{fmtKO(kickoff)||timeAgo(kickoff)}</span>}
+        {kickoff&&<span style={{marginLeft:"auto",fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700}}>{fmtKO(kickoff)||timeAgo(kickoff)}</span>}
       </div>
       {/* xG + markets row */}
       {(xgH||xgA||score||btts||over)&&(
@@ -314,7 +312,7 @@ function MatchPreviewCard({article,featured=false,onClick}){
         </div>
       )}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>StatinSite Model</span>
+        <span style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>StatinSite Model</span>
         <span style={{fontSize:11,fontWeight:800,color:league.color}}>Full preview →</span>
       </div>
     </div>
@@ -345,7 +343,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
       {/* Live dot + league label */}
       <div style={{position:"absolute",top:9,left:12,display:"flex",alignItems:"center",gap:5,zIndex:2}}>
         <div style={{width:6,height:6,borderRadius:"50%",background:accent,boxShadow:"0 0 8px "+accent,animation:"snLivePulse 2s ease-in-out infinite"}}/>
-        <span style={{fontSize:8,fontWeight:700,color:accent,letterSpacing:"0.12em",textTransform:"uppercase",opacity:.85}}>
+        <span style={{fontSize:10,fontWeight:600,color:accent,letterSpacing:"0.12em",textTransform:"uppercase",opacity:.85}}>
           {(LM[article.league]?.label||"Football")+" · "+(isTitle?"Title Race":"Model Insight")}
         </span>
       </div>
@@ -354,13 +352,13 @@ function InsightCard({article,featured=false,onClick,idx=0}){
         <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",gap:18,zIndex:2}}>
           <div style={{textAlign:"center"}}>
             <div style={{fontFamily:"'Inter',sans-serif",fontSize:44,fontWeight:900,color:accent,lineHeight:1,textShadow:"0 0 32px "+accent+"60"}}>{gap}</div>
-            <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:"0.12em",textTransform:"uppercase"}}>point gap</div>
+            <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.3)",letterSpacing:"0.12em",textTransform:"uppercase"}}>point gap</div>
           </div>
           {leader&&<>
             <div style={{width:1,height:44,background:"rgba(255,255,255,.1)"}}/>
             <div>
               <div style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:900,color:"#ffffff"}}>{leader}</div>
-              <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:2}}>Leader</div>
+              <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.3)",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:2}}>Leader</div>
             </div>
           </>}
         </div>
@@ -377,7 +375,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
     <div style={{padding:"11px 13px 13px"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        <span style={{marginLeft:"auto",fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+        <span style={{marginLeft:"auto",fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
       </div>
       <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:"#ffffff",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
       {standings.length>0?(
@@ -390,11 +388,11 @@ function InsightCard({article,featured=false,onClick,idx=0}){
                 background:isLeader?"rgba(255,255,255,0.08)":"transparent",
                 borderLeft:isLeader?"2.5px solid "+accent:"2.5px solid transparent",
                 borderBottom:i<2?"1px solid rgba(255,255,255,0.05)":"none"}}>
-                <span style={{fontSize:9,fontWeight:700,fontFamily:"'Inter',sans-serif",color:isLeader?accent:"rgba(255,255,255,0.3)",width:14,flexShrink:0}}>{i+1}</span>
+                <span style={{fontSize:11,fontWeight:600,fontFamily:"'Inter',sans-serif",color:isLeader?accent:"rgba(255,255,255,0.3)",width:14,flexShrink:0}}>{i+1}</span>
                 <span style={{fontSize:11,fontWeight:700,color:isLeader?"#fff":"rgba(255,255,255,0.65)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.team||s.name}</span>
                 <div style={{display:"flex",gap:2}}>
                   {form.map((r,j)=>(
-                    <span key={j} style={{width:14,height:14,borderRadius:3,fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",
+                    <span key={j} style={{width:14,height:14,borderRadius:3,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",
                       background:r==="W"?"rgba(255,255,255,.18)":r==="D"?"rgba(255,255,255,.15)":"rgba(239,68,68,.15)",
                       color:r==="W"?"rgba(255,255,255,.75)":r==="D"?"rgba(255,255,255,.8)":"rgba(255,255,255,.65)"}}>{r}</span>
                   ))}
@@ -418,7 +416,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
     <div style={{padding:"11px 13px 13px"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
         <CatBadge type={article.type} league={article.league} small/>
-        <span style={{marginLeft:"auto",fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+        <span style={{marginLeft:"auto",fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
       </div>
       <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:"#ffffff",lineHeight:1.3,margin:"0 0 10px"}}>{article.title}</h3>
       {standings.length>0?(
@@ -451,7 +449,7 @@ function InsightCard({article,featured=false,onClick,idx=0}){
   );
 
   return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{borderRadius:0,overflow:"hidden",cursor:"pointer",background:"#0a0a0a",
+    style={{borderRadius:8,overflow:"hidden",cursor:"pointer",background:"rgba(16,16,16,0.98)",
       border:hov?"1px solid "+accent+"50":"1px solid rgba(255,255,255,0.09)",
       boxShadow:hov?"0 0 32px "+accent+"18,0 20px 52px rgba(0,0,0,.65)":"0 8px 28px rgba(0,0,0,0.4)",
       transform:hov?"translateY(-4px)":vis?"translateY(0)":"translateY(14px)",
@@ -465,7 +463,7 @@ function EditorialNewsCard({article,onClick}){
   const[hov,setHov]=useState(false); const[ref,vis]=useReveal();
   const tm=gt(article);
   return(<div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{display:"flex",borderRadius:0,overflow:"hidden",cursor:"pointer",
+    style={{display:"flex",borderRadius:8,overflow:"hidden",cursor:"pointer",
       background:hov?"rgba(10,10,10,0.98)":"rgba(10,10,10,0.97)",
       border:hov?"1px solid rgba(255,255,255,0.12)":"1px solid rgba(255,255,255,0.056)",
       boxShadow:hov?"0 0 26px rgba(0,0,0,0.5),0 1px 0 "+tm.color+"18":"0 4px 16px rgba(0,0,0,0.24)",
@@ -477,9 +475,9 @@ function EditorialNewsCard({article,onClick}){
     </div>
     <div style={{flex:1,padding:"11px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,overflow:"hidden"}}>
-        <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:tm.color+"0e",border:"1px solid "+tm.color+"20",borderRadius:4,padding:"2px 6px",flexShrink:0}}>{tm.label}</span>
-        {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.35)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{article.source}</span>}
-        <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700,flexShrink:0}}>{timeAgo(article.published_at)}</span>
+        <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:tm.color+"0e",border:"1px solid "+tm.color+"20",borderRadius:4,padding:"2px 6px",flexShrink:0}}>{tm.label}</span>
+        {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.35)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{article.source}</span>}
+        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700,flexShrink:0}}>{timeAgo(article.published_at)}</span>
       </div>
       <p style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,fontWeight:700,lineHeight:1.38,color:hov?"#ffffff":"rgba(255,255,255,.55)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
     </div>
@@ -493,7 +491,7 @@ function MagHeroCard({article,onClick}){
   const accent=gl(article).color; const tm=gt(article);
   return(
     <div onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{position:"relative",borderRadius:0,overflow:"hidden",cursor:"pointer",minHeight:240,
+      style={{position:"relative",borderRadius:10,overflow:"hidden",cursor:"pointer",minHeight:240,
         border:hov?"1px solid "+accent+"55":"1px solid rgba(255,255,255,0.08)",
         transition:"all 0.22s cubic-bezier(.22,1,.36,1)",
         transform:hov?"translateY(-3px)":"translateY(0)",
@@ -505,14 +503,14 @@ function MagHeroCard({article,onClick}){
       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:accent}}/>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"16px 18px"}}>
         <div style={{display:"flex",gap:6,marginBottom:7}}>
-          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.12em",textTransform:"uppercase",color:tm.color,background:"#0a0a0a",border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
-          {article.source&&<span style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,.45)",background:"#0a0a0a",borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
+          <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:"rgba(18,18,18,0.98)",border:"1px solid "+tm.color+"40",borderRadius:4,padding:"2px 7px"}}>{tm.label}</span>
+          {article.source&&<span style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.45)",background:"rgba(18,18,18,0.98)",borderRadius:4,padding:"2px 7px"}}>{article.source}</span>}
         </div>
-        <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:17,fontWeight:900,color:"#ffffff",lineHeight:1.28,margin:"0 0 7px",letterSpacing:"-0.02em"}}>{article.title}</h2>
+        <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:900,color:"#ffffff",lineHeight:1.25,margin:"0 0 8px",letterSpacing:"-0.025em"}}>{article.title}</h2>
         {article.standfirst&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.45)",lineHeight:1.5,margin:"0 0 9px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.standfirst}</p>}
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:10,fontWeight:700,color:accent}}>Read more →</span>
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",marginLeft:"auto"}}>{timeAgo(article.published_at)}</span>
+          <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",marginLeft:"auto"}}>{timeAgo(article.published_at)}</span>
         </div>
       </div>
     </div>
@@ -524,8 +522,8 @@ function MagSmallCard({article,onClick}){
   const tm=gt(article);const league=gl(article);
   return(
     <div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{borderRadius:0,overflow:"hidden",cursor:"pointer",display:"flex",flexDirection:"column",
-        background:"rgba(255,255,255,.03)",
+      style={{borderRadius:8,overflow:"hidden",cursor:"pointer",display:"flex",flexDirection:"column",
+        background:"rgba(20,20,20,0.95)",
         border:hov?"1px solid "+tm.color+"45":"1px solid rgba(255,255,255,0.07)",
         transform:hov?"translateY(-2px)":vis?"translateY(0)":"translateY(8px)",
         opacity:vis?1:0,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",
@@ -537,10 +535,10 @@ function MagSmallCard({article,onClick}){
       </div>
       <div style={{padding:"8px 10px",flex:1,display:"flex",flexDirection:"column",gap:5}}>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          <span style={{fontSize:8,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:tm.color+"12",border:"1px solid "+tm.color+"25",borderRadius:3,padding:"1px 5px"}}>{tm.label}</span>
-          {article.league&&article.league!=="general"&&<span style={{fontSize:8,fontWeight:700,color:league.color,background:league.bg,borderRadius:3,padding:"1px 5px"}}>{league.abbr}</span>}
+          <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:tm.color,background:tm.color+"12",border:"1px solid "+tm.color+"25",borderRadius:3,padding:"1px 5px"}}>{tm.label}</span>
+          {article.league&&article.league!=="general"&&<span style={{fontSize:10,fontWeight:600,color:league.color,background:league.bg,borderRadius:3,padding:"1px 5px"}}>{league.abbr}</span>}
         </div>
-        <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,lineHeight:1.35,color:hov?"#fff":"rgba(255,255,255,0.85)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:700,lineHeight:1.35,color:hov?"#ffffff":"rgba(255,255,255,0.88)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
         <div style={{display:"flex",alignItems:"center",gap:4,marginTop:"auto"}}>
           {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,.3)",fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{article.source}</span>}
           <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,0.25)",flexShrink:0}}>{timeAgo(article.published_at)}</span>
@@ -554,7 +552,7 @@ function FeaturedCard({article,onClick}){
   if(article.type==="match_preview")return<MatchPreviewCard article={article} featured onClick={onClick}/>;
   const league=gl(article); const accent=league.color; const fb=getFB(article.type);
   return(<div onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-    style={{position:"relative",borderRadius:0,overflow:"hidden",minHeight:320,cursor:"pointer",
+    style={{position:"relative",borderRadius:10,overflow:"hidden",minHeight:320,cursor:"pointer",
       background:"rgba(10,10,10,0.99)",
       border:hov?"1px solid "+accent+"50":"1px solid "+accent+"22",
       boxShadow:hov?"0 0 48px "+accent+"18,0 28px 64px rgba(0,0,0,0.6)":"0 24px 56px rgba(0,0,0,0.45)",
@@ -575,15 +573,15 @@ function FeaturedCard({article,onClick}){
     <div style={{position:"absolute",inset:0,backgroundImage:NOISE,backgroundSize:"200px 200px",pointerEvents:"none"}}/>
     <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,"+accent+",transparent)"}}/>
     <div style={{position:"absolute",top:28,left:32,display:"flex",gap:8}}>
-      <span style={{fontSize:9,fontWeight:900,letterSpacing:"0.14em",textTransform:"uppercase",color:accent,background:accent+"14",border:"1px solid "+accent+"38",borderRadius:6,padding:"3px 10px"}}>FEATURED</span>
+      <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:accent,background:accent+"14",border:"1px solid "+accent+"38",borderRadius:6,padding:"3px 10px"}}>FEATURED</span>
       <CatBadge type={article.type} league={article.league}/>
     </div>
     <div style={{position:"relative",zIndex:1}}>
-      <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:28,fontWeight:900,color:"#ffffff",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 10px"}}>{article.title}</h2>
+      <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:"#ffffff",lineHeight:1.2,letterSpacing:"-0.03em",margin:"0 0 10px"}}>{article.title}</h2>
       <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"rgba(255,255,255,.7)",lineHeight:1.6,margin:"0 0 20px",maxWidth:580}}>{article.standfirst||article.summary}</p>
       <div style={{display:"flex",alignItems:"center",gap:18}}>
         <span style={{fontSize:12,fontWeight:800,color:accent}}>Read full analysis →</span>
-        <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
       </div>
     </div>
   </div>);
@@ -631,7 +629,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
   const ms=article.meta?.match_stats;
   const related=allArticles.filter(a=>a.id!==article.id&&(a.league===article.league||a.type===article.type||[ht,at].filter(Boolean).some(t=>a.home_team===t||a.away_team===t))).slice(0,5);
   return(<>
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1100,background:"#0a0a0a",animation:"apBack .22s ease both"}}/>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1100,background:"rgba(18,18,18,0.98)",animation:"apBack .22s ease both"}}/>
     <div ref={pageRef} style={{position:"fixed",inset:0,zIndex:1101,overflowY:"auto",overflowX:"hidden",background:"linear-gradient(170deg,rgba(5,10,22,0.995),rgba(2,5,12,0.995))",scrollbarWidth:"thin",scrollbarColor:"rgba(255,255,255,0.05) transparent",animation:"apUp .3s cubic-bezier(.22,1,.36,1) both"}}>
       <div style={{height:2,background:"linear-gradient(90deg,"+accent+",transparent)",position:"sticky",top:0,zIndex:10}}/>
       <button onClick={onClose} style={{position:"fixed",top:16,right:20,zIndex:1200,width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,0.14)",color:"rgba(255,255,255,.55)",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.14)";e.currentTarget.style.color="#f0f6ff";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="rgba(255,255,255,.55)";}}>&#x2715;</button>
@@ -648,8 +646,8 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
             <div style={{display:"flex",gap:10,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
               {!article.image&&!isPreview&&<CatBadge type={article.type} league={article.league}/>}
               {article.author&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,color:"rgba(255,255,255,.9)"}}>{article.author}</span>}
-              {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.35)",fontWeight:700}}>{article.source_type==="external"?"via "+article.source:"StatinSite Intelligence Desk"}</span>}
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
+              {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.35)",fontWeight:700}}>{article.source_type==="external"?"via "+article.source:"StatinSite Intelligence Desk"}</span>}
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(article.published_at)}</span>
             </div>
             <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:28,fontWeight:900,color:"#ffffff",lineHeight:1.2,letterSpacing:"-0.025em",margin:"0 0 14px"}}>{article.title}</h1>
             {article.standfirst&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:16,lineHeight:1.7,color:"#7a9ab8",margin:"0 0 24px",borderLeft:"3px solid "+accent+"40",paddingLeft:16}}>{article.standfirst}</p>}
@@ -667,7 +665,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
               {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#000",fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
             </div>)}
             {ms&&(<div style={{marginTop:32,padding:"18px 20px",borderRadius:0,background:"rgba(255,255,255,0.018)",border:"1px solid "+accent+"14"}}>
-              <div style={{fontSize:9,fontWeight:900,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:16}}>Key Statistics</div>
+              <div style={{fontSize:11,fontWeight:700,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:16}}>Key Statistics</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:22}}>
                 {[{l:"xG Home",v:ms.expected_goals_home},{l:"xG Away",v:ms.expected_goals_away},
                   {l:"Over 2.5",v:ms.over25_probability!=null?ms.over25_probability+"%":null},
@@ -676,7 +674,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
                   {l:"Projected",v:ms.most_likely_score}].filter(s=>s.v!=null).map((s,i)=>(
                   <div key={i}>
                     <div style={{fontFamily:"'Inter',sans-serif",fontSize:17,fontWeight:900,color:accent}}>{s.v}</div>
-                    <div style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,.25)",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:2}}>{s.l}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.25)",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:2}}>{s.l}</div>
                   </div>))}
               </div>
             </div>)}
@@ -684,7 +682,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
           <div style={{position:"sticky",top:60,display:"flex",flexDirection:"column",gap:16}}>
             {!isExt&&article.model_verdict&&(
               <div style={{borderRadius:0,padding:"16px 18px",background:accent+"07",border:"1px solid "+accent+"1e"}}>
-                <div style={{fontSize:9,fontWeight:900,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:10}}>Model Verdict</div>
+                <div style={{fontSize:11,fontWeight:700,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:10}}>Model Verdict</div>
                 <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,lineHeight:1.65,color:"#7a9ab8",margin:0}}>{article.model_verdict}</p>
               </div>)}
             {related.length>0&&(<div>
@@ -706,7 +704,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
 function TrendingBar({clubs,activeClub,onSelect}){
   if(!clubs?.length)return null;
   return(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
-    <span style={{fontSize:9,fontWeight:900,letterSpacing:"0.12em",color:"rgba(255,255,255,.25)",textTransform:"uppercase",flexShrink:0}}>Trending</span>
+    <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"rgba(255,255,255,.25)",textTransform:"uppercase",flexShrink:0}}>Trending</span>
     {clubs.map(club=>(<button key={club} onClick={()=>onSelect(club===activeClub?null:club)}
       style={{fontSize:10,fontWeight:800,color:club===activeClub?"#f0f6ff":"rgba(255,255,255,.55)",
         background:club===activeClub?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.035)",
@@ -729,7 +727,7 @@ function Chip({label,active,color="rgba(255,255,255,.85)",onClick,count}){
       boxShadow:active?"0 0 16px "+color+"18":"none"}}>
     {active&&<span style={{width:5,height:5,borderRadius:"50%",background:color,boxShadow:"0 0 7px "+color,flexShrink:0}}/>}
     {label}
-    {count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:9,fontWeight:900,color:active?color:"rgba(255,255,255,.25)",background:active?color+"18":"rgba(255,255,255,0.035)",borderRadius:999,padding:"1px 5px"}}>{count}</span>}
+    {count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:active?color:"rgba(255,255,255,.25)",background:active?color+"18":"rgba(255,255,255,0.035)",borderRadius:999,padding:"1px 5px"}}>{count}</span>}
   </button>);
 }
 
@@ -765,7 +763,7 @@ function IntelligenceTicker(){
   return(<div style={{width:"100%",background:"rgba(255,255,255,.03)",borderBottom:"2px solid rgba(255,255,255,.12)",borderTop:"2px solid rgba(255,255,255,.12)",padding:"8px 0",overflow:"hidden",position:"relative",marginBottom:24}}>
     <div style={{display:"flex",alignItems:"center",gap:0}}>
       <div style={{flexShrink:0,padding:"0 16px",borderRight:"1px solid rgba(255,255,255,0.08)",marginRight:16}}>
-        <span style={{fontSize:8,fontWeight:900,color:"rgba(255,255,255,.85)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live</span>
+        <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.85)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live</span>
       </div>
       <div style={{flex:1,overflow:"hidden"}}>
         <div style={{display:"flex",gap:40,animation:"tickerScroll 40s linear infinite",whiteSpace:"nowrap"}}>
@@ -791,7 +789,7 @@ function TransferHub({items}){
     <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,0.12)",display:"flex",alignItems:"center",gap:10}}>
       <div style={{width:3,height:20,borderRadius:2,background:"linear-gradient(180deg,#f59e0b,transparent)",flexShrink:0}}/>
       <span style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:"#ffffff"}}>Transfer Hub</span>
-      <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.7)",fontWeight:700,marginLeft:"auto"}}>{items.length}</span>
+      <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:700,marginLeft:"auto"}}>{items.length}</span>
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:0}}>
       {items.slice(0,8).map((t,i)=>(
@@ -969,35 +967,154 @@ export default function NewsTrackerPage(){
   const LF=[{key:"all",label:"All Leagues",color:"rgba(255,255,255,.4)"},{key:"epl",label:"Premier League",color:"rgba(255,255,255,.85)"},{key:"laliga",label:"La Liga",color:"rgba(255,255,255,.7)"},{key:"seriea",label:"Serie A",color:"rgba(255,255,255,.75)"},{key:"bundesliga",label:"Bundesliga",color:"rgba(255,255,255,.7)"},{key:"ligue1",label:"Ligue 1",color:"rgba(255,255,255,.7)"}];
   const SF=[{key:"matchday",label:"Matchday"},{key:"latest",label:"Latest"},{key:"trending",label:"Trending"}];
 
-  return(<div style={{minHeight:"100vh",background:"#0a0a0a",fontFamily:"'Inter',sans-serif",position:"relative"}}>
-    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,opacity:0.016,
-      backgroundImage:"linear-gradient(rgba(255,255,255,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.6) 1px,transparent 1px)",
-      backgroundSize:"80px 80px"}}/>
-    <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:800,height:300,background:"radial-gradient(ellipse at center top,rgba(255,255,255,0.04) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}}/>
+  const isMobile = typeof window !== "undefined" ? window.innerWidth < 640 : false;
+  const [mobileWidth, setMobileWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  useEffect(()=>{const h=()=>setMobileWidth(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  const isMob = mobileWidth < 640;
+  const isTablet = mobileWidth < 960;
 
-    <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes nbPulse{0%,100%{opacity:1}50%{opacity:0.35}}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}@keyframes apBack{from{opacity:0}to{opacity:1}}@keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}@keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}@keyframes snLivePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.55)}}"}</style>
+  return(<div style={{minHeight:"100vh",background:"#080808",fontFamily:"'Inter',sans-serif",color:"#ffffff",position:"relative"}}>
+
+    {/* ── Keyframes ────────────────────────────────────────── */}
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+      *{box-sizing:border-box;}
+      @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+      @keyframes nbPulse{0%,100%{opacity:1}50%{opacity:0.35}}
+      @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+      @keyframes apBack{from{opacity:0}to{opacity:1}}
+      @keyframes apUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+      @keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+      @keyframes snLivePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.55)}}
+      ::-webkit-scrollbar{width:4px;height:4px}
+      ::-webkit-scrollbar-track{background:#080808}
+      ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+      ::selection{background:#fff;color:#080808}
+      .nt-hide-scroll{-ms-overflow-style:none;scrollbar-width:none}
+      .nt-hide-scroll::-webkit-scrollbar{display:none}
+    `}</style>
+
+    {/* ── Intricate Background ─────────────────────────────── */}
+    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      {/* Radial glows */}
+      <div style={{position:"absolute",top:"-15%",right:"10%",width:"65vw",height:"65vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.016) 0%,transparent 60%)"}}/>
+      <div style={{position:"absolute",bottom:"-5%",left:"5%",width:"50vw",height:"50vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 55%)"}}/>
+      {/* Fine grid */}
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px)",
+        backgroundSize:"42px 42px"}}/>
+      {/* Bold grid */}
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
+        backgroundSize:"168px 168px"}}/>
+      {/* SVG intricate */}
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="nt-hatch" width="84" height="84" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="84" x2="84" y2="0" stroke="rgba(255,255,255,.011)" strokeWidth="0.8"/>
+            <line x1="-21" y1="84" x2="63" y2="0" stroke="rgba(255,255,255,.006)" strokeWidth="0.5"/>
+          </pattern>
+          <pattern id="nt-cross" width="84" height="84" patternUnits="userSpaceOnUse">
+            <circle cx="42" cy="42" r="0.9" fill="rgba(255,255,255,.065)"/>
+            <line x1="38" y1="42" x2="46" y2="42" stroke="rgba(255,255,255,.035)" strokeWidth="0.5"/>
+            <line x1="42" y1="38" x2="42" y2="46" stroke="rgba(255,255,255,.035)" strokeWidth="0.5"/>
+          </pattern>
+          <pattern id="nt-hex" width="56" height="48" patternUnits="userSpaceOnUse">
+            <polygon points="28,2 54,14 54,34 28,46 2,34 2,14" fill="none" stroke="rgba(255,255,255,.02)" strokeWidth="0.6"/>
+          </pattern>
+          <pattern id="nt-circle" width="120" height="120" patternUnits="userSpaceOnUse">
+            <circle cx="60" cy="60" r="28" fill="none" stroke="rgba(255,255,255,.014)" strokeWidth="0.6"/>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.008)" strokeWidth="0.4"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#nt-hatch)"/>
+        <rect width="100%" height="100%" fill="url(#nt-cross)"/>
+        <rect x="55%" y="0" width="45%" height="45%" fill="url(#nt-hex)" opacity="0.8"/>
+        <rect x="0" y="60%" width="35%" height="40%" fill="url(#nt-circle)" opacity="0.7"/>
+      </svg>
+      {/* Corner brackets */}
+      <svg style={{position:"absolute",top:0,left:0,width:200,height:200,opacity:.09}} viewBox="0 0 200 200">
+        <polyline points="14,90 14,14 90,14" fill="none" stroke="white" strokeWidth="1.4"/>
+        <polyline points="14,110 14,14 110,14" fill="none" stroke="white" strokeWidth=".5"/>
+        <circle cx="14" cy="14" r="3" fill="none" stroke="white" strokeWidth="1"/>
+        <circle cx="14" cy="14" r="6" fill="none" stroke="white" strokeWidth=".4"/>
+      </svg>
+      <svg style={{position:"absolute",bottom:0,right:0,width:200,height:200,opacity:.07}} viewBox="0 0 200 200">
+        <polyline points="186,110 186,186 110,186" fill="none" stroke="white" strokeWidth="1.4"/>
+        <polyline points="186,90 186,186 90,186" fill="none" stroke="white" strokeWidth=".5"/>
+      </svg>
+      <svg style={{position:"absolute",top:0,right:0,width:160,height:160,opacity:.06}} viewBox="0 0 160 160">
+        <polyline points="146,60 146,14 100,14" fill="none" stroke="white" strokeWidth="1"/>
+      </svg>
+      {/* Ghost text */}
+      <div style={{position:"absolute",top:"3vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontWeight:900,
+        fontSize:"clamp(70px,11vw,150px)",color:"rgba(255,255,255,.016)",lineHeight:1,userSelect:"none",letterSpacing:"-.05em"}}>
+        NEWS
+      </div>
+      <div style={{position:"absolute",bottom:"8vh",right:"-1%",fontFamily:"'Inter',sans-serif",fontWeight:900,
+        fontSize:"clamp(50px,9vw,120px)",color:"rgba(255,255,255,.013)",lineHeight:1,userSelect:"none",letterSpacing:"-.05em"}}>
+        LIVE
+      </div>
+      <div style={{position:"absolute",top:"45vh",left:"40%",fontFamily:"'Inter',sans-serif",fontWeight:900,
+        fontSize:"clamp(40px,7vw,100px)",color:"rgba(255,255,255,.01)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>
+        xG
+      </div>
+    </div>
 
     <ArticlePage article={selectedArticle} allArticles={articles} onClose={closeArticle} onNavigate={navArticle}/>
 
-    <div style={{maxWidth:1320,margin:"0 auto",padding:"0 20px 80px",position:"relative",zIndex:1}}>
-      {/* Header */}
-      <div style={{padding:"30px 0 18px",borderBottom:"1px solid rgba(255,255,255,0.045)",marginBottom:0}}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
+    {/* ── Main Content ─────────────────────────────────────── */}
+    <div style={{maxWidth:1360,margin:"0 auto",padding:isMob?"0 14px 100px":"0 28px 80px",position:"relative",zIndex:1}}>
+
+      {/* ── PAGE HEADER ──────────────────────────────────────── */}
+      <div style={{
+        padding:isMob?"20px 0 16px":"36px 0 22px",
+        borderBottom:"1px solid rgba(255,255,255,0.07)",
+        marginBottom:0,
+      }}>
+        <div style={{display:"flex",alignItems:isMob?"flex-start":"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+          {/* Title */}
           <div style={{display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:4,height:48,borderRadius:2,background:"linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.4))",flexShrink:0}}/>
+            <div style={{
+              display:"flex",flexDirection:"column",justifyContent:"center",gap:3,
+              width:3,height:isMob?36:50,flexShrink:0,
+              background:"linear-gradient(180deg,#ffffff 0%,rgba(255,255,255,.3) 100%)",
+              borderRadius:2,
+            }}/>
             <div>
-              <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:30,fontWeight:900,color:"#ffffff",margin:0,letterSpacing:"-0.03em",lineHeight:1.1}}>Football Intelligence</h1>
-              <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"rgba(255,255,255,.25)",margin:"4px 0 0",fontWeight:600}}>
-                Model previews · Transfer hub · Tactical insights · Live signals
-                {lastUpdated&&<span style={{marginLeft:10,fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)"}}>· Updated {timeAgo(lastUpdated)}</span>}
+              <h1 style={{
+                fontFamily:"'Inter',sans-serif",
+                fontSize:isMob?24:32,
+                fontWeight:900,color:"#ffffff",
+                margin:0,letterSpacing:"-0.04em",lineHeight:1.05,
+              }}>Football Intelligence</h1>
+              <p style={{
+                fontFamily:"'Inter',sans-serif",fontSize:isMob?11:12,
+                color:"rgba(255,255,255,.4)",margin:"5px 0 0",fontWeight:500,
+                letterSpacing:".01em",
+              }}>
+                Model previews · Transfers · Tactical insights · Live signals
+                {lastUpdated&&<span style={{marginLeft:8,fontSize:10,color:"rgba(255,255,255,.25)"}}>· {timeAgo(lastUpdated)}</span>}
               </p>
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",borderRadius:999,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.18)"}}>
-              <span style={{width:6,height:6,borderRadius:"50%",background:"#ffffff",boxShadow:"0 0 8px rgba(255,255,255,0.5)",animation:"nbPulse 2.2s ease-in-out infinite",display:"inline-block"}}/>
-              <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.85)",letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live feed</span>
-            </div>
+          {/* Live badge */}
+          <div style={{
+            display:"flex",alignItems:"center",gap:7,
+            padding:"7px 16px",borderRadius:999,
+            background:"rgba(255,255,255,0.05)",
+            border:"1px solid rgba(255,255,255,0.15)",
+            flexShrink:0,
+          }}>
+            <span style={{width:7,height:7,borderRadius:"50%",background:"#ffffff",
+              boxShadow:"0 0 10px rgba(255,255,255,0.6)",
+              animation:"nbPulse 2.2s ease-in-out infinite",display:"inline-block",flexShrink:0}}/>
+            <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.8)",
+              letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live feed</span>
           </div>
         </div>
       </div>
@@ -1005,102 +1122,193 @@ export default function NewsTrackerPage(){
       {/* Intelligence Ticker */}
       <IntelligenceTicker/>
 
-      {/* Trending + Filters */}
+      {/* ── FILTERS ──────────────────────────────────────────── */}
       <TrendingBar clubs={trending} activeClub={activeClub} onSelect={setActiveClub}/>
-      <div style={{marginBottom:24}}>
-        <div style={{display:"flex",gap:6,flexWrap:"nowrap",overflowX:"auto",paddingBottom:8,scrollbarWidth:"none",alignItems:"center"}}>
+
+      <div style={{marginBottom:24,marginTop:4}}>
+        {/* Type + league filters row */}
+        <div className="nt-hide-scroll" style={{
+          display:"flex",gap:6,flexWrap:"nowrap",
+          overflowX:"auto",paddingBottom:8,alignItems:"center",
+        }}>
           {TF.map(f=><Chip key={f.key} label={f.label} active={activeType===f.key} color={f.color} count={counts[f.key]} onClick={()=>setActiveType(f.key)}/>)}
-          <div style={{width:1,height:22,background:"rgba(255,255,255,.06)",flexShrink:0,margin:"0 4px"}}/>
+          <div style={{width:1,height:20,background:"rgba(255,255,255,.08)",flexShrink:0,margin:"0 4px"}}/>
           {LF.map(f=><Chip key={f.key} label={f.label} active={activeLeague===f.key} color={f.color} onClick={()=>setActiveLeague(f.key)}/>)}
-          <div style={{width:1,height:22,background:"rgba(255,255,255,.06)",flexShrink:0,margin:"0 4px"}}/>
+          <div style={{width:1,height:20,background:"rgba(255,255,255,.08)",flexShrink:0,margin:"0 4px"}}/>
           {SF.map(s=><Chip key={s.key} label={s.label} active={sortMode===s.key} color="rgba(255,255,255,.4)" onClick={()=>setSortMode(s.key)}/>)}
         </div>
       </div>
 
-      {error&&<div style={{padding:"14px 18px",borderRadius:0,marginBottom:20,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.18)",fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.65)"}}>Failed to load: {error}</div>}
+      {/* Error state */}
+      {error&&(
+        <div style={{
+          padding:"14px 18px",marginBottom:20,
+          background:"rgba(255,255,255,0.04)",
+          border:"1px solid rgba(255,255,255,0.12)",
+          borderRadius:8,fontSize:13,color:"rgba(255,255,255,.65)",
+        }}>Failed to load: {error}</div>
+      )}
 
-      {loading&&(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-        <Skeleton h={320}/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24}}>
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>{[1,2,3,4,5,6].map(i=><Skeleton key={i} h={90}/>)}</div>
-          <Skeleton h={480}/>
+      {/* Loading skeletons */}
+      {loading&&(
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          <Skeleton h={isMob?240:320}/>
+          <div style={{display:"grid",gridTemplateColumns:isTablet?"1fr":"1fr 280px",gap:20}}>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {[1,2,3,4,5,6].map(i=><Skeleton key={i} h={90}/>)}
+            </div>
+            {!isTablet&&<Skeleton h={480}/>}
+          </div>
         </div>
-      </div>)}
+      )}
 
-      {!loading&&!error&&(<div style={{display:"flex",flexDirection:"column",gap:40}}>
+      {/* ── CONTENT ──────────────────────────────────────────── */}
+      {!loading&&!error&&(
+        <div style={{display:"flex",flexDirection:"column",gap:isMob?28:40}}>
 
-        {/* Featured */}
-        {featured&&<FeaturedCard article={featured} onClick={openArticle}/>}
+          {/* Featured article */}
+          {featured&&<FeaturedCard article={featured} onClick={openArticle}/>}
 
-        {/* Main two-column layout: feed left, Transfer Hub right */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:28,alignItems:"start"}}>
+          {/* Main layout: left feed + right sidebar */}
+          <div style={{
+            display:"grid",
+            gridTemplateColumns:isTablet?"1fr":"1fr 300px",
+            gap:isTablet?24:32,
+            alignItems:"start",
+          }}>
 
-          {/* LEFT — unified newsroom feed */}
-          <div style={{display:"flex",flexDirection:"column",gap:40}}>
+            {/* LEFT — news feed */}
+            <div style={{display:"flex",flexDirection:"column",gap:isMob?28:40}}>
 
-            {/* ── Latest News: magazine hero grid (news articles) ── */}
-            {newsFeed.length>0&&(<section style={{marginBottom:32}}>
-              <SectionHead title="Latest News" sub="Breaking football news · Transfers · Injuries" accent="rgba(255,255,255,.9)" count={newsFeed.length}/>
-              {/* Magazine hero: first article large, next 2 stacked right */}
-              {newsFeed.length>=3&&(
-                <div style={{display:"grid",gridTemplateColumns:"1.8fr 1fr",gridTemplateRows:"auto auto",gap:8,marginBottom:8}}>
-                  <div style={{gridRow:"1/3"}}><MagHeroCard article={newsFeed[0]} onClick={openArticle}/></div>
-                  <MagSmallCard article={newsFeed[1]} onClick={openArticle}/>
-                  <MagSmallCard article={newsFeed[2]} onClick={openArticle}/>
+              {/* Latest News */}
+              {newsFeed.length>0&&(
+                <section>
+                  <SectionHead title="Latest News" sub="Breaking news · Transfers · Injuries" accent="#ffffff" count={newsFeed.length}/>
+                  {/* Mobile: single column stack */}
+                  {isMob?(
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {newsFeed.slice(0,12).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                    </div>
+                  ):(
+                    <>
+                      {newsFeed.length>=3&&(
+                        <div style={{display:"grid",gridTemplateColumns:"1.7fr 1fr",gridTemplateRows:"auto auto",gap:10,marginBottom:10}}>
+                          <div style={{gridRow:"1/3"}}><MagHeroCard article={newsFeed[0]} onClick={openArticle}/></div>
+                          <MagSmallCard article={newsFeed[1]} onClick={openArticle}/>
+                          <MagSmallCard article={newsFeed[2]} onClick={openArticle}/>
+                        </div>
+                      )}
+                      {newsFeed.length===2&&(
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                          {newsFeed.slice(0,2).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                        </div>
+                      )}
+                      {newsFeed.length===1&&<MagHeroCard article={newsFeed[0]} onClick={openArticle}/>}
+                      {newsFeed.length>3&&(
+                        <div style={{display:"grid",gridTemplateColumns:isTablet?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
+                          {newsFeed.slice(3,21).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </section>
+              )}
+
+              {/* Match Previews */}
+              {previews.length>0&&(
+                <section>
+                  <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="rgba(255,255,255,.9)" count={previews.length}/>
+                  <div style={{display:"grid",
+                    gridTemplateColumns:isMob?"1fr":previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",
+                    gap:isMob?10:12}}>
+                    {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
+                  </div>
+                </section>
+              )}
+
+              {/* Model Insights */}
+              {insights.length>0&&(
+                <section>
+                  <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights" accent="rgba(255,255,255,.8)" count={insights.length}/>
+                  <div style={{display:"grid",
+                    gridTemplateColumns:isMob?"1fr":"1fr 1fr",
+                    gap:isMob?10:12}}>
+                    {insights.slice(0,6).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle} idx={i}/>)}
+                  </div>
+                </section>
+              )}
+
+              {/* Mobile: transfer hub inline */}
+              {isTablet&&transferItems.length>0&&(
+                <section>
+                  <SectionHead title="Transfer Hub" sub="Latest moves & rumours" accent="rgba(255,255,255,.75)" count={transferItems.length}/>
+                  <TransferHub items={transferItems}/>
+                </section>
+              )}
+
+              {sorted.length===0&&newsFeed.length===0&&previews.length===0&&insights.length===0&&(
+                <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(255,255,255,.25)",fontSize:14}}>
+                  No articles match the current filters
                 </div>
               )}
-              {newsFeed.length===2&&(
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                  {newsFeed.slice(0,2).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
-                </div>
-              )}
-              {newsFeed.length===1&&<MagHeroCard article={newsFeed[0]} onClick={openArticle}/>}
-              {/* Rest in 3-col grid */}
-              {newsFeed.length>3&&(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-                  {newsFeed.slice(3,21).map((a,i)=><MagSmallCard key={a.id||i} article={a} onClick={openArticle}/>)}
-                </div>
-              )}
-            </section>)}
+            </div>
 
-            {/* ── Match Previews ── */}
-            {previews.length>0&&(<section style={{marginBottom:32}}>
-              <SectionHead title="Match Previews" sub="Model analysis for upcoming fixtures" accent="rgba(255,255,255,.85)" count={previews.length}/>
-              <div style={{display:"grid",gridTemplateColumns:previews.length===1?"1fr":previews.length===2?"1fr 1fr":"repeat(3,1fr)",gap:12}}>
-                {previews.slice(0,6).map((a,i)=><MatchPreviewCard key={a.id||i} article={a} onClick={openArticle}/>)}
+            {/* RIGHT — sticky Transfer Hub (desktop only) */}
+            {!isTablet&&(
+              <div style={{position:"sticky",top:20,display:"flex",flexDirection:"column",gap:20}}>
+                <TransferHub items={transferItems}/>
               </div>
-            </section>)}
-
-            {/* ── Model Insights ── */}
-            {insights.length>0&&(<section>
-              <SectionHead title="Model Insights" sub="Title race analysis · Form spotlights" accent="rgba(255,255,255,.8)" count={insights.length}/>
-              <div style={{display:"grid",gridTemplateColumns:insights.length===1?"1fr":"1fr 1fr",gap:12}}>
-                {insights.slice(0,6).map((a,i)=><InsightCard key={a.id||i} article={a} onClick={openArticle} idx={i}/>)}
-              </div>
-            </section>)}
-
-            {sorted.length===0&&newsFeed.length===0&&previews.length===0&&insights.length===0&&(
-              <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(255,255,255,.25)",fontSize:14}}>No articles match the current filters</div>
             )}
-
-
           </div>
 
-          {/* RIGHT — sticky Transfer Hub */}
-          <div style={{position:"sticky",top:20,display:"flex",flexDirection:"column",gap:20}}>
-            <TransferHub items={transferItems}/>
-          </div>
+          {/* ── FOOTER ───────────────────────────────────────── */}
+          <footer style={{
+            borderTop:"1px solid rgba(255,255,255,0.08)",
+            paddingTop:32,
+            paddingBottom:40,
+          }}>
+            <div style={{
+              display:"flex",
+              flexDirection:isMob?"column":"row",
+              alignItems:isMob?"flex-start":"center",
+              justifyContent:"space-between",
+              gap:isMob?20:24,
+            }}>
+              {/* Branding */}
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:3,height:22,background:"rgba(255,255,255,.7)",borderRadius:2}}/>
+                  <span style={{fontSize:20,fontWeight:900,color:"#ffffff",letterSpacing:"-.04em"}}>StatinSite</span>
+                </div>
+                <span style={{fontSize:11,color:"rgba(255,255,255,.35)",letterSpacing:".03em",paddingLeft:13}}>
+                  Football Intelligence · Model Predictions
+                </span>
+              </div>
+
+              {/* Built by — centre */}
+              <div style={{
+                display:"flex",flexDirection:"column",
+                alignItems:isMob?"flex-start":"center",
+                gap:4,
+                padding:"16px 28px",
+                border:"1px solid rgba(255,255,255,0.1)",
+                borderRadius:12,
+                background:"rgba(255,255,255,0.03)",
+              }}>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.3)",letterSpacing:".14em",textTransform:"uppercase"}}>Built by</div>
+                <div style={{fontSize:18,fontWeight:800,color:"#ffffff",letterSpacing:"-.02em"}}>Rutej Talati</div>
+              </div>
+
+              {/* Right info */}
+              <div style={{display:"flex",flexDirection:"column",alignItems:isMob?"flex-start":"flex-end",gap:5}}>
+                <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.6)",letterSpacing:".04em"}}>statinsite.com</span>
+                <span style={{fontSize:10,color:"rgba(255,255,255,.2)"}}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
+              </div>
+            </div>
+          </footer>
+
         </div>
-
-        {/* Footer attribution */}
-        <div style={{borderTop:"1px solid rgba(255,255,255,0.045)",paddingTop:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-          <div>
-            <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:700,color:"rgba(255,255,255,.25)"}}>StatinSite Intelligence Engine</span>
-            <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.3)",marginLeft:10}}>Built by Rutej Talati</span>
-          </div>
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.25)",fontWeight:700}}>statinsite.com</span>
-        </div>
-      </div>)}
+      )}
     </div>
   </div>);
 }

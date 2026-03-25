@@ -4,6 +4,22 @@
 // Stat boxes now say "This GW" / "Next GW" / "Season" etc.
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
+
+/* ── Neobrutalist theme constants ── */
+const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB_CSS = `
+  @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
+  @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes nbBlink  { 50%{opacity:0} }
+  @keyframes nbStripes{ to{background-position:90px 0} }
+  @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:#0a0a0a; }
+  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
+  ::selection { background:#e8ff47; color:#0a0a0a; }
+  input[type=range] { accent-color:#e8ff47; }
+`;
   getFplBootstrap, getFplPredictorTable,
   getTopScorers, getTopAssists,
   getLeagueInjuries, getStandings,
@@ -144,6 +160,11 @@ function ABar({pct,color="#28d97a",h=5,delay=0}) {
   useEffect(()=>{ const t=setTimeout(()=>setW(Math.min(pct,100)),delay+60); return()=>clearTimeout(t); },[pct,delay]);
   return (
     <div style={{flex:1,height:h,borderRadius:3,background:"rgba(255,255,255,.05)",overflow:"hidden"}}>
+      <style>{NB_CSS}</style>
+      {/* NB bg stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+
       <div style={{height:"100%",width:w+"%",background:color,borderRadius:3,
         transition:"width .85s cubic-bezier(.4,0,.2,1)",boxShadow:`0 0 6px ${color}55`}}/>
     </div>
@@ -215,7 +236,7 @@ function HeroCard({label,rawVal,dec=1,prefix="",suffix="",sub,color,pulse,rank,i
   const hex = {green:"#28d97a",blue:"#3b9eff",gold:"#f2c94c",purple:"#b388ff",orange:"#ff6b35",red:"#ff4d6d"}[color]||"#67b1ff";
   return (
     <div ref={ref} className="gw-hover-lift" onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{position:"relative",overflow:"hidden",borderRadius:14,padding:"15px 14px 13px",
+      style={{position:"relative",overflow:"hidden",borderRadius:0,padding:"15px 14px 13px",
         background:hov?`${hex}0d`:"rgba(255,255,255,.025)",
         border:`1px solid ${hov?`${hex}55`:"rgba(255,255,255,.07)"}`,
         boxShadow:hov?`0 8px 28px rgba(0,0,0,.4),0 0 0 1px ${hex}33`:"none",
@@ -223,12 +244,12 @@ function HeroCard({label,rawVal,dec=1,prefix="",suffix="",sub,color,pulse,rank,i
       <div style={{position:"absolute",top:10,right:10,width:7,height:7,borderRadius:"50%",
         background:hex,boxShadow:`0 0 9px ${hex}`,animation:pulse?"gwPulse 2s ease-in-out infinite":"none"}}/>
       <div style={{position:"absolute",left:0,top:14,bottom:14,width:3,background:hex,borderRadius:"0 2px 2px 0",boxShadow:`0 0 7px ${hex}88`}}/>
-      <div style={{fontSize:7.5,fontWeight:900,color:"#2a4a6a",letterSpacing:".14em",paddingLeft:8,marginBottom:3}}>{label}</div>
+      <div style={{fontSize:7.5,fontWeight:900,color:"rgba(232,255,71,.35)",letterSpacing:".14em",paddingLeft:8,marginBottom:3}}>{label}</div>
       <div style={{fontSize:21,fontWeight:900,color:hex,fontFamily:"DM Mono,monospace",lineHeight:1.05,paddingLeft:8}}>{display}</div>
       {sub&&<div style={{fontSize:9,color:"#3a6080",paddingLeft:8,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sub}</div>}
       {extra&&<div style={{paddingLeft:8,marginTop:5}}>{extra}</div>}
       {rank&&<div style={{position:"absolute",bottom:8,right:10,fontSize:8,color:"#1a3050",fontFamily:"DM Mono,monospace"}}>#{rank}</div>}
-      <div style={{position:"absolute",inset:0,borderRadius:14,background:`radial-gradient(ellipse at 85% 15%,${hex}07,transparent 55%)`,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",inset:0,borderRadius:0,background:`radial-gradient(ellipse at 85% 15%,${hex}07,transparent 55%)`,pointerEvents:"none"}}/>
     </div>
   );
 }
@@ -244,7 +265,7 @@ function ScoRow({rank,name,team,val,valLbl,sub,color="#28d97a",maxVal,idx}) {
         transform:hov?"translateX(4px)":"none",transition:"all .16s ease",animation:`gwIn ${.06+idx*.05}s ease both`}}>
       <div style={{width:19,height:19,borderRadius:"50%",flexShrink:0,background:medals[rank-1]||"rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8.5,fontWeight:900,color:"#000"}}>{rank}</div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:11,fontWeight:800,color:"#e8f0ff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name}</div>
+        <div style={{fontSize:11,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name}</div>
         <div style={{fontSize:8.5,color:"#2a4060"}}>{team}{sub?` · ${sub}`:""}</div>
       </div>
       {maxVal&&<ABar pct={(val/maxVal)*100} color={color} h={3}/>}
@@ -257,7 +278,7 @@ function ScoRow({rank,name,team,val,valLbl,sub,color="#28d97a",maxVal,idx}) {
 }
 
 function Panel({children,style={}}) {
-  return (<div style={{background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.07)",borderRadius:16,padding:"15px 14px",display:"flex",flexDirection:"column",gap:10,...style}}>{children}</div>);
+  return (<div style={{background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.07)",borderRadius:0,padding:"15px 14px",display:"flex",flexDirection:"column",gap:10,...style}}>{children}</div>);
 }
 
 function SecLabel({text,sub,accent="#3b9eff",right}) {
@@ -278,7 +299,7 @@ function SecLabel({text,sub,accent="#3b9eff",right}) {
 function InjPill({player,team,reason,status}) {
   const col=status==="Injured"?"#ff4d6d":status==="Doubtful"?"#ffaa44":"#4a7a9a";
   return (
-    <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 9px",borderRadius:8,background:"rgba(255,255,255,.02)",border:`1px solid ${col}22`,transition:"background .15s"}}
+    <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 9px",borderRadius:0,background:"rgba(255,255,255,.02)",border:`1px solid ${col}22`,transition:"background .15s"}}
       onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
       <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0,boxShadow:`0 0 5px ${col}`}}/>
       <div style={{flex:1,minWidth:0}}>
@@ -301,7 +322,7 @@ function StandRow({rank,team,pts,played,won,drawn,lost,gd,idx}) {
   const zL=rank<=4?"UCL":rank===5?"UEL":rank===6?"UECL":rank>=total-2?"REL":"";
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{display:"flex",alignItems:"center",gap:7,padding:"6px 9px",borderRadius:8,background:hov?"rgba(255,255,255,.05)":"rgba(255,255,255,.02)",borderLeft:`3px solid ${zone}`,transition:"background .15s",animation:`gwIn ${.04+idx*.03}s ease both`}}>
+      style={{display:"flex",alignItems:"center",gap:7,padding:"6px 9px",borderRadius:0,background:hov?"rgba(255,255,255,.05)":"rgba(255,255,255,.02)",borderLeft:`3px solid ${zone}`,transition:"background .15s",animation:`gwIn ${.04+idx*.03}s ease both`}}>
       <span style={{fontSize:9.5,fontWeight:900,color:"#3a6080",width:18,flexShrink:0}}>{rank}</span>
       <span style={{flex:1,fontSize:11,fontWeight:700,color:"#dce8f8",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
       {zL&&<span style={{fontSize:7,fontWeight:900,padding:"1px 4px",borderRadius:4,background:`${zone}20`,color:zone,flexShrink:0}}>{zL}</span>}
@@ -323,7 +344,7 @@ function DiffHeatRow({name,team,vals,gwId,idx}) {
   const [hov,setHov]=useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",borderRadius:8,background:hov?"rgba(255,255,255,.04)":"transparent",transition:"background .15s",animation:`gwIn ${.04+idx*.04}s ease both`}}>
+      style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",borderRadius:0,background:hov?"rgba(255,255,255,.04)":"transparent",transition:"background .15s",animation:`gwIn ${.04+idx*.04}s ease both`}}>
       <div style={{minWidth:0,width:70,flexShrink:0}}>
         <div style={{fontSize:9.5,fontWeight:800,color:"#bcd4f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(name)}</div>
         <div style={{fontSize:7.5,color:"#2a4060"}}>{team}</div>
@@ -347,7 +368,7 @@ function PosRadarCard({pos,player,vals,color}) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
         <div>
           <div style={{fontSize:8,fontWeight:900,color,letterSpacing:".12em"}}>{pos}</div>
-          <div style={{fontSize:12,fontWeight:800,color:"#e8f0ff"}}>{sn(player?.name||"—")}</div>
+          <div style={{fontSize:12,fontWeight:800,color:"#e8ff47"}}>{sn(player?.name||"—")}</div>
           <div style={{fontSize:9,color:"#2a4060"}}>{player?.team} · £{player?.cost}m</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -471,7 +492,7 @@ export default function GameweekInsightsPage() {
 
   // ── Loading ───────────────────────────────────────────────
   if(loading) return (
-    <div style={{minHeight:"100vh",background:"#000",padding:"24px 20px"}}>
+    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"24px 20px"}}>
       <style>{GW_CSS}</style>
       <div style={{maxWidth:1440,margin:"0 auto",display:"flex",flexDirection:"column",gap:16}}>
         <SKEL h={44} w={340} r={10}/>
@@ -484,21 +505,21 @@ export default function GameweekInsightsPage() {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#000",padding:"20px 20px 52px",fontFamily:"Outfit,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"20px 20px 52px",fontFamily:"Outfit,sans-serif"}}>
       <style>{GW_CSS}</style>
       <div style={{maxWidth:1440,margin:"0 auto",display:"flex",flexDirection:"column",gap:18}}>
 
         {/* HEADER */}
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
           <div style={{animation:"gwSlideL .25s ease both"}}>
-            <div style={{fontSize:8,fontWeight:900,letterSpacing:".22em",color:"#1a3a5a",marginBottom:5}}>STATPITCH · EPL INTELLIGENCE HUB</div>
+            <div style={{fontSize:8,fontWeight:900,letterSpacing:".22em",color:"rgba(232,255,71,.25)",marginBottom:5}}>STATPITCH · EPL INTELLIGENCE HUB</div>
             <h1 style={{margin:0,fontSize:27,fontWeight:900,color:"#f0f8ff",letterSpacing:"-.02em"}}>
               Gameweek Insights
               <span style={{marginLeft:12,fontSize:17,fontWeight:700,background:"linear-gradient(135deg,#3b9eff,#28d97a)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                 — {gwInfo.name}
               </span>
             </h1>
-            <div style={{fontSize:10.5,color:"#2a4a6a",marginTop:2}}>
+            <div style={{fontSize:10.5,color:"rgba(232,255,71,.35)",marginTop:2}}>
               {gwInfo.label} gameweek · Live FPL projections · EPL scorers & standings · Injury tracker
               {gwInfo.deadline && <span style={{marginLeft:8,color:"#3b5060"}}>Deadline: {new Date(gwInfo.deadline).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>}
             </div>
@@ -568,7 +589,7 @@ export default function GameweekInsightsPage() {
                     const col=net>0?"#28d97a":"#ff4d6d";
                     const maxNet=Math.abs((byTransIn[0]?.transfers_in_gw||1)-(byTransIn[0]?.transfers_out_gw||0))||1;
                     return (
-                      <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:8,background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.04)",transition:"background .15s"}}
+                      <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:0,background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.04)",transition:"background .15s"}}
                         onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.055)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
                         <span style={{fontSize:11,color:col,fontWeight:900,flexShrink:0}}>{net>0?"▲":"▼"}</span>
                         <div style={{flex:1,minWidth:0}}>
@@ -622,7 +643,7 @@ export default function GameweekInsightsPage() {
                         onMouseEnter={e=>{e.currentTarget.style.background=`${col}0d`;}} onMouseLeave={e=>{e.currentTarget.style.background=i===0?"rgba(40,217,122,.05)":"rgba(255,255,255,.02)";}}>
                         <span style={{fontSize:9,fontWeight:900,color:col,fontFamily:"DM Mono,monospace",width:14,flexShrink:0}}>{i+1}</span>
                         <div style={{width:80,flexShrink:0}}>
-                          <div style={{fontSize:10.5,fontWeight:800,color:"#e8f0ff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
+                          <div style={{fontSize:10.5,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
                           <div style={{fontSize:8,color:"#2a4060"}}>{p.team} · {p.position}</div>
                         </div>
                         <Spark vals={vals} w={90} h={24} color={col}/>
@@ -715,11 +736,11 @@ export default function GameweekInsightsPage() {
                   const col=val>=9?"#28d97a":val>=7?"#3b9eff":val>=5.5?"#f2c94c":"#67b1ff";
                   const maxV=Number(sorted[0]?.pts_this_gw||1);
                   return (
-                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 9px",borderRadius:8,background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.05)",transition:"all .15s",animation:`gwIn ${.04+i*.03}s ease both`}}
+                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 9px",borderRadius:0,background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.05)",transition:"all .15s",animation:`gwIn ${.04+i*.03}s ease both`}}
                       onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.07)";e.currentTarget.style.transform="translateX(3px)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,.025)";e.currentTarget.style.transform="none";}}>
                       <span style={{fontSize:9.5,fontWeight:900,color:"#2a4060",fontFamily:"DM Mono,monospace",width:18,flexShrink:0}}>{i+1}</span>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,fontWeight:800,color:"#e8f0ff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                        <div style={{fontSize:11,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                         <div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position} · £{p.cost}m</div>
                       </div>
                       <div style={{width:60,flexShrink:0}}><ABar pct={(val/maxV)*100} color={col} h={3}/></div>
@@ -739,7 +760,7 @@ export default function GameweekInsightsPage() {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {byValue.slice(0,7).map((p,i)=>{
                     const maxV=Number(byValue[0]?.value_rest_season||1);
-                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:8,background:"rgba(255,255,255,.025)",border:"1px solid rgba(179,136,255,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(179,136,255,.09)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
+                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:0,background:"rgba(255,255,255,.025)",border:"1px solid rgba(179,136,255,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(179,136,255,.09)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
                       <span style={{fontSize:9,fontWeight:900,color:"#4a2a8a",width:14}}>{i+1}</span>
                       <div style={{flex:1,minWidth:0}}><div style={{fontSize:10.5,fontWeight:700,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div><div style={{fontSize:8,color:"#2a4060"}}>{p.team} · £{p.cost}m</div></div>
                       <ABar pct={(Number(p.value_rest_season||0)/maxV)*100} color="#b388ff" h={3}/>
@@ -753,7 +774,7 @@ export default function GameweekInsightsPage() {
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {diffs.slice(0,6).map((p,i)=>{
                     const own=Number(p.selected_by_pct||0);
-                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:8,background:"rgba(255,255,255,.025)",border:"1px solid rgba(40,217,122,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(40,217,122,.07)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
+                    return (<div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:0,background:"rgba(255,255,255,.025)",border:"1px solid rgba(40,217,122,.08)",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(40,217,122,.07)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.025)"}>
                       <span style={{fontSize:9,fontWeight:900,color:"#0a5a2a",width:14}}>{i+1}</span>
                       <div style={{flex:1,minWidth:0}}><div style={{fontSize:10.5,fontWeight:700,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div><div style={{fontSize:8,color:"#2a4060"}}>{p.team} · {own.toFixed(1)}%</div></div>
                       <span style={{fontSize:12,fontWeight:900,color:"#28d97a",fontFamily:"DM Mono,monospace",minWidth:28,textAlign:"right"}}>{Number(p.pts_this_gw||0).toFixed(1)}</span>
@@ -812,7 +833,7 @@ export default function GameweekInsightsPage() {
                   const prob=Math.round((p.appearance_prob||0)*100);
                   const col=prob<60?"#ff4d6d":prob<80?"#ffaa44":"#28d97a";
                   return (
-                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:9,padding:"5px 8px",borderRadius:8,background:"rgba(255,255,255,.02)",border:`1px solid ${col}18`,transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
+                    <div key={p.player_id||i} style={{display:"flex",alignItems:"center",gap:9,padding:"5px 8px",borderRadius:0,background:"rgba(255,255,255,.02)",border:`1px solid ${col}18`,transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background=`${col}0d`} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}>
                       <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:700,color:"#c8d8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div><div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position}</div></div>
                       <ABar pct={prob} color={col} h={4}/>
                       <Ring pct={prob} size={36} stroke={3} color={col} delay={i*40}/>

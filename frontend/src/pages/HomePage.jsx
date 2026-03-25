@@ -223,7 +223,7 @@ function TopPredPanel({ dash }) {
         <span className="hp4-mono" style={{color:"#34d399",fontWeight:900}}>{aPct}%</span>
       </div>
       <div style={{marginTop:6,fontSize:9,color:"var(--text-muted)"}}>
-        xG <span className="hp4-mono" style={{color:"var(--text)"}}>{pred.xg_home?.toFixed(1)}–{pred.xg_away?.toFixed(1)}</span>
+        xG <span className="hp4-mono" style={{color:"var(--text)"}}>{pred.xg_home!=null?Number(pred.xg_home).toFixed(1):"—"}–{pred.xg_away!=null?Number(pred.xg_away).toFixed(1):"—"}</span>
         <span style={{marginLeft:8,background:`${"#38bdf8"}18`,color:"#38bdf8",padding:"1px 6px",borderRadius:999,fontWeight:800}}>{favProb}% {fav?.split(" ").slice(-1)[0]}</span>
       </div>
     </div>
@@ -439,7 +439,7 @@ function PredCard({ p, index }) {
         </div>
         {/* xG + markets */}
         <div className="hp6-pc-markets">
-          <span>xG <span className="hp4-mono">{p.xg_home?.toFixed(1)}–{p.xg_away?.toFixed(1)}</span></span>
+          <span>xG <span className="hp4-mono">{p.xg_home!=null?Number(p.xg_home).toFixed(1):"—"}–{p.xg_away!=null?Number(p.xg_away).toFixed(1):"—"}</span></span>
           {favProb>=60&&<span className="hp6-pc-badge" style={{background:`${p.col||"#38bdf8"}18`,color:p.col||"#38bdf8"}}>{favProb}% {favTeam?.split(" ").slice(-1)[0]}</span>}
         </div>
         {/* Hover expand */}
@@ -492,7 +492,9 @@ function EdgeCard({ edge, index }) {
 function XgCard({ match, index }) {
   const nav = useNavigate();
   const [ref, vis] = useReveal(0.05);
-  const total = match.total_xg || ((match.xg_home||0)+(match.xg_away||0));
+  const xgHome = Number(match.xg_home) || 0;
+  const xgAway = Number(match.xg_away) || 0;
+  const total  = Number(match.total_xg) || (xgHome + xgAway);
   return (
     <div ref={ref} className="hp6-xg-card" style={{opacity:vis?1:0,transform:vis?"translateX(0)":"translateX(12px)",transition:`all .4s ease ${index*50}ms`}}
       onClick={()=>match.fixture_id&&nav(`/match/${match.fixture_id}`)}>
@@ -500,12 +502,12 @@ function XgCard({ match, index }) {
       <div className="hp6-xg-total hp4-mono">{total.toFixed(1)}</div>
       <div className="hp6-xg-match">{match.home?.split(" ").slice(-1)[0]} vs {match.away?.split(" ").slice(-1)[0]}</div>
       <div style={{display:"flex",gap:3,marginTop:6}}>
-        <div style={{flex:match.xg_home||1,height:4,borderRadius:999,background:"#38bdf8",opacity:.8}}/>
-        <div style={{flex:match.xg_away||1,height:4,borderRadius:999,background:"#34d399",opacity:.8}}/>
+        <div style={{flex:xgHome||1,height:4,borderRadius:999,background:"#38bdf8",opacity:.8}}/>
+        <div style={{flex:xgAway||1,height:4,borderRadius:999,background:"#34d399",opacity:.8}}/>
       </div>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:9,marginTop:3}}>
-        <span className="hp4-mono" style={{color:"#38bdf8"}}>{(match.xg_home||0).toFixed(1)}</span>
-        <span className="hp4-mono" style={{color:"#34d399"}}>{(match.xg_away||0).toFixed(1)}</span>
+        <span className="hp4-mono" style={{color:"#38bdf8"}}>{xgHome.toFixed(1)}</span>
+        <span className="hp4-mono" style={{color:"#34d399"}}>{xgAway.toFixed(1)}</span>
       </div>
     </div>
   );
@@ -754,7 +756,7 @@ function ToolDataRow({ dataKey, fixtures, dash, loading }) {
     if (loading||!dash) return <div className="hp6-td"><Skel w="55%" h={9}/></div>;
     return (
       <div className="hp6-td">
-        {capt&&<><div className="hp6-td-val">Captain: {capt.name||capt.web_name}</div><div className="hp6-td-sub hp4-mono">{capt.ep_next?.toFixed(1)} EP · {capt.next_opp||""}</div></>}
+        {capt&&<><div className="hp6-td-val">Captain: {capt.name||capt.web_name}</div><div className="hp6-td-sub hp4-mono">{capt.ep_next!=null?Number(capt.ep_next).toFixed(1):"?"} EP · {capt.next_opp||""}</div></>}
       </div>
     );
   }
@@ -916,9 +918,9 @@ function FPLHub({ dash }) {
                 {c.photo&&<img src={c.photo} width={28} height={28} style={{borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
                 <div style={{flex:1,minWidth:0}}>
                   <div className="hp6-cr-name">{c.name||c.web_name}</div>
-                  <div className="hp6-cr-meta">{c.next_opp||""} · {c.ownership?.toFixed(1)||"?"}% owned</div>
+                  <div className="hp6-cr-meta">{c.next_opp||""} · {c.ownership!=null?Number(c.ownership).toFixed(1):"?"}% owned</div>
                 </div>
-                <div className="hp6-cr-ep hp4-mono">{c.ep_next?.toFixed(1)||"??"}</div>
+                <div className="hp6-cr-ep hp4-mono">{c.ep_next!=null?Number(c.ep_next).toFixed(1):"??"}</div>
                 <div className="hp6-cr-ep-label">EP</div>
               </div>
             )) : Array.from({length:4}).map((_,i)=><div key={i} className="hp6-capt-row"><Skel w="70%" h={11}/></div>)}
@@ -954,7 +956,7 @@ function FPLToolRow({ tool, index, dash }) {
   const [hov, setHov] = useState(false);
   const [ref, vis]    = useReveal(0.04);
   const capt = tool.to==="/captaincy" && dash?.differential_captains?.captains?.[0];
-  const realStat = capt ? `${capt.name||capt.web_name} ${capt.ep_next?.toFixed(1)||"??"} EP` : tool.stat;
+  const realStat = capt ? `${capt.name||capt.web_name} ${capt.ep_next!=null?Number(capt.ep_next).toFixed(1):"??"} EP` : tool.stat;
   return (
     <div ref={ref} style={{opacity:vis?1:0,transform:vis?"translateX(0)":"translateX(14px)",transition:`all .4s ease ${index*40}ms`}}>
       <Link to={tool.to} style={{textDecoration:"none"}}>
@@ -1019,7 +1021,7 @@ function PlayerCard({ player, index }) {
             <div className="hp6-pc2-name">{player.name||player.player_name||"Player"}</div>
             <div className="hp6-pc2-team">{player.team_name||player.team||""}</div>
           </div>
-          {player.xg_per90!=null&&<div className="hp6-pc2-stat hp4-mono" style={{color:"#38bdf8"}}>{player.xg_per90?.toFixed(2)}<div style={{fontSize:7,color:"var(--text-dim)"}}>xG/90</div></div>}
+          {player.xg_per90!=null&&<div className="hp6-pc2-stat hp4-mono" style={{color:"#38bdf8"}}>{Number(player.xg_per90).toFixed(2)}<div style={{fontSize:7,color:"var(--text-dim)"}}>xG/90</div></div>}
         </div>
         {formArr.length>0&&(
           <div style={{display:"flex",gap:3,marginTop:8}}>
@@ -1057,6 +1059,29 @@ const FACTS = [
   {val:"8K",label:"Simulations/Run"},
 ];
 
+function ModelCard({ m, index }) {
+  const [mref, mvis] = useReveal(0.05);
+  return (
+    <div ref={mref} className="hp6-model-card" style={{opacity:mvis?1:0,transform:mvis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${index*50}ms`,"--mc-color":m.color}}>
+      <div className="hp6-mc-dot"/>
+      <div>
+        <div className="hp6-mc-name">{m.name}</div>
+        <div className="hp6-mc-desc">{m.desc}</div>
+      </div>
+    </div>
+  );
+}
+
+function FactCard({ f, index }) {
+  const [fref, fvis] = useReveal(0.05);
+  return (
+    <div ref={fref} className="hp6-fact-card" style={{opacity:fvis?1:0,transform:fvis?"scale(1)":"scale(.9)",transition:`all .4s ease ${index*60}ms`}}>
+      <div className="hp6-fact-val hp4-mono">{f.val}</div>
+      <div className="hp6-fact-label">{f.label}</div>
+    </div>
+  );
+}
+
 function WhyStatinSite() {
   const [ref, vis] = useReveal(0.04);
   return (
@@ -1070,33 +1095,14 @@ function WhyStatinSite() {
           <div>
             <div className="hp6-sub-label">Data Models</div>
             <div className="hp6-models-grid">
-              {MODELS.map((m,i)=>{
-                const [mref, mvis]=useReveal(0.05);
-                return (
-                  <div key={m.name} ref={mref} className="hp6-model-card" style={{opacity:mvis?1:0,transform:mvis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${i*50}ms`,"--mc-color":m.color}}>
-                    <div className="hp6-mc-dot"/>
-                    <div>
-                      <div className="hp6-mc-name">{m.name}</div>
-                      <div className="hp6-mc-desc">{m.desc}</div>
-                    </div>
-                  </div>
-                );
-              })}
+              {MODELS.map((m,i)=><ModelCard key={m.name} m={m} index={i}/>)}
             </div>
           </div>
           {/* Facts */}
           <div>
             <div className="hp6-sub-label">Platform Scale</div>
             <div className="hp6-facts-grid">
-              {FACTS.map((f,i)=>{
-                const [fref,fvis]=useReveal(0.05);
-                return (
-                  <div key={f.label} ref={fref} className="hp6-fact-card" style={{opacity:fvis?1:0,transform:fvis?"scale(1)":"scale(.9)",transition:`all .4s ease ${i*60}ms`}}>
-                    <div className="hp6-fact-val hp4-mono">{f.val}</div>
-                    <div className="hp6-fact-label">{f.label}</div>
-                  </div>
-                );
-              })}
+              {FACTS.map((f,i)=><FactCard key={f.label} f={f} index={i}/>)}
             </div>
             <div className="hp6-platform-note">
               All predictions use real season statistics from API-Football Pro. Model probabilities are not guaranteed outcomes.

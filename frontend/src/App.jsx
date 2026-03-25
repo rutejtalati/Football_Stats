@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 /* ───────────────── Components ───────────────── */
 import Navbar from "./components/Navbar";
-import LiveTicker from "./components/LiveTicker";
 
 /* ───────────────── Pages ───────────────── */
 import HomePage from "./pages/HomePage";
@@ -28,9 +27,9 @@ import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 
 /* ── Stub for pages not yet built ── */
 const ComingSoon = ({ name }) => (
-  <div style={{minHeight:"60vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,background:"#0a0a0a"}}>
-    <div style={{fontSize:48,fontWeight:900,color:"rgba(232,255,71,0.12)",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:"0.1em"}}>{name}</div>
-    <div style={{fontSize:11,color:"rgba(232,255,71,0.3)",fontFamily:"'DM Mono',monospace",letterSpacing:"0.18em",textTransform:"uppercase"}}>Coming soon</div>
+  <div style={{minHeight:"60vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,background:"#000810"}}>
+    <div style={{fontSize:32,fontWeight:900,color:"rgba(255,255,255,0.15)",fontFamily:"'Sora',sans-serif"}}>{name}</div>
+    <div style={{fontSize:13,color:"rgba(255,255,255,0.25)"}}>Coming soon</div>
   </div>
 );
 
@@ -62,7 +61,6 @@ export default function App() {
       <div className="app-shell">
 
         <Navbar />
-        <LiveTicker />
 
         <div className="sn-page-wrap">
           <Routes>

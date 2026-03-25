@@ -67,8 +67,8 @@
   --page-px: 20px;
   --page-max: 1280px;
   --nav-h:      60px;   /* neo navbar: 56px height + 4px bottom border */
-  --ticker-h:   43px;   /* neo ticker: 40px height + 3px bottom border */
-  --bar-total:  103px;  /* --nav-h + --ticker-h — use this for page offsets */
+  --ticker-h:   0px;    /* ticker is now static/inline in HomePage, not fixed */
+  --bar-total:  60px;   /* only navbar height now — ticker scrolls with page */
 
   /* ── Transition ── */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);

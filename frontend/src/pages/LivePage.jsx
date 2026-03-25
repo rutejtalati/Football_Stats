@@ -1,5 +1,5 @@
 // LivePage.jsx — StatinSite · Neobrutalist Edition
-// Design: #0a0a0a black · #e8ff47 yellow · #ff2744 red
+// Design: #000 black · #e8ff47 yellow · #ff2744 red
 // Bebas Neue headings · DM Mono data · Space Grotesk body
 // All data logic, calendar, filters, sidebar — 100% preserved.
 
@@ -8,8 +8,8 @@ import { useNavigate } from "react-router-dom";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";
 
-const Y = "#e8ff47";
-const K = "#0a0a0a";
+const Y = "#00fff0";
+const K = "#000";
 const R = "#ff2744";
 
 /* ─── League registry — colours updated to neo palette ─── */
@@ -98,7 +98,7 @@ function Logo({ src, size=18 }) {
 function LeagueTag({ k, small }) {
   const c=LEAGUES[k]; if (!c) return null;
   return (
-    <span style={{ fontSize:small?7:8, fontWeight:900, letterSpacing:".12em", color:K, background:c.color, padding:"2px 7px", fontFamily:"'DM Mono',monospace", textTransform:"uppercase" }}>
+    <span style={{ fontSize:small?7:8, fontWeight:900, letterSpacing:".12em", color:c.color, background:"transparent", border:`1px solid ${c.color}40`, padding:"2px 7px", fontFamily:"'DM Mono',monospace", textTransform:"uppercase" }}>
       {small?c.short:c.label}
     </span>
   );
@@ -115,9 +115,9 @@ function LiveCard({ fixture, onClick }) {
   return (
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
       position:"relative", overflow:"hidden", padding:"14px 16px 12px",
-      background:hov?K:"#0a0a0a", border:`2px solid ${R}`,
+      background:hov?K:"#000", border:`1px solid ${R}`,
       boxShadow:hov?`5px 5px 0 ${R}`:"3px 3px 0 rgba(255,39,68,.4)",
-      transform:hov?"translate(-2px,-2px)":"none",
+      transform:"none",
       cursor:"pointer", transition:"all .15s",
     }}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:R}}/>
@@ -133,14 +133,14 @@ function LiveCard({ fixture, onClick }) {
           {[[fixture.home_logo,fixture.home_team,hS,hw],[fixture.away_logo,fixture.away_team,aS,aw]].map(([logo,name,score,bold],i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",gap:8}}>
               <Logo src={logo} size={16}/>
-              <span style={{fontSize:12,fontWeight:bold?900:600,color:bold?Y:"rgba(232,255,71,0.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
-              <span style={{fontSize:20,fontWeight:900,color:bold?Y:"rgba(232,255,71,.15)",fontFamily:"'Bebas Neue',sans-serif",minWidth:22,textAlign:"center",letterSpacing:"0.04em"}}>{score}</span>
+              <span style={{fontSize:12,fontWeight:bold?900:600,color:bold?Y:"rgba(0,255,240,0.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
+              <span style={{fontSize:20,fontWeight:900,color:bold?Y:"rgba(0,255,240,.15)",fontFamily:"'Bebas Neue',sans-serif",minWidth:22,textAlign:"center",letterSpacing:"0.04em"}}>{score}</span>
             </div>
           ))}
         </div>
-        <div style={{borderTop:`1px solid rgba(232,255,71,.08)`,paddingTop:7,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          {fixture.xg_home!=null && <span style={{fontSize:9,color:"rgba(232,255,71,.4)",fontFamily:"'DM Mono',monospace"}}><span style={{color:Y,fontWeight:700}}>xG</span> {fixture.xg_home}–{fixture.xg_away}</span>}
-          {fixture.latest_event && <span style={{fontSize:9,color:"rgba(232,255,71,.3)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'DM Mono',monospace"}}>{fixture.latest_event}</span>}
+        <div style={{borderTop:`1px solid rgba(0,255,240,.08)`,paddingTop:7,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          {fixture.xg_home!=null && <span style={{fontSize:9,color:"rgba(0,255,240,.4)",fontFamily:"'DM Mono',monospace"}}><span style={{color:Y,fontWeight:700}}>xG</span> {fixture.xg_home}–{fixture.xg_away}</span>}
+          {fixture.latest_event && <span style={{fontSize:9,color:"rgba(0,255,240,.3)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'DM Mono',monospace"}}>{fixture.latest_event}</span>}
         </div>
       </div>
     </div>
@@ -155,28 +155,28 @@ function ScheduledCard({ fixture, onClick }) {
   return (
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
       position:"relative", overflow:"hidden", padding:"12px 14px 11px",
-      background:hov?K:"#0a0a0a", border:`2px solid ${hov?Y:"rgba(232,255,71,.15)"}`,
+      background:hov?K:"#000", border:`2px solid ${hov?Y:"rgba(0,255,240,.15)"}`,
       boxShadow:hov?`4px 4px 0 ${Y}`:"none",
-      transform:hov?"translate(-2px,-2px)":"none",
+      transform:"none",
       cursor:"pointer", transition:"all .15s",
     }}>
       <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:lg?.color||Y}}/>
       <div style={{paddingLeft:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <LeagueTag k={fixture.league}/>
-          <span style={{fontSize:9,fontWeight:700,color:"rgba(232,255,71,.35)",fontFamily:"'DM Mono',monospace"}}>{fmtKickoffLabel(fixture.kickoff)}</span>
+          <span style={{fontSize:9,fontWeight:700,color:"rgba(0,255,240,.35)",fontFamily:"'DM Mono',monospace"}}>{fmtKickoffLabel(fixture.kickoff)}</span>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:(line||market)?9:0}}>
           {[[fixture.home_logo,fixture.home_team],[fixture.away_logo,fixture.away_team]].map(([logo,name],i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
               <Logo src={logo} size={15}/>
-              <span style={{fontSize:12,fontWeight:700,color:hov?Y:"rgba(232,255,71,.65)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
+              <span style={{fontSize:12,fontWeight:700,color:hov?Y:"rgba(0,255,240,.65)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
             </div>
           ))}
         </div>
         {(line||market)&&(
-          <div style={{borderTop:`1px solid rgba(232,255,71,.06)`,paddingTop:7,display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
-            {line   && <span style={{fontSize:9,color:"rgba(232,255,71,.3)",fontStyle:"italic",flex:1,fontFamily:"'DM Mono',monospace"}}>{line}</span>}
+          <div style={{borderTop:`1px solid rgba(0,255,240,.06)`,paddingTop:7,display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+            {line   && <span style={{fontSize:9,color:"rgba(0,255,240,.3)",fontStyle:"italic",flex:1,fontFamily:"'DM Mono',monospace"}}>{line}</span>}
             {market && <span style={{fontSize:8,fontWeight:900,letterSpacing:".06em",color:K,background:Y,padding:"2px 7px",fontFamily:"'DM Mono',monospace"}}>{market}</span>}
           </div>
         )}
@@ -194,29 +194,29 @@ function FullTimeCard({ fixture, onClick }) {
   return (
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
       position:"relative", overflow:"hidden", padding:"12px 14px 11px",
-      background:hov?K:"#0a0a0a", border:`2px solid rgba(232,255,71,.08)`,
-      boxShadow:hov?`3px 3px 0 rgba(232,255,71,.3)`:"none",
+      background:hov?K:"#000", border:`2px solid rgba(0,255,240,.08)`,
+      boxShadow:hov?`3px 3px 0 rgba(0,255,240,.3)`:"none",
       transform:hov?"translate(-1px,-1px)":"none",
       cursor:"pointer", transition:"all .15s", opacity:hov?1:.75,
     }}>
-      <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:lg?.color||"rgba(232,255,71,.2)",opacity:.35}}/>
+      <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:lg?.color||"rgba(0,255,240,.2)",opacity:.35}}/>
       <div style={{paddingLeft:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <LeagueTag k={fixture.league}/>
-          <span style={{fontSize:8,fontWeight:900,color:"rgba(232,255,71,.25)",background:"rgba(232,255,71,.04)",padding:"2px 7px",fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>FT</span>
+          <span style={{fontSize:8,fontWeight:900,color:"rgba(0,255,240,.25)",background:"rgba(0,255,240,.04)",padding:"2px 7px",fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>FT</span>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:5}}>
           {[[fixture.home_logo,fixture.home_team,hS,hw],[fixture.away_logo,fixture.away_team,aS,aw]].map(([logo,name,score,bold],i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
               <Logo src={logo} size={15}/>
-              <span style={{fontSize:12,fontWeight:bold?800:500,color:bold?"rgba(232,255,71,.8)":"rgba(232,255,71,.3)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
-              <span style={{fontSize:16,fontWeight:bold?900:600,color:bold?"rgba(232,255,71,.7)":"rgba(232,255,71,.12)",fontFamily:"'Bebas Neue',sans-serif",minWidth:18,textAlign:"center",letterSpacing:"0.04em"}}>{score}</span>
+              <span style={{fontSize:12,fontWeight:bold?800:500,color:bold?"rgba(0,255,240,.8)":"rgba(0,255,240,.3)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
+              <span style={{fontSize:16,fontWeight:bold?900:600,color:bold?"rgba(0,255,240,.7)":"rgba(0,255,240,.12)",fontFamily:"'Bebas Neue',sans-serif",minWidth:18,textAlign:"center",letterSpacing:"0.04em"}}>{score}</span>
             </div>
           ))}
         </div>
         {fixture.xg_home!=null&&(
-          <div style={{borderTop:`1px solid rgba(232,255,71,.04)`,paddingTop:6,marginTop:8}}>
-            <span style={{fontSize:9,color:"rgba(232,255,71,.2)",fontFamily:"'DM Mono',monospace"}}><span style={{color:"rgba(0,212,170,.4)",fontWeight:700}}>xG</span> {fixture.xg_home}–{fixture.xg_away}</span>
+          <div style={{borderTop:`1px solid rgba(0,255,240,.04)`,paddingTop:6,marginTop:8}}>
+            <span style={{fontSize:9,color:"rgba(0,255,240,.2)",fontFamily:"'DM Mono',monospace"}}><span style={{color:"rgba(0,212,170,.4)",fontWeight:700}}>xG</span> {fixture.xg_home}–{fixture.xg_away}</span>
           </div>
         )}
       </div>
@@ -238,30 +238,30 @@ function FeaturedCard({ f, onClick }) {
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{
       position:"relative", overflow:"hidden", flexShrink:0,
       width:272, padding:"18px 18px 14px",
-      background:K, border:`3px solid ${isL?R:hov?Y:"rgba(232,255,71,.2)"}`,
-      boxShadow:hov?`6px 6px 0 ${isL?R:Y}`:"3px 3px 0 rgba(232,255,71,.15)",
-      transform:hov?"translate(-3px,-3px)":"none",
+      background:"#000", border:`3px solid ${isL?R:hov?Y:"rgba(0,255,240,.2)"}`,
+      boxShadow:hov?`6px 6px 0 ${isL?R:Y}`:"3px 3px 0 rgba(0,255,240,.15)",
+      transform:"none",
       cursor:"pointer", transition:"all .18s",
     }}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:isL?R:lg?.color||Y}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <LeagueTag k={f.league}/>
         {isL && <span style={{display:"flex",alignItems:"center",gap:5,fontSize:8,fontWeight:900,color:"#fff",background:R,padding:"2px 9px",fontFamily:"'DM Mono',monospace"}}><LiveDot size={4}/>{f.minute?`${f.minute}'`:"LIVE"}</span>}
-        {isFT && <span style={{fontSize:8,fontWeight:900,color:"rgba(232,255,71,.3)",fontFamily:"'DM Mono',monospace",letterSpacing:".1em"}}>FULL TIME</span>}
-        {!isL&&!isFT && <span style={{fontSize:10,fontWeight:700,color:"rgba(232,255,71,.35)",fontFamily:"'DM Mono',monospace"}}>{fmtKickoffLabel(f.kickoff)}</span>}
+        {isFT && <span style={{fontSize:8,fontWeight:900,color:"rgba(0,255,240,.3)",fontFamily:"'DM Mono',monospace",letterSpacing:".1em"}}>FULL TIME</span>}
+        {!isL&&!isFT && <span style={{fontSize:10,fontWeight:700,color:"rgba(0,255,240,.35)",fontFamily:"'DM Mono',monospace"}}>{fmtKickoffLabel(f.kickoff)}</span>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
         {[[f.home_logo,f.home_team,hS,hw],[f.away_logo,f.away_team,aS,aw]].map(([logo,name,score,bold],i)=>(
           <div key={i} style={{display:"flex",alignItems:"center",gap:9}}>
             <Logo src={logo} size={22}/>
-            <span style={{fontSize:13,fontWeight:bold?900:600,color:bold?Y:"rgba(232,255,71,.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
-            {hasSc&&<span style={{fontSize:22,fontWeight:900,color:bold?Y:"rgba(232,255,71,.1)",fontFamily:"'Bebas Neue',sans-serif",minWidth:24,textAlign:"center",letterSpacing:"0.04em"}}>{score}</span>}
+            <span style={{fontSize:13,fontWeight:bold?900:600,color:bold?Y:"rgba(0,255,240,.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{name}</span>
+            {hasSc&&<span style={{fontSize:22,fontWeight:900,color:bold?Y:"rgba(0,255,240,.1)",fontFamily:"'Bebas Neue',sans-serif",minWidth:24,textAlign:"center",letterSpacing:"0.04em"}}>{score}</span>}
           </div>
         ))}
       </div>
-      <div style={{borderTop:`1px solid rgba(232,255,71,.06)`,paddingTop:10,minHeight:22}}>
-        {f.xg_home!=null&&<span style={{fontSize:9,color:"rgba(232,255,71,.35)",marginRight:10,fontFamily:"'DM Mono',monospace"}}><span style={{color:Y,fontWeight:700}}>xG</span> {f.xg_home}–{f.xg_away}</span>}
-        {!hasSc&&insightLine(f)&&<span style={{fontSize:9,color:"rgba(232,255,71,.28)",fontStyle:"italic",fontFamily:"'DM Mono',monospace"}}>{insightLine(f)}</span>}
+      <div style={{borderTop:`1px solid rgba(0,255,240,.06)`,paddingTop:10,minHeight:22}}>
+        {f.xg_home!=null&&<span style={{fontSize:9,color:"rgba(0,255,240,.35)",marginRight:10,fontFamily:"'DM Mono',monospace"}}><span style={{color:Y,fontWeight:700}}>xG</span> {f.xg_home}–{f.xg_away}</span>}
+        {!hasSc&&insightLine(f)&&<span style={{fontSize:9,color:"rgba(0,255,240,.28)",fontStyle:"italic",fontFamily:"'DM Mono',monospace"}}>{insightLine(f)}</span>}
       </div>
     </div>
   );
@@ -278,7 +278,7 @@ function FeaturedRail({ fixtures, onNavigate }) {
   if(!cards.length) return null;
   return (
     <div style={{marginBottom:32}}>
-      <div style={{fontSize:8,fontWeight:900,letterSpacing:".2em",color:"rgba(232,255,71,.4)",textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>Featured</div>
+      <div style={{fontSize:8,fontWeight:900,letterSpacing:".2em",color:"rgba(0,255,240,.4)",textTransform:"uppercase",marginBottom:12,fontFamily:"'DM Mono',monospace"}}>Featured</div>
       <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:4}}>
         {cards.map(f=><FeaturedCard key={f.fixture_id} f={f} onClick={()=>onNavigate(f.fixture_id)}/>)}
       </div>
@@ -292,10 +292,10 @@ function Section({ title, count, accent, collapsible, defaultOpen=true, children
   return (
     <div style={{marginBottom:24}}>
       <div onClick={collapsible?()=>setOpen(o=>!o):undefined}
-        style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,cursor:collapsible?"pointer":"default",userSelect:"none",borderBottom:`2px solid ${accent||"rgba(232,255,71,.1)"}`,paddingBottom:8}}>
-        <span style={{fontWeight:900,letterSpacing:".18em",color:accent||Y,textTransform:"uppercase",fontFamily:"'Bebas Neue',sans-serif",fontSize:16}}>{title}</span>
+        style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,cursor:collapsible?"pointer":"default",userSelect:"none",borderBottom:`2px solid ${accent||"rgba(0,255,240,.1)"}`,paddingBottom:8}}>
+        <span style={{fontWeight:900,letterSpacing:".18em",color:accent||Y,textTransform:"uppercase",fontFamily:"'Bebas Neue',sans-serif",fontSize:14,fontFamily:"'DM Mono',monospace",letterSpacing:'.14em'}}>{title}</span>
         {count!=null&&<span style={{fontSize:8,fontWeight:900,color:K,background:accent||Y,padding:"1px 8px",fontFamily:"'DM Mono',monospace"}}>{count}</span>}
-        {collapsible&&<span style={{marginLeft:"auto",fontSize:11,color:"rgba(232,255,71,.3)",display:"inline-block",transition:"transform .2s",transform:open?"rotate(0)":"rotate(-90deg)"}}>▾</span>}
+        {collapsible&&<span style={{marginLeft:"auto",fontSize:11,color:"rgba(0,255,240,.3)",display:"inline-block",transition:"transform .2s",transform:open?"rotate(0)":"rotate(-90deg)"}}>▾</span>}
       </div>
       {(!collapsible||open)&&<div style={{display:"flex",flexDirection:"column",gap:7}}>{children}</div>}
     </div>
@@ -313,8 +313,8 @@ function CardRouter({ f, onNavigate }) {
 /* ─── Sidebar widgets — neobrutalist ─────────────────────── */
 function WidgetShell({ title, children, accent=Y }) {
   return (
-    <div style={{background:K,border:`3px solid ${accent}`,padding:"14px 16px",marginBottom:10,boxShadow:`4px 4px 0 rgba(232,255,71,.2)`}}>
-      <div style={{fontWeight:900,letterSpacing:".18em",color:accent,textTransform:"uppercase",marginBottom:12,fontFamily:"'Bebas Neue',sans-serif",fontSize:14,borderBottom:`2px solid ${accent}`,paddingBottom:6}}>{title}</div>
+    <div style={{background:"#000",border:`1px solid ${accent||"rgba(0,255,240,.2)"}`,padding:"14px 16px",marginBottom:10,boxShadow:`4px 4px 0 rgba(0,255,240,.2)`}}>
+      <div style={{fontWeight:900,letterSpacing:".18em",color:accent,textTransform:"uppercase",marginBottom:12,fontFamily:"'Bebas Neue',sans-serif",fontSize:10,fontFamily:"'DM Mono',monospace",letterSpacing:".14em",borderBottom:`1px solid ${accent||"rgba(0,255,240,.2)"}`,paddingBottom:5}}>{title}</div>
       {children}
     </div>
   );
@@ -341,14 +341,14 @@ function NextKickoffWidget({ fixtures }) {
     <WidgetShell title="Next Kick Off" accent={Y}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
         <Logo src={next.home_logo} size={18}/>
-        <span style={{fontSize:10,fontWeight:700,color:"rgba(232,255,71,.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{next.home_team?.split(" ").pop()}</span>
-        <span style={{fontSize:9,color:"rgba(232,255,71,.2)",fontWeight:600,fontFamily:"'DM Mono',monospace"}}>vs</span>
-        <span style={{fontSize:10,fontWeight:700,color:"rgba(232,255,71,.5)",flex:1,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{next.away_team?.split(" ").pop()}</span>
+        <span style={{fontSize:10,fontWeight:700,color:"rgba(0,255,240,.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{next.home_team?.split(" ").pop()}</span>
+        <span style={{fontSize:9,color:"rgba(0,255,240,.2)",fontWeight:600,fontFamily:"'DM Mono',monospace"}}>vs</span>
+        <span style={{fontSize:10,fontWeight:700,color:"rgba(0,255,240,.5)",flex:1,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{next.away_team?.split(" ").pop()}</span>
         <Logo src={next.away_logo} size={18}/>
       </div>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:36,fontWeight:900,color:Y,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:"0.06em",lineHeight:1}}>{cd}</div>
-        <div style={{fontSize:9,color:"rgba(232,255,71,.3)",marginTop:4,fontFamily:"'DM Mono',monospace"}}>{fmtTime(next.kickoff)} · <LeagueTag k={next.league} small/></div>
+        <div style={{fontSize:36,fontWeight:500,color:"#00fff0",fontFamily:"'DM Mono',monospace",letterSpacing:"0.02em",lineHeight:1}}>{cd}</div>
+        <div style={{fontSize:9,color:"rgba(0,255,240,.3)",marginTop:4,fontFamily:"'DM Mono',monospace"}}>{fmtTime(next.kickoff)} · <LeagueTag k={next.league} small/></div>
       </div>
     </WidgetShell>
   );
@@ -359,12 +359,12 @@ function LiveTrackerWidget({ fixtures }) {
   return (
     <WidgetShell title="Live Tracker" accent={R}>
       {live.length===0
-        ? <div style={{fontSize:11,color:"rgba(232,255,71,.3)",textAlign:"center",padding:"6px 0",fontFamily:"'DM Mono',monospace"}}>No matches in progress</div>
+        ? <div style={{fontSize:11,color:"rgba(0,255,240,.3)",textAlign:"center",padding:"6px 0",fontFamily:"'DM Mono',monospace"}}>No matches in progress</div>
         : <div style={{display:"flex",flexDirection:"column",gap:7}}>
             {live.map(f=>(
               <div key={f.fixture_id} style={{display:"flex",alignItems:"center",gap:7}}>
                 <span style={{fontSize:9,fontWeight:900,color:R,minWidth:26,fontFamily:"'DM Mono',monospace"}}>{f.minute?`${f.minute}'`:"–"}</span>
-                <span style={{fontSize:10,fontWeight:700,color:"rgba(232,255,71,.45)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>
+                <span style={{fontSize:10,fontWeight:700,color:"rgba(0,255,240,.45)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>
                   {f.home_team?.split(" ").pop()} {f.home_score??0}–{f.away_score??0} {f.away_team?.split(" ").pop()}
                 </span>
                 <div style={{width:5,height:5,background:LEAGUES[f.league]?.color||Y,flexShrink:0}}/>
@@ -384,14 +384,14 @@ function LeagueSummaryWidget({ fixtures }) {
   }).filter(r=>r.total>0);
   if(!rows.length) return null;
   return (
-    <WidgetShell title="Leagues" accent="rgba(232,255,71,.5)">
+    <WidgetShell title="Leagues" accent="rgba(0,255,240,.5)">
       <div style={{display:"flex",flexDirection:"column",gap:7}}>
         {rows.map(({key,live,total})=>{
           const c=LEAGUES[key];
           return (
             <div key={key} style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={{width:3,height:14,background:c.color,flexShrink:0}}/>
-              <span style={{fontSize:10,fontWeight:700,color:"rgba(232,255,71,.4)",flex:1,fontFamily:"'Space Grotesk',sans-serif"}}>{c.label}</span>
+              <span style={{fontSize:10,fontWeight:700,color:"rgba(0,255,240,.4)",flex:1,fontFamily:"'Space Grotesk',sans-serif"}}>{c.label}</span>
               {live>0&&<span style={{fontSize:8,fontWeight:900,color:"#fff",background:R,padding:"1px 6px",fontFamily:"'DM Mono',monospace"}}>{live} live</span>}
               <span style={{fontSize:9,fontWeight:700,color:Y,fontFamily:"'DM Mono',monospace"}}>{total}</span>
             </div>
@@ -492,40 +492,40 @@ export default function LivePage() {
         *{box-sizing:border-box}
       `}</style>
 
-      <div style={{background:K,minHeight:"100vh",fontFamily:"'Space Grotesk','Inter',system-ui,sans-serif",position:"relative"}}>
+      <div style={{background:"#000",minHeight:"100vh",fontFamily:"'Space Grotesk','Inter',system-ui,sans-serif",position:"relative"}}>
         {/* Animated bg stripes */}
-        <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.02) 44px,rgba(232,255,71,.02) 45px)",animation:"nb-stripes 25s linear infinite"}}/>
+        <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(0,255,240,.02) 44px,rgba(0,255,240,.02) 45px)",animation:"nb-stripes 25s linear infinite"}}/>
 
         <div style={{maxWidth:1280,margin:"0 auto",padding:"0 20px",position:"relative",zIndex:1}}>
 
           {/* ══ HERO HEADER ══ */}
-          <div style={{padding:"32px 0 20px",borderBottom:`4px solid ${Y}`,marginBottom:24}}>
+          <div style={{padding:"32px 0 20px",borderBottom:"1px solid #00fff0",marginBottom:24}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,flexWrap:"wrap",gap:12}}>
               <div>
                 {/* Kicker */}
-                <div style={{display:"inline-flex",alignItems:"center",gap:8,background:Y,color:K,padding:"3px 12px",fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",marginBottom:10}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"transparent",color:"#00fff0",border:"1px solid rgba(0,255,240,.3)",padding:"3px 10px",fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",marginBottom:10}}>
                   <span style={{width:5,height:5,background:R,animation:"nb-pulse 1.6s ease infinite",flexShrink:0}}/>
                   LIVE CENTRE · TOP 5 LEAGUES
                 </div>
-                <h1 style={{fontSize:"clamp(48px,8vw,96px)",fontWeight:900,color:Y,margin:0,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".04em",lineHeight:.9}}>
+                <h1 style={{fontSize:"clamp(44px,7vw,88px)",fontWeight:900,color:"#00fff0",margin:0,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".04em",lineHeight:.88}}>
                   {isPastView?`Results`:"Live"}
                 </h1>
-                <p style={{color:"rgba(232,255,71,.4)",fontSize:12,margin:"6px 0 0",fontFamily:"'DM Mono',monospace",letterSpacing:".06em"}}>
+                <p style={{color:"rgba(0,255,240,.4)",fontSize:12,margin:"6px 0 0",fontFamily:"'DM Mono',monospace",letterSpacing:".06em"}}>
                   {isPastView?`Results · ${dayLabel(dayOffset)}`:isFutureView?`Fixtures · ${dayLabel(dayOffset)}`:"Today & live · Top 5 leagues"}
                 </p>
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
                 {liveCount>0&&(
-                  <div style={{display:"flex",alignItems:"center",gap:6,background:R,padding:"6px 14px"}}>
-                    <LiveDot/><span style={{fontSize:11,fontWeight:900,color:"#fff",fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>{liveCount} LIVE</span>
+                  <div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,39,68,.08)",border:"1px solid rgba(255,39,68,.25)",padding:"6px 14px"}}>
+                    <LiveDot/><span style={{fontSize:10,fontWeight:500,color:"#ff2744",fontFamily:"'DM Mono',monospace",letterSpacing:".12em"}}>{liveCount} LIVE</span>
                   </div>
                 )}
-                <div style={{background:"transparent",border:`2px solid rgba(232,255,71,.2)`,padding:"6px 14px"}}>
-                  <span style={{fontSize:11,fontWeight:700,color:"rgba(232,255,71,.4)",fontFamily:"'DM Mono',monospace"}}>{todayCount} Today</span>
+                <div style={{background:"transparent",border:`2px solid rgba(0,255,240,.2)`,padding:"6px 14px"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"rgba(0,255,240,.4)",fontFamily:"'DM Mono',monospace"}}>{todayCount} Today</span>
                 </div>
                 {lastUp&&(
-                  <div style={{background:"transparent",border:`2px solid rgba(232,255,71,.1)`,padding:"6px 12px"}}>
-                    <span style={{fontSize:10,color:"rgba(232,255,71,.3)",fontFamily:"'DM Mono',monospace"}}>{lastUp.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
+                  <div style={{background:"transparent",border:`2px solid rgba(0,255,240,.1)`,padding:"6px 12px"}}>
+                    <span style={{fontSize:10,color:"rgba(0,255,240,.3)",fontFamily:"'DM Mono',monospace"}}>{lastUp.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
                   </div>
                 )}
               </div>
@@ -538,14 +538,14 @@ export default function LivePage() {
                 {/* Prev week */}
                 <button onClick={prevWeek} style={{
                   width:34,height:72,flexShrink:0,
-                  border:`1.5px solid rgba(232,255,71,.15)`,
-                  background:"transparent",color:"rgba(232,255,71,.4)",
+                  border:`1.5px solid rgba(0,255,240,.15)`,
+                  background:"transparent",color:"rgba(0,255,240,.4)",
                   fontSize:18,cursor:"pointer",
                   display:"flex",alignItems:"center",justifyContent:"center",
                   borderRadius:3,transition:"all .15s",
                 }}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.45)";e.currentTarget.style.color="#e8ff47";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.15)";e.currentTarget.style.color="rgba(232,255,71,.4)";}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(0,255,240,.45)";e.currentTarget.style.color="#00fff0";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(0,255,240,.15)";e.currentTarget.style.color="rgba(0,255,240,.4)";}}
                 >‹</button>
 
                 {/* Day cards */}
@@ -557,7 +557,7 @@ export default function LivePage() {
                     const inRange=off>=-10&&off<=10;
 
                     // Determine accent colour for this day's state
-                    const accentCol = isToday ? Y : isPast ? "rgba(232,255,71,.45)" : "rgba(0,212,170,.75)";
+                    const accentCol = isToday ? Y : isPast ? "rgba(0,255,240,.45)" : "rgba(0,212,170,.75)";
 
                     // Gather which leagues have fixtures on this day from loaded chips
                     const dayDate = new Date(d); dayDate.setHours(0,0,0,0);
@@ -573,13 +573,13 @@ export default function LivePage() {
                     // Border & shadow styling
                     const borderCol = active
                       ? accentCol
-                      : "rgba(232,255,71,.09)";
+                      : "rgba(0,255,240,.09)";
                     const shadowStyle = active
                       ? (isToday
                           ? `0 4px 0 ${Y}`
                           : isFuture
                             ? `0 4px 0 rgba(0,212,170,.45)`
-                            : `0 3px 0 rgba(232,255,71,.3)`)
+                            : `0 3px 0 rgba(0,255,240,.3)`)
                       : "none";
 
                     return (
@@ -591,7 +591,7 @@ export default function LivePage() {
                           display:"flex",flexDirection:"column",alignItems:"center",
                           gap:3,padding:"8px 4px 7px",
                           border:`1.5px solid ${borderCol}`,
-                          background:active?`rgba(232,255,71,.07)`:"transparent",
+                          background:active?`rgba(0,255,240,.07)`:"transparent",
                           cursor:inRange?"pointer":"not-allowed",
                           borderRadius:3,
                           transition:"all .15s",
@@ -600,7 +600,7 @@ export default function LivePage() {
                           position:"relative",
                           transform:active?"translateY(-2px)":"none",
                         }}
-                        onMouseEnter={e=>{if(!active&&inRange){e.currentTarget.style.borderColor="rgba(232,255,71,.28)";e.currentTarget.style.transform="translateY(-2px)";}}}
+                        onMouseEnter={e=>{if(!active&&inRange){e.currentTarget.style.borderColor="rgba(0,255,240,.28)";e.currentTarget.style.transform="translateY(-2px)";}}}
                         onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor=borderCol;e.currentTarget.style.transform="none";}}}
                       >
                         {/* Live pulse dot — top-right corner */}
@@ -616,20 +616,20 @@ export default function LivePage() {
                         {/* Day name */}
                         <span style={{
                           fontSize:8,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",
-                          color:"rgba(232,255,71,.3)",fontFamily:"'DM Mono',monospace",
+                          color:"rgba(0,255,240,.3)",fontFamily:"'DM Mono',monospace",
                         }}>{DAY_NAMES[d.getDay()]}</span>
 
                         {/* Day number */}
                         <span style={{
                           fontSize:21,fontWeight:900,lineHeight:1,
                           fontFamily:"'Bebas Neue',sans-serif",
-                          color:active ? accentCol : "rgba(232,255,71,.22)",
+                          color:active ? accentCol : "rgba(0,255,240,.22)",
                         }}>{d.getDate()}</span>
 
                         {/* League pip row */}
                         <div style={{display:"flex",gap:2,alignItems:"center",justifyContent:"center",flexWrap:"wrap",minHeight:7}}>
                           {leagueKeys.length===0
-                            ? <div style={{width:16,height:1,background:"rgba(232,255,71,.1)",borderRadius:1}}/>
+                            ? <div style={{width:16,height:1,background:"rgba(0,255,240,.1)",borderRadius:1}}/>
                             : leagueKeys.slice(0,5).map(lk=>(
                                 <div key={lk} style={{
                                   width:5,height:5,borderRadius:"50%",flexShrink:0,
@@ -645,9 +645,9 @@ export default function LivePage() {
                           fontFamily:"'DM Mono',monospace",
                           color: total>0
                             ? (active
-                                ? (isToday ? Y : isFuture ? "rgba(0,212,170,.8)" : "rgba(232,255,71,.6)")
+                                ? (isToday ? Y : isFuture ? "rgba(0,212,170,.8)" : "rgba(0,255,240,.6)")
                                 : "rgba(0,212,170,.6)")
-                            : "rgba(232,255,71,.18)",
+                            : "rgba(0,255,240,.18)",
                         }}>
                           {total>0
                             ? (hasLive ? `${total} live` : `${total} fix`)
@@ -661,21 +661,21 @@ export default function LivePage() {
                 {/* Next week */}
                 <button onClick={nextWeek} style={{
                   width:34,height:72,flexShrink:0,
-                  border:`1.5px solid rgba(232,255,71,.15)`,
-                  background:"transparent",color:"rgba(232,255,71,.4)",
+                  border:`1.5px solid rgba(0,255,240,.15)`,
+                  background:"transparent",color:"rgba(0,255,240,.4)",
                   fontSize:18,cursor:"pointer",
                   display:"flex",alignItems:"center",justifyContent:"center",
                   borderRadius:3,transition:"all .15s",
                 }}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.45)";e.currentTarget.style.color="#e8ff47";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(232,255,71,.15)";e.currentTarget.style.color="rgba(232,255,71,.4)";}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(0,255,240,.45)";e.currentTarget.style.color="#00fff0";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(0,255,240,.15)";e.currentTarget.style.color="rgba(0,255,240,.4)";}}
                 >›</button>
               </div>
 
               {/* Legend row */}
               <div style={{display:"flex",gap:14,marginTop:10,paddingLeft:40,flexWrap:"wrap"}}>
                 {[
-                  ["rgba(232,255,71,.45)","PAST"],
+                  ["rgba(0,255,240,.45)","PAST"],
                   [Y,"TODAY & LIVE"],
                   ["rgba(0,212,170,.8)","UPCOMING"],
                 ].map(([c,l])=>(
@@ -683,7 +683,7 @@ export default function LivePage() {
                     <span style={{width:6,height:2,background:c,display:"inline-block"}}/>{l}
                   </span>
                 ))}
-                <span style={{width:1,height:10,background:"rgba(232,255,71,.1)",display:"inline-block",margin:"0 2px"}}/>
+                <span style={{width:1,height:10,background:"rgba(0,255,240,.1)",display:"inline-block",margin:"0 2px"}}/>
                 {Object.entries(LEAGUES).map(([k,v])=>(
                   <span key={k} style={{fontSize:8,fontWeight:700,color:v.color,letterSpacing:".04em",display:"flex",alignItems:"center",gap:3,fontFamily:"'DM Mono',monospace"}}>
                     <span style={{width:5,height:5,borderRadius:"50%",background:v.color,display:"inline-block",flexShrink:0}}/>{v.short}
@@ -702,9 +702,9 @@ export default function LivePage() {
                   <button key={l} onClick={()=>setFilter(l)} style={{
                     padding:"5px 14px",cursor:"pointer",
                     fontSize:11,fontWeight:700,letterSpacing:".06em",
-                    border:active?`2px solid ${col}`:`2px solid rgba(232,255,71,.12)`,
+                    border:active?`2px solid ${col}`:`2px solid rgba(0,255,240,.12)`,
                     background:active?col:"transparent",
-                    color:active?K:"rgba(232,255,71,.35)",
+                    color:active?K:"rgba(0,255,240,.35)",
                     fontFamily:"'Space Grotesk',sans-serif",
                     transition:"all .15s",
                   }}>
@@ -718,14 +718,14 @@ export default function LivePage() {
           {/* ══ STATES ══ */}
           {loading&&(
             <div style={{textAlign:"center",padding:"56px 0",color:Y,fontSize:13}}>
-              <div style={{width:26,height:26,border:`3px solid rgba(232,255,71,.15)`,borderTopColor:Y,margin:"0 auto 12px",animation:"nb-spin .8s linear infinite"}}/>
+              <div style={{width:26,height:26,border:`3px solid rgba(0,255,240,.15)`,borderTopColor:Y,margin:"0 auto 12px",animation:"nb-spin .8s linear infinite"}}/>
               <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:".1em"}}>Loading fixtures…</span>
             </div>
           )}
           {error&&(
-            <div style={{background:"rgba(255,39,68,.06)",border:`2px solid ${R}`,padding:"14px 18px",color:R,fontSize:13,display:"flex",alignItems:"center",gap:10,fontFamily:"'DM Mono',monospace"}}>
+            <div style={{background:"rgba(255,39,68,.06)",border:`1px solid ${R}`,padding:"14px 18px",color:R,fontSize:13,display:"flex",alignItems:"center",gap:10,fontFamily:"'DM Mono',monospace"}}>
               <span>Failed to load: {error}</span>
-              <button onClick={fetchData} style={{background:R,border:"none",color:"#fff",padding:"4px 12px",cursor:"pointer",fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>RETRY</button>
+              <button onClick={fetchData} style={{background:"transparent",border:"1px solid #ff2744",color:"#ff2744",padding:"4px 12px",cursor:"pointer",fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:".08em"}}>RETRY</button>
             </div>
           )}
 
@@ -734,7 +734,7 @@ export default function LivePage() {
               <FeaturedRail fixtures={filtered} onNavigate={id=>navigate(`/match/${id}`)}/>
               <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 240px",gap:22,alignItems:"start"}}>
                 <div>
-                  {filtered.length===0&&<div style={{textAlign:"center",padding:"44px 0",color:"rgba(232,255,71,.3)",fontSize:13,fontFamily:"'DM Mono',monospace"}}>No fixtures for this filter.</div>}
+                  {filtered.length===0&&<div style={{textAlign:"center",padding:"44px 0",color:"rgba(0,255,240,.3)",fontSize:13,fontFamily:"'DM Mono',monospace"}}>No fixtures for this filter.</div>}
                   {isPastView&&pastResults.length>0&&<Section title={`Results · ${dayLabel(dayOffset)}`} count={pastResults.length} accent="rgba(179,136,255,.8)">{pastResults.map(f=><CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)}/>)}</Section>}
                   {isFutureView&&futureResults.length>0&&<Section title={`Fixtures · ${dayLabel(dayOffset)}`} count={futureResults.length} accent="rgba(0,212,170,.8)">{futureResults.map(f=><CardRouter key={f.fixture_id} f={f} onNavigate={id=>navigate(`/match/${id}`)}/>)}</Section>}
                   {isTodayView&&(

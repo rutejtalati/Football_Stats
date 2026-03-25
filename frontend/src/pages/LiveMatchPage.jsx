@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 /* ── Neobrutalist theme constants ── */
-const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB = { y:"#00fff0", k:"#000", r:"#ff2744" };
 const NB_CSS = `
   @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
@@ -15,9 +15,9 @@ const NB_CSS = `
   @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:#0a0a0a; }
-  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
-  ::selection { background:#e8ff47; color:#0a0a0a; }
+  ::-webkit-scrollbar-track { background:#000; }
+  ::-webkit-scrollbar-thumb { background:rgba(0,255,240,.3); }
+  ::selection { background:#e8ff47; color:#000; }
   input[type=range] { accent-color:#e8ff47; }
 `;
 
@@ -72,10 +72,10 @@ function SectionLabel({ children, accent }) {
     }}>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(0,255,240,.018) 44px,rgba(0,255,240,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(0,255,240,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
-      <span style={{ fontSize:12, fontWeight:900, letterSpacing:"0.16em", color:accent||"#e8ff47", textTransform:"uppercase", fontFamily:"'Bebas Neue',sans-serif", borderBottom:`2px solid ${accent||"rgba(232,255,71,.3)"}`, paddingBottom:4 }}>
+      <span style={{ fontSize:10, fontWeight:500, letterSpacing:"0.16em", color:accent||"#00fff0", textTransform:"uppercase", fontFamily:"'DM Mono',monospace", borderBottom:`2px solid ${accent||"rgba(0,255,240,.3)"}`, paddingBottom:4, borderBottom:`1px solid ${accent||"rgba(0,255,240,.12)"}` }}>
         {children}
       </span>
     </div>
@@ -129,7 +129,7 @@ function EventIcon({ type, detail }) {
   return <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>–</span>;
 }
 
-function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef4444", highlight = false }) {
+function StatBar({ label, home, away, homeColor = "#00fff0", awayColor = "#ef4444", highlight = false }) {
   const hNum  = parseFloat(String(home ?? "0").replace("%","")) || 0;
   const aNum  = parseFloat(String(away ?? "0").replace("%","")) || 0;
   const total = hNum + aNum || 1;
@@ -151,13 +151,13 @@ function StatBar({ label, home, away, homeColor = "#3b82f6", awayColor = "#ef444
           fontSize:13, fontWeight:800, fontFamily:"'DM Mono',monospace", minWidth:40,
           color: homeLeads ? "#fff" : "rgba(255,255,255,.6)",
         }}>{home ?? "–"}</span>
-        <span style={{ fontSize:9, fontWeight:700, color:"rgba(232,255,71,.25)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
+        <span style={{ fontSize:9, fontWeight:700, color:"rgba(0,255,240,.25)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center", flex:1 }}>{label}</span>
         <span style={{
           fontSize:13, fontWeight:800, fontFamily:"'DM Mono',monospace", minWidth:40, textAlign:"right",
           color: awayLeads ? "#fff" : "rgba(255,255,255,.6)",
         }}>{away ?? "–"}</span>
       </div>
-      <div style={{ display:"flex", height:4, borderRadius:3, overflow:"hidden", background:"rgba(232,255,71,.06)" }}>
+      <div style={{ display:"flex", height:4, borderRadius:3, overflow:"hidden", background:"rgba(0,255,240,.06)" }}>
         <div className="lm-stat-bar" style={{ width:`${hPct}%`, "--w":`${hPct}%`, background:homeColor, borderRadius:"3px 0 0 3px" }} />
         <div style={{ width:`${100-hPct}%`, background:awayColor, borderRadius:"0 3px 3px 0", transition:"width 0.6s ease" }} />
       </div>
@@ -193,12 +193,12 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
   return (
     <div style={{
       position:"relative",
-      background:"#0a0a0a",
-      borderBottom:"2px solid rgba(232,255,71,.12)",
+      background:"#000",
+      borderBottom:"2px solid rgba(0,255,240,.12)",
       overflow:"hidden",
       padding:"28px 24px 24px",
     }}>
-      <div style={{ position:"absolute", top:-80, left:"10%",  width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle,rgba(96,165,250,0.06),transparent 70%)", pointerEvents:"none" }} />
+      <div style={{ position:"absolute", top:-80, left:"10%",  width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle,rgba(0,255,240,0.06),transparent 70%)", pointerEvents:"none" }} />
       <div style={{ position:"absolute", top:-80, right:"10%", width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle,rgba(239,68,68,0.06),transparent 70%)",  pointerEvents:"none" }} />
 
       {/* Competition */}
@@ -206,7 +206,7 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
         {fixture?.league?.logo && (
           <img src={fixture.league.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }} />
         )}
-        <span style={{ fontSize:10, fontWeight:700, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+        <span style={{ fontSize:10, fontWeight:700, color:"rgba(0,255,240,.25)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
           {fixture?.league?.name}{fixture?.league?.round ? ` · ${fixture.league.round}` : ""}
         </span>
       </div>
@@ -216,7 +216,7 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
         <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
           <img src={homeTeam?.logo} alt={homeTeam?.name} width={60} height={60}
             style={{ objectFit:"contain" }} onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#e8ff47", textAlign:"center" }}>{homeTeam?.name}</span>
+          <span style={{ fontSize:14, fontWeight:900, color:"#00fff0", textAlign:"center" }}>{homeTeam?.name}</span>
           <Pill textColor="#94a3b8">Home</Pill>
         </div>
 
@@ -224,13 +224,13 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
           {kickoff ? (
             <>
               <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"0.06em" }}>KICK OFF</span>
-              <span style={{ fontSize:18, fontWeight:900, color:"#e8ff47", letterSpacing:"-0.01em" }}>{kickoff}</span>
+              <span style={{ fontSize:18, fontWeight:900, color:"#00fff0", letterSpacing:"-0.01em" }}>{kickoff}</span>
             </>
           ) : (
-            <span style={{ fontSize:16, fontWeight:700, color:"rgba(232,255,71,.2)" }}>VS</span>
+            <span style={{ fontSize:16, fontWeight:700, color:"rgba(0,255,240,.2)" }}>VS</span>
           )}
           {fixture?.venue?.name && (
-            <span style={{ fontSize:10, color:"rgba(232,255,71,.2)", textAlign:"center", maxWidth:160 }}>
+            <span style={{ fontSize:10, color:"rgba(0,255,240,.2)", textAlign:"center", maxWidth:160 }}>
               {fixture.venue.name}{fixture?.venue?.city ? `, ${fixture.venue.city}` : ""}
             </span>
           )}
@@ -239,7 +239,7 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
         <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
           <img src={awayTeam?.logo} alt={awayTeam?.name} width={60} height={60}
             style={{ objectFit:"contain" }} onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#e8ff47", textAlign:"center" }}>{awayTeam?.name}</span>
+          <span style={{ fontSize:14, fontWeight:900, color:"#00fff0", textAlign:"center" }}>{awayTeam?.name}</span>
           <Pill textColor="#94a3b8">Away</Pill>
         </div>
       </div>
@@ -258,12 +258,12 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
     <div style={{
       display:"flex", flexDirection:"column", alignItems:"center", gap:4,
       padding:"10px 16px",
-      background: highlight ? "rgba(96,165,250,0.08)" : "rgba(255,255,255,0.025)",
-      border: `1px solid ${highlight ? "rgba(96,165,250,0.2)" : "rgba(255,255,255,0.05)"}`,
+      background: highlight ? "rgba(0,255,240,0.08)" : "rgba(255,255,255,0.025)",
+      border: `1px solid ${highlight ? "rgba(0,255,240,0.2)" : "rgba(255,255,255,0.05)"}`,
       borderRadius:0, flex:1, minWidth:80,
     }}>
-      <span style={{ fontSize:18, fontWeight:900, color: highlight ? "#60a5fa" : "#f0f6ff", fontFamily:"'DM Mono',monospace" }}>{value}</span>
-      <span style={{ fontSize:9, fontWeight:700, color:"rgba(232,255,71,.25)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
+      <span style={{ fontSize:18, fontWeight:900, color: highlight ? "#00fff0" : "#f0f6ff", fontFamily:"'DM Mono',monospace" }}>{value}</span>
+      <span style={{ fontSize:9, fontWeight:700, color:"rgba(0,255,240,.25)", letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"center" }}>{label}</span>
     </div>
   );
 
@@ -274,8 +274,8 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
       {/* Win prob bar */}
       <div style={{ marginBottom:14 }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, fontSize:11, fontWeight:800 }}>
-          <span style={{ color:"#60a5fa" }}>{homeTeam?.name?.split(" ").pop()} {p_home_win}%</span>
-          <span style={{ color:"rgba(232,255,71,.3)" }}>Draw {p_draw}%</span>
+          <span style={{ color:"#00fff0" }}>{homeTeam?.name?.split(" ").pop()} {p_home_win}%</span>
+          <span style={{ color:"rgba(0,255,240,.3)" }}>Draw {p_draw}%</span>
           <span style={{ color:"#f87171" }}>{awayTeam?.name?.split(" ").pop()} {p_away_win}%</span>
         </div>
         <div style={{ display:"flex", height:8, borderRadius:999, overflow:"hidden", gap:2 }}>
@@ -296,19 +296,19 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
       {/* Top scorelines */}
       {top_scorelines?.length > 0 && (
         <div style={{ marginTop:14 }}>
-          <div style={{ fontSize:9, fontWeight:800, color:"rgba(232,255,71,.2)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>
+          <div style={{ fontSize:9, fontWeight:800, color:"rgba(0,255,240,.2)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>
             Likely Scorelines
           </div>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {top_scorelines.slice(0,5).map(s => (
               <div key={s.score} style={{
                 padding:"4px 10px", borderRadius:0,
-                background:"rgba(232,255,71,.05)",
-                border:"2px solid rgba(232,255,71,.15)",
+                background:"rgba(0,255,240,.05)",
+                border:"2px solid rgba(0,255,240,.15)",
                 fontSize:11, fontWeight:800, color:"#e2e8f0",
                 fontFamily:"'DM Mono',monospace",
               }}>
-                {s.score} <span style={{ color:"rgba(232,255,71,.25)", fontSize:9 }}>{s.probability}%</span>
+                {s.score} <span style={{ color:"rgba(0,255,240,.25)", fontSize:9 }}>{s.probability}%</span>
               </div>
             ))}
           </div>
@@ -324,7 +324,7 @@ function FormRow({ label, form }) {
   const color = r => r === "W" ? "#34d399" : r === "L" ? "#f87171" : "#94a3b8";
   return (
     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-      <span style={{ fontSize:10, fontWeight:700, color:"rgba(232,255,71,.25)", width:80 }}>{label}</span>
+      <span style={{ fontSize:10, fontWeight:700, color:"rgba(0,255,240,.25)", width:80 }}>{label}</span>
       <div style={{ display:"flex", gap:4 }}>
         {results.map((r,i) => (
           <div key={i} style={{
@@ -384,7 +384,7 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
           flexShrink:0,
         }} />
         <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.7)", flex:1 }}>{player.name || "Unknown"}</span>
-        <span style={{ fontSize:10, color:"rgba(232,255,71,.25)", fontWeight:600 }}>{type}</span>
+        <span style={{ fontSize:10, color:"rgba(0,255,240,.25)", fontWeight:600 }}>{type}</span>
       </div>
     );
   };
@@ -395,14 +395,14 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
         {[{ team:homeTeam, list:homeInj },{ team:awayTeam, list:awayInj }].map(({ team, list }) => (
           <div key={team?.id}>
-            <div style={{ fontSize:10, fontWeight:800, color:"rgba(232,255,71,.25)", marginBottom:8 }}>
+            <div style={{ fontSize:10, fontWeight:800, color:"rgba(0,255,240,.25)", marginBottom:8 }}>
               {team?.name}
               <span style={{ marginLeft:6, fontSize:9, color:"#f87171", fontWeight:700 }}>
                 {list.length > 0 ? `${list.length} doubt${list.length > 1 ? "s" : ""}` : ""}
               </span>
             </div>
             {list.length === 0
-              ? <span style={{ fontSize:11, color:"rgba(232,255,71,.2)" }}>No known issues</span>
+              ? <span style={{ fontSize:11, color:"rgba(0,255,240,.2)" }}>No known issues</span>
               : list.slice(0,6).map((inj,i) => <InjRow key={i} inj={inj} />)
             }
           </div>
@@ -520,7 +520,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
             boxShadow:isGK
               ?`0 0 0 2px #000,0 0 0 5px ${colour}88,0 0 14px ${colour}44`
               :`0 0 0 1px ${colour}33`,
-            background:"#0a0a0a",overflow:"hidden",flexShrink:0,
+            background:"#000",overflow:"hidden",flexShrink:0,
             transition:"transform .15s",
           }}
             onMouseEnter={e=>{ if(pid) e.currentTarget.parentElement.style.transform="translate(-50%,-50%) scale(1.1)"; }}
@@ -531,7 +531,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
               onError={e=>{e.currentTarget.style.display="none";}}/>}
           </div>
           <div style={{
-            fontSize:"9.5px",fontWeight:800,color:"#e8ff47",
+            fontSize:"9.5px",fontWeight:800,color:"#00fff0",
             textShadow:"0 1px 6px #000,0 0 12px #000",
             background: pid ? `${colour}28` : "rgba(0,0,0,.85)",
             border: pid ? `1px solid ${colour}50` : "none",
@@ -626,7 +626,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
   function posCol(pos){
     const p=(pos||"").toUpperCase().slice(0,1);
     if(p==="G") return "#f59e0b";
-    if(p==="D") return "#60a5fa";
+    if(p==="D") return "#00fff0";
     if(p==="M") return "#34d399";
     return "#f87171";
   }
@@ -657,7 +657,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
           <div style={{position:"relative",flexShrink:0}}>
             <div style={{
               width:26,height:26,borderRadius:"50%",overflow:"hidden",
-              background:"#0a0a0a",
+              background:"#000",
               border:`1.5px solid ${isOut?"rgba(239,68,68,.45)":colour+"55"}`,
             }}>
               {p.photo&&<img src={p.photo} alt="" width="26" height="26"
@@ -670,7 +670,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
                 fontSize:"6px",fontWeight:900,lineHeight:"11px",
                 background:posCol(pos),color:"#000",
                 borderRadius:3,padding:"0 2.5px",
-                boxShadow:"3px 3px 0 rgba(232,255,71,.15)",
+                boxShadow:"3px 3px 0 rgba(0,255,240,.15)",
               }}>{pos}</span>
             )}
             {isOut&&(
@@ -729,7 +729,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
                 style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
             </div>
             <span style={{
-              fontSize:10,fontWeight:900,color:"#e8ff47",
+              fontSize:10,fontWeight:900,color:"#00fff0",
               overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
             }}>{team?.name?.split(" ").slice(-1)[0]||team?.name}</span>
           </div>
@@ -812,13 +812,13 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
 
   return(
     <div style={{
-      background:"#0a0a0a",borderRadius:0,border:"1px solid rgba(255,255,255,.08)",
+      background:"#000",borderRadius:0,border:"1px solid rgba(255,255,255,.08)",
       overflow:"hidden",margin:"0 auto",maxWidth:760,
       fontFamily:"'Inter','Bebas Neue',sans-serif",
     }}>
 
       {/* ── Full-width bezel-less pitch ── */}
-      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden",background:"#0a0a0a"}}>
+      <div style={{position:"relative",width:"100%",paddingBottom:"44%",overflow:"hidden",background:"#000"}}>
         <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
           viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -915,7 +915,7 @@ function SquadCard({lineup,team,colour,isRight}){
   function posColSC(pos){
     const p=(pos||"").toUpperCase().slice(0,1);
     if(p==="G") return{bg:"#f59e0b",label:"GK"};
-    if(p==="D") return{bg:"#60a5fa",label:"DEF"};
+    if(p==="D") return{bg:"#00fff0",label:"DEF"};
     if(p==="M") return{bg:"#34d399",label:"MID"};
     return{bg:"#f87171",label:"FWD"};
   }
@@ -933,7 +933,7 @@ function SquadCard({lineup,team,colour,isRight}){
         }}>
         <div style={{position:"relative",flexShrink:0}}>
           <div style={{width:28,height:28,borderRadius:"50%",overflow:"hidden",
-            background:"#0a0a0a",
+            background:"#000",
             border:`1.5px solid ${isOut?"rgba(239,68,68,.4)":colour+"55"}`}}>
             {p.photo&&<img src={p.photo} alt="" width="28" height="28"
               style={{objectFit:"cover",objectPosition:"top"}}
@@ -945,7 +945,7 @@ function SquadCard({lineup,team,colour,isRight}){
               right:isRight?"auto":-2,left:isRight?-2:"auto",
               fontSize:"6px",fontWeight:900,lineHeight:"11px",
               background:pos.bg,color:"#000",borderRadius:3,
-              padding:"0 3px",boxShadow:"3px 3px 0 rgba(232,255,71,.15)",
+              padding:"0 3px",boxShadow:"3px 3px 0 rgba(0,255,240,.15)",
             }}>{pos.label}</span>
           )}
           {isOut&&<span style={{
@@ -992,7 +992,7 @@ function SquadCard({lineup,team,colour,isRight}){
         <div style={{flex:1,minWidth:0,
           display:"flex",flexDirection:"column",
           alignItems:isRight?"flex-end":"flex-start",gap:1}}>
-          <span style={{fontSize:10,fontWeight:900,color:"#e8ff47",
+          <span style={{fontSize:10,fontWeight:900,color:"#00fff0",
             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
             {team?.name?.split(" ").slice(-1)[0]||team?.name}
           </span>
@@ -1064,18 +1064,18 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
   return (
     <div style={{
       position:"relative",
-      background:"#0a0a0a",
-      borderBottom:"2px solid rgba(232,255,71,.15)",
+      background:"#000",
+      borderBottom:"2px solid rgba(0,255,240,.15)",
       overflow:"hidden",
       padding:"28px 24px 22px",
     }}>
-      <div style={{ position:"absolute", top:-80, left:"15%",  width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,rgba(59,130,246,0.08),transparent 70%)",  pointerEvents:"none" }} />
+      <div style={{ position:"absolute", top:-80, left:"15%",  width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,rgba(0,255,240,0.08),transparent 70%)",  pointerEvents:"none" }} />
       <div style={{ position:"absolute", top:-80, right:"15%", width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,rgba(239,68,68,0.08),transparent 70%)", pointerEvents:"none" }} />
 
       {/* Competition + status */}
       <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:20 }}>
         {fixture?.league?.logo && <img src={fixture.league.logo} alt="" width={16} height={16} style={{ objectFit:"contain" }} />}
-        <span style={{ fontSize:10, fontWeight:700, color:"rgba(232,255,71,.25)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+        <span style={{ fontSize:10, fontWeight:700, color:"rgba(0,255,240,.25)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
           {fixture?.league?.name}{fixture?.league?.round ? ` · ${fixture.league.round}` : ""}
         </span>
         {isLive && (
@@ -1087,7 +1087,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           </span>
         )}
         {isFT && (
-          <span style={{ fontSize:9, fontWeight:900, color:"rgba(232,255,71,.25)", background:"rgba(232,255,71,.05)", borderRadius:999, padding:"2px 9px", letterSpacing:"0.1em" }}>
+          <span style={{ fontSize:9, fontWeight:900, color:"rgba(0,255,240,.25)", background:"rgba(0,255,240,.05)", borderRadius:999, padding:"2px 9px", letterSpacing:"0.1em" }}>
             FULL TIME
           </span>
         )}
@@ -1100,18 +1100,18 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, maxWidth:680, margin:"0 auto" }}>
         <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
           <img src={homeTeam?.logo} alt={homeTeam?.name} width={56} height={56}
-            style={{ objectFit:"contain", filter: homeWin ? "drop-shadow(0 0 14px rgba(59,130,246,0.5))" : "none" }}
+            style={{ objectFit:"contain", filter: homeWin ? "drop-shadow(0 0 14px rgba(0,255,240,0.5))" : "none" }}
             onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#e8ff47", textAlign:"center" }}>{homeTeam?.name}</span>
+          <span style={{ fontSize:14, fontWeight:900, color:"#00fff0", textAlign:"center" }}>{homeTeam?.name}</span>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, flexShrink:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{
               fontSize:54, fontWeight:900, lineHeight:1,
-              color: homeWin ? "#60a5fa" : awayWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
+              color: homeWin ? "#00fff0" : awayWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
               fontFamily:"'DM Mono',monospace",
-              textShadow: homeWin ? "0 0 30px rgba(96,165,250,0.4)" : "none",
+              textShadow: homeWin ? "0 0 30px rgba(0,255,240,0.4)" : "none",
             }}>{hGoals}</span>
             <span style={{ fontSize:26, fontWeight:300, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>–</span>
             <span style={{
@@ -1122,7 +1122,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
             }}>{aGoals}</span>
           </div>
           {score?.halftime && isFT && (
-            <span style={{ fontSize:10, color:"rgba(232,255,71,.2)", fontFamily:"'DM Mono',monospace" }}>
+            <span style={{ fontSize:10, color:"rgba(0,255,240,.2)", fontFamily:"'DM Mono',monospace" }}>
               HT {score.halftime.home}–{score.halftime.away}
             </span>
           )}
@@ -1137,7 +1137,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
           <img src={awayTeam?.logo} alt={awayTeam?.name} width={56} height={56}
             style={{ objectFit:"contain", filter: awayWin ? "drop-shadow(0 0 14px rgba(239,68,68,0.5))" : "none" }}
             onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#e8ff47", textAlign:"center" }}>{awayTeam?.name}</span>
+          <span style={{ fontSize:14, fontWeight:900, color:"#00fff0", textAlign:"center" }}>{awayTeam?.name}</span>
         </div>
       </div>
 
@@ -1150,7 +1150,7 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
             { label:"Poss",  h:hPoss,  a:aPoss  },
           ].filter(s => s.h || s.a).map(({ label, h, a }) => (
             <div key={label} style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:12, fontWeight:800, color:"#60a5fa", fontFamily:"'DM Mono',monospace" }}>{h ?? "–"}</span>
+              <span style={{ fontSize:12, fontWeight:800, color:"#00fff0", fontFamily:"'DM Mono',monospace" }}>{h ?? "–"}</span>
               <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.22)", letterSpacing:"0.08em", textTransform:"uppercase" }}>{label}</span>
               <span style={{ fontSize:12, fontWeight:800, color:"#f87171", fontFamily:"'DM Mono',monospace" }}>{a ?? "–"}</span>
             </div>
@@ -1197,8 +1197,8 @@ function MomentumGraph({ momentumData, events }) {
         <SectionLabel>Match Momentum</SectionLabel>
         {momentumData?.overall && (
           <div style={{ display:"flex", gap:14, fontSize:10, fontWeight:700 }}>
-            <span style={{ color:"#60a5fa", display:"flex", alignItems:"center", gap:5 }}>
-              <span style={{ width:7, height:7, borderRadius:"50%", background:"#60a5fa", display:"inline-block" }}/>
+            <span style={{ color:"#00fff0", display:"flex", alignItems:"center", gap:5 }}>
+              <span style={{ width:7, height:7, borderRadius:"50%", background:"#00fff0", display:"inline-block" }}/>
               {momentumData.home_team?.split(" ").pop()} {momentumData.overall.home_pct}%
             </span>
             <span style={{ color:"#f87171", display:"flex", alignItems:"center", gap:5 }}>
@@ -1237,7 +1237,7 @@ function MomentumGraph({ momentumData, events }) {
             const aPx   = Math.max(Math.round((1-hFrac)*scale*maxPx), 2);
             return (
               <div key={i} style={{ flex:1, height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", gap:"1px" }}>
-                <div style={{ height:`${hPx}px`, background:`rgba(59,130,246,${isFuture?.15:.58})`, borderRadius:"2px 2px 0 0" }}/>
+                <div style={{ height:`${hPx}px`, background:`rgba(0,255,240,${isFuture?.15:.58})`, borderRadius:"2px 2px 0 0" }}/>
                 <div style={{ height:`${aPx}px`, background:`rgba(239,68,68,${isFuture?.12:.5})`, borderRadius:"0 0 2px 2px" }}/>
               </div>
             );
@@ -1250,7 +1250,7 @@ function MomentumGraph({ momentumData, events }) {
         <div style={{ marginTop:5, display:"flex", height:5, borderRadius:3, overflow:"hidden" }}>
           {momentumData.phases.map((ph, i) => {
             const w = ((ph.end-ph.start)/90)*100;
-            return <div key={i} style={{ width:`${w}%`, background: ph.team==="home" ? "rgba(59,130,246,.5)" : "rgba(239,68,68,.45)" }}/>;
+            return <div key={i} style={{ width:`${w}%`, background: ph.team==="home" ? "rgba(0,255,240,.5)" : "rgba(239,68,68,.45)" }}/>;
           })}
         </div>
       )}
@@ -1306,14 +1306,14 @@ function Timeline({ events, homeTeam, awayTeam }) {
                   <div style={{ textAlign:"right" }}>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0" }}>{ev.player?.name}</div>
                     {ev.assist?.name && <div style={{ fontSize:10, color:"rgba(255,255,255,0.28)" }}>assist: {ev.assist.name}</div>}
-                    {ev.detail && <div style={{ fontSize:9, color:"rgba(232,255,71,.2)", fontStyle:"italic" }}>{ev.detail}</div>}
+                    {ev.detail && <div style={{ fontSize:9, color:"rgba(0,255,240,.2)", fontStyle:"italic" }}>{ev.detail}</div>}
                   </div>
                   <EventIcon type={ev.type} detail={ev.detail} />
                 </div>
               ) : <div />}
 
               <div style={{ textAlign:"center" }}>
-                <span style={{ fontSize:10, fontWeight:800, color:"rgba(232,255,71,.35)", fontFamily:"'DM Mono',monospace", background:"rgba(232,255,71,.06)", borderRadius:4, padding:"2px 6px" }}>
+                <span style={{ fontSize:10, fontWeight:800, color:"rgba(0,255,240,.35)", fontFamily:"'DM Mono',monospace", background:"rgba(0,255,240,.06)", borderRadius:4, padding:"2px 6px" }}>
                   {min}
                 </span>
               </div>
@@ -1324,7 +1324,7 @@ function Timeline({ events, homeTeam, awayTeam }) {
                   <div>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0" }}>{ev.player?.name}</div>
                     {ev.assist?.name && <div style={{ fontSize:10, color:"rgba(255,255,255,0.28)" }}>assist: {ev.assist.name}</div>}
-                    {ev.detail && <div style={{ fontSize:9, color:"rgba(232,255,71,.2)", fontStyle:"italic" }}>{ev.detail}</div>}
+                    {ev.detail && <div style={{ fontSize:9, color:"rgba(0,255,240,.2)", fontStyle:"italic" }}>{ev.detail}</div>}
                   </div>
                 </div>
               ) : <div />}
@@ -1342,7 +1342,7 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
 
   const hStats = stats.find(s => s.team?.id === homeTeam?.id)?.statistics || [];
   const aStats = stats.find(s => s.team?.id === awayTeam?.id)?.statistics || [];
-  const hc = "#3b82f6";
+  const hc = "#00fff0";
   const ac = "#ef4444";
 
   function gs(arr, key) { return arr.find(s => s.type === key)?.value ?? null; }
@@ -1603,10 +1603,10 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
         <SectionLabel>Shot Map</SectionLabel>
         <div style={{ display:"flex", gap:16, marginBottom:10, flexWrap:"wrap" }}>
           {[
-            { label: homeTeam?.name, data: home?.summary, color:"#60a5fa" },
+            { label: homeTeam?.name, data: home?.summary, color:"#00fff0" },
             { label: awayTeam?.name, data: away?.summary, color:"#f87171" },
           ].map(({ label, data, color }) => data && (
-            <div key={label} style={{ display:"flex", gap:12, fontSize:10, color:"rgba(232,255,71,.35)" }}>
+            <div key={label} style={{ display:"flex", gap:12, fontSize:10, color:"rgba(0,255,240,.35)" }}>
               <span style={{ fontWeight:800, color }}>{label?.split(" ").pop()}</span>
               <span>{data.total} shots</span>
               <span style={{ color: "#34d399" }}>xG {data.total_xg}</span>
@@ -1626,7 +1626,7 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
                   left:`${s.x}%`, top:`${s.y}%`,
                   width: isGoal ? 10 : 7, height: isGoal ? 10 : 7,
                   borderRadius:"50%",
-                  background: isGoal ? (isHome ? "#60a5fa" : "#f87171") : "rgba(255,255,255,0.22)",
+                  background: isGoal ? (isHome ? "#00fff0" : "#f87171") : "rgba(255,255,255,0.22)",
                   border: isGoal ? "2px solid rgba(255,255,255,0.8)" : "1px solid rgba(255,255,255,0.2)",
                   transform:"translate(-50%,-50%)",
                   boxShadow: isGoal ? "0 0 8px currentColor" : "none",
@@ -1638,11 +1638,11 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
         </div>
         <div style={{ display:"flex", gap:16, marginTop:8, justifyContent:"center" }}>
           {[
-            { color:"#60a5fa", label:"Goal (Home)", border:true },
+            { color:"#00fff0", label:"Goal (Home)", border:true },
             { color:"#f87171", label:"Goal (Away)", border:true },
             { color:"rgba(255,255,255,0.22)", label:"Shot", border:false },
           ].map(({ color, label, border }) => (
-            <span key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, color:"rgba(232,255,71,.3)" }}>
+            <span key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, color:"rgba(0,255,240,.3)" }}>
               <span style={{ width:8, height:8, borderRadius:"50%", background:color, border: border ? "1.5px solid rgba(255,255,255,0.6)" : "1px solid rgba(255,255,255,0.2)" }} />
               {label}
             </span>
@@ -1664,12 +1664,12 @@ function ShotMapPanel({ shotMapData, events, homeTeam, awayTeam }) {
           const isHome = g.team?.id === homeTeam?.id;
           return (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0", borderBottom:"1px solid rgba(255,255,255,0.03)" }}>
-              <span style={{ fontSize:10, fontWeight:800, color:"rgba(232,255,71,.3)", width:30, fontFamily:"'DM Mono',monospace" }}>
+              <span style={{ fontSize:10, fontWeight:800, color:"rgba(0,255,240,.3)", width:30, fontFamily:"'DM Mono',monospace" }}>
                 {fmtMin(g.time?.elapsed, g.time?.extra)}
               </span>
-              <span style={{ width:8, height:8, borderRadius:"50%", background: isHome ? "#60a5fa" : "#f87171", flexShrink:0 }} />
+              <span style={{ width:8, height:8, borderRadius:"50%", background: isHome ? "#00fff0" : "#f87171", flexShrink:0 }} />
               <span style={{ fontSize:12, fontWeight:700, color:"#e2e8f0", flex:1 }}>{g.player?.name}</span>
-              <span style={{ fontSize:10, color:"rgba(232,255,71,.25)" }}>{isHome ? homeTeam?.name : awayTeam?.name}</span>
+              <span style={{ fontSize:10, color:"rgba(0,255,240,.25)" }}>{isHome ? homeTeam?.name : awayTeam?.name}</span>
             </div>
           );
         })}
@@ -1715,13 +1715,13 @@ function PlayerTable({ players, homeTeam, awayTeam }) {
       <div style={{ overflowX:"auto" }}>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
           <thead>
-            <tr style={{ borderBottom:"2px solid rgba(232,255,71,.12)" }}>
+            <tr style={{ borderBottom:"2px solid rgba(0,255,240,.12)" }}>
               <th style={{ padding:"6px 8px", textAlign:"left", fontSize:9, fontWeight:800, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase" }}>Player</th>
               {cols.map(c => (
                 <th key={c.key} onClick={() => setSort(c.key)} style={{
                   padding:"6px 8px", textAlign:"center", fontSize:9, fontWeight:800,
                   letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer",
-                  color: sort === c.key ? "#60a5fa" : "rgba(255,255,255,0.25)",
+                  color: sort === c.key ? "#00fff0" : "rgba(255,255,255,0.25)",
                 }}>
                   {c.label}
                 </th>
@@ -1862,12 +1862,12 @@ const COMM_TYPE_STYLE = {
   goal:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.25)",  label:"GOAL"       },
   chance:       { color:"#f87171", bg:"rgba(248,113,113,.12)", border:"rgba(248,113,113,.25)", label:"CHANCE"     },
   pressure:     { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"PRESSURE"   },
-  tactical:     { color:"#60a5fa", bg:"rgba(96,165,250,.12)",  border:"rgba(96,165,250,.22)",  label:"TACTICAL"   },
+  tactical:     { color:"#00fff0", bg:"rgba(0,255,240,.12)",  border:"rgba(0,255,240,.22)",  label:"TACTICAL"   },
   insight:      { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"INSIGHT"    },
   duel:         { color:"#fb923c", bg:"rgba(251,146,60,.12)",  border:"rgba(251,146,60,.22)",  label:"DUEL"       },
   set_piece:    { color:"#e879f9", bg:"rgba(232,121,249,.12)", border:"rgba(232,121,249,.22)", label:"SET PIECE"  },
   substitution: { color:"#4ade80", bg:"rgba(74,222,128,.12)",  border:"rgba(74,222,128,.22)",  label:"SUB"        },
-  preview:      { color:"#60a5fa", bg:"rgba(96,165,250,.12)",  border:"rgba(96,165,250,.22)",  label:"PREVIEW"    },
+  preview:      { color:"#00fff0", bg:"rgba(0,255,240,.12)",  border:"rgba(0,255,240,.22)",  label:"PREVIEW"    },
   prediction:   { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"PREDICTION" },
   h2h:          { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"H2H"        },
   form:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.22)",  label:"FORM"       },
@@ -1879,7 +1879,7 @@ function CommText({ text }) {
   return (
     <span>
       {(text||"").split(/\*\*(.+?)\*\*/g).map((p,i)=>
-        i%2===1 ? <strong key={i} style={{color:"#e8ff47",fontWeight:800}}>{p}</strong> : p
+        i%2===1 ? <strong key={i} style={{color:"#00fff0",fontWeight:800}}>{p}</strong> : p
       )}
     </span>
   );
@@ -1958,7 +1958,7 @@ function CommentaryPanel({
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px 6px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {isLive&&<span style={{width:7,height:7,borderRadius:"50%",background:"#ef4444",display:"inline-block",flexShrink:0,animation:"livePulse 1.4s ease-in-out infinite"}}/>}
-          <span style={{fontSize:11,fontWeight:800,color:isLive?"#ef4444":isFT?"#a78bfa":"#60a5fa",letterSpacing:".07em"}}>
+          <span style={{fontSize:11,fontWeight:800,color:isLive?"#ef4444":isFT?"#a78bfa":"#00fff0",letterSpacing:".07em"}}>
             {isLive?`LIVE · ${elapsed}'`:isFT?"FULL TIME":"PRE-MATCH"}
           </span>
           <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>{homeTeam?.name} {hScore}–{aScore} {awayTeam?.name}</span>
@@ -2291,21 +2291,21 @@ export default function LiveMatchPage() {
   const tabs = TABS_BY_MODE[mode] || TABS_BY_MODE.prematch;
 
   return (
-    <div style={{ background:"#0a0a0a", minHeight:"100vh", color:"#e8ff47", position:"relative" }}>
-      <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.02) 44px,rgba(232,255,71,.02) 45px)",animation:"nb-mp-stripes 25s linear infinite"}}/>
+    <div style={{ background:"#000", minHeight:"100vh", color:"#00fff0", position:"relative" }}>
+      
       <style>{`
         @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.25;transform:scale(0.55)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lmScanX { 0%{left:-40%} 100%{left:140%} }
         @keyframes lmBorderFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
         @keyframes lmBarIn { from{width:0} to{width:var(--w)} }
-        @keyframes lmGlow { 0%,100%{box-shadow:0 0 8px var(--c,#e8ff47)} 50%{box-shadow:0 0 22px var(--c,#e8ff47)} }
-        @keyframes nb-mp-stripes { to{background-position:60px 0} }
+        @keyframes lmGlow { 0%,100%{box-shadow:0 0 4px rgba(0,255,240,.2)} 50%{box-shadow:0 0 12px rgba(0,255,240,.4)} }
+        
         @keyframes nb-mp-spin { to{transform:rotate(360deg)} }
         .lm-tab { background:none; border:none; cursor:pointer; font-family:'Space Grotesk','Space Grotesk',sans-serif; transition:all 0.15s; letter-spacing:0.08em; text-transform:uppercase; }
-        .lm-tab:hover { color:#e8ff47 !important; }
+        .lm-tab:hover { color:#00fff0 !important; }
         .lm-stat-bar { animation: lmBarIn 0.7s cubic-bezier(.22,1,.36,1) both; }
-        .lm-card { background:rgba(232,255,71,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; transition:border-color .2s, box-shadow .2s; }
+        .lm-card { background:rgba(0,255,240,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; transition:border-color .2s, box-shadow .2s; }
         .lm-card:hover { border-color:rgba(255,255,255,.16); box-shadow:0 8px 28px rgba(0,0,0,.5); }
       `}</style>
 
@@ -2322,7 +2322,7 @@ export default function LiveMatchPage() {
       {loading && (
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:280, color:"rgba(255,255,255,0.25)", fontSize:13 }}>
           <div style={{ textAlign:"center" }}>
-            <div style={{ width:28, height:28, borderRadius:"50%", border:"2px solid rgba(96,165,250,0.15)", borderTopColor:"#60a5fa", margin:"0 auto 14px", animation:"livePulse 0.8s linear infinite" }} />
+            <div style={{ width:28, height:28, borderRadius:"50%", border:"2px solid rgba(0,255,240,0.15)", borderTopColor:"#00fff0", margin:"0 auto 14px", animation:"livePulse 0.8s linear infinite" }} />
             Loading match…
           </div>
         </div>
@@ -2350,15 +2350,15 @@ export default function LiveMatchPage() {
           {/* ── Sticky tabs ── */}
           <div style={{
             position:"sticky", top:0, zIndex:100,
-            background:"#0a0a0a",
-            borderBottom:"2px solid rgba(232,255,71,.18)",
+            background:"#000",
+            borderBottom:"2px solid rgba(0,255,240,.18)",
             display:"flex", padding:"0 20px", overflowX:"auto",
           }}>
             {tabs.map(t => (
               <button key={t} className="lm-tab" onClick={() => setTab(t)} style={{
                 padding:"12px 14px", fontSize:11, fontWeight:800,
                 letterSpacing:"0.04em", textTransform:"uppercase",
-                color: tab === t ? "#60a5fa" : "rgba(255,255,255,0.35)",
+                color: tab === t ? "#00fff0" : "rgba(255,255,255,0.35)",
                 borderBottom: tab === t ? "2px solid #60a5fa" : "2px solid transparent",
                 marginBottom:-1, whiteSpace:"nowrap",
               }}>{t}</button>
@@ -2457,7 +2457,7 @@ export default function LiveMatchPage() {
               <div style={{ padding:48, textAlign:"center", color:"rgba(255,255,255,0.18)", fontSize:13 }}>
                 No detailed match data available for this fixture.
                 <br /><br />
-                <button onClick={() => navigate(-1)} style={{ color:"#60a5fa", fontWeight:700, background:"none", border:"none", cursor:"pointer", fontSize:13 }}>
+                <button onClick={() => navigate(-1)} style={{ color:"#00fff0", fontWeight:700, background:"none", border:"none", cursor:"pointer", fontSize:13 }}>
                   ← Back to Live Centre
                 </button>
               </div>

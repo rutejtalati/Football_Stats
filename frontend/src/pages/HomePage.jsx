@@ -37,31 +37,20 @@ const C = {
 /* ─── Global styles ─────────────────────────────────────── */
 const HOME_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
-
-  /* ── Neo bg stripes (like concept) ── */
-  .hp-bg-stripes {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: repeating-linear-gradient(92deg, transparent 0, transparent 44px, rgba(0,0,0,.03) 44px, rgba(0,0,0,.03) 45px);
-    animation: hpStripes 25s linear infinite;
-  }
-  @keyframes hpStripes { to { background-position: 90px 0; } }
-
-  /* ── Animations ── */
-  @keyframes hpFadeDown  { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes hpFadeUp    { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes hpCardIn    { from{opacity:0;transform:translateY(18px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes hpPulse     { 0%,100%{opacity:1;transform:scale(1)}      50%{opacity:.3;transform:scale(.55)} }
-  @keyframes hpBarGrow   { from{width:0} to{width:var(--w)} }
-  @keyframes hpHeightGrow{ from{height:0} to{height:var(--h)} }
+  @keyframes hpFadeDown  { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes hpFadeUp    { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes hpCardIn    { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes hpPulse     { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
   @keyframes hpMarquee   { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
   @keyframes hpBlink     { 50%{opacity:0} }
-
-  /* ── Interactive ── */
-  .hp-card { transition: all 180ms cubic-bezier(.22,1,.36,1); }
-  .hp-card:hover { transform: translateY(-4px) !important; }
-  .hp-btn  { transition: all 140ms ease; cursor: pointer; }
-  .hp-btn:hover { transform: translate(-2px,-2px); }
+  @keyframes hpBarGrow   { from{width:0} to{width:var(--w)} }
+  @keyframes hpHeightGrow{ from{height:0} to{height:var(--h)} }
+  .hp-card { transition: all 160ms ease; cursor: pointer; }
+  .hp-card:hover { border-color: #00fff0 !important; }
+  .hp-btn  { transition: all 120ms ease; cursor: pointer; }
+  .hp-btn:hover { background: #00fff0 !important; color: #000 !important; }
 `;
+
 
 
 /* ─── Animated count-up ─────────────────────────────────── */
@@ -101,9 +90,10 @@ function StatTile({ value, suffix = "", label, sublabel, color, delay = 0, svg, 
       style={{
         display: "flex", flexDirection: "column", gap: 10,
         padding: "22px 24px",
-        background: hov ? "#0a0a0a" : "#e8ff47",
-        border: "3px solid #0a0a0a",
-        boxShadow: hov ? "6px 6px 0 #0a0a0a" : "3px 3px 0 rgba(0,0,0,.2)",
+        background: hov ? "rgba(0,255,240,.06)" : "#000",
+        border: "1px solid rgba(0,255,240,.2)",
+        borderColor: hov ? "#00fff0" : "rgba(0,255,240,.2)",
+        boxShadow: "none",
         flex: 1, minWidth: 0, position: "relative", overflow: "hidden",
         transition: "all 160ms cubic-bezier(.22,1,.36,1)",
         transform: hov ? "translate(-2px,-2px)" : "none",
@@ -142,7 +132,7 @@ function StatTile({ value, suffix = "", label, sublabel, color, delay = 0, svg, 
         <span style={{
           fontSize: 40, fontWeight: 900,
           fontFamily: "'Bebas Neue', sans-serif",
-          color: hov ? "#e8ff47" : "#0a0a0a", lineHeight: 1, letterSpacing: "0.02em",
+          color: "#00fff0", lineHeight: 1, letterSpacing: "0.02em",
           textShadow: "none",
           transition: "text-shadow 260ms",
         }}>{v.toLocaleString()}</span>
@@ -398,8 +388,8 @@ function FeatureCard({ to, color, title, subtitle, description, badge, delay = 0
       className="hp-card"
       style={{
         display: "flex", flexDirection: "column",
-        background: hov ? "#0a0a0a" : "#e8ff47",
-        border: "3px solid #0a0a0a", borderRight: "none",
+        background: hov ? "rgba(0,255,240,.06)" : "#000",
+        border: "1px solid rgba(0,255,240,.2)", borderRight: "none",
         textDecoration: "none",
         boxShadow: hov ? "6px 6px 0 #0a0a0a" : "none",
         animationDelay: delay + "ms", animation: "hpCardIn 500ms ease both",
@@ -409,14 +399,14 @@ function FeatureCard({ to, color, title, subtitle, description, badge, delay = 0
       {/* Corner number — concept .feat-n */}
       <div style={{ position:"absolute", top:8, right:10, fontFamily:"'Bebas Neue',sans-serif", fontSize:72, color: hov ? "rgba(255,255,255,.05)" : "rgba(0,0,0,.04)", lineHeight:1, pointerEvents:"none", userSelect:"none" }}>{String(index).padStart(2,"0")}</div>
       {/* Accent top on hover */}
-      <div style={{ height:3, background: hov ? "#e8ff47" : "#0a0a0a", transition:"background 160ms" }}/>
+      <div style={{ height:1, background: hov ? "#00fff0" : "rgba(0,255,240,.12)", transition:"background 160ms" }}/>
       <div style={{ padding:"24px 26px 26px", flex:1, display:"flex", flexDirection:"column", gap:8 }}>
         {/* Icon */}
-        <div style={{ width:42, height:42, background: hov ? "#ff2744" : "#0a0a0a", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, boxShadow: hov ? "4px 4px 0 #0a0a0a" : "3px 3px 0 rgba(0,0,0,.2)", transition:"background .15s,box-shadow .15s", flexShrink:0 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8ff47" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14 14 0 0 1 0 20M2 12h20"/></svg>
+        <div style={{ width:42, height:42, background: hov ? "#ff2744" : "rgba(0,255,240,.06)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, boxShadow: hov ? "4px 4px 0 #0a0a0a" : "3px 3px 0 rgba(0,0,0,.2)", transition:"background .15s,box-shadow .15s", flexShrink:0 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00fff0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14 14 0 0 1 0 20M2 12h20"/></svg>
         </div>
         {/* Title */}
-        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:26, letterSpacing:1, color: hov ? "#e8ff47" : "#0a0a0a", lineHeight:1.1, transition:"color 160ms" }}>{title}</div>
+        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:26, letterSpacing:1, color: hov ? "#00fff0" : "rgba(0,255,240,.8)", lineHeight:1.1, transition:"color 160ms" }}>{title}</div>
         {/* Description */}
         <p style={{ fontSize:12, lineHeight:1.7, color: hov ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.5)", margin:0, fontFamily:"'Space Grotesk',sans-serif", transition:"color 160ms" }}>{description}</p>
         {/* CTA link */}
@@ -480,16 +470,16 @@ function PredictionStrip({ predictions = [] }) {
               className="hp-card"
             >
               <div style={{
-                background: "#e8ff47",
-                border: "3px solid #0a0a0a",
+                background: "rgba(0,255,240,.05)",
+                border: "1px solid rgba(0,255,240,.15)",
                 borderRadius: 0,
                 padding: "16px 18px",
                 position: "relative",
                 overflow: "hidden",
                 transition: "border-color 220ms, box-shadow 220ms",
               }}
-                onMouseEnter={e=>{e.currentTarget.style.background="#0a0a0a";e.currentTarget.style.boxShadow="5px 5px 0 #0a0a0a";e.currentTarget.style.transform="translate(-2px,-2px)";}}
-                onMouseLeave={e=>{e.currentTarget.style.background="#e8ff47";e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}
+                onMouseEnter={e=>{e.currentTarget.style.background="#000";e.currentTarget.style.boxShadow="5px 5px 0 #0a0a0a";e.currentTarget.style.transform="translate(-2px,-2px)";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="rgba(0,255,240,.06)";e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}
               >
                 {/* Top accent stripe */}
                 <div style={{
@@ -592,14 +582,14 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
   const maxAcc = Math.max(...trend.map(d => d.acc), 1);
   return (
     <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}} ref={ref}>
-      <div style={{display:"grid",gridTemplateColumns:byMarket.length > 0 ? "1fr 340px" : "1fr",gap:0,alignItems:"stretch",border:"3px solid #0a0a0a",boxShadow:"6px 6px 0 rgba(0,0,0,.2)"}}>
+      <div style={{display:"grid",gridTemplateColumns:byMarket.length > 0 ? "1fr 340px" : "1fr",gap:0,alignItems:"stretch",border:"1px solid rgba(0,255,240,.2)",boxShadow:"6px 6px 0 rgba(0,0,0,.2)"}}>
         {/* Bar chart */}
         {trend.length > 0 && (
-          <div style={{background:"#0a0a0a",padding:"24px 28px"}}>
+          <div style={{background:"#000",padding:"24px 28px"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
               <div>
-                <div style={{fontSize:9,fontWeight:900,color:"rgba(232,255,71,.5)",letterSpacing:"0.14em",marginBottom:4}}>MODEL ACCURACY</div>
-                <div style={{fontSize:18,fontWeight:900,color:"#e8ff47",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>Rolling Gameweeks</div>
+                <div style={{fontSize:9,fontWeight:900,color:"rgba(0,255,240,.5)",letterSpacing:"0.14em",marginBottom:4}}>MODEL ACCURACY</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#00fff0",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>Rolling Gameweeks</div>
               </div>
               {overallAccuracy > 0 && (
                 <div style={{textAlign:"right"}}>
@@ -619,7 +609,7 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
                     height:visible?`${(d.acc/maxAcc)*90}%`:"0%",
                     opacity:d.acc>=70?.85:.6,
                     transition:`height 700ms ${i*80}ms cubic-bezier(0.22,1,0.36,1)`}}/>
-                  <span style={{fontSize:8,color:"rgba(232,255,71,.35)"}}>{d.gw}</span>
+                  <span style={{fontSize:8,color:"rgba(0,255,240,.35)"}}>{d.gw}</span>
                 </div>
               ))}
             </div>
@@ -627,13 +617,13 @@ function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
         )}
         {/* By market breakdown */}
         {byMarket.length > 0 && (
-          <div style={{background:"#111",borderLeft:"3px solid #0a0a0a",
+          <div style={{background:"#111",borderLeft:"1px solid rgba(0,255,240,.2)",
             padding:"24px 24px",display:"flex",flexDirection:"column",gap:14,justifyContent:"center"}}>
-            <div style={{fontSize:9,fontWeight:900,color:"rgba(232,255,71,.5)",letterSpacing:"0.14em",marginBottom:2}}>BY MARKET</div>
+            <div style={{fontSize:9,fontWeight:900,color:"rgba(0,255,240,.5)",letterSpacing:"0.14em",marginBottom:2}}>BY MARKET</div>
             {byMarket.map((m,i)=>(
               <div key={m.label}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#e8ff47"}}>{m.label}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#00fff0"}}>{m.label}</span>
                   <span style={{fontSize:16,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:m.col,
                     textShadow:`0 0 10px ${m.col}44`}}>{m.value}%</span>
                 </div>
@@ -730,8 +720,8 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
   return (
     <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 64px" }}>
       <div style={{
-        background: "#0a0a0a",
-        border: "3px solid #0a0a0a",
+        background: "#000",
+        border: "1px solid rgba(0,255,240,.2)",
         boxShadow: "6px 6px 0 rgba(0,0,0,.25)",
         padding: "24px 28px",
       }}>
@@ -742,11 +732,11 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
         }}>
           <div>
             <div style={{
-              fontSize: 9, fontWeight: 900, color: "rgba(232,255,71,.5)",
+              fontSize: 9, fontWeight: 900, color: "rgba(0,255,240,.5)",
               letterSpacing: "0.18em", marginBottom: 5, fontFamily:"'DM Mono',monospace",
             }}>ACCOUNTABILITY</div>
             <div style={{
-              fontSize: 22, fontWeight: 900, color: "#e8ff47",
+              fontSize: 22, fontWeight: 900, color: "#00fff0",
               fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1,
             }}>Recent Predictions</div>
           </div>
@@ -761,7 +751,7 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
                   color: pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange,
                   textShadow: `0 0 18px ${pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange}55`,
                 }}>{pct}%</div>
-                <div style={{ fontSize: 9, color: "rgba(232,255,71,.4)", letterSpacing: "0.08em", marginTop: 2 }}>
+                <div style={{ fontSize: 9, color: "rgba(0,255,240,.4)", letterSpacing: "0.08em", marginTop: 2 }}>
                   {correct}/{total} correct
                 </div>
               </div>
@@ -774,7 +764,7 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
           {results.map((r, i) => {
             const ok = r.correct === true;
             const bad = r.correct === false;
-            const borderCol = ok ? C.green : bad ? C.red : "rgba(232,255,71,0.3)";
+            const borderCol = ok ? C.green : bad ? C.red : "rgba(0,255,240,0.3)";
             const icon = ok ? "✓" : bad ? "✗" : "·";
  
             return (
@@ -823,16 +813,16 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
                   {/* Match info */}
                   <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <span style={{
-                      fontSize: 13, fontWeight: 700, color: "#e8ff47", minWidth: 130,
+                      fontSize: 13, fontWeight: 700, color: "#00fff0", minWidth: 130,
                       fontFamily: "'Space Grotesk',sans-serif",
                     }}>
                       {r.home} vs {r.away}
                     </span>
-                    <span style={{ fontSize: 11, color: "rgba(232,255,71,.4)", fontFamily:"'DM Mono',monospace" }}>
+                    <span style={{ fontSize: 11, color: "rgba(0,255,240,.4)", fontFamily:"'DM Mono',monospace" }}>
                       Predicted: <b style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>{r.pred}</b>
                     </span>
                     {r.actual && r.actual !== "Pending" && (
-                      <span style={{ fontSize: 11, color: "rgba(232,255,71,.4)", fontFamily:"'DM Mono',monospace" }}>
+                      <span style={{ fontSize: 11, color: "rgba(0,255,240,.4)", fontFamily:"'DM Mono',monospace" }}>
                         Result: <b style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>{r.actual}</b>
                       </span>
                     )}
@@ -843,7 +833,7 @@ function RecentResults({ results = [], correct = 0, total = 0 }) {
           })}
         </div>
         {/* Footer link */}
-        <div style={{ marginTop:18, paddingTop:16, borderTop:"1px solid rgba(232,255,71,.12)", display:"flex", justifyContent:"flex-end" }}>
+        <div style={{ marginTop:18, paddingTop:16, borderTop:"1px solid rgba(0,255,240,.12)", display:"flex", justifyContent:"flex-end" }}>
           <Link to="/predictions/premier-league" style={{
             fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".18em",
             textTransform:"uppercase", color:"#ff2744", textDecoration:"none",
@@ -987,16 +977,15 @@ const fixturesPred = hs.fixturesPredicted || 0;
 const verifiedAcc = hs.verifiedAccuracy || 0;
 
   return (
-    <div style={{ minHeight:"100vh", background:"#e8ff47", color:"#0a0a0a", overflow:"hidden", position:"relative" }}>
+    <div style={{ minHeight:"100vh", background:"#000", color:"#00fff0", overflow:"hidden", position:"relative" }}>
       <style>{HOME_CSS}</style>
 
-      {/* Animated bg stripes — matches concept exactly */}
-      <div className="hp-bg-stripes"/>
+      {/* Grid drift is handled by body::after in index.css */}
 
       {/* ── BG FLOATERS (concept decorative text) ── */}
-      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(120px,18vw,220px)", color:"rgba(0,0,0,.04)", pointerEvents:"none", zIndex:0, top:"8vh", left:"-2%", lineHeight:1, userSelect:"none" }}>xG</div>
-      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,0,0,.04)", pointerEvents:"none", zIndex:0, top:"52vh", right:"0%", lineHeight:1, userSelect:"none" }}>2–1</div>
-      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(60px,11vw,130px)", color:"rgba(0,0,0,.04)", pointerEvents:"none", zIndex:0, bottom:"8vh", left:"35%", lineHeight:1, userSelect:"none" }}>89%</div>
+      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(120px,18vw,220px)", color:"rgba(0,255,240,.03)", pointerEvents:"none", zIndex:0, top:"8vh", left:"-2%", lineHeight:1, userSelect:"none" }}>xG</div>
+      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,255,240,.03)", pointerEvents:"none", zIndex:0, top:"52vh", right:"0%", lineHeight:1, userSelect:"none" }}>2–1</div>
+      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(60px,11vw,130px)", color:"rgba(0,255,240,.03)", pointerEvents:"none", zIndex:0, bottom:"8vh", left:"35%", lineHeight:1, userSelect:"none" }}>89%</div>
 
       <div style={{ position:"relative", zIndex:1 }}>
 
@@ -1009,20 +998,20 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
         <section style={{ padding:"clamp(48px,7vh,80px) 20px clamp(40px,6vh,64px)", textAlign:"center", position:"relative", overflow:"hidden" }}>
 
           {/* Kicker */}
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"#0a0a0a", color:"#e8ff47", padding:"4px 14px", fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", marginBottom:24, animation:"hpFadeDown .5s ease both" }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"transparent", color:"#00fff0", border:"1px solid rgba(0,255,240,.3)", padding:"4px 14px", fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", marginBottom:24, animation:"hpFadeDown .5s ease both" }}>
             <span style={{ width:6, height:6, background:"#ff2744", animation:"hpPulse 1.6s ease infinite", flexShrink:0 }}/>
             ◈ SEASON 2025/26 · LIVE DATA ENGINE
           </div>
 
           {/* H1 — Bebas Neue, giant, centered */}
           <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,13vw,180px)", lineHeight:.88, letterSpacing:".02em", margin:"0 0 20px", animation:"hpFadeDown .55s .08s ease both" }}>
-            <span style={{ display:"block", color:"#0a0a0a" }}>READ THE</span>
-            <span style={{ display:"block", WebkitTextStroke:"2.5px #0a0a0a", WebkitTextFillColor:"transparent" }}>GAME</span>
+            <span style={{ display:"block", color:"rgba(0,255,240,.88)" }}>READ THE</span>
+            <span style={{ display:"block", WebkitTextStroke:"1px #00fff0", WebkitTextFillColor:"transparent" }}>GAME</span>
           </h1>
 
           {/* Sub */}
-          <p style={{ fontSize:"clamp(13px,1.8vw,15px)", color:"rgba(0,0,0,.55)", maxWidth:480, margin:"0 auto 36px", lineHeight:1.8, fontFamily:"'Space Grotesk',sans-serif", animation:"hpFadeDown .55s .16s ease both" }}>
-            <strong style={{ color:"#0a0a0a", fontWeight:700 }}>Raw stats. No spin.</strong> Football intelligence for predictions, FPL decisions, and deeper match insight.
+          <p style={{ fontSize:"clamp(13px,1.8vw,15px)", color:"rgba(0,255,240,.4)", maxWidth:480, margin:"0 auto 36px", lineHeight:1.8, fontFamily:"'Space Grotesk',sans-serif", animation:"hpFadeDown .55s .16s ease both" }}>
+            <strong style={{ color:"rgba(0,255,240,.88)", fontWeight:700 }}>Raw stats. No spin.</strong> Football intelligence for predictions, FPL decisions, and deeper match insight.
           </p>
 
           {/* CTA buttons — concept style */}
@@ -1036,10 +1025,10 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
               <Link key={i} to={to} className="hp-btn" style={{
                 display:"inline-flex", alignItems:"center", gap:8,
                 padding:"13px 26px",
-                background: primary ? "#0a0a0a" : live ? "#ff2744" : "transparent",
-                border: `3px solid ${primary ? "#0a0a0a" : live ? "#ff2744" : "#0a0a0a"}`,
-                color: primary ? "#e8ff47" : live ? "#fff" : "#0a0a0a",
-                boxShadow: primary ? "4px 4px 0 #0a0a0a" : live ? "4px 4px 0 rgba(255,39,68,.4)" : "4px 4px 0 rgba(0,0,0,.2)",
+                background: primary ? "#00fff0" : live ? "#ff2744" : "transparent",
+                border: `1px solid ${primary ? "#00fff0" : live ? "#ff2744" : "rgba(0,255,240,.3)"}`,
+                color: primary ? "#000" : live ? "#fff" : "#00fff0",
+                boxShadow: "none",
                 fontSize:11, fontWeight:700, textDecoration:"none",
                 fontFamily:"'Space Grotesk',sans-serif", letterSpacing:".12em", textTransform:"uppercase",
               }}>{label}</Link>
@@ -1048,15 +1037,15 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
 
           {/* Stat strip — concept hss style */}
           {(fixturesPred > 0 || verifiedAcc > 0) && (
-            <div style={{ display:"inline-flex", marginTop:48, borderTop:"3px solid #0a0a0a", borderLeft:"3px solid #0a0a0a", borderRight:"3px solid #0a0a0a", animation:"hpFadeUp .6s .3s ease both" }}>
+            <div style={{ display:"inline-flex", marginTop:48, borderTop:"1px solid rgba(0,255,240,.2)", borderLeft:"1px solid rgba(0,255,240,.2)", borderRight:"1px solid rgba(0,255,240,.2)", animation:"hpFadeUp .6s .3s ease both" }}>
               {[
                 fixturesPred > 0 && { n: `${fixturesPred}+`, l:"Fixtures Predicted" },
                 verifiedAcc > 0  && { n: `${verifiedAcc}%`,  l:"Verified Accuracy"  },
                 predictions.length > 0 && { n: predictions.length, l:"Live Predictions" },
               ].filter(Boolean).map((s, i, arr) => (
-                <div key={i} style={{ padding:"16px 28px", borderRight: i < arr.length-1 ? "2px solid #0a0a0a" : "none", textAlign:"center" }}>
-                  <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:52, lineHeight:1, color:"#0a0a0a" }}>{s.n}</div>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.4)", marginTop:4 }}>{s.l}</div>
+                <div key={i} style={{ padding:"16px 28px", borderRight: i < arr.length-1 ? "1px solid rgba(0,255,240,.1)" : "none", textAlign:"center" }}>
+                  <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:52, lineHeight:1, color:"rgba(0,255,240,.88)" }}>{s.n}</div>
+                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,255,240,.3)", marginTop:4 }}>{s.l}</div>
                 </div>
               ))}
             </div>
@@ -1076,13 +1065,13 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
         {/* ══════════════════════════════════════════
             DIVIDER MARQUEE (concept style — black bg)
         ══════════════════════════════════════════ */}
-        <div style={{ background:"#0a0a0a", borderTop:"4px solid #e8ff47", borderBottom:"4px solid #e8ff47", height:52, overflow:"hidden", display:"flex", alignItems:"center" }}>
+        <div style={{ background:"#000", borderTop:"1px solid rgba(0,255,240,.12)", borderBottom:"1px solid rgba(0,255,240,.12)", height:52, overflow:"hidden", display:"flex", alignItems:"center" }}>
           <div style={{ display:"flex", animation:"hpMarquee 28s linear infinite", whiteSpace:"nowrap" }}>
             {["Premier League","La Liga","Bundesliga","Serie A","Champions League","Ligue 1","Eredivisie","Copa Libertadores","MLS","FA Cup","Europa League","World Cup",
               "Premier League","La Liga","Bundesliga","Serie A","Champions League","Ligue 1","Eredivisie","Copa Libertadores","MLS","FA Cup","Europa League","World Cup",
             ].map((name, i) => (
-              <div key={i} style={{ padding:"0 34px", fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:3, textTransform:"uppercase", color: i%3===0 ? "#e8ff47" : "rgba(232,255,71,.18)", display:"flex", alignItems:"center", gap:14, flexShrink:0 }}>
-                <span style={{ width:4, height:4, borderRadius:"50%", background:"#ff2744", boxShadow: i%3===0 ? "0 0 6px #ff2744" : "none", flexShrink:0 }}/>
+              <div key={i} style={{ padding:"0 34px", fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:3, textTransform:"uppercase", color: i%3===0 ? "#00fff0" : "rgba(0,255,240,.12)", display:"flex", alignItems:"center", gap:14, flexShrink:0 }}>
+                <span style={{ width:4, height:4, borderRadius:"50%", background: i%3===0 ? "#ff2744" : "rgba(0,255,240,.3)", boxShadow:"none", flexShrink:0 }}/>
                 {name}
               </div>
             ))}
@@ -1092,7 +1081,7 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
         {/* ══════════════════════════════════════════
             FEATURE CARDS — concept grid style
         ══════════════════════════════════════════ */}
-        <section style={{ borderTop:"4px solid #0a0a0a", borderBottom:"4px solid #0a0a0a" }}>
+        <section style={{ borderTop:"1px solid rgba(0,255,240,.1)", borderBottom:"1px solid rgba(0,255,240,.1)" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))" }}>
             {FEATURES.map((f, i) => <FeatureCard key={f.to} {...f} index={i+1} delay={i*55}/>)}
           </div>
@@ -1103,15 +1092,15 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
         ══════════════════════════════════════════ */}
 
         {/* ── ACCOUNTABILITY DIVIDER ── */}
-        <div style={{ background:"#e8ff47", borderTop:"4px solid #0a0a0a", borderBottom:"4px solid #0a0a0a", padding:"40px 24px 36px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+        <div style={{ background:"#000", borderTop:"1px solid rgba(0,255,240,.1)", borderBottom:"1px solid rgba(0,255,240,.1)", padding:"40px 24px 36px", textAlign:"center", position:"relative", overflow:"hidden" }}>
           {/* faint watermark */}
-          <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,0,0,.04)", lineHeight:1, pointerEvents:"none", userSelect:"none", whiteSpace:"nowrap" }}>PREDICTION LOG</div>
+          <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,255,240,.03)", lineHeight:1, pointerEvents:"none", userSelect:"none", whiteSpace:"nowrap" }}>PREDICTION LOG</div>
           <div style={{ position:"relative", zIndex:1 }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:10, background:"#0a0a0a", padding:"4px 14px", marginBottom:14 }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:10, background:"#000", padding:"4px 14px", marginBottom:14 }}>
               <span style={{ width:6, height:6, background:"#ff2744", display:"inline-block", animation:"hpPulse 1.6s ease infinite", flexShrink:0 }}/>
-              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(232,255,71,.6)" }}>MODEL ACCOUNTABILITY</span>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,255,240,.6)" }}>MODEL ACCOUNTABILITY</span>
             </div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(38px,6vw,72px)", lineHeight:.9, color:"#0a0a0a", letterSpacing:".02em", marginBottom:10 }}>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(38px,6vw,72px)", lineHeight:.9, color:"rgba(0,255,240,.88)", letterSpacing:".02em", marginBottom:10 }}>
               EVERY PREDICTION.<br/><span style={{ WebkitTextStroke:"2px #0a0a0a", WebkitTextFillColor:"transparent" }}>VERIFIED.</span>
             </div>
             <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, color:"rgba(0,0,0,.5)", maxWidth:440, margin:"0 auto", lineHeight:1.7 }}>
@@ -1131,21 +1120,21 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
             LEAGUES STRIP
         ══════════════════════════════════════════ */}
         <section style={{ padding:"0 20px 60px", maxWidth:1200, margin:"0 auto" }}>
-          <div style={{ background:"#0a0a0a", border:"3px solid #0a0a0a", padding:"28px 32px", boxShadow:"6px 6px 0 rgba(0,0,0,.2)" }}>
-            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(232,255,71,.35)", marginBottom:6 }}>Covering {LEAGUES.length} competitions</div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, letterSpacing:2, color:"#e8ff47", marginBottom:20 }}>Pick Your League</div>
+          <div style={{ background:"#040408", border:"1px solid rgba(0,255,240,.12)", padding:"28px 32px" }}>
+            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,255,240,.3)", marginBottom:6 }}>Covering {LEAGUES.length} competitions</div>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, letterSpacing:2, color:"#00fff0", marginBottom:20 }}>Pick Your League</div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {LEAGUES.map(({ to, name, flag, col }) => (
                 <Link key={to} to={to} className="hp-btn" style={{
                   display:"flex", alignItems:"center", gap:8,
                   padding:"9px 16px", background:"transparent",
-                  border:"2px solid rgba(232,255,71,.25)", color:"#e8ff47",
+                  border:"1px solid rgba(0,255,240,.2)", color:"rgba(0,255,240,.5)",
                   fontSize:12, fontWeight:700, textDecoration:"none",
                   fontFamily:"'Space Grotesk',sans-serif",
                   boxShadow:"none",
                 }}
-                  onMouseEnter={e=>{e.currentTarget.style.background="#e8ff47";e.currentTarget.style.color="#0a0a0a";e.currentTarget.style.borderColor="#e8ff47";e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow="4px 4px 0 #0a0a0a";}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#e8ff47";e.currentTarget.style.borderColor="rgba(232,255,71,.25)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#00fff0";e.currentTarget.style.color="#000";e.currentTarget.style.borderColor="#00fff0";e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow="4px 4px 0 #0a0a0a";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#00fff0";e.currentTarget.style.borderColor="rgba(0,255,240,.25)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
                 >
                   <span style={{ display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, width:32, height:26 }}>{flag}</span>
                   {name}
@@ -1158,18 +1147,18 @@ const verifiedAcc = hs.verifiedAccuracy || 0;
         {/* ══════════════════════════════════════════
             HOW IT WORKS / BOTTOM CTA
         ══════════════════════════════════════════ */}
-        <section style={{ background:"#0a0a0a", borderTop:"4px solid #e8ff47", padding:"72px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:40, flexWrap:"wrap" }}>
+        <section style={{ background:"#000", borderTop:"1px solid rgba(0,255,240,.12)", padding:"72px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:40, flexWrap:"wrap" }}>
           <div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(52px,5vw,84px)", lineHeight:.88, color:"#fff", marginBottom:14 }}>
-              EVERY STAT.<br/><span style={{ color:"#e8ff47" }}>NO PAYWALLS.</span>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(52px,5vw,84px)", lineHeight:.88, color:"rgba(0,255,240,.8)", marginBottom:14 }}>
+              EVERY STAT.<br/><span style={{ color:"#00fff0" }}>NO PAYWALLS.</span>
             </div>
-            <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, lineHeight:1.75, color:"rgba(255,255,255,.35)", maxWidth:340, margin:0 }}>
+            <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, lineHeight:1.75, color:"rgba(0,255,240,.25)", maxWidth:340, margin:0 }}>
               Full access to all leagues, all players, all advanced metrics. Free forever — no credit card required.
             </p>
           </div>
           <Link to="/predictions/premier-league" className="hp-btn" style={{
-            padding:"18px 48px", background:"#e8ff47", color:"#0a0a0a",
-            border:"3px solid #e8ff47", boxShadow:"5px 5px 0 #e8ff47",
+            padding:"18px 48px", background:"#00fff0", color:"#000",
+            border:"none", boxShadow:"none",
             fontFamily:"'Bebas Neue',sans-serif", fontSize:22, letterSpacing:2,
             textDecoration:"none", flexShrink:0,
           }}>Start For Free →</Link>

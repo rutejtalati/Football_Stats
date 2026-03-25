@@ -25,11 +25,13 @@ import GameweekInsightsPage from "./pages/GameweekInsightsPage";
 import DifferentialFinderPage from "./pages/DifferentialFinderPage";
 import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 
+import LeaguesPage from "./pages/LeaguesPage";
+
 /* ── Stub for pages not yet built ── */
 const ComingSoon = ({ name }) => (
-  <div style={{minHeight:"60vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,background:"#000810"}}>
-    <div style={{fontSize:32,fontWeight:900,color:"rgba(255,255,255,0.15)",fontFamily:"'Sora',sans-serif"}}>{name}</div>
-    <div style={{fontSize:13,color:"rgba(255,255,255,0.25)"}}>Coming soon</div>
+  <div style={{minHeight:"60vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,background:"#000"}}>
+    <div style={{fontSize:36,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".06em",color:"rgba(0,255,240,.2)"}}>{name}</div>
+    <div style={{fontSize:9,color:"rgba(0,255,240,.15)",fontFamily:"'DM Mono',monospace",letterSpacing:".18em",textTransform:"uppercase"}}>Coming soon</div>
   </div>
 );
 
@@ -80,7 +82,7 @@ export default function App() {
             <Route path="/predictions/:league" element={<PredictionsPage slugMap={SLUG_MAP} />} />
 
             {/* Leagues */}
-            <Route path="/leagues"           element={<ComingSoon name="Leagues" />} />
+            <Route path="/leagues"           element={<LeaguesPage />} />
             <Route path="/league/epl"        element={<ComingSoon name="Premier League" />} />
             <Route path="/league/laliga"     element={<ComingSoon name="La Liga" />} />
             <Route path="/league/seriea"     element={<ComingSoon name="Serie A" />} />

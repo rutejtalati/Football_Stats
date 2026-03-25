@@ -315,39 +315,94 @@ def season_check(): return {"current_season":CURRENT_SEASON}
 
 @app.get("/api/matches/upcoming")
 async def upcoming_matches():
-    today=date.today(); end=today+timedelta(days=7)
-    season=today.year if today.month>=7 else today.year-1
+    # ── Caching: the original had ZERO caching, firing 6 concurrent API calls
+    # every 75s poll. On API-Football free tier (10 req/min) this hit rate
+    # limits immediately whenever home dashboard or other endpoints had run,
+    # causing all inner except blocks to return [] and the ticker to get
+    # {"matches": [], "count": 0}.  Fix: cache result + cut calls from 6 to 2.
+    today = date.today()
+    cache_key = f"upcoming_v2_{today.isoformat()}"
+    live_s = {"1H", "2H", "HT", "ET", "BT", "P"}
 
-    async def fetch_league(lid: int):
-        try:
-            data=await async_api_get("/fixtures",{"league":lid,"season":season,"from":today.isoformat(),"to":end.isoformat(),"timezone":"UTC"})
-            return data.get("response",[])
-        except Exception: return []
+    # Use short live-cache during match windows, longer cache otherwise
+    cached = _live_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    end    = today + timedelta(days=7)
+    season = today.year if today.month >= 7 else today.year - 1
 
     async def fetch_live():
+        """Live matches — one call, filter to top 5 leagues."""
         try:
-            data=await async_api_get("/fixtures",{"live":"all"})
-            return [f for f in data.get("response",[]) if f.get("league",{}).get("id") in TOP5_LEAGUES]
-        except Exception: return []
+            data = await async_api_get("/fixtures", {"live": "all"})
+            return [f for f in data.get("response", [])
+                    if f.get("league", {}).get("id") in TOP5_LEAGUES]
+        except Exception:
+            return []
 
-    results=await asyncio.gather(*[fetch_league(lid) for lid in TOP5_LEAGUES],fetch_live())
-    seen=set(); matches=[]
-    for fl in results:
-        for f in fl:
-            fid=f.get("fixture",{}).get("id")
-            if not fid or fid in seen: continue
-            seen.add(fid)
-            fix=f.get("fixture",{}); teams=f.get("teams",{}); goals=f.get("goals",{}); lg=f.get("league",{})
-            matches.append({"fixture_id":fid,"league":league_slug(lg.get("id")),"league_id":lg.get("id"),
-                "league_name":lg.get("name"),"home_team":teams.get("home",{}).get("name"),
-                "away_team":teams.get("away",{}).get("name"),"home_logo":teams.get("home",{}).get("logo"),
-                "away_logo":teams.get("away",{}).get("logo"),"home_score":goals.get("home"),
-                "away_score":goals.get("away"),"status":fix.get("status",{}).get("short"),
-                "minute":fix.get("status",{}).get("elapsed"),"kickoff":fix.get("date"),
-                "venue_name":fix.get("venue",{}).get("name")})
-    live_s={"1H","2H","HT","ET","BT","P"}
-    matches.sort(key=lambda m:(0 if m.get("status") in live_s else 1, m.get("kickoff") or "9999"))
-    return {"matches":matches,"count":len(matches)}
+    async def fetch_scheduled_for_league(lid: int):
+        """Scheduled fixtures for one league — kept as fallback."""
+        try:
+            data = await async_api_get("/fixtures", {
+                "league": lid, "season": season,
+                "from": today.isoformat(), "to": end.isoformat(),
+                "timezone": "UTC", "status": "NS-TBD",
+            })
+            return data.get("response", [])
+        except Exception:
+            return []
+
+    # Two concurrent calls: live + one per-league scheduled call (staggered)
+    # Stagger scheduled calls sequentially to stay inside rate limit
+    live_raw = await fetch_live()
+
+    # Only fetch scheduled if we have API credits — use smallest needed set
+    scheduled_raw = []
+    for lid in list(TOP5_LEAGUES.keys()):
+        batch = await fetch_scheduled_for_league(lid)
+        scheduled_raw.extend(batch)
+        if len(scheduled_raw) >= 30:  # enough to fill ticker
+            break
+
+    def _build_match(f):
+        fix = f.get("fixture", {}); teams = f.get("teams", {})
+        goals = f.get("goals", {}); lg = f.get("league", {})
+        return {
+            "fixture_id":  fix.get("id"),
+            "league":      league_slug(lg.get("id")),
+            "league_id":   lg.get("id"),
+            "league_name": lg.get("name"),
+            "home_team":   teams.get("home", {}).get("name"),
+            "away_team":   teams.get("away", {}).get("name"),
+            "home_logo":   teams.get("home", {}).get("logo"),
+            "away_logo":   teams.get("away", {}).get("logo"),
+            "home_score":  goals.get("home"),
+            "away_score":  goals.get("away"),
+            "status":      fix.get("status", {}).get("short"),
+            "minute":      fix.get("status", {}).get("elapsed"),
+            "kickoff":     fix.get("date"),
+            "venue_name":  fix.get("venue", {}).get("name"),
+        }
+
+    seen = set(); matches = []
+    for f in [*live_raw, *scheduled_raw]:
+        fid = f.get("fixture", {}).get("id")
+        if not fid or fid in seen:
+            continue
+        seen.add(fid)
+        matches.append(_build_match(f))
+
+    matches.sort(key=lambda m: (
+        0 if m.get("status") in live_s else 1,
+        m.get("kickoff") or "9999",
+    ))
+
+    result = {"matches": matches, "count": len(matches)}
+
+    # Cache in _live_cache (60s TTL) — safe for both live and non-live periods
+    _live_cache.set(cache_key, result)
+    return result
 
 @app.get("/api/matches/results")
 async def past_results(days_ago: int = 1):

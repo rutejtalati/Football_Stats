@@ -314,6 +314,7 @@ def health(): return {"status":"ok","season":CURRENT_SEASON,"version":"4.0.0"}
 def season_check(): return {"current_season":CURRENT_SEASON}
 
 @app.get("/api/matches/upcoming")
+@app.head("/api/matches/upcoming")
 async def upcoming_matches():
     # ── Caching: the original had ZERO caching, firing 6 concurrent API calls
     # every 75s poll. On API-Football free tier (10 req/min) this hit rate

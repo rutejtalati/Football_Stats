@@ -1,148 +1,78 @@
+// LeaguesPage.jsx — StatinSite · Neobrutalist Edition
+// Design: #0a0a0a black · #e8ff47 yellow · #ff2744 red
+// All data fetching, MiniStandings, MiniScorers, LeagueCard — logic 100% preserved.
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";
+const Y = "#e8ff47";
+const K = "#0a0a0a";
+const R = "#ff2744";
 
 const LEAGUES = [
-  {
-    id: "epl",
-    name: "Premier League",
-    country: "England",
-    shortName: "EPL",
-    color: "#3d0099",
-    accent: "#00d4aa",
-    logo: "https://media.api-sports.io/football/leagues/39.png",
-    flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  },
-  {
-    id: "laliga",
-    name: "La Liga",
-    country: "Spain",
-    shortName: "LAL",
-    color: "#c8102e",
-    accent: "#ffd700",
-    logo: "https://media.api-sports.io/football/leagues/140.png",
-    flag: "🇪🇸",
-  },
-  {
-    id: "seriea",
-    name: "Serie A",
-    country: "Italy",
-    shortName: "SA",
-    color: "#003f8c",
-    accent: "#009246",
-    logo: "https://media.api-sports.io/football/leagues/135.png",
-    flag: "🇮🇹",
-  },
-  {
-    id: "bundesliga",
-    name: "Bundesliga",
-    country: "Germany",
-    shortName: "BUN",
-    color: "#d20515",
-    accent: "#ffd700",
-    logo: "https://media.api-sports.io/football/leagues/78.png",
-    flag: "🇩🇪",
-  },
-  {
-    id: "ligue1",
-    name: "Ligue 1",
-    country: "France",
-    shortName: "L1",
-    color: "#0055a4",
-    accent: "#ef4135",
-    logo: "https://media.api-sports.io/football/leagues/61.png",
-    flag: "🇫🇷",
-  },
+  { id:"epl",        name:"Premier League", country:"England", shortName:"PL",  color:Y,        logo:"https://media.api-sports.io/football/leagues/39.png",  flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { id:"laliga",     name:"La Liga",        country:"Spain",   shortName:"LL",  color:"#ff6600", logo:"https://media.api-sports.io/football/leagues/140.png", flag:"🇪🇸" },
+  { id:"seriea",     name:"Serie A",        country:"Italy",   shortName:"SA",  color:"#00d4aa", logo:"https://media.api-sports.io/football/leagues/135.png", flag:"🇮🇹" },
+  { id:"bundesliga", name:"Bundesliga",     country:"Germany", shortName:"BUN", color:"#ffcc00", logo:"https://media.api-sports.io/football/leagues/78.png",  flag:"🇩🇪" },
+  { id:"ligue1",     name:"Ligue 1",        country:"France",  shortName:"L1",  color:"#b388ff", logo:"https://media.api-sports.io/football/leagues/61.png",  flag:"🇫🇷" },
 ];
 
 function useLeagueData(leagueId) {
   const [standings, setStandings] = useState([]);
-  const [scorers, setScorers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+  const [scorers,   setScorers]   = useState([]);
+  const [loading,   setLoading]   = useState(true);
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch(`${BACKEND}/api/standings/${leagueId}`).then(r => r.json()).catch(() => []),
-      fetch(`${BACKEND}/api/topscorers/${leagueId}`).then(r => r.json()).catch(() => []),
+      fetch(`${BACKEND}/api/standings/${leagueId}`).then(r=>r.json()).catch(()=>[]),
+      fetch(`${BACKEND}/api/topscorers/${leagueId}`).then(r=>r.json()).catch(()=>[]),
     ]).then(([s, sc]) => {
       setStandings(Array.isArray(s) ? s.slice(0, 5) : []);
-      setScorers(Array.isArray(sc) ? sc.slice(0, 3) : []);
+      setScorers(Array.isArray(sc)  ? sc.slice(0, 3) : []);
       setLoading(false);
     });
   }, [leagueId]);
-
   return { standings, scorers, loading };
 }
 
-function FormPip({ result }) {
-  const colors = { W: "#22c55e", D: "#6b7280", L: "#ef4444" };
-  return (
-    <span style={{
-      width: 16, height: 16, borderRadius: 4,
-      background: colors[result] || "rgba(255,255,255,0.1)",
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      fontSize: 8, fontWeight: 900, color: "#fff",
-      flexShrink: 0,
-    }}>{result}</span>
-  );
-}
-
+/* ─── Mini standings — neo style ────────────────────────── */
 function MiniStandings({ standings, leagueId, accent }) {
   if (!standings.length) return (
-    <div style={{ padding: "20px 0", textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 11 }}>
-      Loading table...
-    </div>
+    <div style={{ padding:"20px 0", textAlign:"center", color:"rgba(232,255,71,.2)", fontSize:10, fontFamily:"'DM Mono',monospace" }}>Loading table…</div>
   );
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
       {/* Header */}
-      <div style={{
-        display: "grid", gridTemplateColumns: "20px 1fr 28px 28px 28px 36px",
-        gap: 4, padding: "4px 6px",
-        fontSize: 8, fontWeight: 800, letterSpacing: "0.1em",
-        color: "rgba(255,255,255,0.2)", textTransform: "uppercase",
-      }}>
-        <span>#</span>
-        <span>Club</span>
-        <span style={{ textAlign: "center" }}>W</span>
-        <span style={{ textAlign: "center" }}>D</span>
-        <span style={{ textAlign: "center" }}>L</span>
-        <span style={{ textAlign: "center" }}>Pts</span>
+      <div style={{ display:"grid", gridTemplateColumns:"20px 1fr 24px 24px 24px 32px", gap:4, padding:"4px 6px", fontSize:7.5, fontWeight:900, letterSpacing:".12em", color:"rgba(232,255,71,.25)", textTransform:"uppercase", fontFamily:"'DM Mono',monospace" }}>
+        <span>#</span><span>Club</span>
+        <span style={{textAlign:"center"}}>W</span>
+        <span style={{textAlign:"center"}}>D</span>
+        <span style={{textAlign:"center"}}>L</span>
+        <span style={{textAlign:"center"}}>Pts</span>
       </div>
-
       {standings.map((row, i) => (
-        <Link
-          key={row.team_id || i}
-          to={`/team/${row.team_id}/${leagueId}`}
-          style={{ textDecoration: "none" }}
-        >
+        <Link key={row.team_id||i} to={`/team/${row.team_id}/${leagueId}`} style={{ textDecoration:"none" }}>
           <div style={{
-            display: "grid", gridTemplateColumns: "20px 1fr 28px 28px 28px 36px",
-            gap: 4, padding: "6px 6px",
-            borderRadius: 8,
-            background: i === 0 ? `rgba(${hexToRgb(accent)}, 0.07)` : "rgba(255,255,255,0.02)",
-            border: i === 0 ? `1px solid rgba(${hexToRgb(accent)}, 0.15)` : "1px solid transparent",
-            alignItems: "center",
-            transition: "background 0.15s",
-            cursor: "pointer",
+            display:"grid", gridTemplateColumns:"20px 1fr 24px 24px 24px 32px",
+            gap:4, padding:"7px 6px",
+            background: i===0 ? `rgba(232,255,71,.07)` : "transparent",
+            borderLeft: i===0 ? `3px solid ${accent}` : "3px solid transparent",
+            alignItems:"center", transition:"background .13s, border-color .13s",
+            cursor:"pointer",
           }}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-          onMouseLeave={e => e.currentTarget.style.background = i === 0 ? `rgba(${hexToRgb(accent)}, 0.07)` : "rgba(255,255,255,0.02)"}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(232,255,71,.05)";e.currentTarget.style.borderLeftColor=accent;}}
+            onMouseLeave={e=>{e.currentTarget.style.background=i===0?"rgba(232,255,71,.07)":"transparent";e.currentTarget.style.borderLeftColor=i===0?accent:"transparent";}}
           >
-            <span style={{ fontSize: 10, fontWeight: 800, color: i === 0 ? accent : "rgba(255,255,255,0.3)", fontFamily: "'JetBrains Mono', monospace" }}>{row.rank || i + 1}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-              {row.team_logo && <img src={row.team_logo} alt="" width={14} height={14} style={{ objectFit: "contain", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />}
-              <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? "#fff" : "rgba(255,255,255,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {row.team_name || row.team}
-              </span>
+            <span style={{fontSize:9,fontWeight:900,color:i===0?accent:"rgba(232,255,71,.25)",fontFamily:"'DM Mono',monospace"}}>{row.rank||i+1}</span>
+            <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
+              {row.team_logo&&<img src={row.team_logo} alt="" width={13} height={13} style={{objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
+              <span style={{fontSize:11,fontWeight:700,color:i===0?"#fff":"rgba(232,255,71,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{row.team_name||row.team}</span>
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", fontFamily: "'JetBrains Mono', monospace" }}>{row.win ?? row.wins ?? "–"}</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", fontFamily: "'JetBrains Mono', monospace" }}>{row.draw ?? row.draws ?? "–"}</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", fontFamily: "'JetBrains Mono', monospace" }}>{row.lose ?? row.losses ?? "–"}</span>
-            <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? accent : "#fff", textAlign: "center", fontFamily: "'JetBrains Mono', monospace" }}>{row.points ?? row.pts ?? "–"}</span>
+            {[row.win??row.wins??"-", row.draw??row.draws??"-", row.lose??row.losses??"-"].map((v,j)=>(
+              <span key={j} style={{fontSize:9,fontWeight:700,color:"rgba(232,255,71,.3)",textAlign:"center",fontFamily:"'DM Mono',monospace"}}>{v}</span>
+            ))}
+            <span style={{fontSize:12,fontWeight:900,color:i===0?accent:Y,textAlign:"center",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".04em"}}>{row.points??row.pts??"-"}</span>
           </div>
         </Link>
       ))}
@@ -150,224 +80,177 @@ function MiniStandings({ standings, leagueId, accent }) {
   );
 }
 
+/* ─── Mini scorers — neo style ───────────────────────────── */
 function MiniScorers({ scorers, accent }) {
   if (!scorers.length) return (
-    <div style={{ padding: "20px 0", textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 11 }}>
-      Loading scorers...
-    </div>
+    <div style={{ padding:"20px 0", textAlign:"center", color:"rgba(232,255,71,.2)", fontSize:10, fontFamily:"'DM Mono',monospace" }}>Loading scorers…</div>
   );
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
       {scorers.map((p, i) => (
-        <div key={i} style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "6px 6px", borderRadius: 8,
-          background: "rgba(255,255,255,0.02)",
-        }}>
-          <span style={{
-            width: 18, height: 18, borderRadius: 5,
-            background: i === 0 ? accent : "rgba(255,255,255,0.08)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 9, fontWeight: 900,
-            color: i === 0 ? "#000" : "rgba(255,255,255,0.4)",
-            flexShrink: 0,
-          }}>{i + 1}</span>
-          {p.photo && <img src={p.photo} alt="" width={22} height={22} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {p.player_name || p.name}
-            </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>
-              {p.team_name || p.team}
-            </div>
+        <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 6px", background:"rgba(232,255,71,.02)", borderLeft:`3px solid ${i===0?accent:"rgba(232,255,71,.08)"}`, transition:"background .13s" }}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(232,255,71,.05)"}
+          onMouseLeave={e=>e.currentTarget.style.background="rgba(232,255,71,.02)"}
+        >
+          <span style={{ width:20, height:20, flexShrink:0, background:i===0?accent:"rgba(232,255,71,.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:900, color:i===0?K:"rgba(232,255,71,.4)", fontFamily:"'DM Mono',monospace" }}>{i+1}</span>
+          {p.photo&&<img src={p.photo} alt="" width={22} height={22} style={{borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,fontWeight:700,color:"rgba(232,255,71,.8)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Space Grotesk',sans-serif"}}>{p.player_name||p.name}</div>
+            <div style={{fontSize:8,color:"rgba(232,255,71,.3)",fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{p.team_name||p.team}</div>
           </div>
-          <span style={{
-            fontSize: 14, fontWeight: 900,
-            color: i === 0 ? accent : "#94a3b8",
-            fontFamily: "'JetBrains Mono', monospace",
-          }}>{p.goals ?? p.total ?? "–"}</span>
+          <span style={{fontSize:20,fontWeight:900,color:i===0?accent:Y,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".04em"}}>{p.goals??p.total??"-"}</span>
         </div>
       ))}
     </div>
   );
 }
 
+/* ─── League card — neo style ────────────────────────────── */
 function LeagueCard({ league }) {
   const { standings, scorers, loading } = useLeagueData(league.id);
   const [tab, setTab] = useState("table");
+  const [hov, setHov] = useState(false);
+  const acc = league.color;
+
+  const predPath = league.id==="epl"?"premier-league":league.id==="laliga"?"la-liga":league.id==="seriea"?"serie-a":league.id==="ligue1"?"ligue-1":league.id;
 
   return (
-    <div style={{
-      background: "rgba(8,10,16,0.95)",
-      border: "1px solid rgba(255,255,255,0.07)",
-      borderRadius: 20,
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      transition: "border-color 0.2s, transform 0.2s",
-    }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor = `rgba(${hexToRgb(league.accent)}, 0.3)`; e.currentTarget.style.transform = "translateY(-2px)"; }}
-    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}
+    <div
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        background:K, border:`3px solid ${hov?acc:"rgba(232,255,71,.2)"}`,
+        overflow:"hidden", display:"flex", flexDirection:"column",
+        boxShadow:hov?`6px 6px 0 ${acc}`:"3px 3px 0 rgba(232,255,71,.1)",
+        transform:hov?"translate(-3px,-3px)":"none",
+        transition:"all .15s",
+      }}
     >
+      {/* Top accent bar */}
+      <div style={{height:3,background:acc}}/>
+
       {/* Header */}
-      <div style={{
-        padding: "16px 18px 14px",
-        background: `linear-gradient(135deg, rgba(${hexToRgb(league.color)}, 0.25) 0%, rgba(0,0,0,0) 60%)`,
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-        display: "flex", alignItems: "center", gap: 12,
-      }}>
-        <img src={league.logo} alt={league.name} width={36} height={36} style={{ objectFit: "contain", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-0.01em" }}>{league.name}</div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{league.flag} {league.country}</div>
+      <div style={{ padding:"16px 18px 14px", display:"flex", alignItems:"center", gap:12, borderBottom:`2px solid rgba(232,255,71,.08)` }}>
+        <img src={league.logo} alt={league.name} width={36} height={36} style={{objectFit:"contain",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:18,fontWeight:900,color:Y,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".06em",lineHeight:1}}>{league.name}</div>
+          <div style={{fontSize:9,color:"rgba(232,255,71,.35)",fontWeight:600,marginTop:2,fontFamily:"'DM Mono',monospace"}}>{league.flag} {league.country}</div>
         </div>
-        <Link
-          to={`/league/${league.id}`}
-          style={{
-            padding: "5px 12px", borderRadius: 999,
-            background: `rgba(${hexToRgb(league.accent)}, 0.12)`,
-            border: `1px solid rgba(${hexToRgb(league.accent)}, 0.25)`,
-            color: league.accent,
-            fontSize: 10, fontWeight: 800, letterSpacing: "0.04em",
-            textDecoration: "none", flexShrink: 0,
-            transition: "background 0.15s",
-          }}
+        <Link to={`/league/${league.id}`} style={{
+          padding:"6px 14px", background:"transparent",
+          border:`2px solid ${acc}`, color:acc,
+          fontSize:9,fontWeight:900,letterSpacing:".1em",textDecoration:"none",
+          flexShrink:0,fontFamily:"'DM Mono',monospace",
+          boxShadow:`2px 2px 0 ${acc}`, transition:"all .12s",
+        }}
+          onMouseEnter={e=>{e.currentTarget.style.background=acc;e.currentTarget.style.color=K;e.currentTarget.style.transform="translate(-1px,-1px)";}}
+          onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=acc;e.currentTarget.style.transform="none";}}
         >
-          Full View →
+          FULL VIEW →
         </Link>
       </div>
 
       {/* Tabs */}
-      <div style={{
-        display: "flex", gap: 0,
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-      }}>
-        {["table", "scorers"].map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              flex: 1, padding: "9px 0",
-              background: "none", border: "none",
-              borderBottom: tab === t ? `2px solid ${league.accent}` : "2px solid transparent",
-              color: tab === t ? league.accent : "rgba(255,255,255,0.3)",
-              fontSize: 10, fontWeight: 800, letterSpacing: "0.06em",
-              textTransform: "uppercase", cursor: "pointer",
-              transition: "color 0.15s",
-              fontFamily: "'Inter', sans-serif",
-              marginBottom: -1,
-            }}
-          >
-            {t === "table" ? "Table" : "Top Scorers"}
-          </button>
+      <div style={{ display:"flex", gap:0, borderBottom:`2px solid rgba(232,255,71,.08)` }}>
+        {[["table","Table"],["scorers","Top Scorers"]].map(([t,l])=>(
+          <button key={t} onClick={()=>setTab(t)} style={{
+            flex:1, padding:"10px 0", background:"none", border:"none",
+            borderBottom:tab===t?`3px solid ${acc}`:"3px solid transparent",
+            color:tab===t?acc:"rgba(232,255,71,.25)",
+            fontSize:9,fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",
+            cursor:"pointer",transition:"color .15s",fontFamily:"'DM Mono',monospace",
+            marginBottom:-2,
+          }}>{l}</button>
         ))}
       </div>
 
       {/* Content */}
-      <div style={{ padding: "12px 12px 16px", flex: 1 }}>
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {[...Array(5)].map((_, i) => (
-              <div key={i} style={{ height: 28, borderRadius: 8, background: "rgba(255,255,255,0.04)", animation: "shimmer 1.3s ease infinite" }} />
+      <div style={{ padding:"12px 12px 16px", flex:1 }}>
+        {loading?(
+          <div style={{display:"flex",flexDirection:"column",gap:5}}>
+            {[...Array(5)].map((_,i)=>(
+              <div key={i} style={{height:26,background:"rgba(232,255,71,.04)",animation:"nbShimmer 1.3s ease infinite",animationDelay:`${i*.1}s`}}/>
             ))}
           </div>
-        ) : tab === "table" ? (
-          <MiniStandings standings={standings} leagueId={league.id} accent={league.accent} />
-        ) : (
-          <MiniScorers scorers={scorers} accent={league.accent} />
+        ):tab==="table"?(
+          <MiniStandings standings={standings} leagueId={league.id} accent={acc}/>
+        ):(
+          <MiniScorers scorers={scorers} accent={acc}/>
         )}
       </div>
 
       {/* Footer CTA */}
-      <div style={{ padding: "10px 12px 14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <Link
-          to={`/predictions/${league.id === "epl" ? "premier-league" : league.id === "laliga" ? "la-liga" : league.id === "seriea" ? "serie-a" : league.id === "ligue1" ? "ligue-1" : league.id}`}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 6, padding: "8px",
-            borderRadius: 10,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            color: "rgba(255,255,255,0.4)",
-            fontSize: 10, fontWeight: 700,
-            textDecoration: "none",
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = `rgba(${hexToRgb(league.accent)}, 0.08)`; e.currentTarget.style.color = league.accent; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
+      <div style={{ padding:"10px 12px 14px", borderTop:`2px solid rgba(232,255,71,.06)` }}>
+        <Link to={`/predictions/${predPath}`} style={{
+          display:"flex",alignItems:"center",justifyContent:"center",
+          gap:6,padding:"9px",
+          background:"transparent",border:`2px solid rgba(232,255,71,.12)`,
+          color:"rgba(232,255,71,.35)",
+          fontSize:9,fontWeight:900,textDecoration:"none",
+          fontFamily:"'DM Mono',monospace",letterSpacing:".1em",
+          transition:"all .13s",
+        }}
+          onMouseEnter={e=>{e.currentTarget.style.background=acc;e.currentTarget.style.color=K;e.currentTarget.style.borderColor=acc;}}
+          onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(232,255,71,.35)";e.currentTarget.style.borderColor="rgba(232,255,71,.12)";}}
         >
-          ⚡ View Predictions
+          ⚡ VIEW PREDICTIONS
         </Link>
       </div>
     </div>
   );
 }
 
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `${r},${g},${b}`;
-}
-
+/* ─── Main page export ───────────────────────────────────── */
 export default function LeaguesPage() {
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 20px 60px" }}>
+    <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 20px 60px", background:K, minHeight:"100vh", fontFamily:"'Space Grotesk','Inter',system-ui,sans-serif" }}>
       <style>{`
-        @keyframes shimmer {
-          0% { opacity: 0.4; }
-          50% { opacity: 0.8; }
-          100% { opacity: 0.4; }
-        }
+        @keyframes nbShimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
+        @keyframes nb-stripes { to{background-position:60px 0} }
       `}</style>
 
-      {/* Page header */}
-      <div style={{ padding: "28px 0 24px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 4, height: 48, borderRadius: 4, background: "linear-gradient(180deg, #60a5fa, #34d399)" }} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-0.02em", fontFamily: "'Sora', sans-serif" }}>
+      {/* Animated bg stripes */}
+      <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.02) 44px,rgba(232,255,71,.02) 45px)",animation:"nb-stripes 25s linear infinite"}}/>
+
+      <div style={{position:"relative",zIndex:1}}>
+        {/* Page header */}
+        <div style={{ padding:"32px 0 24px", borderBottom:`4px solid ${Y}`, marginBottom:28 }}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,background:Y,color:K,padding:"3px 12px",fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",marginBottom:14}}>
+            <span style={{width:5,height:5,background:R,flexShrink:0}}/>
+            COVERING {LEAGUES.length} COMPETITIONS
+          </div>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+            <h1 style={{margin:0,fontSize:"clamp(48px,8vw,96px)",fontWeight:900,color:Y,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:".04em",lineHeight:.9}}>
               Leagues
             </h1>
-            <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.3)", fontWeight: 600, marginTop: 2 }}>
-              Live standings · Top scorers · Predictions
-            </p>
+            {/* Quick jump */}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {LEAGUES.map(l=>(
+                <a key={l.id} href={`#league-${l.id}`} style={{
+                  padding:"6px 14px",
+                  background:"transparent",border:`2px solid rgba(232,255,71,.15)`,
+                  color:"rgba(232,255,71,.35)",
+                  fontSize:9,fontWeight:900,textDecoration:"none",letterSpacing:".1em",
+                  fontFamily:"'DM Mono',monospace",transition:"all .13s",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.background=l.color;e.currentTarget.style.color=K;e.currentTarget.style.borderColor=l.color;}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(232,255,71,.35)";e.currentTarget.style.borderColor="rgba(232,255,71,.15)";}}
+                >
+                  {l.flag} {l.shortName}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* League quick-jump */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {LEAGUES.map(l => (
-            <a key={l.id} href={`#league-${l.id}`} style={{
-              padding: "5px 12px", borderRadius: 999,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 10, fontWeight: 800,
-              textDecoration: "none", letterSpacing: "0.04em",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = `rgba(${hexToRgb(l.accent)}, 0.1)`; e.currentTarget.style.color = l.accent; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
-            >
-              {l.flag} {l.shortName}
-            </a>
+        {/* League grid */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))", gap:16 }}>
+          {LEAGUES.map(league=>(
+            <div key={league.id} id={`league-${league.id}`}>
+              <LeagueCard league={league}/>
+            </div>
           ))}
         </div>
-      </div>
-
-      {/* League grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
-        gap: 18,
-      }}>
-        {LEAGUES.map(league => (
-          <div key={league.id} id={`league-${league.id}`}>
-            <LeagueCard league={league} />
-          </div>
-        ))}
       </div>
     </div>
   );

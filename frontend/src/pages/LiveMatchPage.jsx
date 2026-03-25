@@ -52,9 +52,7 @@ function SectionLabel({ children, accent }) {
       display: "flex", alignItems: "center", gap: 8,
       marginBottom: 14,
     }}>
-      {accent && <span style={{ width:3, height:16, borderRadius:2, background:accent, display:"inline-block", flexShrink:0 }} />}
-      <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.14em",
-        color: "rgba(255,255,255,0.5)", textTransform: "uppercase" }}>
+      <span style={{ fontSize:12, fontWeight:900, letterSpacing:"0.16em", color:accent||"#e8ff47", textTransform:"uppercase", fontFamily:"'Bebas Neue',sans-serif", borderBottom:`2px solid ${accent||"rgba(232,255,71,.3)"}`, paddingBottom:4 }}>
         {children}
       </span>
     </div>
@@ -64,10 +62,11 @@ function SectionLabel({ children, accent }) {
 function Pill({ children, color = "rgba(255,255,255,0.07)", textColor = "rgba(255,255,255,0.5)" }) {
   return (
     <span style={{
-      fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+      fontSize: 8, fontWeight: 900, letterSpacing: "0.1em",
       background: color, color: textColor,
-      padding: "3px 8px", borderRadius: 999,
+      padding: "2px 8px",
       display: "inline-flex", alignItems: "center", gap: 4,
+      fontFamily: "'DM Mono', monospace",
     }}>
       {children}
     </span>
@@ -2269,16 +2268,19 @@ export default function LiveMatchPage() {
   const tabs = TABS_BY_MODE[mode] || TABS_BY_MODE.prematch;
 
   return (
-    <div style={{ background:"#000", minHeight:"100vh", color:"#f0f6ff" }}>
+    <div style={{ background:"#0a0a0a", minHeight:"100vh", color:"#e8ff47", position:"relative" }}>
+      <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.02) 44px,rgba(232,255,71,.02) 45px)",animation:"nb-mp-stripes 25s linear infinite"}}/>
       <style>{`
         @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.25;transform:scale(0.55)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lmScanX { 0%{left:-40%} 100%{left:140%} }
         @keyframes lmBorderFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
         @keyframes lmBarIn { from{width:0} to{width:var(--w)} }
-        @keyframes lmGlow { 0%,100%{box-shadow:0 0 8px var(--c,#60a5fa)} 50%{box-shadow:0 0 22px var(--c,#60a5fa)} }
-        .lm-tab { background:none; border:none; cursor:pointer; font-family:'Inter','Sora',sans-serif; transition:all 0.15s; }
-        .lm-tab:hover { color:rgba(255,255,255,0.85) !important; }
+        @keyframes lmGlow { 0%,100%{box-shadow:0 0 8px var(--c,#e8ff47)} 50%{box-shadow:0 0 22px var(--c,#e8ff47)} }
+        @keyframes nb-mp-stripes { to{background-position:60px 0} }
+        @keyframes nb-mp-spin { to{transform:rotate(360deg)} }
+        .lm-tab { background:none; border:none; cursor:pointer; font-family:'Space Grotesk','Inter',sans-serif; transition:all 0.15s; letter-spacing:0.08em; text-transform:uppercase; }
+        .lm-tab:hover { color:#e8ff47 !important; }
         .lm-stat-bar { animation: lmBarIn 0.7s cubic-bezier(.22,1,.36,1) both; }
         .lm-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.08); border-radius:12px; transition:border-color .2s, box-shadow .2s; }
         .lm-card:hover { border-color:rgba(255,255,255,.16); box-shadow:0 8px 28px rgba(0,0,0,.5); }

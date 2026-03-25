@@ -1,1170 +1,1143 @@
-// HomePage.jsx — StatinSite v2 (backend-connected)
-// ═══════════════════════════════════════════════════════════
-// DESIGN DNA: 100% preserved from old homepage
-// CHANGES: backend data, hero text, 9 leagues, no fake arrays
-// ═══════════════════════════════════════════════════════════
-import { Link } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { mapDashboard } from "../utils/homeDataMappers";
-import LiveTicker3Row from "../components/LiveTicker3Row";
+// ═══════════════════════════════════════════════════════════════════════
+// StatinSite — HomePage v6  "Maximum Density Intelligence Platform"
+// ═══════════════════════════════════════════════════════════════════════
+// New architecture — everything rebuilt from the section level up.
+// Sections (in order):
+//   1.  Hero          — 3-column command layout with flanking panels
+//   2.  LiveStrip     — scrolling live scores
+//   3.  TopPredictions — horizontal prediction cards with full data
+//   4.  ModelEdgeBoard — value edge signals + xG leaders
+//   5.  CommandGrid   — large animated tool cards (2-col asymmetric)
+//   6.  CompetitionHub— league cards with match counts + coverage badges
+//   7.  FPLHub        — multi-column FPL intelligence dashboard
+//   8.  TrendingPlayers — player data rail
+//   9.  WhyStatinSite — data models + platform facts
+// ═══════════════════════════════════════════════════════════════════════
 
-const API = import.meta.env.VITE_API_URL || "";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-/* ── Responsive hook ─────────────────────────────────────── */
-function useIsMobile(bp = 640) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+const API = "https://football-stats-lw4b.onrender.com";
+const LIVE_SET = new Set(["1H","2H","HT","ET","BT","P"]);
+const FT_SET   = new Set(["FT","AET","PEN"]);
+const isToday  = d => d && new Date(d).toDateString() === new Date().toDateString();
+
+// ─── Data hooks ───────────────────────────────────────────────
+function useUpcoming() {
+  const [data, setData]       = useState([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
+    let dead = false;
+    const k = "hp6_up";
+    try { const r = sessionStorage.getItem(k); if (r) { const {ts,p} = JSON.parse(r); if (Date.now()-ts<180000) { setData(p); setLoading(false); return; } } } catch {}
+    fetch(`${API}/api/matches/upcoming`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (dead || !d) return;
+        const raw = d.matches || d.chips || [];
+        const m = raw.map(c => ({
+          fixture_id: c.fixture_id, home_team: c.home_team, away_team: c.away_team,
+          home_logo: c.home_logo, away_logo: c.away_logo,
+          home_score: c.home_score??null, away_score: c.away_score??null,
+          status: c.status, minute: c.minute, kickoff: c.kickoff||c.date,
+          league_name: c.league_name||c.league, league_id: c.league_id,
+          p_home_win: c.p_home_win??null, p_draw: c.p_draw??null, p_away_win: c.p_away_win??null,
+          confidence: c.confidence??null,
+          home_form: c.home_form||"", away_form: c.away_form||"",
+        }));
+        setData(m);
+        try { sessionStorage.setItem(k, JSON.stringify({ts:Date.now(),p:m})); } catch {}
+      }).catch(()=>{}).finally(()=>{ if(!dead) setLoading(false); });
+    return () => { dead = true; };
+  }, []);
+  return { fixtures: data, loading };
 }
 
-/* ─── Design tokens ─────────────────────────────────────── */
-const C = {
-  blue:"#4f9eff",   blueGlow:"rgba(79,158,255,0.35)",
-  green:"#00e09e",  greenGlow:"rgba(0,224,158,0.28)",
-  red:"#ff4d6d",    redGlow:"rgba(255,77,109,0.28)",
-  gold:"#f2c94c",   goldGlow:"rgba(242,201,76,0.28)",
-  purple:"#b388ff", purpleGlow:"rgba(179,136,255,0.28)",
-  orange:"#ff8c42", teal:"#2dd4bf", pink:"#f472b6",
-  panel:"rgba(12,18,30,0.95)",
-  line:"rgba(255,255,255,0.07)",
-  text:"#e8f0ff", muted:"#4a6a8a", soft:"#2a3f58",
-};
+function useDashboard() {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let dead = false;
+    const k = "hp6_dash";
+    try { const r = sessionStorage.getItem(k); if (r) { const {ts,p} = JSON.parse(r); if (Date.now()-ts<300000) { setData(p); setLoading(false); return; } } } catch {}
+    fetch(`${API}/api/home/dashboard`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (dead||!d) return; setData(d); try { sessionStorage.setItem(k, JSON.stringify({ts:Date.now(),p:d})); } catch {} })
+      .catch(()=>{}).finally(()=>{ if(!dead) setLoading(false); });
+    return () => { dead = true; };
+  }, []);
+  return { dash: data, loading };
+}
 
-/* ─── Global styles ─────────────────────────────────────── */
-const HOME_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
-  @keyframes hpFadeDown  { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes hpFadeUp    { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes hpCardIn    { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
-  @keyframes hpPulse     { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
-  @keyframes hpMarquee   { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-  @keyframes hpBlink     { 50%{opacity:0} }
-  @keyframes hpBarGrow   { from{width:0} to{width:var(--w)} }
-  @keyframes hpHeightGrow{ from{height:0} to{height:var(--h)} }
-  .hp-card { transition: all 160ms ease; cursor: pointer; }
-  .hp-card:hover { border-color: #00fff0 !important; }
-  .hp-btn  { transition: all 120ms ease; cursor: pointer; }
-  .hp-btn:hover { background: #00fff0 !important; color: #000 !important; }
-`;
-
-
-
-/* ─── Animated count-up ─────────────────────────────────── */
-function useCountUp(target, duration=1800, delay=0) {
-  const [val, setVal] = useState(0);
+// ─── Utility hooks ────────────────────────────────────────────
+function useReveal(thr = 0.06) {
   const ref = useRef(null);
+  const [v, setV] = useState(false);
   useEffect(() => {
     const el = ref.current; if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return; obs.disconnect();
-      const start = performance.now() + delay;
-      const tick = now => {
-        const elapsed = Math.max(0, now - start);
-        const pct = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - pct, 3);
-        setVal(Math.round(ease * target));
-        if (pct < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }, { threshold: 0.3 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [target, duration, delay]);
-  return [val, ref];
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setV(true); io.disconnect(); } }, { threshold: thr });
+    io.observe(el); return () => io.disconnect();
+  }, []);
+  return [ref, v];
 }
 
-/* ─── Stat tile — neobrutalist ─────────────────────────── */
-function StatTile({ value, suffix = "", label, sublabel, color, delay = 0, svg, trend }) {
-  const [v, ref] = useCountUp(value, 1600, delay);
-  const [hov, setHov] = useState(false);
+function useTilt(str = 6) {
+  const ref = useRef(null);
+  const [tf, setTf]   = useState("perspective(900px) rotateX(0) rotateY(0) scale3d(1,1,1)");
+  const [gl, setGl]   = useState({x:50,y:50});
+  const onMove = useCallback(e => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX-r.left)/r.width, y = (e.clientY-r.top)/r.height;
+    setTf(`perspective(900px) rotateX(${(y-.5)*-str}deg) rotateY(${(x-.5)*str}deg) scale3d(1.015,1.015,1.015)`);
+    setGl({x:Math.round(x*100),y:Math.round(y*100)});
+  }, [str]);
+  const onLeave = useCallback(() => { setTf("perspective(900px) rotateX(0) rotateY(0) scale3d(1,1,1)"); setGl({x:50,y:50}); }, []);
+  return {ref, tf, gl, onMove, onLeave};
+}
 
+function CountUp({ to, suffix="", dur=900 }) {
+  const [v, setV]   = useState(0);
+  const [ref, vis]  = useReveal(0.1);
+  const ran         = useRef(false);
+  useEffect(() => {
+    if (!vis||ran.current||!to) return; ran.current=true;
+    const t0 = performance.now();
+    const go = ts => { const p=Math.min((ts-t0)/dur,1); setV(Math.round((1-Math.pow(1-p,4))*to)); if(p<1) requestAnimationFrame(go); };
+    requestAnimationFrame(go);
+  }, [vis, to, dur]);
+  return <span ref={ref} className="hp4-mono">{v}{suffix}</span>;
+}
+
+function RippleBtn({ children, onClick, cls="", style={} }) {
+  const [rips, setRips] = useState([]);
+  const go = e => {
+    const r = e.currentTarget.getBoundingClientRect(), id=Date.now();
+    setRips(p=>[...p,{id,x:e.clientX-r.left,y:e.clientY-r.top}]);
+    setTimeout(()=>setRips(p=>p.filter(r=>r.id!==id)),700);
+    onClick?.(e);
+  };
+  return <button className={`hp4-btn ${cls}`} style={style} onClick={go}>{children}{rips.map(r=><span key={r.id} className="hp4-ripple" style={{left:r.x,top:r.y}}/>)}</button>;
+}
+
+function Skel({w="100%",h=14,r=5}) { return <div className="hp5-skel" style={{width:w,height:h,borderRadius:r,display:"block"}}/>; }
+
+function FormPip({r}) {
+  const c=r==="W"?"#34d399":r==="D"?"#f59e0b":"#f87171";
+  return <div style={{width:14,height:14,borderRadius:3,background:`${c}22`,border:`1px solid ${c}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,color:c}}>{r}</div>;
+}
+
+// ─── Background animations ────────────────────────────────────
+function TelemetryGrid() {
+  const c = useRef(null);
+  useEffect(() => {
+    const canvas = c.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf, t=0;
+    const resize = () => { canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; };
+    resize(); window.addEventListener("resize",resize);
+    const draw = () => {
+      const {width:W,height:H} = canvas; ctx.clearRect(0,0,W,H);
+      const SZ=64, cols=Math.ceil(W/SZ)+2, rows=Math.ceil(H/SZ)+2;
+      const ox=(t*0.3)%SZ, oy=(t*0.15)%SZ;
+      for(let i=-1;i<cols;i++) { const a=0.02+0.01*Math.sin(i*0.4+t*0.007); ctx.strokeStyle=`rgba(56,189,248,${a})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(i*SZ-ox,0); ctx.lineTo(i*SZ-ox,H); ctx.stroke(); }
+      for(let j=-1;j<rows;j++) { const a=0.02+0.01*Math.sin(j*0.5+t*0.005); ctx.strokeStyle=`rgba(56,189,248,${a})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(0,j*SZ-oy); ctx.lineTo(W,j*SZ-oy); ctx.stroke(); }
+      for(let i=0;i<cols;i++) for(let j=0;j<rows;j++) { const p=Math.sin(i*0.8+j*0.6+t*0.04); if(p>0.7){ctx.fillStyle=`rgba(52,211,153,${(p-0.7)*0.45})`; ctx.beginPath(); ctx.arc(i*SZ-ox,j*SZ-oy,1.5,0,Math.PI*2); ctx.fill();} }
+      t++; raf=requestAnimationFrame(draw);
+    };
+    draw(); return () => { cancelAnimationFrame(raf); window.removeEventListener("resize",resize); };
+  },[]);
+  return <canvas ref={c} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}/>;
+}
+
+function Particles({n=20}) {
+  const ps = useMemo(()=>Array.from({length:n},(_,i)=>({id:i,x:Math.random()*100,y:Math.random()*100,sz:1+Math.random()*2.2,dur:9+Math.random()*14,del:-Math.random()*18,c:["56,189,248","52,211,153","167,139,250","245,158,11"][i%4]})),[n]);
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>{ps.map(p=><div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:`${p.y}%`,width:p.sz,height:p.sz,borderRadius:"50%",background:`rgba(${p.c},0.6)`,boxShadow:`0 0 ${p.sz*3}px rgba(${p.c},0.4)`,animation:`hp4-float ${p.dur}s ${p.del}s linear infinite`}}/>)}</div>;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 1 — HERO (3-column command layout)
+// ═══════════════════════════════════════════════════════════════
+function LiveMatchPanel({ fixtures }) {
+  const nav   = useNavigate();
+  const live  = fixtures.filter(f => LIVE_SET.has(f.status)).slice(0,3);
+  if (!live.length) return (
+    <div className="hp6-hero-panel">
+      <div className="hp6-panel-label">LIVE CENTRE</div>
+      <div className="hp6-panel-empty">No matches live</div>
+      <div className="hp6-panel-sub">{fixtures.filter(f=>isToday(f.kickoff)).length} fixtures today</div>
+    </div>
+  );
   return (
-    <div
-      ref={ref}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: "flex", flexDirection: "column", gap: 10,
-        padding: "22px 24px",
-        background: hov ? "rgba(0,255,240,.06)" : "#000",
-        border: "1px solid rgba(0,255,240,.2)",
-        borderColor: hov ? "#00fff0" : "rgba(0,255,240,.2)",
-        boxShadow: "none",
-        flex: 1, minWidth: 0, position: "relative", overflow: "hidden",
-        transition: "all 160ms cubic-bezier(.22,1,.36,1)",
-        transform: hov ? "translate(-2px,-2px)" : "none",
-        cursor: "default",
-      }}
-    >
-      {/* Corner glow blob */}
-      <div style={{
-        position: "absolute", top: -30, right: -30, width: 100, height: 100,
-        borderRadius: "50%", background: color,
-        opacity: hov ? 0.15 : 0.05, filter: "blur(30px)",
-        transition: "opacity 260ms", pointerEvents: "none",
-      }} />
-
-      {/* Bottom accent line */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 2,
-        background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
-        opacity: hov ? 0.7 : 0, transition: "opacity 260ms",
-      }} />
-
-      {/* SVG icon row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ color, opacity: hov ? 1 : 0.7, transition: "opacity 260ms" }}>{svg}</div>
-        {trend && (
-          <span style={{
-            fontSize: 9, fontWeight: 800, color: C.green,
-            background: `${C.green}14`, border: `1px solid ${C.green}35`,
-            padding: "2px 8px", borderRadius: 999, letterSpacing: "0.06em",
-          }}>{trend}</span>
-        )}
+    <div className="hp6-hero-panel">
+      <div className="hp6-panel-label" style={{color:"#ff4444"}}>
+        <span className="hp4-live-dot hp4-live-dot--sm" style={{"--dot-color":"#ff4444"}}/> {live.length} LIVE NOW
       </div>
+      {live.map(f=>(
+        <div key={f.fixture_id} className="hp6-live-row" onClick={()=>nav(`/match/${f.fixture_id}`)}>
+          <div className="hp6-live-teams">
+            {f.home_logo&&<img src={f.home_logo} width={14} height={14} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+            <span className="hp6-lr-name">{f.home_team?.split(" ").slice(-1)[0]}</span>
+            <span className="hp6-lr-score hp4-mono">{f.home_score??0}–{f.away_score??0}</span>
+            <span className="hp6-lr-name">{f.away_team?.split(" ").slice(-1)[0]}</span>
+            {f.away_logo&&<img src={f.away_logo} width={14} height={14} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+          </div>
+          {f.minute&&<span className="hp6-lr-min hp4-mono">{f.minute}'</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
-      {/* Big number */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-        <span style={{
-          fontSize: 40, fontWeight: 900,
-          fontFamily: "'Bebas Neue', sans-serif",
-          color: "#00fff0", lineHeight: 1, letterSpacing: "0.02em",
-          textShadow: "none",
-          transition: "text-shadow 260ms",
-        }}>{v.toLocaleString()}</span>
-        <span style={{ fontSize: 18, fontWeight: 700, color, opacity: 0.8 }}>{suffix}</span>
+function TopPredPanel({ dash }) {
+  const nav   = useNavigate();
+  const pred  = dash?.top_predictions?.predictions?.[0];
+  if (!pred) return (
+    <div className="hp6-hero-panel">
+      <div className="hp6-panel-label">TOP PREDICTION</div>
+      <Skel w="80%" h={11}/><div style={{marginTop:6}}/><Skel w="60%" h={9}/>
+    </div>
+  );
+  const fav     = pred.homeProb>pred.awayProb ? pred.home : pred.away;
+  const favProb = Math.max(pred.homeProb||0,pred.awayProb||0);
+  const hPct    = pred.homeProb||0, aPct = pred.awayProb||0, dPct = pred.draw||0;
+  return (
+    <div className="hp6-hero-panel" onClick={()=>nav(`/predictions/premier-league`)} style={{cursor:"pointer"}}>
+      <div className="hp6-panel-label" style={{color:"#38bdf8"}}>TOP PREDICTION</div>
+      <div className="hp6-pred-teams">
+        {pred.home_logo&&<img src={pred.home_logo} width={18} height={18} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+        <span className="hp6-pred-name">{pred.home?.split(" ").slice(-1)[0]}</span>
+        <span style={{color:"var(--text-dim)",fontSize:9,margin:"0 3px"}}>vs</span>
+        <span className="hp6-pred-name">{pred.away?.split(" ").slice(-1)[0]}</span>
+        {pred.away_logo&&<img src={pred.away_logo} width={18} height={18} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
       </div>
-
-      {/* Label + sublabel */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <span style={{
-          fontSize: 9, fontWeight: 900, color: C.muted,
-          letterSpacing: "0.14em", textTransform: "uppercase",
-          fontFamily: "'Inter', sans-serif",
-        }}>{label}</span>
-        {sublabel && (
-          <span style={{
-            fontSize: 10, color: C.muted, fontFamily: "'Inter', sans-serif",
-            opacity: 0.7, lineHeight: 1.4,
-          }}>{sublabel}</span>
-        )}
+      {/* Tri-bar */}
+      <div style={{display:"flex",height:5,borderRadius:999,overflow:"hidden",margin:"8px 0 5px",gap:1}}>
+        <div style={{flex:hPct,background:"#38bdf8",opacity:.9}}/>
+        <div style={{flex:dPct,background:"rgba(255,255,255,0.2)"}}/>
+        <div style={{flex:aPct,background:"#34d399",opacity:.9}}/>
       </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 2, borderRadius: 1, background: "rgba(255,255,255,0.05)" }}>
-        <div style={{
-          height: "100%", borderRadius: 1, background: color, opacity: 0.8,
-          width: hov ? "100%" : "40%",
-          boxShadow: hov ? `0 0 8px ${color}` : "none",
-          transition: "width 700ms cubic-bezier(0.22,1,0.36,1), box-shadow 260ms",
-        }} />
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:9}}>
+        <span className="hp4-mono" style={{color:"#38bdf8",fontWeight:900}}>{hPct}%</span>
+        <span style={{color:"var(--text-dim)"}}>D {dPct}%</span>
+        <span className="hp4-mono" style={{color:"#34d399",fontWeight:900}}>{aPct}%</span>
+      </div>
+      <div style={{marginTop:6,fontSize:9,color:"var(--text-muted)"}}>
+        xG <span className="hp4-mono" style={{color:"var(--text)"}}>{pred.xg_home?.toFixed(1)}–{pred.xg_away?.toFixed(1)}</span>
+        <span style={{marginLeft:8,background:`${"#38bdf8"}18`,color:"#38bdf8",padding:"1px 6px",borderRadius:999,fontWeight:800}}>{favProb}% {fav?.split(" ").slice(-1)[0]}</span>
       </div>
     </div>
   );
 }
 
-/* ─── Live ticker (backend-driven) ──────────────────────── */
-function LiveTicker({ items = [] }) {
-  if (items.length === 0) return null;
-  const doubled = [...items, ...items];
+function ModelConfPanel({ dash, dash_loading }) {
+  const conf = dash?.model_confidence;
+  const edge = dash?.model_edges?.edges?.[0];
   return (
-    <div style={{
-      borderTop:`1px solid ${C.line}`, borderBottom:`1px solid ${C.line}`,
-      background:"rgba(255,255,255,0.015)", overflow:"hidden", padding:"10px 0",
-      position:"relative",
-    }}>
-      <div style={{position:"absolute",left:0,top:0,bottom:0,width:80,
-        background:"linear-gradient(to right,#060a14,transparent)",zIndex:2,pointerEvents:"none"}}/>
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:80,
-        background:"linear-gradient(to left,#060a14,transparent)",zIndex:2,pointerEvents:"none"}}/>
-      <div style={{display:"flex",gap:0,animation:"tickerMove 40s linear infinite",width:"max-content"}}>
-        {doubled.map((item, i) => (
-          <div key={i} style={{
-            display:"flex",alignItems:"center",gap:8,padding:"0 28px",
-            borderRight:`1px solid ${C.line}`,flexShrink:0,
-          }}>
-            <div style={{width:5,height:5,borderRadius:"50%",background:item.col,
-              boxShadow:`0 0 6px ${item.col}`,flexShrink:0}}/>
-            <span style={{fontSize:10,color:C.muted,fontFamily:"'Inter',sans-serif",
-              fontWeight:600,whiteSpace:"nowrap"}}>{item.label}</span>
-            <span style={{fontSize:12,fontWeight:900,color:item.col,
-              fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap"}}>{item.value}</span>
+    <div className="hp6-hero-panel">
+      <div className="hp6-panel-label">MODEL SIGNALS</div>
+      {dash_loading||!conf ? (
+        <><Skel w="60%" h={22}/><div style={{marginTop:6}}/><Skel w="75%" h={9}/></>
+      ) : (
+        <>
+          <div className="hp6-conf-val hp4-mono" style={{color:"#34d399"}}>{conf.avg_confidence}%</div>
+          <div style={{fontSize:9,color:"var(--text-muted)",marginBottom:8}}>avg confidence · {conf.total} fixtures</div>
+          {/* Mini confidence bar */}
+          <div style={{display:"flex",gap:3,marginBottom:8}}>
+            {conf.high>0&&<div style={{flex:conf.high,background:"#34d399",height:4,borderRadius:999,opacity:.8}} title={`High: ${conf.high}`}/>}
+            {conf.medium>0&&<div style={{flex:conf.medium,background:"#f59e0b",height:4,borderRadius:999,opacity:.7}} title={`Med: ${conf.medium}`}/>}
+            {conf.low>0&&<div style={{flex:conf.low,background:"#f87171",height:4,borderRadius:999,opacity:.6}} title={`Low: ${conf.low}`}/>}
+          </div>
+          {edge&&<div style={{fontSize:9,color:"var(--text-muted)"}}>Top edge: <span style={{color:"#34d399",fontWeight:800}}>+{edge.edge}% {edge.label?.split(" ").slice(0,2).join(" ")}</span></div>}
+        </>
+      )}
+    </div>
+  );
+}
+
+function HeroSection({ fixtures, upcoming_loading, dash, dash_loading }) {
+  const nav     = useNavigate();
+  const heroRef = useRef(null);
+  const [mouse, setMouse] = useState({x:.5,y:.5});
+  const liveCount  = fixtures.filter(f=>LIVE_SET.has(f.status)).length;
+  const todayCount = fixtures.filter(f=>isToday(f.kickoff)).length;
+  const avgConf    = dash?.model_confidence?.avg_confidence??null;
+  const topEdge    = dash?.model_edges?.edges?.[0]??null;
+  const onMove = useCallback(e=>{const r=heroRef.current?.getBoundingClientRect();if(!r)return;setMouse({x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height});},[]);
+
+  return (
+    <section className="hp6-hero" ref={heroRef} onMouseMove={onMove}>
+      <TelemetryGrid/>
+      <Particles n={20}/>
+      {[{cls:"hp4-hero-blob hp4-hero-blob--a",dx:.5,dy:.4},{cls:"hp4-hero-blob hp4-hero-blob--b",dx:-.3,dy:-.3},{cls:"hp4-hero-blob hp4-hero-blob--c",dx:.6,dy:.5}].map(({cls,dx,dy},i)=>(
+        <div key={i} className={cls} style={{transform:`translate(calc(-50% + ${(mouse.x-.5)*40*dx}px),calc(-50% + ${(mouse.y-.5)*28*dy}px))`,transition:"transform 0.18s ease"}}/>
+      ))}
+      <div className="hp4-scanline"/>
+
+      <div className="hp6-hero-layout">
+        {/* Left intel panel */}
+        <div className="hp6-hero-left">
+          <LiveMatchPanel fixtures={fixtures}/>
+          <ModelConfPanel dash={dash} dash_loading={dash_loading}/>
+        </div>
+
+        {/* Centre */}
+        <div className="hp6-hero-center">
+          <div className="hp4-hero-badge" style={{animationDelay:"0.05s"}}>
+            {liveCount>0
+              ? <><span className="hp4-live-dot"/><span className="hp4-hero-badge-text hp4-hero-badge-text--live hp4-mono">{liveCount} LIVE NOW</span></>
+              : <span className="hp4-hero-badge-text">ELO · DIXON-COLES · REAL xG · POISSON</span>
+            }
+          </div>
+          <h1 className="hp4-hero-title hp6-hero-title" style={{animationDelay:"0.1s"}}>
+            Read The<br/><span className="hp4-gradient-text hp4-glow-pulse">Game.</span>
+          </h1>
+          <p className="hp6-hero-sub" style={{animationDelay:"0.18s"}}>
+            Football intelligence rebuilt. Live scores, Poisson predictions, live xG tracking and the deepest FPL suite.
+          </p>
+          <div className="hp4-hero-ctas" style={{animationDelay:"0.26s"}}>
+            <RippleBtn cls={liveCount>0?"hp4-btn--live":"hp4-btn--primary"} onClick={()=>nav("/live")}>
+              {liveCount>0&&<span className="hp4-live-dot hp4-live-dot--sm"/>}
+              {liveCount>0?"Watch Live":"Live Centre"}<span className="hp4-btn-sweep"/>
+            </RippleBtn>
+            <RippleBtn cls="hp4-btn--ghost" onClick={()=>nav("/predictions/premier-league")}>
+              Predictions<span className="hp4-btn-sweep"/>
+            </RippleBtn>
+            <RippleBtn cls="hp4-btn--fpl" onClick={()=>nav("/best-team")}>
+              FPL<span className="hp4-btn-sweep"/>
+            </RippleBtn>
+          </div>
+          {/* Stats strip */}
+          <div className="hp4-stats-strip hp6-stats-strip" style={{animationDelay:"0.35s"}}>
+            {[
+              {l:"Live",v:liveCount,c:"#ff4444",live:true,ld:upcoming_loading},
+              {l:"Today",v:todayCount,c:"#38bdf8",ld:upcoming_loading},
+              {l:"Confidence",v:avgConf,c:"#34d399",sx:"%",ld:dash_loading},
+              {l:"Top Edge",v:topEdge?`+${topEdge.edge}%`:null,c:"#a78bfa",raw:true,ld:dash_loading},
+            ].map(({l,v,c,live,sx="",ld,raw},i)=>(
+              <div key={l} className="hp4-stat-cell" style={{"--cell-color":c}}>
+                {i>0&&<div className="hp4-stat-div"/>}
+                <div className="hp4-stat-inner">
+                  <div className="hp4-stat-val">
+                    {live&&v>0&&!ld&&<span className="hp4-live-dot hp4-live-dot--sm" style={{"--dot-color":"#ff4444"}}/>}
+                    {ld||v==null?<span className="hp5-skel" style={{width:28,height:22,borderRadius:4}}/>
+                      :raw?<span className="hp4-mono">{v}</span>
+                      :<CountUp to={Number(v)||0} suffix={sx}/>}
+                  </div>
+                  <div className="hp4-stat-label">{l}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right intel panel */}
+        <div className="hp6-hero-right">
+          <TopPredPanel dash={dash}/>
+          {/* Quick links */}
+          <div className="hp6-hero-panel hp6-quicklinks">
+            <div className="hp6-panel-label">QUICK ACCESS</div>
+            {[
+              {to:"/predictions/champions-league",l:"UCL Predictions",c:"#3b82f6"},
+              {to:"/predictions/premier-league",l:"EPL Predictions",c:"#60a5fa"},
+              {to:"/captaincy",l:"Captain Picks",c:"#34d399"},
+              {to:"/player",l:"Player Browser",c:"#f59e0b"},
+            ].map(({to,l,c})=>(
+              <Link key={to} to={to} className="hp6-qlink" style={{"--ql-color":c}}>{l}<span className="hp6-qlink-arrow">→</span></Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="hp4-scroll-cue"><div className="hp4-scroll-line"/><div className="hp4-scroll-dot"/></div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE STRIP
+// ═══════════════════════════════════════════════════════════════
+function LivePulseStrip({ fixtures }) {
+  const nav  = useNavigate();
+  const live = fixtures.filter(f=>LIVE_SET.has(f.status));
+  if (!live.length) return null;
+  const chips = [...live,...live,...live];
+  return (
+    <div className="hp4-live-strip">
+      <div className="hp4-strip-fade hp4-strip-fade--l"/>
+      <div className="hp4-strip-track" style={{animationDuration:`${Math.max(live.length*6,18)}s`}}>
+        {chips.map((f,i)=>(
+          <div key={i} className="hp4-strip-chip" onClick={()=>nav(`/match/${f.fixture_id}`)}>
+            <span className="hp4-live-dot hp4-live-dot--xs"/>
+            {f.home_logo&&<img src={f.home_logo} className="hp4-chip-logo" onError={e=>e.currentTarget.style.display="none"}/>}
+            <span className="hp4-chip-team">{f.home_team?.split(" ").slice(-1)[0]}</span>
+            <span className="hp4-chip-score hp4-mono">{f.home_score??0}–{f.away_score??0}</span>
+            {f.away_logo&&<img src={f.away_logo} className="hp4-chip-logo" onError={e=>e.currentTarget.style.display="none"}/>}
+            <span className="hp4-chip-team">{f.away_team?.split(" ").slice(-1)[0]}</span>
+            {f.minute&&<span className="hp4-chip-min hp4-mono">{f.minute}'</span>}
           </div>
         ))}
       </div>
+      <div className="hp4-strip-fade hp4-strip-fade--r"/>
     </div>
   );
 }
 
-/* ─── Pitch grid background ─────────────────────────────── */
-function PitchGridBg() {
-  return (
-    <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none",zIndex:0}}>
-      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",
-        width:800,height:500,background:"radial-gradient(ellipse,rgba(79,158,255,0.07) 0%,rgba(0,224,158,0.03) 45%,transparent 70%)",}}/>
-      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:.045,animation:"pitchPulse 6s ease-in-out infinite"}}
-        viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
-        <rect x="40" y="20" width="1120" height="560" rx="8" fill="none" stroke="white" strokeWidth="1.5"/>
-        <line x1="600" y1="20" x2="600" y2="580" stroke="white" strokeWidth="1"/>
-        <circle cx="600" cy="300" r="80" fill="none" stroke="white" strokeWidth="1"/>
-        <circle cx="600" cy="300" r="4" fill="white"/>
-        <rect x="40" y="180" width="110" height="240" fill="none" stroke="white" strokeWidth="1"/>
-        <rect x="1050" y="180" width="110" height="240" fill="none" stroke="white" strokeWidth="1"/>
-        <rect x="40" y="230" width="50" height="140" fill="none" stroke="white" strokeWidth="1"/>
-        <rect x="1110" y="230" width="50" height="140" fill="none" stroke="white" strokeWidth="1"/>
-        <circle cx="240" cy="300" r="2" fill="white"/>
-        <circle cx="960" cy="300" r="2" fill="white"/>
-      </svg>
-      {[[C.blue,.06,"-5%","10%","55s"],[C.green,.05,"78%","55%","68s"],[C.purple,.04,"42%","-6%","62s"],[C.gold,.04,"20%","70%","72s"]].map(([col,op,l,t,dur],i)=>(
-        <div key={i} style={{position:"absolute",width:500,height:500,borderRadius:"50%",left:l,top:t,
-          background:col,opacity:op,filter:"blur(110px)",animation:`orbFloat ${dur} ease-in-out infinite`,animationDelay:`${i*9}s`}}/>
-      ))}
-      {Array.from({length:18},(_,i)=>({
-        x:Math.random()*100,y:Math.random()*100,s:Math.random()*1.4+.4,
-        op:Math.random()*.18+.04,sp:Math.random()*28+18,dl:Math.random()*-28,
-      })).map((p,i)=>(
-        <div key={i} style={{position:"absolute",left:p.x+"%",top:p.y+"%",width:p.s,height:p.s,
-          borderRadius:"50%",background:"white",opacity:p.op,
-          animation:`floatP ${p.sp}s ${p.dl}s linear infinite`}}/>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Animated feature card graphics ───────────────────── */
-function PitchGraphic({ color, hov }) {
-  return (
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      <rect x="2" y="2" width="176" height="96" rx="7" stroke={color} strokeWidth="1.5" strokeOpacity={hov?.5:.25}/>
-      <line x1="90" y1="2" x2="90" y2="98" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.15}/>
-      <circle cx="90" cy="50" r="20" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.15}/>
-      <rect x="2" y="32" width="24" height="36" rx="2" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.2}/>
-      <rect x="154" y="32" width="24" height="36" rx="2" stroke={color} strokeWidth="0.8" strokeOpacity={hov?.3:.2}/>
-      <path d="M 40 62 C 65 28 120 25 148 50" stroke={color} strokeWidth="2" strokeOpacity={hov?.9:.55}
-        strokeDasharray="5 3" strokeLinecap="round"
-        style={{strokeDashoffset: hov?0:100, transition:"stroke-dashoffset 600ms ease"}}/>
-      <circle cx={hov?148:40} cy={hov?50:62} r="6" fill={color} opacity={hov?.95:.7}
-        style={{transition:"cx 600ms ease, cy 600ms ease"}}/>
-      <circle cx={hov?148:40} cy={hov?50:62} r="11" fill={color} opacity={hov?.2:.08}
-        style={{transition:"cx 600ms ease, cy 600ms ease"}}/>
-      {[[40,62],[62,36],[62,72],[108,38],[108,68]].map(([x,y],i)=>(
-        <circle key={i} cx={x} cy={y} r={i===0?5:4} fill={color} opacity={i===0?0:hov?.55:.3}
-          style={{transition:"opacity 220ms"}}/>
-      ))}
-    </svg>
-  );
-}
-
-function BarGraphic({ color, hov }) {
-  const bars = [0.42,0.68,0.52,0.88,0.61,0.78,0.95];
-  return (
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      <line x1="14" y1="90" x2="170" y2="90" stroke={color} strokeOpacity="0.15" strokeWidth="0.8"/>
-      {bars.map((h,i)=>(
-        <rect key={i} x={16+i*22} y={90-h*72} width="15" height={h*72} rx="3"
-          fill={color} opacity={hov ? 0.25+h*.6 : 0.12+h*.3}
-          style={{transition:`opacity 220ms, height 500ms ${i*50}ms`}}/>
-      ))}
-      <polyline points={bars.map((h,i)=>`${23.5+i*22},${90-h*72}`).join(" ")}
-        fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        opacity={hov?.95:.65} style={{transition:"opacity 220ms"}}/>
-      {bars.filter((_,i)=>i%2===0).map((h,i)=>(
-        <circle key={i} cx={23.5+(i*2)*22} cy={90-h*72} r="3.5" fill={color} opacity={hov?.95:.7}
-          style={{transition:"opacity 220ms"}}/>
-      ))}
-    </svg>
-  );
-}
-
-function FormationGraphic({ color, hov }) {
-  const pos = [[90,88],[38,68],[63,68],[117,68],[142,68],[50,46],[90,40],[130,46],[60,18],[90,12],[120,18]];
-  return (
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      <rect x="2" y="2" width="176" height="96" rx="7" stroke={color} strokeWidth="1" strokeOpacity={hov?.25:.12}/>
-      <line x1="2" y1="50" x2="178" y2="50" stroke={color} strokeWidth="0.5" strokeOpacity={hov?.15:.07}/>
-      <circle cx="90" cy="50" r="16" stroke={color} strokeWidth="0.5" strokeOpacity={hov?.15:.07}/>
-      {pos.map(([x,y],i)=>(
-        <g key={i}>
-          <circle cx={x} cy={y} r={6} fill={color} opacity={i===0?hov?.5:.3:hov?.9:.6} style={{transition:`opacity 220ms ${i*18}ms`}}/>
-          <circle cx={x} cy={y} r={11} fill={color} opacity={hov?.12:.05} style={{transition:`opacity 220ms ${i*18}ms`}}/>
-        </g>
-      ))}
-      <text x="90" y="15" fontSize="6" fill="white" textAnchor="middle" dominantBaseline="middle" fontWeight="900" opacity={hov?.8:.4}>10</text>
-    </svg>
-  );
-}
-
-function RadarGraphic({ color, hov }) {
-  const pts=6, vals=[0.88,0.72,0.94,0.67,0.81,0.90];
-  const cx=90,cy=50,r=36;
-  const poly=vals.map((v,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return[cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v];}).map(([x,y])=>`${x},${y}`).join(" ");
-  return(
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      {[.33,.66,1].map(g=><polygon key={g} points={vals.map((_,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return`${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;}).join(" ")} fill="none" stroke={color} strokeWidth=".7" strokeOpacity={hov?.25:.12}/>)}
-      {Array.from({length:pts}).map((_,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return<line key={i} x1={cx} y1={cy} x2={cx+Math.cos(a)*r} y2={cy+Math.sin(a)*r} stroke={color} strokeWidth=".5" strokeOpacity={hov?.2:.08}/>;} )}
-      <polygon points={poly} fill={color} fillOpacity={hov?.28:.13} stroke={color} strokeWidth="1.8" strokeOpacity={hov?.9:.6} style={{transition:"all 300ms"}}/>
-      {vals.map((v,i)=>{const a=(i/pts)*Math.PI*2-Math.PI/2;return<circle key={i} cx={cx+Math.cos(a)*r*v} cy={cy+Math.sin(a)*r*v} r="3.5" fill={color} opacity={hov?.95:.65} style={{transition:`opacity 220ms ${i*30}ms`}}/>;} )}
-    </svg>
-  );
-}
-
-function TrendGraphic({ color, hov }) {
-  const pts=[[10,76],[24,63],[38,68],[52,50],[66,42],[80,54],[94,36],[108,30],[122,20],[136,14],[150,8]];
-  const poly=pts.map(([x,y])=>`${x},${y}`).join(" ");
-  const area=`${pts[0][0]},90 ${poly} ${pts[pts.length-1][0]},90`;
-  return(
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      {[25,50,75].map(y=><line key={y} x1="8" y1={y} x2="158" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth=".8"/>)}
-      <polygon points={area} fill={color} fillOpacity={hov?.12:.05} style={{transition:"fill-opacity 220ms"}}/>
-      <polyline points={poly} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity={hov?.95:.65} style={{transition:"opacity 220ms"}}/>
-      {pts.filter((_,i)=>i%3===0).map(([x,y],i)=>(
-        <circle key={i} cx={x} cy={y} r="3.5" fill={color} opacity={hov?.9:.6} style={{transition:"opacity 220ms"}}/>
-      ))}
-      <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="6" fill={color} opacity={hov?.95:.8}>
-        {hov && <animate attributeName="r" values="5;8;5" dur="1.2s" repeatCount="indefinite"/>}
-      </circle>
-    </svg>
-  );
-}
-
-function HeatmapGraphic({ color, hov }) {
-  const cells=Array.from({length:35},(_,i)=>.15+Math.sin(i*.7)*.35+Math.cos(i*.4)*.25);
-  return(
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      <rect x="12" y="8" width="156" height="84" rx="4" fill="none" stroke={color} strokeWidth=".8" strokeOpacity={hov?.35:.18}/>
-      {Array.from({length:7}).map((_,row)=>Array.from({length:5}).map((_,col)=>{
-        const v=cells[row*5+col];
-        return<rect key={row*5+col} x={12+col*31.2} y={8+row*12} width="31.2" height="12"
-          fill={color} opacity={hov?v*.75:v*.4} rx="1" style={{transition:`opacity 250ms ${(row*5+col)*8}ms`}}/>;
-      }))}
-      <line x1="90" y1="8" x2="90" y2="92" stroke={color} strokeWidth=".6" strokeOpacity={hov?.3:.15}/>
-    </svg>
-  );
-}
-
-function GameGraphic({ color, hov }) {
-  return(
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      <rect x="20" y="20" width="140" height="60" rx="12" fill={color} fillOpacity={hov?.1:.05} stroke={color} strokeWidth="1.5" strokeOpacity={hov?.5:.25}/>
-      <circle cx="90" cy="50" r="18" fill={color} fillOpacity={hov?.15:.07} stroke={color} strokeWidth="1.2" strokeOpacity={hov?.5:.25}/>
-      <path d="M84 50l-6-4v8l6-4z" fill={color} opacity={hov?.9:.6}/>
-      <path d="M96 50l6-4v8l-6-4z" fill={color} opacity={hov?.9:.6}/>
-      <rect x="86" y="44" width="8" height="12" rx="1" fill={color} opacity={hov?.3:.15}/>
-      {[[32,50],[148,50]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r={8} fill={color} fillOpacity={hov?.2:.08} stroke={color} strokeOpacity={hov?.5:.25} strokeWidth="1"/>)}
-      {[[32,44],[32,56],[148,44],[148,56]].map(([x,y],i)=><rect key={i} x={x-4} y={y-2} width="8" height="4" rx="1" fill={color} opacity={hov?.7:.4}/>)}
-    </svg>
-  );
-}
-
-function LearnGraphic({ color, hov }) {
-  const nodes=[[90,20],[50,50],[90,50],[130,50],[70,80],[110,80]];
-  return(
-    <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
-      {[[0,1],[0,2],[0,3],[1,4],[2,4],[2,5],[3,5]].map(([a,b],i)=>(
-        <line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]}
-          stroke={color} strokeWidth="1.2" strokeOpacity={hov?.5:.22}
-          style={{transition:`stroke-opacity 220ms ${i*40}ms`}}/>
-      ))}
-      {nodes.map(([x,y],i)=>(
-        <g key={i}>
-          <circle cx={x} cy={y} r="8" fill={color} opacity={hov?.3:.12} style={{transition:`opacity 220ms ${i*40}ms`}}/>
-          <circle cx={x} cy={y} r="4.5" fill={color} opacity={hov?.9:.55} style={{transition:`opacity 220ms ${i*40}ms`}}/>
-        </g>
-      ))}
-      <text x="90" y="24" fontSize="5.5" fill="white" textAnchor="middle" dominantBaseline="middle" fontWeight="900" opacity={hov?.8:.4}>xG</text>
-    </svg>
-  );
-}
-
-/* ─── Feature card — neobrutalist ───────────────────────── */
-function FeatureCard({ to, color, title, subtitle, description, badge, delay = 0, index = 1 }) {
+// ═══════════════════════════════════════════════════════════════
+// SECTION 3 — TOP PREDICTIONS (large horizontal cards)
+// ═══════════════════════════════════════════════════════════════
+function PredCard({ p, index }) {
+  const nav   = useNavigate();
   const [hov, setHov] = useState(false);
+  const [ref, vis]    = useReveal(0.05);
+  const hp = p.homeProb||0, dp = p.draw||0, ap = p.awayProb||0;
+  const favTeam = hp>ap ? p.home : p.away;
+  const favProb = Math.max(hp,ap);
+  const confColor = (p.conf_pct||50)>=70?"#34d399":(p.conf_pct||50)>=55?"#f59e0b":"#f87171";
+
   return (
-    <Link to={to} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      className="hp-card"
-      style={{
-        display: "flex", flexDirection: "column",
-        background: hov ? "rgba(0,255,240,.06)" : "#000",
-        border: "1px solid rgba(0,255,240,.2)", borderRight: "none",
-        textDecoration: "none",
-        boxShadow: hov ? "6px 6px 0 #0a0a0a" : "none",
-        animationDelay: delay + "ms", animation: "hpCardIn 500ms ease both",
-        position: "relative", overflow: "hidden",
-        transition: "background 160ms, box-shadow 160ms",
-      }}>
-      {/* Corner number — concept .feat-n */}
-      <div style={{ position:"absolute", top:8, right:10, fontFamily:"'Bebas Neue',sans-serif", fontSize:72, color: hov ? "rgba(255,255,255,.05)" : "rgba(0,0,0,.04)", lineHeight:1, pointerEvents:"none", userSelect:"none" }}>{String(index).padStart(2,"0")}</div>
-      {/* Accent top on hover */}
-      <div style={{ height:1, background: hov ? "#00fff0" : "rgba(0,255,240,.12)", transition:"background 160ms" }}/>
-      <div style={{ padding:"24px 26px 26px", flex:1, display:"flex", flexDirection:"column", gap:8 }}>
-        {/* Icon */}
-        <div style={{ width:42, height:42, background: hov ? "#ff2744" : "rgba(0,255,240,.06)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, boxShadow: hov ? "4px 4px 0 #0a0a0a" : "3px 3px 0 rgba(0,0,0,.2)", transition:"background .15s,box-shadow .15s", flexShrink:0 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00fff0" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14 14 0 0 1 0 20M2 12h20"/></svg>
+    <div ref={ref} style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(16px)",transition:`all 0.45s ease ${index*55}ms`,flexShrink:0,width:280}}>
+      <div
+        className={`hp6-pred-card ${hov?"hp6-pred-card--hov":""}`}
+        style={{"--pc-color":p.col||"#38bdf8"}}
+        onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+        onClick={()=>p.fixture_id&&nav(`/match/${p.fixture_id}`)}
+      >
+        {/* Header */}
+        <div className="hp6-pc-head">
+          <span className="hp6-pc-league">{p.league||"League"}</span>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <div style={{width:5,height:5,borderRadius:"50%",background:confColor}}/>
+            <span className="hp4-mono" style={{fontSize:9,fontWeight:800,color:confColor}}>{p.conf_pct||50}%</span>
+          </div>
         </div>
-        {/* Title */}
-        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:26, letterSpacing:1, color: hov ? "#00fff0" : "rgba(0,255,240,.8)", lineHeight:1.1, transition:"color 160ms" }}>{title}</div>
-        {/* Description */}
-        <p style={{ fontSize:12, lineHeight:1.7, color: hov ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.5)", margin:0, fontFamily:"'Space Grotesk',sans-serif", transition:"color 160ms" }}>{description}</p>
-        {/* CTA link */}
-        <div style={{ marginTop:"auto", paddingTop:10, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".18em", textTransform:"uppercase", color: hov ? "#ff2744" : "rgba(0,0,0,.35)", display:"flex", alignItems:"center", gap:6, opacity: hov ? 1 : 0, transform: hov ? "translateX(0)" : "translateX(-6px)", transition:"all .2s" }}>
-          {subtitle} →
+        {/* Teams row */}
+        <div className="hp6-pc-teams">
+          <div className="hp6-pc-team">
+            {p.home_logo&&<img src={p.home_logo} width={24} height={24} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+            <span className="hp6-pc-tname">{p.home}</span>
+          </div>
+          <div className="hp6-pc-score-area">
+            <div className="hp6-pc-predicted hp4-mono">{p.score||"1-0"}</div>
+            <div style={{fontSize:8,color:"var(--text-muted)"}}>predicted</div>
+          </div>
+          <div className="hp6-pc-team" style={{flexDirection:"row-reverse"}}>
+            {p.away_logo&&<img src={p.away_logo} width={24} height={24} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+            <span className="hp6-pc-tname" style={{textAlign:"right"}}>{p.away}</span>
+          </div>
+        </div>
+        {/* Prob bar */}
+        <div className="hp6-pc-probbar">
+          <div style={{flex:hp,background:"#38bdf8",opacity:.85,transition:"flex .5s"}}/>
+          <div style={{flex:dp,background:"rgba(255,255,255,.18)"}}/>
+          <div style={{flex:ap,background:"#34d399",opacity:.85,transition:"flex .5s"}}/>
+        </div>
+        <div className="hp6-pc-probs">
+          <span className="hp4-mono" style={{color:"#38bdf8",fontWeight:900}}>{hp}%</span>
+          <span style={{color:"var(--text-dim)"}}>Draw {dp}%</span>
+          <span className="hp4-mono" style={{color:"#34d399",fontWeight:900}}>{ap}%</span>
+        </div>
+        {/* xG + markets */}
+        <div className="hp6-pc-markets">
+          <span>xG <span className="hp4-mono">{p.xg_home?.toFixed(1)}–{p.xg_away?.toFixed(1)}</span></span>
+          {favProb>=60&&<span className="hp6-pc-badge" style={{background:`${p.col||"#38bdf8"}18`,color:p.col||"#38bdf8"}}>{favProb}% {favTeam?.split(" ").slice(-1)[0]}</span>}
+        </div>
+        {/* Hover expand */}
+        <div className={`hp6-pc-expand ${hov?"hp6-pc-expand--vis":""}`}>
+          <span style={{fontSize:9,color:"var(--text-muted)"}}>Open match intelligence →</span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
-/* ─── Prediction strip (backend-driven) ─────────────────── */
-function PredictionStrip({ predictions = [] }) {
-  if (predictions.length === 0) return null;
- 
+function TopPredictions({ dash, loading }) {
+  const [ref, vis] = useReveal(0.04);
+  const preds = dash?.top_predictions?.predictions ?? [];
   return (
-    <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 52px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: "50%",
-            background: C.green, boxShadow: `0 0 8px ${C.green}`,
-            animation: "livePulse 2s ease infinite",
-          }} />
-          <span style={{
-            fontSize: 12, fontWeight: 900, color: C.text,
-            fontFamily: "'Sora', sans-serif", letterSpacing: "0.07em",
-          }}>
-            TOP PREDICTIONS
-          </span>
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div><div className="hp6-eyebrow">— Model Output</div><h2 className="hp6-section-title">Today's Top Predictions</h2></div>
+          <Link to="/predictions/premier-league" className="hp6-see-all">All predictions →</Link>
         </div>
-        <Link to="/predictions/premier-league" style={{
-          fontSize: 11, fontWeight: 700, color: C.blue,
-          textDecoration: "none", fontFamily: "'Inter', sans-serif",
-          display: "flex", alignItems: "center", gap: 5,
-          opacity: 0.85, transition: "opacity 150ms",
-        }}
-          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
-          onMouseLeave={e => e.currentTarget.style.opacity = "0.85"}
-        >
-          All fixtures
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-            <path d="M2 6h8M7 3l3 3-3 3" stroke={C.blue} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <div className="hp6-hscroll">
+          {loading ? Array.from({length:4}).map((_,i)=>(
+            <div key={i} style={{flexShrink:0,width:280,height:200,borderRadius:16,background:"rgba(6,11,22,.98)",border:"1px solid rgba(255,255,255,.06)"}}><div style={{padding:16}}><Skel w="60%" h={9}/><div style={{marginTop:12}}/><Skel w="90%" h={12}/><div style={{marginTop:4}}/><Skel w="75%" h={9}/></div></div>
+          )) : preds.map((p,i)=><PredCard key={i} p={p} index={i}/>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 4 — MODEL EDGE BOARD + HIGH XG
+// ═══════════════════════════════════════════════════════════════
+function EdgeCard({ edge, index }) {
+  const [ref, vis] = useReveal(0.05);
+  return (
+    <div ref={ref} className="hp6-edge-card" style={{opacity:vis?1:0,transform:vis?"translateX(0)":"translateX(12px)",transition:`all .4s ease ${index*50}ms`}}>
+      <div className="hp6-edge-tag" style={{color:edge.col||"#34d399"}}>MODEL EDGE</div>
+      <div className="hp6-edge-match">{edge.home} vs {edge.away}</div>
+      <div className="hp6-edge-val" style={{color:edge.col||"#34d399"}}>+{edge.edge}%</div>
+      <div className="hp6-edge-dir">{edge.direction==="home"?edge.home:edge.away} favoured</div>
+      <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,.05)",marginTop:8,overflow:"hidden"}}>
+        <div style={{width:`${Math.min(edge.model_prob||edge.edge*2,100)}%`,height:"100%",background:edge.col||"#34d399",borderRadius:999}}/>
+      </div>
+    </div>
+  );
+}
+
+function XgCard({ match, index }) {
+  const nav = useNavigate();
+  const [ref, vis] = useReveal(0.05);
+  const total = match.total_xg || ((match.xg_home||0)+(match.xg_away||0));
+  return (
+    <div ref={ref} className="hp6-xg-card" style={{opacity:vis?1:0,transform:vis?"translateX(0)":"translateX(12px)",transition:`all .4s ease ${index*50}ms`}}
+      onClick={()=>match.fixture_id&&nav(`/match/${match.fixture_id}`)}>
+      <div className="hp6-xg-tag">HIGH xG</div>
+      <div className="hp6-xg-total hp4-mono">{total.toFixed(1)}</div>
+      <div className="hp6-xg-match">{match.home?.split(" ").slice(-1)[0]} vs {match.away?.split(" ").slice(-1)[0]}</div>
+      <div style={{display:"flex",gap:3,marginTop:6}}>
+        <div style={{flex:match.xg_home||1,height:4,borderRadius:999,background:"#38bdf8",opacity:.8}}/>
+        <div style={{flex:match.xg_away||1,height:4,borderRadius:999,background:"#34d399",opacity:.8}}/>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:9,marginTop:3}}>
+        <span className="hp4-mono" style={{color:"#38bdf8"}}>{(match.xg_home||0).toFixed(1)}</span>
+        <span className="hp4-mono" style={{color:"#34d399"}}>{(match.xg_away||0).toFixed(1)}</span>
+      </div>
+    </div>
+  );
+}
+
+function EdgeBoard({ dash, loading }) {
+  const [ref, vis] = useReveal(0.04);
+  const edges     = dash?.model_edges?.edges ?? [];
+  const highXg    = dash?.high_scoring_matches?.matches ?? [];
+  return (
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div><div className="hp6-eyebrow">— Value Signals</div><h2 className="hp6-section-title">Model Edge Board</h2></div>
+        </div>
+        <div className="hp6-edge-grid">
+          {/* Left: edges */}
+          <div>
+            <div className="hp6-sub-label">Best Edges Today</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {loading ? Array.from({length:3}).map((_,i)=><div key={i} className="hp6-edge-card"><Skel w="70%" h={10}/><div style={{marginTop:6}}/><Skel w="50%" h={16}/></div>)
+                : edges.length>0 ? edges.map((e,i)=><EdgeCard key={i} edge={e} index={i}/>)
+                : <div className="hp6-empty-state">No edges detected today</div>}
+            </div>
+          </div>
+          {/* Right: high xG */}
+          <div>
+            <div className="hp6-sub-label">Highest xG Fixtures</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {loading ? Array.from({length:3}).map((_,i)=><div key={i} className="hp6-xg-card"><Skel w="40%" h={24}/><div style={{marginTop:4}}/><Skel w="70%" h={10}/></div>)
+                : highXg.length>0 ? highXg.slice(0,4).map((m,i)=><XgCard key={i} match={m} index={i}/>)
+                : <div className="hp6-empty-state">Loading fixtures…</div>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 5 — TOOL COMMAND GRID (large asymmetric cards)
+// ═══════════════════════════════════════════════════════════════
+
+// Animated SVG graphics — topic-specific, animate on hover
+function LiveRadarGfx({ active }) {
+  return (
+    <svg width="110" height="110" viewBox="0 0 110 110" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      {[20,32,44].map((r,i)=><circle key={i} cx="55" cy="55" r={r} stroke="#ff4444" strokeWidth={i===2?1.5:.6} opacity={.12+i*.08}/>)}
+      {Array.from({length:6}).map((_,j)=>{const a=(j/6)*Math.PI*2;return<line key={j} x1="55" y1="55" x2={55+Math.cos(a)*44} y2={55+Math.sin(a)*44} stroke="#ff4444" strokeWidth=".5" opacity=".15"/>;  })}
+      {/* Sweep arm */}
+      <line x1="55" y1="55" x2="99" y2="55" stroke="#ff4444" strokeWidth="1.5" opacity=".7" style={{transformOrigin:"55px 55px",animation:active?"hp6-sweep-arm 2s linear infinite":"none"}}/>
+      {/* Live dots */}
+      {[{x:72,y:38},{x:44,y:68},{x:80,y:64}].map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={3} fill="#ff4444" opacity=".7" style={{animation:`snLivePulse ${1.2+i*.3}s ease-in-out infinite`}}/>)}
+    </svg>
+  );
+}
+
+function ProbBarsGfx({ active }) {
+  const bars = [62,45,78,55,88,40,66,72];
+  return (
+    <svg width="110" height="70" viewBox="0 0 110 70" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      {bars.map((h,i)=>(
+        <rect key={i} x={i*13+2} y={70-h*.65} width={10} height={h*.65} rx="3"
+          fill="#38bdf8" opacity={i===4?.9:.3+i*.07}
+          style={{transformOrigin:`${i*13+7}px 70px`,animation:active?`hp6-bar-grow .6s ease ${i*60}ms both`:undefined}}/>
+      ))}
+      <path d="M2 52L15 34L28 44L41 18L54 30L67 24L80 38L93 28" stroke="#38bdf8" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity=".5"/>
+    </svg>
+  );
+}
+
+function PitchGfx({ active }) {
+  return (
+    <svg width="110" height="78" viewBox="0 0 110 78" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      <rect x="1" y="1" width="108" height="76" rx="5" stroke="#a78bfa" strokeWidth="1.2" opacity=".5"/>
+      <line x1="55" y1="1" x2="55" y2="77" stroke="#a78bfa" strokeWidth=".8" opacity=".35"/>
+      <circle cx="55" cy="39" r="13" stroke="#a78bfa" strokeWidth=".8" opacity=".35"/>
+      <rect x="1" y="24" width="22" height="30" stroke="#a78bfa" strokeWidth=".8" opacity=".35"/>
+      <rect x="87" y="24" width="22" height="30" stroke="#a78bfa" strokeWidth=".8" opacity=".35"/>
+      {/* Positional nodes */}
+      {[{x:18,y:39},{x:36,y:20},{x:36,y:39},{x:36,y:58},{x:55,y:28},{x:55,y:50},{x:74,y:20},{x:74,y:39},{x:74,y:58},{x:90,y:30},{x:90,y:48}].map((p,i)=>(
+        <circle key={i} cx={p.x} cy={p.y} r={active?4:3} fill="#a78bfa" opacity={active?.85:.4}
+          style={{transition:"r .2s,opacity .2s",animation:active?`snLivePulse ${1.5+i*.15}s ease-in-out infinite`:undefined}}/>
+      ))}
+    </svg>
+  );
+}
+
+function FPLPitchGfx({ active }) {
+  const players = [{x:18,y:39,cap:false},{x:34,y:16,cap:false},{x:34,y:32,cap:false},{x:34,y:46,cap:false},{x:34,y:62,cap:false},{x:52,y:22,cap:false},{x:52,y:39,cap:true},{x:52,y:56,cap:false},{x:70,y:26,cap:false},{x:70,y:52,cap:false},{x:86,y:39,cap:false}];
+  return (
+    <svg width="110" height="78" viewBox="0 0 110 78" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      <rect x="1" y="1" width="108" height="76" rx="5" stroke="#34d399" strokeWidth="1" opacity=".35"/>
+      <line x1="55" y1="1" x2="55" y2="77" stroke="#34d399" strokeWidth=".6" opacity=".25"/>
+      <circle cx="55" cy="39" r="11" stroke="#34d399" strokeWidth=".6" opacity=".25"/>
+      {players.map((p,i)=>(
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r={p.cap?6:4} fill="#34d399" opacity={p.cap?.9:.5}
+            style={{animation:p.cap&&active?`snLivePulse 1.5s ease-in-out infinite`:undefined}}/>
+          {p.cap&&<text x={p.x} y={p.y+3.5} textAnchor="middle" fontSize="6" fontWeight="900" fill="#000" fontFamily="monospace">C</text>}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function PlayersGfx({ active }) {
+  return (
+    <svg width="80" height="90" viewBox="0 0 80 90" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      <circle cx="40" cy="22" r="14" stroke="#f59e0b" strokeWidth="1.5" opacity=".7" fill="#f59e0b" fillOpacity=".1"/>
+      <path d="M8 88c0-17.7 14.3-32 32-32s32 14.3 32 32" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" opacity=".7"/>
+      {/* Stat bars */}
+      {[{x:8,y:58,h:18,w:8},{x:20,y:52,h:24,w:8},{x:32,y:46,h:30,w:8}].map((b,i)=>(
+        <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} rx="2" fill="#f59e0b" opacity={.25+i*.1}
+          style={{animation:active?`hp6-bar-grow .6s ease ${i*100}ms both`:undefined}}/>
+      ))}
+      {/* Radar */}
+      <circle cx="40" cy="22" r="20" stroke="#f59e0b" strokeWidth=".5" strokeDasharray="3 3" opacity=".2"/>
+    </svg>
+  );
+}
+
+function NewsGfx({ active }) {
+  return (
+    <svg width="100" height="70" viewBox="0 0 100 70" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      <rect x="1" y="1" width="98" height="68" rx="6" stroke="#f472b6" strokeWidth="1" opacity=".35"/>
+      <rect x="8" y="10" width="84" height="10" rx="3" fill="#f472b6" fillOpacity=".4"
+        style={{animation:active?"hp6-shimmer-in .5s ease both":undefined}}/>
+      {[{y:28,w:60},{y:38,w:76},{y:48,w:50},{y:58,w:68}].map((r,i)=>(
+        <rect key={i} x="8" y={r.y} width={r.w} height="5" rx="2" fill="#f472b6" fillOpacity={.18-i*.03}/>
+      ))}
+      <circle cx="82" cy="43" r="12" stroke="#f472b6" strokeWidth=".8" strokeDasharray="3 2" opacity=".3"
+        style={{animation:active?"hp6-sweep-arm 3s linear infinite":undefined,transformOrigin:"82px 43px"}}/>
+    </svg>
+  );
+}
+
+function GameGfx({ active }) {
+  return (
+    <svg width="100" height="68" viewBox="0 0 100 68" fill="none" className={`hp6-gfx ${active?"hp6-gfx--active":""}`}>
+      <rect x="1" y="8" width="98" height="52" rx="12" stroke="#fb923c" strokeWidth="1.4" opacity=".6"/>
+      <circle cx="28" cy="34" r="12" stroke="#fb923c" strokeWidth="1" opacity=".5"/>
+      <line x1="22" y1="34" x2="34" y2="34" stroke="#fb923c" strokeWidth="1.6" strokeLinecap="round" opacity=".7"/>
+      <line x1="28" y1="28" x2="28" y2="40" stroke="#fb923c" strokeWidth="1.6" strokeLinecap="round" opacity=".7"/>
+      {[{x:68,y:26},{x:80,y:34},{x:68,y:42},{x:56,y:34}].map((p,i)=>(
+        <circle key={i} cx={p.x} cy={p.y} r="4" fill="#fb923c" opacity={active?.7:.35}
+          style={{animation:active?`snLivePulse ${1+i*.25}s ease-in-out infinite`:undefined}}/>
+      ))}
+    </svg>
+  );
+}
+
+// Large tool cards
+const TOOLS = [
+  {
+    to:"/live", label:"Live Centre", color:"#ff4444",
+    span:2, tall:true,
+    Gfx: LiveRadarGfx,
+    sub: "Real-time scores, live events and minute-by-minute match tracking",
+    dataKey:"live",
+    tag:"LIVE DATA",
+  },
+  {
+    to:"/predictions/premier-league", label:"Predictions", color:"#38bdf8",
+    span:1, tall:false,
+    Gfx: ProbBarsGfx,
+    sub: "Dixon-Coles Poisson model with ELO ratings",
+    dataKey:"preds",
+    tag:"MODEL OUTPUT",
+  },
+  {
+    to:"/match/0", label:"Match Hub", color:"#a78bfa",
+    span:1, tall:false,
+    Gfx: PitchGfx,
+    sub: "Expected lineups, H2H, injuries, xG and live tactics",
+    dataKey:null,
+    tag:"INTELLIGENCE",
+  },
+  {
+    to:"/best-team", label:"FPL Best XI", color:"#34d399",
+    span:1, tall:true,
+    Gfx: FPLPitchGfx,
+    sub: "Optimal FPL starting XI with captain signal",
+    dataKey:"fpl",
+    tag:"FPL",
+  },
+  {
+    to:"/squad-builder", label:"Squad Builder", color:"#34d399",
+    span:1, tall:false,
+    Gfx: null,
+    sub: "Build your 15-man FPL squad under budget",
+    dataKey:null,
+    tag:"FPL",
+  },
+  {
+    to:"/player", label:"Players", color:"#f59e0b",
+    span:1, tall:false,
+    Gfx: PlayersGfx,
+    sub: "500+ player profiles with xG, FPL stats and form",
+    dataKey:null,
+    tag:"DATA",
+  },
+  {
+    to:"/news", label:"News", color:"#f472b6",
+    span:1, tall:false,
+    Gfx: NewsGfx,
+    sub: "Transfers, injuries and intelligence updates",
+    dataKey:null,
+    tag:"NEWS",
+  },
+  {
+    to:"/games", label:"Mini Games", color:"#fb923c",
+    span:1, tall:false,
+    Gfx: GameGfx,
+    sub: "Score predictor, quizzes and football challenges",
+    dataKey:null,
+    tag:"GAMES",
+  },
+];
+
+function ToolDataRow({ dataKey, fixtures, dash, loading }) {
+  if (!dataKey) return null;
+  if (dataKey==="live") {
+    const live = fixtures.filter(f=>LIVE_SET.has(f.status));
+    if (loading) return <div className="hp6-td"><Skel w="70%" h={9}/></div>;
+    return (
+      <div className="hp6-td">
+        <div className="hp6-td-val" style={{color:"#ff4444"}}>{live.length>0?`${live.length} live now`:`${fixtures.filter(f=>isToday(f.kickoff)).length} today`}</div>
+        {live[0]&&<div className="hp6-td-sub hp4-mono">{live[0].home_team?.split(" ").slice(-1)[0]} {live[0].home_score??0}–{live[0].away_score??0} {live[0].away_team?.split(" ").slice(-1)[0]}</div>}
+      </div>
+    );
+  }
+  if (dataKey==="preds") {
+    const conf = dash?.model_confidence; const top = dash?.top_predictions?.predictions?.[0];
+    if (loading||!dash) return <div className="hp6-td"><Skel w="60%" h={9}/></div>;
+    return (
+      <div className="hp6-td">
+        {conf&&<div className="hp6-td-val">{conf.avg_confidence}% conf · {conf.total} fixtures</div>}
+        {top&&<div className="hp6-td-sub">{Math.max(top.homeProb||0,top.awayProb||0)}% {(top.homeProb>top.awayProb?top.home:top.away)?.split(" ").slice(-1)[0]}</div>}
+      </div>
+    );
+  }
+  if (dataKey==="fpl") {
+    const capt = dash?.differential_captains?.captains?.[0];
+    if (loading||!dash) return <div className="hp6-td"><Skel w="55%" h={9}/></div>;
+    return (
+      <div className="hp6-td">
+        {capt&&<><div className="hp6-td-val">Captain: {capt.name||capt.web_name}</div><div className="hp6-td-sub hp4-mono">{capt.ep_next?.toFixed(1)} EP · {capt.next_opp||""}</div></>}
+      </div>
+    );
+  }
+  return null;
+}
+
+function LargeToolCard({ tool, index, fixtures, dash, loading }) {
+  const { ref:tref, tf, gl, onMove, onLeave } = useTilt(5);
+  const [hov, setHov] = useState(false);
+  const [rref, vis]   = useReveal(0.04);
+  const { Gfx }       = tool;
+  return (
+    <div ref={rref} className="hp6-tool-wrap" style={{gridColumn:`span ${tool.span}`,gridRow:tool.tall?"span 2":"span 1",opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(20px)",transition:`opacity .55s ease ${index*55}ms,transform .55s ease ${index*55}ms`}}>
+      <div ref={tref} className={`hp6-tool-card ${hov?"hp6-tool-card--hov":""}`}
+        style={{"--tc-color":tool.color,transform:tf,transition:"transform .18s ease,box-shadow .22s,border-color .22s"}}
+        onMouseMove={onMove} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>{onLeave();setHov(false);}}>
+        {/* Dynamic glow */}
+        <div className="hp6-tool-glow" style={{background:`radial-gradient(circle at ${gl.x}% ${gl.y}%,${tool.color}22 0%,transparent 65%)`}}/>
+        <div className={`hp4-card-shimmer ${hov?"hp4-card-shimmer--active":""}`}/>
+        <div className="hp6-tool-topbar"/>
+        <Link to={tool.to} className="hp6-tool-link">
+          {/* Tag + label */}
+          <div className="hp6-tool-header">
+            <div className="hp6-tool-tag" style={{color:tool.color}}>{tool.tag}</div>
+            {hov&&Gfx&&<div className="hp6-tool-gfx-top"><Gfx active={hov}/></div>}
+          </div>
+          <div className="hp6-tool-title">{tool.label}</div>
+          <div className="hp6-tool-sub">{tool.sub}</div>
+          {/* Real data */}
+          <ToolDataRow dataKey={tool.dataKey} fixtures={fixtures} dash={dash} loading={loading}/>
+          {/* Background graphic */}
+          {Gfx&&<div className="hp6-tool-gfx-bg"><Gfx active={hov}/></div>}
+          <div className="hp6-tool-cta">
+            Open <span style={{transition:"transform .18s",transform:hov?"translateX(4px)":"translateX(0)",display:"inline-block"}}>→</span>
+          </div>
         </Link>
       </div>
- 
-      {/* Cards grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-        {predictions.slice(0, 4).map((p, i) => {
-          const confCol = p.conf === "high" ? C.green : p.conf === "medium" ? C.gold : C.orange;
-          const confLabel = (p.conf || "").charAt(0).toUpperCase() + (p.conf || "").slice(1);
-          const accentCol = p.col || C.blue;
- 
-          return (
-            <Link
-              key={p.fixtureId || i}
-              to={p.fixtureId ? `/match/${p.fixtureId}` : "/predictions/premier-league"}
-              style={{ textDecoration: "none", display: "block" }}
-              className="hp-card"
-            >
-              <div style={{
-                background: "rgba(0,255,240,.05)",
-                border: "1px solid rgba(0,255,240,.15)",
-                borderRadius: 0,
-                padding: "16px 18px",
-                position: "relative",
-                overflow: "hidden",
-                transition: "border-color 220ms, box-shadow 220ms",
-              }}
-                onMouseEnter={e=>{e.currentTarget.style.background="#000";e.currentTarget.style.boxShadow="5px 5px 0 #0a0a0a";e.currentTarget.style.transform="translate(-2px,-2px)";}}
-                onMouseLeave={e=>{e.currentTarget.style.background="rgba(0,255,240,.06)";e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}
-              >
-                {/* Top accent stripe */}
-                <div style={{
-                  position: "absolute", top: 0, left: 0, right: 0, height: 2,
-                  background: `linear-gradient(90deg, transparent, ${accentCol}88, transparent)`,
-                }} />
- 
-                {/* Team names */}
-                <div style={{
-                  display: "flex", justifyContent: "space-between",
-                  alignItems: "center", marginBottom: 12, gap: 8,
-                }}>
-                  <span style={{
-                    fontSize: 13, fontWeight: 800, color: C.text,
-                    fontFamily: "'Sora', sans-serif", flex: 1,
-                  }}>{p.home}</span>
-                  <span style={{
-                    fontSize: 9, fontWeight: 800, color: C.muted,
-                    background: "rgba(255,255,255,0.05)", padding: "2px 8px",
-                    borderRadius: 999, border: `1px solid ${C.line}`,
-                    letterSpacing: "0.06em", flexShrink: 0,
-                  }}>VS</span>
-                  <span style={{
-                    fontSize: 13, fontWeight: 800, color: C.text,
-                    fontFamily: "'Sora', sans-serif", flex: 1, textAlign: "right",
-                  }}>{p.away}</span>
-                </div>
- 
-                {/* Win prob bar — taller + glowing */}
-                <div style={{
-                  display: "flex", height: 8, borderRadius: 999,
-                  overflow: "hidden", marginBottom: 10, gap: 2,
-                }}>
-                  <div style={{
-                    flex: p.homeProb,
-                    background: `linear-gradient(90deg, ${C.blue}cc, ${C.blue})`,
-                    boxShadow: `0 0 8px ${C.blue}66`,
-                    borderRadius: "999px 0 0 999px",
-                  }} />
-                  <div style={{
-                    flex: p.draw,
-                    background: C.gold,
-                    opacity: 0.7,
-                  }} />
-                  <div style={{
-                    flex: p.awayProb,
-                    background: `linear-gradient(90deg, ${C.red}, ${C.red}cc)`,
-                    boxShadow: `0 0 8px ${C.red}66`,
-                    borderRadius: "0 999px 999px 0",
-                  }} />
-                </div>
- 
-                {/* Percentages + predicted score */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    {[[p.homeProb + "%", C.blue, "H"], [p.draw + "%", C.gold, "D"], [p.awayProb + "%", C.red, "A"]].map(([v, c, l]) => (
-                      <div key={l} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                        <span style={{
-                          fontSize: 13, fontWeight: 900, color: c,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          textShadow: `0 0 10px ${c}55`,
-                        }}>{v}</span>
-                        <span style={{ fontSize: 8, color: C.muted, letterSpacing: "0.06em" }}>{l}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                    <span style={{
-                      fontSize: 16, fontWeight: 900, color: accentCol,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      textShadow: `0 0 14px ${accentCol}66`,
-                    }}>{p.score || "—"}</span>
-                    <span style={{
-                      fontSize: 8, fontWeight: 800, color: confCol,
-                      background: `${confCol}14`, border: `1px solid ${confCol}35`,
-                      padding: "2px 7px", borderRadius: 999, letterSpacing: "0.06em",
-                    }}>{confLabel} conf.</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+    </div>
+  );
+}
+
+function CommandGrid({ fixtures, dash, loading }) {
+  const [ref, vis] = useReveal(0.04);
+  return (
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div><div className="hp6-eyebrow">— Platform</div><h2 className="hp6-section-title">Intelligence Command Grid</h2></div>
+          <span style={{fontSize:10,color:"var(--text-muted)"}}>8 tools</span>
+        </div>
+        <div className="hp6-bento">
+          {TOOLS.map((t,i)=><LargeToolCard key={t.to} tool={t} index={i} fixtures={fixtures} dash={dash} loading={loading}/>)}
+        </div>
       </div>
     </section>
   );
 }
-/* ─── Model performance (backend-driven) ────────────────── */
-function ModelPerformance({ trend = [], byMarket = [], overallAccuracy = 0 }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
 
-  if (trend.length === 0 && byMarket.length === 0) return null;
+// ═══════════════════════════════════════════════════════════════
+// SECTION 6 — COMPETITION HUB (rich league cards)
+// ═══════════════════════════════════════════════════════════════
+const COMPS = [
+  {label:"Premier League",slug:"premier-league",code:"epl",color:"#60a5fa",logo:"https://media.api-sports.io/football/leagues/39.png",teams:20,matches:"380/season",features:["Predictions","Standings","Season Sim","xG Leaders"]},
+  {label:"La Liga",slug:"la-liga",code:"laliga",color:"#fb923c",logo:"https://media.api-sports.io/football/leagues/140.png",teams:20,matches:"380/season",features:["Predictions","Standings","Season Sim"]},
+  {label:"Bundesliga",slug:"bundesliga",code:"bundesliga",color:"#f59e0b",logo:"https://media.api-sports.io/football/leagues/78.png",teams:18,matches:"306/season",features:["Predictions","Standings","Season Sim"]},
+  {label:"Serie A",slug:"serie-a",code:"seriea",color:"#34d399",logo:"https://media.api-sports.io/football/leagues/135.png",teams:20,matches:"380/season",features:["Predictions","Standings"]},
+  {label:"Ligue 1",slug:"ligue-1",code:"ligue1",color:"#a78bfa",logo:"https://media.api-sports.io/football/leagues/61.png",teams:18,matches:"306/season",features:["Predictions","Standings"]},
+  {label:"UCL",slug:"champions-league",code:"ucl",color:"#3b82f6",logo:"https://media.api-sports.io/football/leagues/2.png",teams:36,matches:"League phase + KO",features:["Predictions","Bracket"]},
+  {label:"Europa League",slug:"europa-league",code:"uel",color:"#f97316",logo:"https://media.api-sports.io/football/leagues/3.png",teams:36,matches:"League phase + KO",features:["Predictions","Bracket"]},
+  {label:"Conference",slug:"conference-league",code:"uecl",color:"#22c55e",logo:"https://media.api-sports.io/football/leagues/848.png",teams:36,matches:"League phase + KO",features:["Predictions","Bracket"]},
+  {label:"FA Cup",slug:"fa-cup",code:"facup",color:"#ef4444",logo:"https://media.api-sports.io/football/leagues/45.png",teams:736,matches:"Knockout",features:["Predictions","Bracket"]},
+];
 
-  const maxAcc = Math.max(...trend.map(d => d.acc), 1);
+function CompCard({ comp, index }) {
+  const [hov, setHov] = useState(false);
+  const [ref, vis]    = useReveal(0.05);
   return (
-    <section style={{maxWidth:1200,margin:"0 auto",padding:"0 20px 64px"}} ref={ref}>
-      <div style={{display:"grid",gridTemplateColumns:byMarket.length > 0 ? "1fr 340px" : "1fr",gap:0,alignItems:"stretch",border:"1px solid rgba(0,255,240,.2)",boxShadow:"6px 6px 0 rgba(0,0,0,.2)"}}>
-        {/* Bar chart */}
-        {trend.length > 0 && (
-          <div style={{background:"#000",padding:"24px 28px"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <div>
-                <div style={{fontSize:9,fontWeight:900,color:"rgba(0,255,240,.5)",letterSpacing:"0.14em",marginBottom:4}}>MODEL ACCURACY</div>
-                <div style={{fontSize:18,fontWeight:900,color:"#00fff0",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>Rolling Gameweeks</div>
-              </div>
-              {overallAccuracy > 0 && (
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:32,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",
-                    color:C.green,lineHeight:1,textShadow:`0 0 18px ${C.green}55`}}>{overallAccuracy}%</div>
-                  <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>OVERALL</div>
-                </div>
-              )}
+    <div ref={ref} style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${index*35}ms`}}>
+      <Link to={`/predictions/${comp.slug}`} style={{textDecoration:"none"}}>
+        <div className={`hp6-comp-card ${hov?"hp6-comp-card--hov":""}`} style={{"--cc-color":comp.color}}
+          onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <div className="hp6-cc-topbar"/>
+          <div className="hp6-cc-header">
+            <div className="hp6-cc-logo">
+              <img src={comp.logo} width={28} height={28} style={{objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>
             </div>
-            <div style={{display:"flex",alignItems:"flex-end",gap:8,height:120}}>
-              {trend.map((d,i) => (
-                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:6,height:"100%",justifyContent:"flex-end"}}>
-                  <span style={{fontSize:9,fontWeight:800,color:d.acc>=70?C.green:d.acc>=60?C.gold:C.orange,
-                    fontFamily:"'JetBrains Mono',monospace"}}>{d.acc}%</span>
-                  <div style={{width:"100%",borderRadius:"4px 4px 0 0",
-                    background:d.acc>=70?C.green:d.acc>=60?C.gold:C.orange,
-                    height:visible?`${(d.acc/maxAcc)*90}%`:"0%",
-                    opacity:d.acc>=70?.85:.6,
-                    transition:`height 700ms ${i*80}ms cubic-bezier(0.22,1,0.36,1)`}}/>
-                  <span style={{fontSize:8,color:"rgba(0,255,240,.35)"}}>{d.gw}</span>
-                </div>
-              ))}
+            <div>
+              <div className="hp6-cc-name">{comp.label}</div>
+              <div className="hp6-cc-meta">{comp.teams} clubs · {comp.matches}</div>
             </div>
           </div>
-        )}
-        {/* By market breakdown */}
-        {byMarket.length > 0 && (
-          <div style={{background:"#111",borderLeft:"1px solid rgba(0,255,240,.2)",
-            padding:"24px 24px",display:"flex",flexDirection:"column",gap:14,justifyContent:"center"}}>
-            <div style={{fontSize:9,fontWeight:900,color:"rgba(0,255,240,.5)",letterSpacing:"0.14em",marginBottom:2}}>BY MARKET</div>
-            {byMarket.map((m,i)=>(
-              <div key={m.label}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#00fff0"}}>{m.label}</span>
-                  <span style={{fontSize:16,fontWeight:900,fontFamily:"'JetBrains Mono',monospace",color:m.col,
-                    textShadow:`0 0 10px ${m.col}44`}}>{m.value}%</span>
+          <div className="hp6-cc-features">
+            {comp.features.map(f=><span key={f} className="hp6-cc-feat">{f}</span>)}
+          </div>
+          <div className="hp6-cc-cta">Explore predictions →</div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function CompetitionHub() {
+  const [ref, vis] = useReveal(0.04);
+  return (
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div>
+            <div className="hp6-eyebrow">— Coverage</div>
+            <h2 className="hp6-section-title">9 Competitions. Full Intelligence.</h2>
+            <p style={{fontSize:12,color:"var(--text-muted)",marginTop:6,maxWidth:480}}>Poisson model predictions, standings, season simulation and xG analysis across Europe's top competitions.</p>
+          </div>
+        </div>
+        <div className="hp6-comp-grid">
+          {COMPS.map((c,i)=><CompCard key={c.slug} comp={c} index={i}/>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 7 — FPL INTELLIGENCE HUB
+// ═══════════════════════════════════════════════════════════════
+const FPL_TOOLS = [
+  {to:"/best-team",label:"Best XI",stat:"Optimal 11",detail:"Model-driven optimal starting 11",color:"#34d399"},
+  {to:"/squad-builder",label:"Squad Builder",stat:"15-man squad",detail:"Build within £100m budget",color:"#38bdf8"},
+  {to:"/gameweek-insights",label:"GW Insights",stat:"This gameweek",detail:"Fixture analysis & GW picks",color:"#f59e0b"},
+  {to:"/fpl-table",label:"FPL Table",stat:"Standings",detail:"Live leaderboard & rank",color:"#a78bfa"},
+  {to:"/captaincy",label:"Captaincy",stat:"Captain picks",detail:"EP analysis & ownership",color:"#fb923c"},
+  {to:"/fixture-difficulty",label:"FDR Heatmap",stat:"8 GWs",detail:"Fixture difficulty ratings",color:"#67e8f9"},
+  {to:"/transfer-planner",label:"Transfer Planner",stat:"Plan moves",detail:"Model transfer recommendations",color:"#f87171"},
+  {to:"/differentials",label:"Differentials",stat:"Low-owned",detail:"High-ceiling, low-ownership picks",color:"#f472b6"},
+];
+
+function FPLHub({ dash }) {
+  const [ref, vis] = useReveal(0.04);
+  const capts  = dash?.differential_captains?.captains?.slice(0,4) ?? [];
+  const trends = dash?.trending_players?.items?.slice(0,4) ?? [];
+
+  return (
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div><div className="hp6-eyebrow">— Fantasy Premier League</div><h2 className="hp6-section-title">FPL Intelligence Hub</h2></div>
+          <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:999,background:"rgba(52,211,153,.07)",border:"1px solid rgba(52,211,153,.2)"}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:"#34d399",boxShadow:"0 0 8px #34d399",animation:"snLivePulse 2s ease-in-out infinite"}}/>
+            <span style={{fontSize:9,fontWeight:900,color:"#34d399",letterSpacing:"0.1em",fontFamily:"var(--font-mono)"}}>8 TOOLS ACTIVE</span>
+          </div>
+        </div>
+
+        <div className="hp6-fpl-layout">
+          {/* Left: captain picks */}
+          <div className="hp6-fpl-left">
+            <div className="hp6-sub-label">Captain Picks</div>
+            {capts.length>0 ? capts.map((c,i)=>(
+              <div key={i} className="hp6-capt-row" style={{"--cr-rank":i}}>
+                <div className="hp6-cr-rank hp4-mono">{String(i+1).padStart(2,"0")}</div>
+                {c.photo&&<img src={c.photo} width={28} height={28} style={{borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="hp6-cr-name">{c.name||c.web_name}</div>
+                  <div className="hp6-cr-meta">{c.next_opp||""} · {c.ownership?.toFixed(1)||"?"}% owned</div>
                 </div>
-                <div style={{height:4,borderRadius:2,background:"rgba(255,255,255,0.06)"}}>
-                  <div style={{height:"100%",borderRadius:2,background:m.col,
-                    width:visible?`${m.value}%`:"0%",
-                    boxShadow:`0 0 8px ${m.col}66`,
-                    transition:`width 800ms ${200+i*120}ms cubic-bezier(0.22,1,0.36,1)`}}/>
-                </div>
+                <div className="hp6-cr-ep hp4-mono">{c.ep_next?.toFixed(1)||"??"}</div>
+                <div className="hp6-cr-ep-label">EP</div>
               </div>
+            )) : Array.from({length:4}).map((_,i)=><div key={i} className="hp6-capt-row"><Skel w="70%" h={11}/></div>)}
+          </div>
+
+          {/* Center: animated orbit */}
+          <div className="hp6-fpl-center">
+            <div className="hp4-fpl-orbit">
+              <div className="hp4-fpl-orbit-ring"/>
+              <div className="hp4-fpl-orbit-ring hp4-fpl-orbit-ring--2"/>
+              <div className="hp4-fpl-orbit-core"/>
+            </div>
+            <div className="hp6-fpl-center-text">
+              <div className="hp6-fpl-center-num hp4-mono">{FPL_TOOLS.length}</div>
+              <div style={{fontSize:9,fontWeight:900,letterSpacing:"0.1em",color:"var(--text-muted)",textTransform:"uppercase"}}>FPL Tools</div>
+            </div>
+          </div>
+
+          {/* Right: tool list */}
+          <div className="hp6-fpl-right">
+            <div className="hp6-sub-label">All Tools</div>
+            {FPL_TOOLS.map((t,i)=>(
+              <FPLToolRow key={t.to} tool={t} index={i} dash={dash}/>
             ))}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FPLToolRow({ tool, index, dash }) {
+  const [hov, setHov] = useState(false);
+  const [ref, vis]    = useReveal(0.04);
+  const capt = tool.to==="/captaincy" && dash?.differential_captains?.captains?.[0];
+  const realStat = capt ? `${capt.name||capt.web_name} ${capt.ep_next?.toFixed(1)||"??"} EP` : tool.stat;
+  return (
+    <div ref={ref} style={{opacity:vis?1:0,transform:vis?"translateX(0)":"translateX(14px)",transition:`all .4s ease ${index*40}ms`}}>
+      <Link to={tool.to} style={{textDecoration:"none"}}>
+        <div className={`hp4-fpl-row ${hov?"hp4-fpl-row--hov":""}`} style={{"--fpl-color":tool.color}}
+          onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <div className="hp4-fpl-indicator"/>
+          <div className="hp4-fpl-idx hp4-mono">{String(index+1).padStart(2,"0")}</div>
+          <div className="hp4-fpl-dot"/>
+          <div className="hp4-fpl-content">
+            <span className="hp4-fpl-label">{tool.label}</span>
+            <span className={`hp4-fpl-detail ${hov?"hp4-fpl-detail--vis":""}`}>{tool.detail}</span>
+          </div>
+          <span className="hp4-fpl-stat">{realStat}</span>
+          <div className={`hp4-fpl-arrow ${hov?"hp4-fpl-arrow--vis":""}`}>→</div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 8 — TRENDING PLAYERS
+// ═══════════════════════════════════════════════════════════════
+function TrendingPlayers({ dash, loading }) {
+  const [ref, vis] = useReveal(0.04);
+  const items = dash?.trending_players?.items ?? [];
+  const xgLeaders = dash?.xg_leaders?.leaders?.slice(0,5) ?? [];
+  const showable = items.length>0 ? items.slice(0,6) : xgLeaders.slice(0,6);
+
+  return (
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div><div className="hp6-eyebrow">— Players</div><h2 className="hp6-section-title">Trending Now</h2></div>
+          <Link to="/player" className="hp6-see-all">Browse all →</Link>
+        </div>
+        <div className="hp6-player-grid">
+          {loading ? Array.from({length:6}).map((_,i)=>(
+            <div key={i} className="hp6-player-card"><div style={{padding:14}}><Skel w="60%" h={11}/><div style={{marginTop:8}}/><Skel w="80%" h={9}/></div></div>
+          )) : showable.length>0 ? showable.map((p,i)=><PlayerCard key={i} player={p} index={i}/>)
+            : <div className="hp6-empty-state" style={{gridColumn:"1/-1"}}>Loading player data…</div>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PlayerCard({ player, index }) {
+  const nav   = useNavigate();
+  const [hov, setHov] = useState(false);
+  const [ref, vis]    = useReveal(0.05);
+  const form = player.form||player.recent_form||"";
+  const formArr = typeof form==="string"?form.split("").filter(c=>"WDL".includes(c)):(Array.isArray(form)?form:[]);
+  return (
+    <div ref={ref} style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${index*45}ms`}}>
+      <div className={`hp6-player-card ${hov?"hp6-player-card--hov":""}`}
+        onClick={()=>nav(`/player?search=${encodeURIComponent(player.name||player.team_name||"")}`)}
+        onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+        <div className="hp6-pc2-top">
+          {player.photo&&<img src={player.photo} width={36} height={36} style={{borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
+          <div style={{flex:1,minWidth:0}}>
+            <div className="hp6-pc2-name">{player.name||player.player_name||"Player"}</div>
+            <div className="hp6-pc2-team">{player.team_name||player.team||""}</div>
+          </div>
+          {player.xg_per90!=null&&<div className="hp6-pc2-stat hp4-mono" style={{color:"#38bdf8"}}>{player.xg_per90?.toFixed(2)}<div style={{fontSize:7,color:"var(--text-dim)"}}>xG/90</div></div>}
+        </div>
+        {formArr.length>0&&(
+          <div style={{display:"flex",gap:3,marginTop:8}}>
+            {formArr.slice(-5).map((r,i)=><FormPip key={i} r={r}/>)}
+          </div>
         )}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Stat of the moment (backend-driven) ────────────────── */
-function StatOfMoment({ insight }) {
-  if (!insight || !insight.stat || insight.stat === "—") return null;
-  const s = insight;
-  const col = s.col || C.gold;
- 
-  return (
-    <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 52px" }}>
-      <div style={{
-        background: `linear-gradient(135deg, rgba(12,18,30,0.98), ${col}0e)`,
-        border: `1px solid ${col}33`,
-        borderRadius: 20, padding: "28px 36px",
-        display: "flex", gap: 32, alignItems: "center", flexWrap: "wrap",
-        position: "relative", overflow: "hidden",
-        transition: "box-shadow 300ms",
-      }}
-        onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 60px ${col}18`}
-        onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
-      >
-        {/* Background glow */}
-        <div style={{
-          position: "absolute", top: 0, right: 0, width: 350, height: 250,
-          background: `radial-gradient(circle at 100% 0%, ${col}18, transparent 70%)`,
-          pointerEvents: "none",
-        }} />
- 
-        {/* Animated dot + label */}
-        <div style={{ position: "absolute", top: 20, left: 36, display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: col, boxShadow: `0 0 8px ${col}`,
-            animation: "livePulse 2.5s ease infinite",
-          }} />
-          <span style={{
-            fontSize: 9, fontWeight: 900, color: col,
-            letterSpacing: "0.18em", textTransform: "uppercase",
-          }}>STAT SPOTLIGHT</span>
-        </div>
- 
-        {/* Big number */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 20 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-            <span style={{
-              fontSize: 64, fontWeight: 900,
-              fontFamily: "'JetBrains Mono', monospace",
-              color: col, lineHeight: 1,
-              textShadow: `0 0 32px ${col}77`,
-            }}>{s.stat}</span>
-            <div>
-              <div style={{
-                fontSize: 18, fontWeight: 800, color: C.text,
-                fontFamily: "'Sora', sans-serif", letterSpacing: "-0.01em",
-              }}>{s.label}</div>
-              <div style={{ fontSize: 12, color: col, fontWeight: 700, marginTop: 3 }}>{s.player}</div>
-            </div>
+        {player.goals!=null&&(
+          <div style={{display:"flex",gap:12,marginTop:8,fontSize:10,color:"var(--text-muted)"}}>
+            {player.goals!=null&&<span><span className="hp4-mono" style={{color:"var(--text)",fontWeight:900}}>{player.goals}</span> G</span>}
+            {player.assists!=null&&<span><span className="hp4-mono" style={{color:"var(--text)",fontWeight:900}}>{player.assists}</span> A</span>}
+            {player.rating!=null&&<span>Rating <span className="hp4-mono" style={{color:"#f59e0b",fontWeight:900}}>{Number(player.rating).toFixed(1)}</span></span>}
           </div>
-        </div>
- 
-        {/* Context text */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <p style={{
-            fontSize: 14, color: C.muted, lineHeight: 1.72,
-            margin: 0, fontFamily: "'Inter', sans-serif",
-          }}>{s.context}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-/* ─── Recent results (backend-driven) ────────────────────── */
-function RecentResults({ results = [], correct = 0, total = 0 }) {
-  if (results.length === 0) return null;
- 
-  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
- 
-  return (
-    <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 64px" }}>
-      <div style={{
-        background: "#000",
-        border: "1px solid rgba(0,255,240,.2)",
-        boxShadow: "6px 6px 0 rgba(0,0,0,.25)",
-        padding: "24px 28px",
-      }}>
-        {/* Header */}
-        <div style={{
-          display: "flex", alignItems: "center",
-          justifyContent: "space-between", marginBottom: 20,
-        }}>
-          <div>
-            <div style={{
-              fontSize: 9, fontWeight: 900, color: "rgba(0,255,240,.5)",
-              letterSpacing: "0.18em", marginBottom: 5, fontFamily:"'DM Mono',monospace",
-            }}>ACCOUNTABILITY</div>
-            <div style={{
-              fontSize: 22, fontWeight: 900, color: "#00fff0",
-              fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1,
-            }}>Recent Predictions</div>
-          </div>
- 
-          {total > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              {/* Mini circular-ish accuracy indicator */}
-              <div style={{ textAlign: "right" }}>
-                <div style={{
-                  fontSize: 28, fontWeight: 900, lineHeight: 1,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange,
-                  textShadow: `0 0 18px ${pct >= 70 ? C.green : pct >= 55 ? C.gold : C.orange}55`,
-                }}>{pct}%</div>
-                <div style={{ fontSize: 9, color: "rgba(0,255,240,.4)", letterSpacing: "0.08em", marginTop: 2 }}>
-                  {correct}/{total} correct
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
- 
-        {/* Result rows */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          {results.map((r, i) => {
-            const ok = r.correct === true;
-            const bad = r.correct === false;
-            const borderCol = ok ? C.green : bad ? C.red : "rgba(0,255,240,0.3)";
-            const icon = ok ? "✓" : bad ? "✗" : "·";
- 
-            return (
-              <Link
-                key={r.fixtureId || i}
-                to={r.fixtureId ? `/match/${r.fixtureId}` : "/predictions/premier-league"}
-                style={{ textDecoration: "none", display: "block" }}
-              >
-                <div
-                  style={{
-                    display: "flex", alignItems: "center", gap: 14,
-                    padding: "11px 16px", borderRadius: 12,
-                    background: `${borderCol}07`,
-                    border: `1px solid ${borderCol}20`,
-                    transition: "all 180ms",
-                    position: "relative", overflow: "hidden",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = `${borderCol}12`;
-                    e.currentTarget.style.borderColor = `${borderCol}35`;
-                    e.currentTarget.style.transform = "translateX(4px)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = `${borderCol}07`;
-                    e.currentTarget.style.borderColor = `${borderCol}20`;
-                    e.currentTarget.style.transform = "translateX(0)";
-                  }}
-                >
-                  {/* Left glow accent */}
-                  <div style={{
-                    position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
-                    background: borderCol, opacity: ok ? 0.9 : bad ? 0.7 : 0.3,
-                    borderRadius: "3px 0 0 3px",
-                  }} />
- 
-                  {/* Icon badge */}
-                  <div style={{
-                    width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-                    background: `${borderCol}20`, border: `1.5px solid ${borderCol}50`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: ok || bad ? 13 : 18, fontWeight: 900, color: borderCol,
-                  }}>
-                    {icon}
-                  </div>
- 
-                  {/* Match info */}
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{
-                      fontSize: 13, fontWeight: 700, color: "#00fff0", minWidth: 130,
-                      fontFamily: "'Space Grotesk',sans-serif",
-                    }}>
-                      {r.home} vs {r.away}
-                    </span>
-                    <span style={{ fontSize: 11, color: "rgba(0,255,240,.4)", fontFamily:"'DM Mono',monospace" }}>
-                      Predicted: <b style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>{r.pred}</b>
-                    </span>
-                    {r.actual && r.actual !== "Pending" && (
-                      <span style={{ fontSize: 11, color: "rgba(0,255,240,.4)", fontFamily:"'DM Mono',monospace" }}>
-                        Result: <b style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>{r.actual}</b>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-        {/* Footer link */}
-        <div style={{ marginTop:18, paddingTop:16, borderTop:"1px solid rgba(0,255,240,.12)", display:"flex", justifyContent:"flex-end" }}>
-          <Link to="/predictions/premier-league" style={{
-            fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".18em",
-            textTransform:"uppercase", color:"#ff2744", textDecoration:"none",
-            display:"flex", alignItems:"center", gap:6,
-            transition:"letter-spacing 160ms",
-          }}
-            onMouseEnter={e=>e.currentTarget.style.letterSpacing=".22em"}
-            onMouseLeave={e=>e.currentTarget.style.letterSpacing=".18em"}
-          >
-            Full predictions log →
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
- 
-/* ─── Feature cards data ─────────────────────────────────── */
-const FEATURES = [
-  { to:"/predictions/premier-league", color:C.blue,   title:"Match Predictions",    subtitle:"This week's fixtures →",  description:"Win probabilities, expected scorelines, and model confidence across 9 competitions.", graphic:PitchGraphic,    badge:"LIVE" },
-  { to:"/best-team",                  color:C.green,  title:"Best XI Builder",       subtitle:"Build your squad →",      description:"Optimal fantasy XI using composite scoring: fixtures, form, ICT index and season PPG.", graphic:FormationGraphic, badge:"FPL"  },
-  { to:"/squad-builder",              color:C.gold,   title:"Squad Builder",         subtitle:"Plan transfers →",         description:"Full FPL squads with budget constraints. Best value picks, differentials and captain options.", graphic:BarGraphic,       badge:"FPL"  },
-  { to:"/player",                     color:C.purple, title:"Player Profiles",       subtitle:"Analyse any player →",     description:"Deep statistical profiles with form trends and fixture difficulty across the season.", graphic:RadarGraphic,     badge:"STATS"},
-  { to:"/gameweek-insights",          color:C.orange, title:"GW Insights",           subtitle:"This gameweek →",          description:"FDR, captain picks, differential watchlist and injury news all in one place.", graphic:TrendGraphic,     badge:"FPL"  },
-  { to:"/fpl-table",                  color:C.red,    title:"Player Stats Table",    subtitle:"Full stats table →",       description:"Sortable stats for all players. Filter by position, team, price. Find hidden gems.", graphic:HeatmapGraphic,  badge:"STATS"},
-  { to:"/live",                       color:C.teal,   title:"Live Scores",           subtitle:"Watch now →",              description:"Real-time scores and live match intelligence across 9 competitions — updated every 30 seconds.", graphic:PitchGraphic,    badge:"LIVE" },
-  { to:"/news",                       color:"#ff2744", title:"News Tracker",          subtitle:"Latest updates →",         description:"Transfer rumours, injury alerts, and squad news. Stay ahead of your FPL rivals.", graphic:TrendGraphic,    badge:"NEW"  },
-  { to:"/predictions/premier-league", color:C.gold,   title:"Prediction Tracker",    subtitle:"Check the model →",        description:"Full accountability log. Every prediction we've made, verified against real results with accuracy stats.", graphic:BarGraphic,      badge:"DATA" },
-  { to:"/games",                      color:C.pink,   title:"Sports Arcade",         subtitle:"Play games →",             description:"Penalty shootouts, analytics quizzes, 2048 and more. Learn stats through play.", graphic:GameGraphic,      badge:"FUN"  },
-  { to:"/learn",                      color:"#b388ff", title:"Ground Zero",           subtitle:"Explore methodology →",    description:"How the platform thinks. Research lab, model transparency, and the science behind forecasting.", graphic:LearnGraphic,    badge:"LAB"  },
-  { to:"/about",                      color:"#ff2744", title:"About Me",               subtitle:"Meet the builder →",       description:"The person behind StatinSite. Football obsessive, data nerd, building tools that actually work.", graphic:LearnGraphic,    badge:"👋"   },
-];
-
-/* ─── Leagues data ───────────────────────────────────────── */
-const LEAGUES = [
-  {to:"/predictions/premier-league",name:"Premier League",col:"#4f9eff",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#012169"/><path d="M0 0l18 13M18 0L0 13" stroke="white" strokeWidth="3"/><path d="M0 0l18 13M18 0L0 13" stroke="#C8102E" strokeWidth="1.8"/><path d="M9 0v13M0 6.5h18" stroke="white" strokeWidth="4"/><path d="M9 0v13M0 6.5h18" stroke="#C8102E" strokeWidth="2.4"/></svg>},
-  {to:"/predictions/la-liga",name:"La Liga",col:"#ff6b35",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#AA151B"/><rect y="2.8" width="18" height="7.4" fill="#F1BF00"/></svg>},
-  {to:"/predictions/serie-a",name:"Serie A",col:"#00e09e",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#009246"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#CE2B37"/></svg>},
-  {to:"/predictions/bundesliga",name:"Bundesliga",col:"#ff8c42",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#000"/><rect y="4.33" width="18" height="4.34" fill="#DD0000"/><rect y="8.67" width="18" height="4.33" fill="#FFCC00"/></svg>},
-  {to:"/predictions/ligue-1",name:"Ligue 1",col:"#b388ff",flag:<svg width="22" height="16" viewBox="0 0 18 13" fill="none"><rect width="18" height="13" rx="2" fill="#002395"/><rect x="6" width="6" height="13" fill="white"/><rect x="12" width="6" height="13" fill="#ED2939"/></svg>},
-  {to:"/predictions/champions-league",name:"UCL",col:"#0e1e5b",
-    flag:<img src="https://media.api-sports.io/football/leagues/2.png" alt="UCL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
-  {to:"/predictions/europa-league",name:"UEL",col:"#e35f10",
-    flag:<img src="https://media.api-sports.io/football/leagues/3.png" alt="UEL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
-  {to:"/predictions/conference-league",name:"UECL",col:"#00843d",
-    flag:<img src="https://media.api-sports.io/football/leagues/848.png" alt="UECL" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
-  {to:"/predictions/fa-cup",name:"FA Cup",col:"#c62828",
-    flag:<img src="https://media.api-sports.io/football/leagues/45.png" alt="FA Cup" style={{width:28,height:28,objectFit:"contain",display:"block"}} onError={e=>e.currentTarget.style.display="none"} />},
-];
-
-/* ═══════════════════════════════════════════════════════════
-   MAIN PAGE — backend-connected
-═══════════════════════════════════════════════════════════ */
-export default function HomePage() {
-  const isMobile = useIsMobile();
-  const [d, setD] = useState(null);   // mapDashboard output
-  const [raw, setRaw] = useState({}); // raw dashboard for new blocks
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      try {
-        const res = await fetch(`${API}/api/home/dashboard`);
-        if (!res.ok) throw new Error("fail");
-        const j = await res.json();
-        if (!alive) return;
-        setD(mapDashboard(j));
-        setRaw(j);
-      } catch {
-        if (alive) { setD(mapDashboard(null)); setRaw({}); }
-      } finally {
-        if (alive) setLoading(false);
-      }
-    }
-    load();
-    return () => { alive = false; };
-  }, []);
-
-  if (loading) {
-  return (
-    <div style={{ minHeight: "100vh", background: "#060a14", padding: "80px 20px 0" }}>
-      <style>{`
-        @keyframes shimmerSlide {
-          0%   { background-position: -800px 0; }
-          100% { background-position:  800px 0; }
-        }
-        .sk { 
-          background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-          background-size: 800px 100%;
-          animation: shimmerSlide 1.5s infinite linear;
-          border-radius: 12px;
-        }
-      `}</style>
- 
-      {/* Hero skeleton */}
-      <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", marginBottom: 48 }}>
-        <div className="sk" style={{ height: 28, width: 220, margin: "0 auto 24px", borderRadius: 999 }} />
-        <div className="sk" style={{ height: 72, width: "90%", margin: "0 auto 12px" }} />
-        <div className="sk" style={{ height: 72, width: "60%", margin: "0 auto 24px" }} />
-        <div className="sk" style={{ height: 18, width: "80%", margin: "0 auto 8px" }} />
-        <div className="sk" style={{ height: 18, width: "65%", margin: "0 auto 36px" }} />
-        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          {[140, 130, 120, 110].map((w, i) => (
-            <div key={i} className="sk" style={{ height: 44, width: w, borderRadius: 12, animationDelay: `${i * 0.1}s` }} />
-          ))}
-        </div>
-      </div>
- 
-      {/* Stat tiles skeleton */}
-      <div style={{ maxWidth: 1100, margin: "0 auto 48px", display: "flex", gap: 12 }}>
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="sk" style={{ flex: 1, height: 100, borderRadius: 16, animationDelay: `${i * 0.08}s` }} />
-        ))}
-      </div>
- 
-      {/* Cards skeleton */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 14 }}>
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="sk" style={{ height: 200, borderRadius: 16, animationDelay: `${i * 0.06}s` }} />
-        ))}
+        )}
       </div>
     </div>
   );
 }
 
-  // ── Extract data from mapDashboard output ──
-  const predictions = (d?.predictions?.predictions) || [];
-  const tickerItems = (d?.trendingPlayers?.items) || [];
-  const insight = (d?.tacticalInsight?.primary) || null;
-  const trend = (d?.modelMetrics?.trend) || [];
-  const byMarket = (d?.modelMetrics?.byMarket) || [];
-  const overallAcc = (d?.modelMetrics?.overallAccuracy) || 0;
-  const results = (d?.recentResults?.results) || [];
-  const resCorrect = (d?.recentResults?.correct) || 0;
-  const resTotal = (d?.recentResults?.total) || 0;
-  const mc = d?.modelConfidence || {};
- const hs = d?.heroStats || {};
-const compsCount = hs.competitionsCount || LEAGUES.length;
-const fixturesPred = hs.fixturesPredicted || 0;
-const verifiedAcc = hs.verifiedAccuracy || 0;
+// ═══════════════════════════════════════════════════════════════
+// SECTION 9 — WHY STATINSITE
+// ═══════════════════════════════════════════════════════════════
+const MODELS = [
+  {name:"Dixon-Coles",desc:"Low-score corrected Poisson model with τ-adjustment",color:"#38bdf8"},
+  {name:"ELO Ratings",desc:"Dynamic team strength ratings updated after every match",color:"#a78bfa"},
+  {name:"xG Modelling",desc:"Expected goals derived from shot location and context",color:"#34d399"},
+  {name:"Monte Carlo",desc:"8,000-run season simulation for final table probabilities",color:"#f59e0b"},
+  {name:"Form Weighting",desc:"Exponentially decayed recent form with injury signal",color:"#f472b6"},
+  {name:"Market Edge",desc:"Model probability vs implied odds to identify value signals",color:"#fb923c"},
+];
 
+const FACTS = [
+  {val:"9",label:"Competitions"},
+  {val:"500+",label:"Player Profiles"},
+  {val:"8",label:"FPL Tools"},
+  {val:"8K",label:"Simulations/Run"},
+];
+
+function WhyStatinSite() {
+  const [ref, vis] = useReveal(0.04);
   return (
-    <div style={{ minHeight:"100vh", background:"#000", color:"#00fff0", overflow:"hidden", position:"relative" }}>
-      <style>{HOME_CSS}</style>
-
-      {/* Grid drift is handled by body::after in index.css */}
-
-      {/* ── BG FLOATERS (concept decorative text) ── */}
-      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(120px,18vw,220px)", color:"rgba(0,255,240,.03)", pointerEvents:"none", zIndex:0, top:"8vh", left:"-2%", lineHeight:1, userSelect:"none" }}>xG</div>
-      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,255,240,.03)", pointerEvents:"none", zIndex:0, top:"52vh", right:"0%", lineHeight:1, userSelect:"none" }}>2–1</div>
-      <div style={{ position:"fixed", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(60px,11vw,130px)", color:"rgba(0,255,240,.03)", pointerEvents:"none", zIndex:0, bottom:"8vh", left:"35%", lineHeight:1, userSelect:"none" }}>89%</div>
-
-      <div style={{ position:"relative", zIndex:1 }}>
-
-        {/* ── 3-ROW LIVE TICKER ── */}
-        <LiveTicker3Row/>
-
-        {/* ══════════════════════════════════════════
-            HERO — centered, Bebas Neue, concept style
-        ══════════════════════════════════════════ */}
-        <section style={{ padding:"clamp(48px,7vh,80px) 20px clamp(40px,6vh,64px)", textAlign:"center", position:"relative", overflow:"hidden" }}>
-
-          {/* Kicker */}
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"transparent", color:"#00fff0", border:"1px solid rgba(0,255,240,.3)", padding:"4px 14px", fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", marginBottom:24, animation:"hpFadeDown .5s ease both" }}>
-            <span style={{ width:6, height:6, background:"#ff2744", animation:"hpPulse 1.6s ease infinite", flexShrink:0 }}/>
-            ◈ SEASON 2025/26 · LIVE DATA ENGINE
-          </div>
-
-          {/* H1 — Bebas Neue, giant, centered */}
-          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,13vw,180px)", lineHeight:.88, letterSpacing:".02em", margin:"0 0 20px", animation:"hpFadeDown .55s .08s ease both" }}>
-            <span style={{ display:"block", color:"rgba(0,255,240,.88)" }}>READ THE</span>
-            <span style={{ display:"block", WebkitTextStroke:"1px #00fff0", WebkitTextFillColor:"transparent" }}>GAME</span>
-          </h1>
-
-          {/* Sub */}
-          <p style={{ fontSize:"clamp(13px,1.8vw,15px)", color:"rgba(0,255,240,.4)", maxWidth:480, margin:"0 auto 36px", lineHeight:1.8, fontFamily:"'Space Grotesk',sans-serif", animation:"hpFadeDown .55s .16s ease both" }}>
-            <strong style={{ color:"rgba(0,255,240,.88)", fontWeight:700 }}>Raw stats. No spin.</strong> Football intelligence for predictions, FPL decisions, and deeper match insight.
-          </p>
-
-          {/* CTA buttons — concept style */}
-          <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap", animation:"hpFadeDown .55s .24s ease both" }}>
-            {[
-              { to:"/predictions/premier-league", label:"Explore Live Data →", primary:true },
-              { to:"/best-team",                  label:"Build FPL Team",      primary:false },
-              { to:"/live",                       label:"Live Scores",          live:true },
-              { to:"/learn",                      label:"Ground Zero",          primary:false },
-            ].map(({ to, label, primary, live }, i) => (
-              <Link key={i} to={to} className="hp-btn" style={{
-                display:"inline-flex", alignItems:"center", gap:8,
-                padding:"13px 26px",
-                background: primary ? "#00fff0" : live ? "#ff2744" : "transparent",
-                border: `1px solid ${primary ? "#00fff0" : live ? "#ff2744" : "rgba(0,255,240,.3)"}`,
-                color: primary ? "#000" : live ? "#fff" : "#00fff0",
-                boxShadow: "none",
-                fontSize:11, fontWeight:700, textDecoration:"none",
-                fontFamily:"'Space Grotesk',sans-serif", letterSpacing:".12em", textTransform:"uppercase",
-              }}>{label}</Link>
-            ))}
-          </div>
-
-          {/* Stat strip — concept hss style */}
-          {(fixturesPred > 0 || verifiedAcc > 0) && (
-            <div style={{ display:"inline-flex", marginTop:48, borderTop:"1px solid rgba(0,255,240,.2)", borderLeft:"1px solid rgba(0,255,240,.2)", borderRight:"1px solid rgba(0,255,240,.2)", animation:"hpFadeUp .6s .3s ease both" }}>
-              {[
-                fixturesPred > 0 && { n: `${fixturesPred}+`, l:"Fixtures Predicted" },
-                verifiedAcc > 0  && { n: `${verifiedAcc}%`,  l:"Verified Accuracy"  },
-                predictions.length > 0 && { n: predictions.length, l:"Live Predictions" },
-              ].filter(Boolean).map((s, i, arr) => (
-                <div key={i} style={{ padding:"16px 28px", borderRight: i < arr.length-1 ? "1px solid rgba(0,255,240,.1)" : "none", textAlign:"center" }}>
-                  <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:52, lineHeight:1, color:"rgba(0,255,240,.88)" }}>{s.n}</div>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,255,240,.3)", marginTop:4 }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ══════════════════════════════════════════
-            PREDICTIONS STRIP
-        ══════════════════════════════════════════ */}
-        <PredictionStrip predictions={predictions}/>
-
-        {/* ══════════════════════════════════════════
-            STAT SPOTLIGHT
-        ══════════════════════════════════════════ */}
-        <StatOfMoment insight={insight}/>
-
-        {/* ══════════════════════════════════════════
-            DIVIDER MARQUEE (concept style — black bg)
-        ══════════════════════════════════════════ */}
-        <div style={{ background:"#000", borderTop:"1px solid rgba(0,255,240,.12)", borderBottom:"1px solid rgba(0,255,240,.12)", height:52, overflow:"hidden", display:"flex", alignItems:"center" }}>
-          <div style={{ display:"flex", animation:"hpMarquee 28s linear infinite", whiteSpace:"nowrap" }}>
-            {["Premier League","La Liga","Bundesliga","Serie A","Champions League","Ligue 1","Eredivisie","Copa Libertadores","MLS","FA Cup","Europa League","World Cup",
-              "Premier League","La Liga","Bundesliga","Serie A","Champions League","Ligue 1","Eredivisie","Copa Libertadores","MLS","FA Cup","Europa League","World Cup",
-            ].map((name, i) => (
-              <div key={i} style={{ padding:"0 34px", fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:3, textTransform:"uppercase", color: i%3===0 ? "#00fff0" : "rgba(0,255,240,.12)", display:"flex", alignItems:"center", gap:14, flexShrink:0 }}>
-                <span style={{ width:4, height:4, borderRadius:"50%", background: i%3===0 ? "#ff2744" : "rgba(0,255,240,.3)", boxShadow:"none", flexShrink:0 }}/>
-                {name}
-              </div>
-            ))}
-          </div>
+    <section className="hp6-section hp6-section--last">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div><div className="hp6-eyebrow">— Platform</div><h2 className="hp6-section-title">The Intelligence Stack</h2></div>
         </div>
-
-        {/* ══════════════════════════════════════════
-            FEATURE CARDS — concept grid style
-        ══════════════════════════════════════════ */}
-        <section style={{ borderTop:"1px solid rgba(0,255,240,.1)", borderBottom:"1px solid rgba(0,255,240,.1)" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))" }}>
-            {FEATURES.map((f, i) => <FeatureCard key={f.to} {...f} index={i+1} delay={i*55}/>)}
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════
-            MODEL PERFORMANCE
-        ══════════════════════════════════════════ */}
-
-        {/* ── ACCOUNTABILITY DIVIDER ── */}
-        <div style={{ background:"#000", borderTop:"1px solid rgba(0,255,240,.1)", borderBottom:"1px solid rgba(0,255,240,.1)", padding:"40px 24px 36px", textAlign:"center", position:"relative", overflow:"hidden" }}>
-          {/* faint watermark */}
-          <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,14vw,160px)", color:"rgba(0,255,240,.03)", lineHeight:1, pointerEvents:"none", userSelect:"none", whiteSpace:"nowrap" }}>PREDICTION LOG</div>
-          <div style={{ position:"relative", zIndex:1 }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:10, background:"#000", padding:"4px 14px", marginBottom:14 }}>
-              <span style={{ width:6, height:6, background:"#ff2744", display:"inline-block", animation:"hpPulse 1.6s ease infinite", flexShrink:0 }}/>
-              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,255,240,.6)" }}>MODEL ACCOUNTABILITY</span>
-            </div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(38px,6vw,72px)", lineHeight:.9, color:"rgba(0,255,240,.88)", letterSpacing:".02em", marginBottom:10 }}>
-              EVERY PREDICTION.<br/><span style={{ WebkitTextStroke:"2px #0a0a0a", WebkitTextFillColor:"transparent" }}>VERIFIED.</span>
-            </div>
-            <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, color:"rgba(0,0,0,.5)", maxWidth:440, margin:"0 auto", lineHeight:1.7 }}>
-              No cherry-picking. No hiding misses. Full log of every match predicted by the model — wins, draws, losses and scorelines — tracked against real results.
-            </p>
-          </div>
-        </div>
-
-        <ModelPerformance trend={trend} byMarket={byMarket} overallAccuracy={overallAcc}/>
-
-        {/* ══════════════════════════════════════════
-            RECENT RESULTS
-        ══════════════════════════════════════════ */}
-        <RecentResults results={results} correct={resCorrect} total={resTotal}/>
-
-        {/* ══════════════════════════════════════════
-            LEAGUES STRIP
-        ══════════════════════════════════════════ */}
-        <section style={{ padding:"0 20px 60px", maxWidth:1200, margin:"0 auto" }}>
-          <div style={{ background:"#040408", border:"1px solid rgba(0,255,240,.12)", padding:"28px 32px" }}>
-            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,255,240,.3)", marginBottom:6 }}>Covering {LEAGUES.length} competitions</div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, letterSpacing:2, color:"#00fff0", marginBottom:20 }}>Pick Your League</div>
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {LEAGUES.map(({ to, name, flag, col }) => (
-                <Link key={to} to={to} className="hp-btn" style={{
-                  display:"flex", alignItems:"center", gap:8,
-                  padding:"9px 16px", background:"transparent",
-                  border:"1px solid rgba(0,255,240,.2)", color:"rgba(0,255,240,.5)",
-                  fontSize:12, fontWeight:700, textDecoration:"none",
-                  fontFamily:"'Space Grotesk',sans-serif",
-                  boxShadow:"none",
-                }}
-                  onMouseEnter={e=>{e.currentTarget.style.background="#00fff0";e.currentTarget.style.color="#000";e.currentTarget.style.borderColor="#00fff0";e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow="4px 4px 0 #0a0a0a";}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#00fff0";e.currentTarget.style.borderColor="rgba(0,255,240,.25)";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
-                >
-                  <span style={{ display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, width:32, height:26 }}>{flag}</span>
-                  {name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════
-            HOW IT WORKS / BOTTOM CTA
-        ══════════════════════════════════════════ */}
-        <section style={{ background:"#000", borderTop:"1px solid rgba(0,255,240,.12)", padding:"72px 48px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:40, flexWrap:"wrap" }}>
+        <div className="hp6-why-grid">
+          {/* Models */}
           <div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(52px,5vw,84px)", lineHeight:.88, color:"rgba(0,255,240,.8)", marginBottom:14 }}>
-              EVERY STAT.<br/><span style={{ color:"#00fff0" }}>NO PAYWALLS.</span>
+            <div className="hp6-sub-label">Data Models</div>
+            <div className="hp6-models-grid">
+              {MODELS.map((m,i)=>{
+                const [mref, mvis]=useReveal(0.05);
+                return (
+                  <div key={m.name} ref={mref} className="hp6-model-card" style={{opacity:mvis?1:0,transform:mvis?"translateY(0)":"translateY(12px)",transition:`all .4s ease ${i*50}ms`,"--mc-color":m.color}}>
+                    <div className="hp6-mc-dot"/>
+                    <div>
+                      <div className="hp6-mc-name">{m.name}</div>
+                      <div className="hp6-mc-desc">{m.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:13, lineHeight:1.75, color:"rgba(0,255,240,.25)", maxWidth:340, margin:0 }}>
-              Full access to all leagues, all players, all advanced metrics. Free forever — no credit card required.
-            </p>
           </div>
-          <Link to="/predictions/premier-league" className="hp-btn" style={{
-            padding:"18px 48px", background:"#00fff0", color:"#000",
-            border:"none", boxShadow:"none",
-            fontFamily:"'Bebas Neue',sans-serif", fontSize:22, letterSpacing:2,
-            textDecoration:"none", flexShrink:0,
-          }}>Start For Free →</Link>
-        </section>
-
+          {/* Facts */}
+          <div>
+            <div className="hp6-sub-label">Platform Scale</div>
+            <div className="hp6-facts-grid">
+              {FACTS.map((f,i)=>{
+                const [fref,fvis]=useReveal(0.05);
+                return (
+                  <div key={f.label} ref={fref} className="hp6-fact-card" style={{opacity:fvis?1:0,transform:fvis?"scale(1)":"scale(.9)",transition:`all .4s ease ${i*60}ms`}}>
+                    <div className="hp6-fact-val hp4-mono">{f.val}</div>
+                    <div className="hp6-fact-label">{f.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hp6-platform-note">
+              All predictions use real season statistics from API-Football Pro. Model probabilities are not guaranteed outcomes.
+            </div>
+          </div>
+        </div>
       </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIVIDER
+// ═══════════════════════════════════════════════════════════════
+function Div() {
+  return <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent)",maxWidth:1200,margin:"0 auto",padding:"0 40px"}}><div style={{height:1}}/></div>;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROOT
+// ═══════════════════════════════════════════════════════════════
+export default function HomePage() {
+  const { fixtures, loading: ul } = useUpcoming();
+  const { dash,     loading: dl } = useDashboard();
+  return (
+    <div className="hp4-root">
+      <HeroSection fixtures={fixtures} upcoming_loading={ul} dash={dash} dash_loading={dl}/>
+      <LivePulseStrip fixtures={fixtures}/>
+      <TopPredictions dash={dash} loading={dl}/>
+      <Div/>
+      <EdgeBoard dash={dash} loading={dl}/>
+      <Div/>
+      <CommandGrid fixtures={fixtures} dash={dash} loading={dl||ul}/>
+      <Div/>
+      <CompetitionHub/>
+      <Div/>
+      <FPLHub dash={dash}/>
+      <Div/>
+      <TrendingPlayers dash={dash} loading={dl}/>
+      <Div/>
+      <WhyStatinSite/>
     </div>
   );
 }

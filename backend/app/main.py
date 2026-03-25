@@ -496,10 +496,12 @@ async def match_intelligence_endpoint(fixture_id: int):
     home_id=teams.get("home",{}).get("id"); away_id=teams.get("away",{}).get("id")
     league_id=league.get("id"); season=league.get("season") or CURRENT_SEASON
 
+    async def _noop(): return []
+
     h2h_raw,home_s_raw,away_s_raw=await asyncio.gather(
-        _get("/fixtures/headtohead",{"h2h":f"{home_id}-{away_id}","last":10}) if home_id and away_id else asyncio.coroutine(lambda:[])(),
-        _get("/teams/statistics",{"team":home_id,"season":season,"league":league_id}) if home_id and league_id else asyncio.coroutine(lambda:[])(),
-        _get("/teams/statistics",{"team":away_id,"season":season,"league":league_id}) if away_id and league_id else asyncio.coroutine(lambda:[])(),
+        _get("/fixtures/headtohead",{"h2h":f"{home_id}-{away_id}","last":10}) if home_id and away_id else _noop(),
+        _get("/teams/statistics",{"team":home_id,"season":season,"league":league_id}) if home_id and league_id else _noop(),
+        _get("/teams/statistics",{"team":away_id,"season":season,"league":league_id}) if away_id and league_id else _noop(),
     )
 
     def ns(raw):

@@ -60,10 +60,18 @@ function useDashboard() {
     let dead = false;
     const k = "hp6_dash";
     try { const r = sessionStorage.getItem(k); if (r) { const {ts,p} = JSON.parse(r); if (Date.now()-ts<300000) { setData(p); setLoading(false); return; } } } catch {}
-    fetch(`${API}/api/home/dashboard`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (dead||!d) return; setData(d); try { sessionStorage.setItem(k, JSON.stringify({ts:Date.now(),p:d})); } catch {} })
-      .catch(()=>{}).finally(()=>{ if(!dead) setLoading(false); });
+
+    // Fetch dashboard + accountability in parallel
+    Promise.all([
+      fetch(`${API}/api/home/dashboard`).then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(`${API}/api/home/performance_summary`).then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(`${API}/api/home/accountability_summary`).then(r=>r.ok?r.json():null).catch(()=>null),
+    ]).then(([dash, perf, acct]) => {
+      if (dead) return;
+      const merged = dash ? { ...dash, performance_summary: perf, accountability_summary: acct } : null;
+      setData(merged);
+      try { sessionStorage.setItem(k, JSON.stringify({ts:Date.now(),p:merged})); } catch {}
+    }).catch(()=>{}).finally(()=>{ if(!dead) setLoading(false); });
     return () => { dead = true; };
   }, []);
   return { dash: data, loading };
@@ -136,13 +144,17 @@ function TelemetryGrid() {
     let raf, t=0;
     const resize = () => { canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; };
     resize(); window.addEventListener("resize",resize);
+    const isDark = () => document.documentElement.getAttribute("data-theme") !== "light";
     const draw = () => {
+      const dark = isDark();
+      const gridAlpha = dark ? 1 : 0.35;
+      const dotAlpha = dark ? 1 : 0.25;
       const {width:W,height:H} = canvas; ctx.clearRect(0,0,W,H);
       const SZ=64, cols=Math.ceil(W/SZ)+2, rows=Math.ceil(H/SZ)+2;
       const ox=(t*0.3)%SZ, oy=(t*0.15)%SZ;
-      for(let i=-1;i<cols;i++) { const a=0.02+0.01*Math.sin(i*0.4+t*0.007); ctx.strokeStyle=`rgba(56,189,248,${a})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(i*SZ-ox,0); ctx.lineTo(i*SZ-ox,H); ctx.stroke(); }
-      for(let j=-1;j<rows;j++) { const a=0.02+0.01*Math.sin(j*0.5+t*0.005); ctx.strokeStyle=`rgba(56,189,248,${a})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(0,j*SZ-oy); ctx.lineTo(W,j*SZ-oy); ctx.stroke(); }
-      for(let i=0;i<cols;i++) for(let j=0;j<rows;j++) { const p=Math.sin(i*0.8+j*0.6+t*0.04); if(p>0.7){ctx.fillStyle=`rgba(52,211,153,${(p-0.7)*0.45})`; ctx.beginPath(); ctx.arc(i*SZ-ox,j*SZ-oy,1.5,0,Math.PI*2); ctx.fill();} }
+      for(let i=-1;i<cols;i++) { const a=(0.02+0.01*Math.sin(i*0.4+t*0.007))*gridAlpha; ctx.strokeStyle=`rgba(56,189,248,${a})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(i*SZ-ox,0); ctx.lineTo(i*SZ-ox,H); ctx.stroke(); }
+      for(let j=-1;j<rows;j++) { const a=(0.02+0.01*Math.sin(j*0.5+t*0.005))*gridAlpha; ctx.strokeStyle=`rgba(56,189,248,${a})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(0,j*SZ-oy); ctx.lineTo(W,j*SZ-oy); ctx.stroke(); }
+      for(let i=0;i<cols;i++) for(let j=0;j<rows;j++) { const p=Math.sin(i*0.8+j*0.6+t*0.04); if(p>0.7){ctx.fillStyle=`rgba(52,211,153,${(p-0.7)*0.45*dotAlpha})`; ctx.beginPath(); ctx.arc(i*SZ-ox,j*SZ-oy,1.5,0,Math.PI*2); ctx.fill();} }
       t++; raf=requestAnimationFrame(draw);
     };
     draw(); return () => { cancelAnimationFrame(raf); window.removeEventListener("resize",resize); };
@@ -152,7 +164,10 @@ function TelemetryGrid() {
 
 function Particles({n=20}) {
   const ps = useMemo(()=>Array.from({length:n},(_,i)=>({id:i,x:Math.random()*100,y:Math.random()*100,sz:1+Math.random()*2.2,dur:9+Math.random()*14,del:-Math.random()*18,c:["56,189,248","52,211,153","167,139,250","245,158,11"][i%4]})),[n]);
-  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>{ps.map(p=><div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:`${p.y}%`,width:p.sz,height:p.sz,borderRadius:"50%",background:`rgba(${p.c},0.6)`,boxShadow:`0 0 ${p.sz*3}px rgba(${p.c},0.4)`,animation:`hp4-float ${p.dur}s ${p.del}s linear infinite`}}/>)}</div>;
+  const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+  const alpha = isDark ? 0.6 : 0.22;
+  const glowAlpha = isDark ? 0.4 : 0.1;
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>{ps.map(p=><div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:`${p.y}%`,width:p.sz,height:p.sz,borderRadius:"50%",background:`rgba(${p.c},${alpha})`,boxShadow:`0 0 ${p.sz*3}px rgba(${p.c},${glowAlpha})`,animation:`hp4-float ${p.dur}s ${p.del}s linear infinite`}}/>)}</div>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -214,7 +229,7 @@ function TopPredPanel({ dash }) {
       {/* Tri-bar */}
       <div style={{display:"flex",height:5,borderRadius:999,overflow:"hidden",margin:"8px 0 5px",gap:1}}>
         <div style={{flex:hPct,background:"#38bdf8",opacity:.9}}/>
-        <div style={{flex:dPct,background:"rgba(255,255,255,0.2)"}}/>
+        <div style={{flex:dPct,background:"var(--border-strong)"}}/>
         <div style={{flex:aPct,background:"#34d399",opacity:.9}}/>
       </div>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:9}}>
@@ -429,7 +444,7 @@ function PredCard({ p, index }) {
         {/* Prob bar */}
         <div className="hp6-pc-probbar">
           <div style={{flex:hp,background:"#38bdf8",opacity:.85,transition:"flex .5s"}}/>
-          <div style={{flex:dp,background:"rgba(255,255,255,.18)"}}/>
+          <div style={{flex:dp,background:"var(--border-strong)"}}/>
           <div style={{flex:ap,background:"#34d399",opacity:.85,transition:"flex .5s"}}/>
         </div>
         <div className="hp6-pc-probs">
@@ -463,7 +478,7 @@ function TopPredictions({ dash, loading }) {
         </div>
         <div className="hp6-hscroll">
           {loading ? Array.from({length:4}).map((_,i)=>(
-            <div key={i} style={{flexShrink:0,width:280,height:200,borderRadius:16,background:"rgba(6,11,22,.98)",border:"1px solid rgba(255,255,255,.06)"}}><div style={{padding:16}}><Skel w="60%" h={9}/><div style={{marginTop:12}}/><Skel w="90%" h={12}/><div style={{marginTop:4}}/><Skel w="75%" h={9}/></div></div>
+            <div key={i} style={{flexShrink:0,width:280,height:200,borderRadius:16,background:"var(--bg-card)",border:"1px solid var(--border)"}}><div style={{padding:16}}><Skel w="60%" h={9}/><div style={{marginTop:12}}/><Skel w="90%" h={12}/><div style={{marginTop:4}}/><Skel w="75%" h={9}/></div></div>
           )) : preds.map((p,i)=><PredCard key={i} p={p} index={i}/>)}
         </div>
       </div>
@@ -482,7 +497,7 @@ function EdgeCard({ edge, index }) {
       <div className="hp6-edge-match">{edge.home} vs {edge.away}</div>
       <div className="hp6-edge-val" style={{color:edge.col||"#34d399"}}>+{edge.edge}%</div>
       <div className="hp6-edge-dir">{edge.direction==="home"?edge.home:edge.away} favoured</div>
-      <div style={{height:3,borderRadius:999,background:"rgba(255,255,255,.05)",marginTop:8,overflow:"hidden"}}>
+      <div style={{height:3,borderRadius:999,background:"var(--border)",marginTop:8,overflow:"hidden"}}>
         <div style={{width:`${Math.min(edge.model_prob||edge.edge*2,100)}%`,height:"100%",background:edge.col||"#34d399",borderRadius:999}}/>
       </div>
     </div>
@@ -902,7 +917,7 @@ function FPLHub({ dash }) {
       <div className="hp6-container">
         <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
           <div><div className="hp6-eyebrow">— Fantasy Premier League</div><h2 className="hp6-section-title">FPL Intelligence Hub</h2></div>
-          <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:999,background:"rgba(52,211,153,.07)",border:"1px solid rgba(52,211,153,.2)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:999,background:"var(--green-soft)",border:"1px solid rgba(52,211,153,.2)"}}>
             <span style={{width:6,height:6,borderRadius:"50%",background:"#34d399",boxShadow:"0 0 8px #34d399",animation:"snLivePulse 2s ease-in-out infinite"}}/>
             <span style={{fontSize:9,fontWeight:900,color:"#34d399",letterSpacing:"0.1em",fontFamily:"var(--font-mono)"}}>8 TOOLS ACTIVE</span>
           </div>
@@ -1115,10 +1130,191 @@ function WhyStatinSite() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SECTION — MODEL PERFORMANCE + ACCOUNTABILITY
+// ═══════════════════════════════════════════════════════════════
+
+function AccuracyRing({ pct, color, size=80 }) {
+  const r = (size/2) - 6;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct/100) * circ;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={r} stroke="var(--border)" strokeWidth="5" fill="none"/>
+      <circle cx={size/2} cy={size/2} r={r} stroke={color} strokeWidth="5" fill="none"
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        style={{transform:"rotate(-90deg)",transformOrigin:"50% 50%",transition:"stroke-dashoffset 1s ease"}}/>
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central"
+        style={{fontFamily:"var(--font-mono)",fontSize:size/5,fontWeight:900,fill:color}}>
+        {pct}%
+      </text>
+    </svg>
+  );
+}
+
+function VerifiedRow({ p, index }) {
+  const [ref, vis] = useReveal(0.04);
+  const isCorrect = p.correct;
+  const confColor = p.confidence >= 70 ? "#34d399" : p.confidence >= 55 ? "#f59e0b" : "#f87171";
+  return (
+    <div ref={ref} style={{opacity:vis?1:0,transform:vis?"translateX(0)":"translateX(-12px)",transition:`all .35s ease ${index*40}ms`}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:10,background:"var(--bg-glass)",border:"1px solid var(--border)",marginBottom:5}}>
+        {/* Correct/wrong indicator */}
+        <div style={{width:20,height:20,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,background:isCorrect?"rgba(52,211,153,0.12)":"rgba(248,113,113,0.12)",border:`1px solid ${isCorrect?"rgba(52,211,153,0.3)":"rgba(248,113,113,0.25)"}`}}>
+          <span style={{fontSize:10,fontWeight:900,color:isCorrect?"#34d399":"#f87171"}}>{isCorrect?"✓":"✗"}</span>
+        </div>
+        {/* Match info */}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            {p.home} {p.score!=="—"?<span style={{fontFamily:"var(--font-mono)",color:"var(--text-secondary)"}}>{p.score}</span>:""} {p.away}
+          </div>
+          <div style={{fontSize:9,color:"var(--text-muted)",marginTop:1}}>
+            Predicted: <span style={{color:isCorrect?"#34d399":"#f87171",fontWeight:700}}>{p.predicted_outcome}</span>
+            {p.actual_outcome&&<> · Actual: <span style={{fontWeight:700,color:"var(--text-secondary)"}}>{p.actual_outcome}</span></>}
+            {p.league&&<> · {p.league}</>}
+          </div>
+        </div>
+        {/* Confidence badge */}
+        <div style={{flexShrink:0,textAlign:"right"}}>
+          <div style={{fontSize:11,fontWeight:900,color:confColor,fontFamily:"var(--font-mono)"}}>{p.confidence}%</div>
+          <div style={{fontSize:8,color:"var(--text-dim)"}}>{p.confidence_label}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModelPerformanceSection({ dash, loading }) {
+  const [ref, vis] = useReveal(0.04);
+  const perf = dash?.performance_summary;
+  const acct = dash?.accountability_summary;
+
+  const overallAcc = perf?.overall_accuracy ?? acct?.hit_rate ?? null;
+  const last30Acc  = perf?.last_30_accuracy ?? null;
+  const highConfAcc = perf?.confidence_bands?.find(b=>b.bracket?.startsWith("High"))?.accuracy
+                   ?? acct?.high_confidence_hit_rate ?? null;
+  const verifiedCount = perf?.verified_count ?? acct?.verified_count ?? 0;
+  const pendingCount  = perf?.pending_count  ?? acct?.pending_count  ?? 0;
+  const recentPreds   = acct?.recent_verified ?? [];
+  const rollingAcc    = perf?.rolling_accuracy ?? [];
+  const confBands     = perf?.confidence_bands ?? [];
+  const avgConf       = perf?.average_confidence ?? null;
+
+  const isInsufficient = perf?.insufficient && acct?.insufficient;
+
+  return (
+    <section className="hp6-section">
+      <div className="hp6-container">
+        <div ref={ref} className="hp6-section-head" style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(12px)",transition:"all .5s"}}>
+          <div>
+            <div className="hp6-eyebrow">— Verified Results Only</div>
+            <h2 className="hp6-section-title">Model Performance & Accountability</h2>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 14px",borderRadius:999,background:"var(--green-soft)",border:"1px solid rgba(52,211,153,0.2)"}}>
+            <div style={{width:6,height:6,borderRadius:"50%",background:"#34d399",boxShadow:"0 0 8px #34d399",animation:"snLivePulse 2s ease-in-out infinite"}}/>
+            <span style={{fontSize:9,fontWeight:900,color:"#34d399",letterSpacing:"0.1em",fontFamily:"var(--font-mono)"}}>
+              {verifiedCount} VERIFIED · {pendingCount} PENDING
+            </span>
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
+            {[0,1,2].map(i=><div key={i} style={{height:140,borderRadius:16,background:"var(--bg-card)",border:"1px solid var(--border)"}}><div style={{padding:16}}><Skel w="50%" h={10}/><div style={{marginTop:12}}/><Skel w="80%" h={32}/></div></div>)}
+          </div>
+        ) : isInsufficient ? (
+          <div style={{padding:"32px 24px",borderRadius:16,background:"var(--bg-card)",border:"1px solid var(--border)",textAlign:"center"}}>
+            <div style={{fontSize:13,color:"var(--text-muted)",marginBottom:6}}>No verified predictions yet.</div>
+            <div style={{fontSize:10,color:"var(--text-dim)"}}>Results are checked automatically after matches finish.</div>
+          </div>
+        ) : (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            {/* Left: accuracy rings + stats */}
+            <div style={{display:"flex",flexDirection:"column",gap:16}}>
+              {/* Top metric rings */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+                {[
+                  {label:"Overall",val:overallAcc,color:"#34d399",sub:`${verifiedCount} verified`},
+                  {label:"Last 30",val:last30Acc,color:"#38bdf8",sub:"Trending"},
+                  {label:"High Conf",val:highConfAcc,color:"#f59e0b",sub:`≥70% picks`},
+                ].map(({label,val,color,sub})=>(
+                  <div key={label} style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:16,padding:"16px 12px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,textAlign:"center"}}>
+                    {val!=null
+                      ? <AccuracyRing pct={Math.round(val)} color={color}/>
+                      : <div style={{width:80,height:80,borderRadius:"50%",border:"5px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"var(--text-dim)"}}>—</div>
+                    }
+                    <div style={{fontSize:10,fontWeight:800,color:"var(--text)"}}>{label}</div>
+                    <div style={{fontSize:8,color:"var(--text-muted)"}}>{sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Rolling windows */}
+              {rollingAcc.length > 0 && (
+                <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:14,padding:"14px 16px"}}>
+                  <div className="hp6-sub-label">Rolling Accuracy Windows</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {rollingAcc.map((r,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{fontSize:10,fontWeight:700,color:"var(--text-secondary)",minWidth:55}}>{r.window}</div>
+                        <div style={{flex:1,height:6,borderRadius:999,background:"var(--border)",overflow:"hidden"}}>
+                          <div style={{width:`${r.accuracy}%`,height:"100%",background:"linear-gradient(90deg,#38bdf8,#34d399)",borderRadius:999,transition:"width 1s ease"}}/>
+                        </div>
+                        <div style={{fontFamily:"var(--font-mono)",fontSize:11,fontWeight:900,color:"#34d399",minWidth:35,textAlign:"right"}}>{r.accuracy}%</div>
+                        <div style={{fontSize:8,color:"var(--text-muted)",minWidth:22}}>n={r.count}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Confidence bands */}
+              {confBands.length > 0 && (
+                <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:14,padding:"14px 16px"}}>
+                  <div className="hp6-sub-label">Accuracy by Confidence</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {confBands.map((b,i)=>{
+                      const bColor = b.bracket?.startsWith("High")?"#34d399":b.bracket?.startsWith("Med")?"#f59e0b":"#f87171";
+                      return (
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
+                          <div style={{fontSize:9,fontWeight:700,color:bColor,minWidth:80,whiteSpace:"nowrap"}}>{b.bracket}</div>
+                          <div style={{flex:1,height:6,borderRadius:999,background:"var(--border)",overflow:"hidden"}}>
+                            <div style={{width:`${b.accuracy||0}%`,height:"100%",background:bColor,borderRadius:999,opacity:0.8,transition:"width 1s ease"}}/>
+                          </div>
+                          <div style={{fontFamily:"var(--font-mono)",fontSize:11,fontWeight:900,color:bColor,minWidth:35,textAlign:"right"}}>{b.accuracy!=null?`${b.accuracy}%`:"—"}</div>
+                          <div style={{fontSize:8,color:"var(--text-muted)",minWidth:28}}>({b.count})</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {avgConf!=null&&(
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid var(--border)",fontSize:10,color:"var(--text-muted)"}}>
+                      Avg model confidence: <span style={{fontFamily:"var(--font-mono)",fontWeight:900,color:"var(--text)"}}>{avgConf}%</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: recent verified predictions */}
+            <div>
+              <div className="hp6-sub-label">Recent Verified Predictions</div>
+              {recentPreds.length > 0
+                ? recentPreds.slice(0,8).map((p,i)=><VerifiedRow key={i} p={p} index={i}/>)
+                : <div className="hp6-empty-state">No verified results yet.</div>
+              }
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // DIVIDER
 // ═══════════════════════════════════════════════════════════════
 function Div() {
-  return <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent)",maxWidth:1200,margin:"0 auto",padding:"0 40px"}}><div style={{height:1}}/></div>;
+  return <div style={{height:1,background:"linear-gradient(90deg,transparent,var(--border),transparent)",maxWidth:1200,margin:"0 auto",padding:"0 40px"}}><div style={{height:1}}/></div>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1142,6 +1338,8 @@ export default function HomePage() {
       <FPLHub dash={dash}/>
       <Div/>
       <TrendingPlayers dash={dash} loading={dl}/>
+      <Div/>
+      <ModelPerformanceSection dash={dash} loading={dl}/>
       <Div/>
       <WhyStatinSite/>
     </div>

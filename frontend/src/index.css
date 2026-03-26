@@ -1273,3 +1273,62 @@ button, input, select, textarea { font-family: var(--font-body); color: var(--te
   .hp6-facts-grid { grid-template-columns: 1fr 1fr; }
   .hp6-container { padding: 0 16px; }
 }
+/* ══════════════════════════════════════════════════════════
+   LIGHT-MODE OVERRIDES — HomePage Hero & Live Strip
+══════════════════════════════════════════════════════════ */
+
+/* Hero blobs: much more subtle in light mode */
+[data-theme="light"] .hp4-hero-blob--a { background: radial-gradient(ellipse, rgba(0,122,255,0.06) 0%, transparent 60%); }
+[data-theme="light"] .hp4-hero-blob--b { background: radial-gradient(ellipse, rgba(52,199,89,0.04) 0%, transparent 60%); }
+[data-theme="light"] .hp4-hero-blob--c { background: radial-gradient(ellipse, rgba(175,82,222,0.03) 0%, transparent 60%); }
+
+/* Scanline: invisible in light mode */
+[data-theme="light"] .hp4-scanline { opacity: 0; }
+
+/* Live strip: lighter in light mode */
+[data-theme="light"] .hp4-live-strip {
+  background: rgba(255,59,48,0.03);
+  border-top-color: rgba(255,59,48,0.1);
+  border-bottom-color: rgba(255,59,48,0.1);
+}
+[data-theme="light"] .hp4-strip-chip:hover { background: rgba(255,59,48,0.05); }
+[data-theme="light"] .hp4-strip-fade--l { background: linear-gradient(to right, var(--bg), transparent); }
+[data-theme="light"] .hp4-strip-fade--r { background: linear-gradient(to left,  var(--bg), transparent); }
+
+/* Hero gradient button: legible in light */
+[data-theme="light"] .hp4-btn--primary { color: #fff; }
+[data-theme="light"] .hp4-btn--ghost { color: var(--text-secondary); }
+
+/* Section divider: use border var */
+[data-theme="light"] .hp4-divider-section { background: var(--border); }
+
+/* Prediction card shadow: lighter */
+[data-theme="light"] .hp6-pred-card--hov {
+  box-shadow: 0 0 24px color-mix(in srgb, var(--pc-color,#007aff) 12%, transparent),
+              0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* Tool card shadow: lighter */
+[data-theme="light"] .hp6-tool-card--hov {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tc-color,#007aff) 14%, transparent),
+              0 0 32px color-mix(in srgb, var(--tc-color,#007aff) 10%, transparent),
+              0 8px 24px rgba(0,0,0,0.12),
+              inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+/* Competition card shadow: lighter */
+[data-theme="light"] .hp6-comp-card--hov {
+  box-shadow: var(--shadow-hover), 0 0 0 1px color-mix(in srgb, var(--cc-color,#007aff) 10%, transparent);
+}
+
+/* Platform note: more opaque in light */
+[data-theme="light"] .hp6-platform-note { background: var(--bg-secondary); border-color: var(--border); }
+
+/* FPL orbit glow: adapted */
+[data-theme="light"] .hp4-fpl-orbit-core { box-shadow: 0 0 10px var(--green); }
+
+/* Accountability section ring text in light mode */
+[data-theme="light"] .hp6-section--acct { background: var(--bg-secondary); }
+
+/* Hero: light mode orb tints */
+[data-theme="light"] .hp6-hero { background: var(--bg); }

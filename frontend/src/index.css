@@ -1332,3 +1332,53 @@ button, input, select, textarea { font-family: var(--font-body); color: var(--te
 
 /* Hero: light mode orb tints */
 [data-theme="light"] .hp6-hero { background: var(--bg); }
+
+/* ══════════════════════════════════════════════════════════
+   COMPETITION HUB — XL CARDS (added v7)
+══════════════════════════════════════════════════════════ */
+.hp6-comp-grid-xl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 16px;
+}
+
+.hp6-comp-card-xl {
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 20px 20px 16px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s, transform .18s, background .18s;
+  display: flex;
+  flex-direction: column;
+}
+
+.hp6-comp-card-xl--hov {
+  border-color: color-mix(in srgb, var(--cc-color, #38bdf8) 38%, transparent);
+  background: color-mix(in srgb, var(--cc-color, #38bdf8) 4%, var(--bg-card));
+  box-shadow: 0 0 28px color-mix(in srgb, var(--cc-color, #38bdf8) 12%, transparent),
+              0 8px 20px rgba(0,0,0,0.18);
+  transform: translateY(-3px);
+}
+
+/* Light-mode competition card adjustments */
+[data-theme="light"] .hp6-comp-card-xl {
+  background: rgba(255,255,255,0.92);
+  border-color: rgba(0,0,0,0.07);
+}
+[data-theme="light"] .hp6-comp-card-xl--hov {
+  background: color-mix(in srgb, var(--cc-color, #007aff) 5%, rgba(255,255,255,0.98));
+  border-color: color-mix(in srgb, var(--cc-color, #007aff) 30%, transparent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--cc-color, #007aff) 10%, transparent),
+              0 8px 20px rgba(0,0,0,0.10);
+}
+
+@media (max-width: 900px) {
+  .hp6-comp-grid-xl { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+}
+@media (max-width: 600px) {
+  .hp6-comp-grid-xl { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hp6-comp-card-xl { padding: 14px 14px 12px; }
+}

@@ -2318,7 +2318,8 @@ export default function LiveMatchPage() {
   const tabs = TABS_BY_MODE[mode] || TABS_BY_MODE.prematch;
 
   return (
-    <div style={{ background:"#080808", minHeight:"100vh", color:"#ffffff", position:"relative" }}>
+    <div className="sn-page-wrap" style={{ position:"relative" }}>
+      <div style={{ minHeight:"100vh", color:"var(--text)", position:"relative" }}>
       
       <style>{`
         @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.25;transform:scale(0.55)} }
@@ -2492,6 +2493,7 @@ export default function LiveMatchPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

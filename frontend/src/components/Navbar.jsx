@@ -266,6 +266,14 @@ export default function Navbar() {
 
   const SW = collapsed ? 68 : 220;
 
+  // Drive --sidebar-w on :root so index.css's .sn-page-wrap transition works
+  // cleanly. Writing directly to documentElement.style is synchronous and
+  // survives the style tag being re-parsed, which hardcoded px strings in
+  // template literals cannot do.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--sidebar-w", `${SW}px`);
+  }, [SW]);
+
   return (
     <>
       <style>{`
@@ -541,122 +549,29 @@ export default function Navbar() {
           flex-shrink: 0;
         }
 
-        /* ── Page offset for sidebar ── */
+        /* ── Sidebar width CSS variable — written to :root via useEffect above ── */
+        /* .sn-page-wrap in index.css reads var(--sidebar-w) and handles transition */
+
+        /* ── Page offset helper class (legacy — prefer sn-page-wrap) ── */
         .sn7-page-offset {
-          margin-left: ${SW}px;
+          margin-left: var(--sidebar-w, 220px);
           transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
         }
 
-        /* ── Mobile top bar ── */
-        .sn7-top-bar {
-          display: none;
-          position: fixed; top: 0; left: 0; right: 0;
-          height: 52px; z-index: 200;
-          background: var(--sn-bar-bg);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border-bottom: 0.5px solid var(--sn-border);
-          align-items: center; justify-content: space-between;
-          padding: 0 16px; gap: 12px;
-        }
-
-        /* ── Mobile brand ── */
-        .sn7-mob-brand {
-          display: flex; align-items: center; gap: 7px;
-          text-decoration: none;
-        }
-        .sn7-mob-brand-name {
-          font-size: 16px; font-weight: 700;
-          color: var(--sn-text); letter-spacing: -0.04em;
-        }
-        .sn7-mob-search-input {
-          height: 34px; background: var(--sn-surface);
-          border: 0.5px solid rgba(10,132,255,0.4);
-          border-radius: 10px; padding: 0 12px;
-          font-size: 13px; color: var(--sn-text);
-          font-family: -apple-system, 'Inter', sans-serif;
-          outline: none; width: 160px;
-        }
-
-        /* ── Mobile drawer ── */
-        .sn7-mobile-drawer {
-          display: none;
-          position: fixed; top: 0; left: 0; bottom: 0;
-          width: min(280px, 82vw); z-index: 300;
-          background: var(--sn-bar-bg);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border-right: 0.5px solid var(--sn-border);
-          flex-direction: column;
-          overflow-y: auto;
-          animation: sn7-slidein 0.2s cubic-bezier(0.22,1,0.36,1) both;
-          scrollbar-width: none;
-        }
-        .sn7-mobile-drawer::-webkit-scrollbar { display: none; }
-        .sn7-backdrop {
-          display: none;
-          position: fixed; inset: 0; z-index: 299;
-          background: rgba(0,0,0,0.5);
-          backdrop-filter: blur(2px);
-        }
-
-        /* ── Mobile bottom tab ── */
-        .sn7-mobile-bar {
-          display: none;
-          position: fixed; bottom: 0; left: 0; right: 0;
-          height: 64px; z-index: 200;
-          background: var(--sn-bar-bg);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border-top: 0.5px solid var(--sn-border);
-          justify-content: space-around; align-items: flex-start;
-          padding: 6px 0 max(8px, env(safe-area-inset-bottom));
-        }
-        .sn7-mob-tab {
-          display: flex; flex-direction: column; align-items: center;
-          gap: 3px; flex: 1; text-decoration: none;
-          color: var(--sn-muted); transition: color 0.13s;
-          padding: 2px 4px;
-        }
-        .sn7-mob-tab--active { color: var(--tc, white); }
-        .sn7-mob-icon {
-          width: 30px; height: 30px; border-radius: 9px;
-          display: flex; align-items: center; justify-content: center;
-          position: relative; transition: background 0.13s;
-        }
-        .sn7-mob-tab--active .sn7-mob-icon {
-          background: color-mix(in srgb, var(--tc,white) 12%, transparent);
-        }
-        .sn7-mob-icon--live .sn7-live-dot--sm { position: absolute; top: 3px; right: 3px; }
-        .sn7-mob-label { font-size: 10px; font-weight: 500; letter-spacing: 0.01em; }
-
-        /* ── Icon button ── */
-        .sn7-icon-btn {
-          width: 36px; height: 36px; border-radius: 10px;
-          border: none; background: transparent;
-          color: var(--sn-muted); cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          transition: background 0.13s, color 0.13s; flex-shrink: 0;
-        }
-        .sn7-icon-btn:hover { background: var(--sn-hover); color: var(--sn-text); }
-
-        /* ── Responsive ── */
+        /* ── Mobile responsive overrides ── */
         @media (max-width: 820px) {
           .sn7-sidebar   { display: none; }
           .sn7-page-offset { margin-left: 0 !important; padding-top: 52px; padding-bottom: 72px; }
+          .sn-page-wrap  { margin-left: 0 !important; padding-top: 52px; padding-bottom: 72px; }
           .sn7-top-bar   { display: flex; }
           .sn7-mobile-bar { display: flex; }
           .sn7-mobile-drawer { display: flex; }
           .sn7-backdrop  { display: block; }
         }
-        px;
-          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
-          min-height: 100vh;
-        }
       `}</style>
 
       {/* ── DESKTOP SIDEBAR ──────────────────────────────────── */}
-      <aside className="sn7-sidebar" style={{ width: SW }}>
+      <aside className="sn7-sidebar">
 
         {/* Header / brand */}
         <div className="sn7-sidebar-head">

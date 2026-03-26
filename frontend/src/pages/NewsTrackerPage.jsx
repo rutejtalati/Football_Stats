@@ -1053,7 +1053,7 @@ export default function NewsTrackerPage(){
   const isMob = mobileWidth < 640;
   const isTablet = mobileWidth < 960;
 
-  return(<div style={{minHeight:"100vh",background:"var(--bg)",fontFamily:"'Inter',sans-serif",color:"var(--text)",position:"relative"}}>
+  return(<div className="sn-page-wrap" style={{fontFamily:"'Inter',sans-serif",position:"relative"}}>
 
     {/* ── Keyframes ────────────────────────────────────────── */}
     <style>{`

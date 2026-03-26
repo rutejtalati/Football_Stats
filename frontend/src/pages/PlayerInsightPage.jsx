@@ -428,9 +428,9 @@ export default function PlayerProfilePage(){
   const onLeague=lg=>{setLeague(lg);cacheRef.current={};setCache({});};
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Inter',sans-serif",
+    <div className="sn-page-wrap" style={{
       backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
-      backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
+      backgroundSize:"80px 80px",backgroundAttachment:"fixed",fontFamily:"'Inter',sans-serif"}}>
       <PageBg/>
       <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
 
@@ -569,9 +569,9 @@ export default function PlayerProfilePage(){
           </div>
 
         </div>
+
       </div>
+      <PageFooter/>
     </div>
   );
-      <PageFooter/>
-  
 }

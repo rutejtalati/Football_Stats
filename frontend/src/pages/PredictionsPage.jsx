@@ -2572,7 +2572,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const avgXgA=matches.length?(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length).toFixed(2):"0.00";
 
   return(
-    <div className="sn-page-wrap" style={{background:"#080808",position:"relative",fontFamily:"'Inter',sans-serif",color:"#e2e8f0"}}>
+    <div className="sn-page-wrap" style={{position:"relative",fontFamily:"'Inter',sans-serif"}}>
 
       {/* -- Neobrutalist BG stripes */}
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,

@@ -728,7 +728,7 @@ export default function LivePage() {
   const todayCount = fixtures.filter(f=>dayBucket(f.kickoff)==="today").length;
 
   return (
-    <>
+    <div className="sn-page-wrap">
       <style>{`
         @keyframes lc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.68)} }
         @keyframes lc-spin  { to{transform:rotate(360deg)} }
@@ -736,7 +736,7 @@ export default function LivePage() {
         *{box-sizing:border-box}
       `}</style>
 
-      <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Inter',system-ui,sans-serif", position:"relative" }}>
+      <div style={{ minHeight:"100vh", fontFamily:"'Inter',system-ui,sans-serif", position:"relative" }}>
         <LiveBg/>
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 20px", position:"relative", zIndex:1 }}>
 
@@ -948,6 +948,6 @@ export default function LivePage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1107,7 +1107,7 @@ export default function HomePage() {
   const { fixtures, loading: ul } = useUpcoming();
   const { dash,     loading: dl } = useDashboard();
   return (
-    <div className="hp4-root">
+    <div className="sn-page-wrap hp4-root">
       <HeroSection fixtures={fixtures} upcoming_loading={ul} dash={dash} dash_loading={dl}/>
       <LivePulseStrip fixtures={fixtures}/>
       <TopPredictions dash={dash} loading={dl}/>

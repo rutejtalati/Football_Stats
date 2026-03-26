@@ -520,6 +520,7 @@ function TitleRace({ dash, loading }) {
 // ═══════════════════════════════════════════════════════════════
 function EdgeBoard({ dash, loading }) {
   const [ref,vis]=useReveal(0.04);
+  const nav=useNavigate();
   const edges=dash?.model_edges?.edges??[];
   const highXg=dash?.high_scoring_matches?.matches??[];
   return (
@@ -551,7 +552,6 @@ function EdgeBoard({ dash, loading }) {
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {loading?Array.from({length:3}).map((_,i)=><div key={i} className="hp6-xg-card"><Skel w="40%" h={24}/><div style={{marginTop:4}}/><Skel w="70%" h={10}/></div>)
                 :highXg.length>0?highXg.slice(0,4).map((m,i)=>{
-                  const nav=useNavigate();
                   const xgH=Number(m.xg_home)||0,xgA=Number(m.xg_away)||0,total=Number(m.total_xg)||(xgH+xgA);
                   return (
                     <div key={i} className="hp6-xg-card" onClick={()=>m.fixture_id&&nav(`/match/${m.fixture_id}`)}>
@@ -729,6 +729,25 @@ const FPL_TOOLS=[
   {to:"/differentials",label:"Differentials",stat:"Low-owned",detail:"High-ceiling, low-ownership picks",color:"#f472b6"},
 ];
 
+// Extracted from FPLHub .map() — hooks must be at component top level, not inside .map()
+function FplToolRow({t, i, dash}){
+  const[hov,setHov]=useState(false);
+  const[ref2,vis2]=useReveal(0.04);
+  const capt=t.to==="/captaincy"&&dash?.differential_captains?.captains?.[0];
+  const realStat=capt?`${capt.name||capt.web_name} ${capt.ep_next!=null?Number(capt.ep_next).toFixed(1):"??"}EP`:t.stat;
+  return(
+    <div ref={ref2} style={{opacity:vis2?1:0,transform:vis2?"translateX(0)":"translateX(14px)",transition:`all .4s ease ${i*40}ms`}}>
+      <Link to={t.to} style={{textDecoration:"none"}}>
+        <div className={`hp4-fpl-row ${hov?"hp4-fpl-row--hov":""}`} style={{"--fpl-color":t.color}} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <div className="hp4-fpl-indicator"/><div className="hp4-fpl-idx hp4-mono">{String(i+1).padStart(2,"0")}</div><div className="hp4-fpl-dot"/>
+          <div className="hp4-fpl-content"><span className="hp4-fpl-label">{t.label}</span><span className={`hp4-fpl-detail ${hov?"hp4-fpl-detail--vis":""}`}>{t.detail}</span></div>
+          <span className="hp4-fpl-stat">{realStat}</span><div className={`hp4-fpl-arrow ${hov?"hp4-fpl-arrow--vis":""}`}>→</div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 function FPLHub({dash}){
   const[ref,vis]=useReveal(0.04);
   const capts=dash?.differential_captains?.captains?.slice(0,4)??[];
@@ -789,22 +808,7 @@ function FPLHub({dash}){
         </div>
         <div className="hp6-fpl-right">
           <div className="hp6-sub-label">All Tools</div>
-          {FPL_TOOLS.map((t,i)=>{
-            const[hov,setHov]=useState(false);const[ref2,vis2]=useReveal(0.04);
-            const capt=t.to==="/captaincy"&&dash?.differential_captains?.captains?.[0];
-            const realStat=capt?`${capt.name||capt.web_name} ${capt.ep_next!=null?Number(capt.ep_next).toFixed(1):"??"}EP`:t.stat;
-            return(
-              <div key={t.to} ref={ref2} style={{opacity:vis2?1:0,transform:vis2?"translateX(0)":"translateX(14px)",transition:`all .4s ease ${i*40}ms`}}>
-                <Link to={t.to} style={{textDecoration:"none"}}>
-                  <div className={`hp4-fpl-row ${hov?"hp4-fpl-row--hov":""}`} style={{"--fpl-color":t.color}} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-                    <div className="hp4-fpl-indicator"/><div className="hp4-fpl-idx hp4-mono">{String(i+1).padStart(2,"0")}</div><div className="hp4-fpl-dot"/>
-                    <div className="hp4-fpl-content"><span className="hp4-fpl-label">{t.label}</span><span className={`hp4-fpl-detail ${hov?"hp4-fpl-detail--vis":""}`}>{t.detail}</span></div>
-                    <span className="hp4-fpl-stat">{realStat}</span><div className={`hp4-fpl-arrow ${hov?"hp4-fpl-arrow--vis":""}`}>→</div>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
+          {FPL_TOOLS.map((t,i)=><FplToolRow key={t.to} t={t} i={i} dash={dash}/>)}
         </div>
       </div>
     </div></section>
@@ -814,6 +818,27 @@ function FPLHub({dash}){
 // ═══════════════════════════════════════════════════════════════
 // SECTION 9 — TRENDING PLAYERS
 // ═══════════════════════════════════════════════════════════════
+// Extracted from TrendingPlayers .map() — hooks must not be called inside .map()
+function PlayerCard({p, i, nav}){
+  const[hov,setHov]=useState(false);
+  return(
+    <div key={i} className={`hp6-player-card ${hov?"hp6-player-card--hov":""}`} onClick={()=>nav(`/player?search=${encodeURIComponent(p.name||"")}`)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <div className="hp6-pc2-top">
+        {p.photo&&<img src={p.photo} width={36} height={36} style={{borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
+        <div style={{flex:1,minWidth:0}}><div className="hp6-pc2-name">{p.name||"Player"}</div><div className="hp6-pc2-team">{p.team||p.team_name||""}</div></div>
+        {p.per90!=null&&<div className="hp6-pc2-stat hp4-mono" style={{color:"#38bdf8"}}>{Number(p.per90).toFixed(2)}<div style={{fontSize:7,color:"var(--text-dim)"}}>G+A/90</div></div>}
+      </div>
+      {(p.goals!=null||p.g_plus_a!=null)&&(
+        <div style={{display:"flex",gap:12,marginTop:8,fontSize:10,color:"var(--text-muted)"}}>
+          {p.goals!=null&&<span><span className="hp4-mono" style={{color:"var(--text)",fontWeight:900}}>{p.goals}</span> G</span>}
+          {p.assists!=null&&<span><span className="hp4-mono" style={{color:"var(--text)",fontWeight:900}}>{p.assists}</span> A</span>}
+          {p.g_plus_a!=null&&<span><span className="hp4-mono" style={{color:"#f59e0b",fontWeight:900}}>{p.g_plus_a}</span> G+A</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TrendingPlayers({dash,loading}){
   const[ref,vis]=useReveal(0.04);
   const nav=useNavigate();
@@ -828,25 +853,8 @@ function TrendingPlayers({dash,loading}){
       </div>
       <div className="hp6-player-grid">
         {loading?Array.from({length:6}).map((_,i)=><div key={i} className="hp6-player-card"><div style={{padding:14}}><Skel w="60%" h={11}/><div style={{marginTop:8}}/><Skel w="80%" h={9}/></div></div>)
-          :showable.length>0?showable.map((p,i)=>{
-            const[hov,setHov]=useState(false);
-            return(
-              <div key={i} className={`hp6-player-card ${hov?"hp6-player-card--hov":""}`} onClick={()=>nav(`/player?search=${encodeURIComponent(p.name||"")}`)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-                <div className="hp6-pc2-top">
-                  {p.photo&&<img src={p.photo} width={36} height={36} style={{borderRadius:"50%",objectFit:"cover",flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>}
-                  <div style={{flex:1,minWidth:0}}><div className="hp6-pc2-name">{p.name||"Player"}</div><div className="hp6-pc2-team">{p.team||p.team_name||""}</div></div>
-                  {p.per90!=null&&<div className="hp6-pc2-stat hp4-mono" style={{color:"#38bdf8"}}>{Number(p.per90).toFixed(2)}<div style={{fontSize:7,color:"var(--text-dim)"}}>G+A/90</div></div>}
-                </div>
-                {(p.goals!=null||p.g_plus_a!=null)&&(
-                  <div style={{display:"flex",gap:12,marginTop:8,fontSize:10,color:"var(--text-muted)"}}>
-                    {p.goals!=null&&<span><span className="hp4-mono" style={{color:"var(--text)",fontWeight:900}}>{p.goals}</span> G</span>}
-                    {p.assists!=null&&<span><span className="hp4-mono" style={{color:"var(--text)",fontWeight:900}}>{p.assists}</span> A</span>}
-                    {p.g_plus_a!=null&&<span><span className="hp4-mono" style={{color:"#f59e0b",fontWeight:900}}>{p.g_plus_a}</span> G+A</span>}
-                  </div>
-                )}
-              </div>
-            );
-          }):<div className="hp6-empty-state" style={{gridColumn:"1/-1"}}>Loading player data…</div>}
+          :showable.length>0?showable.map((p,i)=><PlayerCard key={i} p={p} i={i} nav={nav}/>)
+          :<div className="hp6-empty-state" style={{gridColumn:"1/-1"}}>Loading player data…</div>}
       </div>
     </div></section>
   );
@@ -1107,7 +1115,7 @@ export default function HomePage() {
   const { fixtures, loading: ul } = useUpcoming();
   const { dash,     loading: dl } = useDashboard();
   return (
-    <div className="sn-page-wrap hp4-root">
+    <div className="hp4-root">
       <HeroSection fixtures={fixtures} upcoming_loading={ul} dash={dash} dash_loading={dl}/>
       <LivePulseStrip fixtures={fixtures}/>
       <TopPredictions dash={dash} loading={dl}/>

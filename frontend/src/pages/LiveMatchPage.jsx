@@ -62,6 +62,29 @@ function fmtKickoff(iso) {
   return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" }) + ` · ${timeStr}`;
 }
 
+// ─── Background decorator ─────────────────────────────────────────────────────
+
+function MatchBg() {
+  return (
+    <div aria-hidden="true" className="sn-fixed-bg" style={{
+      position:"fixed", top:0, right:0, bottom:0,
+      pointerEvents:"none", zIndex:0, overflow:"hidden",
+    }}>
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",top:"-15%",left:"20%",width:"65vw",height:"65vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.014) 0%,transparent 62%)"}}/>
+      <div style={{position:"absolute",bottom:"-8%",right:"5%",width:"50vw",height:"50vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px)",
+        backgroundSize:"44px 44px"}}/>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.052) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.052) 1px,transparent 1px)",
+        backgroundSize:"176px 176px"}}/>
+    </div>
+  );
+}
+
 // ─── Shared atoms ─────────────────────────────────────────────────────────────
 
 function SectionLabel({ children, accent }) {
@@ -70,16 +93,9 @@ function SectionLabel({ children, accent }) {
       display: "flex", alignItems: "center", gap: 8,
       marginBottom: 14,
     }}>
-      <MatchBg/>
-      <style>{NB_CSS}</style>
-      {/* NB bg stripes */}
-      <div style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"auto",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
-
-      <span style={{ fontSize:10, fontWeight:500, letterSpacing:"0.16em", color:accent||"#ffffff", textTransform:"uppercase", fontFamily:"'Inter',sans-serif", borderBottom:`2px solid ${accent||"rgba(255,255,255,.3)"}`, paddingBottom:4, borderBottom:`1px solid ${accent||"rgba(255,255,255,.12)"}` }}>
+      <span style={{ fontSize:10, fontWeight:500, letterSpacing:"0.16em", color:accent||"#ffffff", textTransform:"uppercase", fontFamily:"'Inter',sans-serif", paddingBottom:4, borderBottom:`1px solid ${accent||"rgba(255,255,255,.12)"}` }}>
         {children}
       </span>
-      <PageFooter/>
     </div>
   );
 }
@@ -2320,7 +2336,8 @@ export default function LiveMatchPage() {
   return (
     <div style={{ position:"relative" }}>
       <div style={{ minHeight:"100vh", color:"var(--text)", position:"relative" }}>
-      
+      <MatchBg/>
+      <style>{NB_CSS}</style>
       <style>{`
         @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.25;transform:scale(0.55)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }

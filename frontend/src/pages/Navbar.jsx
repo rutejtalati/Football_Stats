@@ -541,9 +541,20 @@ export default function Navbar() {
           flex-shrink: 0;
         }
 
+        /* ── Sidebar width CSS variable — read by sn-page-wrap in index.css ── */
+        :root {
+          --sidebar-w: ${SW}px;
+        }
+
         /* ── Page offset for sidebar ── */
         .sn7-page-offset {
           margin-left: ${SW}px;
+          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        /* ── Also update sn-page-wrap so App.jsx layout responds ── */
+        .sn-page-wrap {
+          margin-left: ${SW}px !important;
           transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
         }
 
@@ -644,14 +655,12 @@ export default function Navbar() {
         @media (max-width: 820px) {
           .sn7-sidebar   { display: none; }
           .sn7-page-offset { margin-left: 0 !important; padding-top: 52px; padding-bottom: 72px; }
+          .sn-page-wrap  { margin-left: 0 !important; padding-top: 52px; padding-bottom: 72px; }
           .sn7-top-bar   { display: flex; }
           .sn7-mobile-bar { display: flex; }
           .sn7-mobile-drawer { display: flex; }
           .sn7-backdrop  { display: block; }
         }
-        px;
-          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
-          min-height: 100vh;
         }
       `}</style>
 

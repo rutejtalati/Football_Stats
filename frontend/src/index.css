@@ -274,7 +274,9 @@ button, input, select, textarea { font-family: var(--font-body); color: var(--te
    PAGE LAYOUT
 ══════════════════════════════════════════════════════════ */
 .sn-page-wrap {
-  margin-left: 220px; min-height: 100vh;
+  /* Navbar injects --sidebar-w dynamically; fall back to 220px on first paint */
+  margin-left: var(--sidebar-w, 220px);
+  min-height: 100vh;
   display: flex; flex-direction: column;
   background: var(--bg);
   transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1), background 0.25s;

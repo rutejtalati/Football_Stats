@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=JetBrains+Mono:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
 
-.hiw-page { min-height:100vh; background:#000; color:#fff; font-family:'Inter',sans-serif; }
+.hiw-page { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
 
 /* ── Keyframes ── */
 @keyframes hiwScanX { 0%{left:-40%} 100%{left:140%} }
@@ -82,14 +82,14 @@ const CSS = `
   letter-spacing: -0.025em;
 }
 .hiw-section-sub {
-  font-size: 12px; color: rgba(255,255,255,.4);
+  font-size: 12px; color: var(--text-muted);
   margin-top: 2px; font-weight: 500;
 }
 
 /* Stat tiles */
 .hiw-stat-tile {
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 13px;
   transition: background .2s, border-color .2s;
@@ -99,7 +99,7 @@ const CSS = `
 /* Rule description */
 .hiw-rule-desc {
   font-size: 11px;
-  color: rgba(255,255,255,.5);
+  color: var(--text-secondary);
   line-height: 1.7;
   font-weight: 400;
 }
@@ -113,6 +113,7 @@ const CSS = `
   cursor: pointer;
   transition: color .15s, border-color .15s, background .15s;
   font-family: 'Inter', sans-serif;
+  color: var(--text-muted);
 }
 `;
 
@@ -189,7 +190,7 @@ function OffsideCard() {
           </text>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#ef4444", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Offside Rule</div>
         <div className="hiw-rule-desc">
           When a teammate plays the ball forward to you, your body (not arms) must have at least one defender between you and the goal at the exact moment the ball is kicked. The goalkeeper counts as one of those defenders. If you are ahead of everyone except the keeper when the pass is made, you are offside and the referee stops play. The green player is onside because a defender is still behind them. The red player has run too far forward and is caught offside as soon as the pass is made.
@@ -257,7 +258,7 @@ function PenaltyCard() {
           </text>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Penalty Kick</div>
         <div className="hiw-rule-desc">
           A penalty is awarded when a defending player commits a foul inside their own penalty area. The attacking team gets a one on one chance from the penalty spot, which sits exactly 12 yards (11 metres) from the goal line. The goalkeeper must stay on the goal line until the ball is kicked. All other players must wait outside the penalty area. Penalties are scored approximately 76 percent of the time, making them one of the most decisive moments in any football match. Hover to watch the taker run up, strike the ball into the top corner and the keeper dive the wrong way.
@@ -336,7 +337,7 @@ function FreeKickCard() {
           </text>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#28d97a", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Free Kick</div>
         <div className="hiw-rule-desc">
           A free kick is awarded whenever a player commits a foul outside the penalty area. Defenders are allowed to form a wall of players, but that wall must be at least 9.15 metres away from the ball. The kicker can strike the ball directly at goal on a direct free kick. The best free kick takers in the world generate enormous swerve and dip by striking through the side of the ball, causing it to curl around or over the defensive wall before dipping sharply into the net. Hover to see the ball trace its path over the wall and into the top corner.
@@ -417,7 +418,7 @@ function CardsCard() {
           </g>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>Yellow and Red Cards</div>
         <div className="hiw-rule-desc">
           Referees carry yellow and red cards to discipline players. A yellow card is a formal warning issued for reckless challenges, diving, time wasting or dissent. If a player receives two yellow cards in the same match they are shown a second yellow immediately followed by a red card and must leave the pitch. A direct red card can also be shown for violent conduct or denying an obvious goalscoring opportunity. Once a player is sent off, their team must play the rest of the match with only ten players against eleven, which is a significant disadvantage. Hover to see the cards being raised and the player being dismissed.
@@ -521,7 +522,7 @@ function RestartsCard() {
           </>}
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Sora',sans-serif", marginBottom: 5, color: current.col }}>{current.title}</div>
         <div className="hiw-rule-desc">{current.desc}</div>
       </div>
@@ -578,7 +579,7 @@ function TacticsBoardCard() {
           </button>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", background: "#030a04" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", background: "var(--bg-tertiary)" }}>
         {/* Pitch SVG */}
         <div style={{ position: "relative", paddingTop: "62%", overflow: "hidden" }}>
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 340 210" preserveAspectRatio="xMidYMid meet">
@@ -662,16 +663,16 @@ function TacticsBoardCard() {
           <div style={{ fontSize: 13, fontWeight: 800, color: t.col, fontFamily: "'Sora',sans-serif" }}>{t.title}</div>
           {t.stats.map(([l, v, c]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 8px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7 }}>
-              <span style={{ fontSize: 9, color: "rgba(255,255,255,.45)" }}>{l}</span>
+              <span style={{ fontSize: 9, color: "var(--text-muted)" }}>{l}</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono',monospace" }}>{v}</span>
             </div>
           ))}
-          <div style={{ marginTop: "auto", padding: "7px 9px", background: t.col + "0e", borderRadius: 7, fontSize: 9, color: "rgba(255,255,255,.4)", lineHeight: 1.6 }}>
+          <div style={{ marginTop: "auto", padding: "7px 9px", background: t.col + "0e", borderRadius: 7, fontSize: 9, color: "var(--text-muted)", lineHeight: 1.6 }}>
             <span style={{ color: t.col, fontWeight: 700 }}>Examples: </span>{t.example}
           </div>
         </div>
       </div>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div className="hiw-rule-desc">{t.desc}</div>
       </div>
     </div>
@@ -701,7 +702,7 @@ function PositionsCard() {
           </button>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "130px 1fr", background: "#030a04" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "130px 1fr", background: "var(--bg-tertiary)" }}>
         {/* Mini pitch */}
         <div style={{ borderRight: "1px solid rgba(255,255,255,.07)", padding: 4 }}>
           <svg width="122" height="175" viewBox="0 0 122 175">
@@ -721,18 +722,18 @@ function PositionsCard() {
         {/* Stats */}
         <div style={{ padding: "12px 14px" }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: p.col, fontFamily: "'Sora',sans-serif", marginBottom: 2 }}>{p.label}</div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.3)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 10 }}>{p.role}</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-dim)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 10 }}>{p.role}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {p.stats.map(([l, v]) => (
               <div key={l} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "7px 9px" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: p.col, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{v}</div>
-                <div style={{ fontSize: 8, color: "rgba(255,255,255,.35)", fontWeight: 700, letterSpacing: ".07em", marginTop: 2, textTransform: "uppercase" }}>{l}</div>
+                <div style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 700, letterSpacing: ".07em", marginTop: 2, textTransform: "uppercase" }}>{l}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
-      <div style={{ padding: "13px 15px", background: "#000" }}>
+      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div className="hiw-rule-desc">{p.desc}</div>
       </div>
     </div>
@@ -798,10 +799,10 @@ function StatGlossarySection() {
               </>}
             </svg>
           </Scene>
-          <div style={{ padding: "12px 14px", background: "#000" }}>
+          <div style={{ padding: "12px 14px", background: "var(--bg-secondary)" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 5 }}>
               <span style={{ fontSize: 20, fontWeight: 900, color: s.col, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{s.abbr}</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)", fontWeight: 600 }}>{s.full}</span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{s.full}</span>
             </div>
             <div className="hiw-rule-desc">{s.desc}</div>
           </div>
@@ -818,7 +819,7 @@ function MatchStructureCard() {
   return (
     <div className="hiw-card">
       <div className="hiw-top-border" style={{ background: "linear-gradient(90deg,#28d97a,#fbbf24,#ef4444,#a78bfa)", backgroundSize: "300% 100%" }} />
-      <div style={{ padding: "16px 18px", background: "#000" }}>
+      <div style={{ padding: "16px 18px", background: "var(--bg-secondary)" }}>
         {/* Visual timeline */}
         <div style={{ position: "relative", height: 60, marginBottom: 14 }}>
           <div style={{ position: "absolute", top: 22, left: 0, right: 0, height: 10, background: "rgba(255,255,255,.06)", borderRadius: 999, overflow: "hidden" }}>
@@ -839,15 +840,47 @@ function MatchStructureCard() {
           {[["90", "Standard mins", "#28d97a"], ["+5", "Avg stoppage", "#fbbf24"], ["15", "Half time break", "#67b1ff"], ["30", "Extra time mins", "#ef4444"], ["5", "Penalty shootout", "#a78bfa"]].map(([v, l, c]) => (
             <div key={l} style={{ background: c + "09", border: `1px solid ${c}22`, borderRadius: 9, padding: "9px 8px", textAlign: "center" }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{v}</div>
-              <div style={{ fontSize: 8, color: "rgba(255,255,255,.35)", fontWeight: 700, letterSpacing: ".07em", marginTop: 3, textTransform: "uppercase", lineHeight: 1.4 }}>{l}</div>
+              <div style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 700, letterSpacing: ".07em", marginTop: 3, textTransform: "uppercase", lineHeight: 1.4 }}>{l}</div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 12, fontSize: 11, color: "rgba(255,255,255,.45)", lineHeight: 1.7 }}>
+        <div style={{ marginTop: 12, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.7 }}>
           A standard football match lasts 90 minutes divided into two halves of 45 minutes each. Unlike basketball or American football, the clock never stops when play is interrupted. Instead the referee adds extra time at the end of each half to compensate for delays such as injuries, substitutions and goal celebrations. If a knockout match is level after 90 minutes, two additional periods of 15 minutes each (extra time) are played. If scores are still level, a penalty shootout decides the winner.
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─────────────────────────────────────
+   PAGE FOOTER
+───────────────────────────────────── */
+function PageFooter() {
+  return (
+    <footer style={{
+      position:"relative", zIndex:2, flexShrink:0,
+      background:"var(--glass-bg)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
+      borderTop:"1px solid var(--border)", fontFamily:"'Inter',system-ui,sans-serif", marginTop:8,
+    }}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:"0 28px",height:52}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+            <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+            <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+            <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
+          </svg>
+          <span style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",letterSpacing:"-.03em"}}>StatinSite</span>
+          <span style={{fontSize:11,color:"var(--text-muted)",letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px",background:"var(--bg-glass)",border:"1px solid var(--border)",borderRadius:999,flexShrink:0}}>
+          <span style={{fontSize:10,color:"var(--text-muted)",letterSpacing:".1em",textTransform:"uppercase"}}>Built by</span>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Rutej Talati</span>
+        </div>
+        <span style={{fontSize:11,color:"var(--text-dim)",flexShrink:0}}>© {new Date().getFullYear()} StatinSite</span>
+      </div>
+    </footer>
   );
 }
 
@@ -862,14 +895,14 @@ export default function HowItWorksPage() {
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 20px 80px" }}>
 
         {/* Hero header */}
-        <div style={{ marginBottom: 48, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,.07)" }}>
+        <div style={{ marginBottom: 48, paddingBottom: 24, borderBottom: "1px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-            <div style={{ width: 4, height: 52, borderRadius: 2, background: "linear-gradient(180deg,#28d97a,#67b1ff)", flexShrink: 0 }} />
+            <div style={{ width: 4, height: 52, borderRadius: 2, background: "linear-gradient(180deg,var(--green),var(--blue))", flexShrink: 0 }} />
             <div>
-              <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(26px,4vw,38px)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0, background: "linear-gradient(135deg,#fff,rgba(255,255,255,.6))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(26px,4vw,38px)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0, color: "var(--text)" }}>
                 How Football Works
               </h1>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)", margin: "4px 0 0", fontWeight: 500 }}>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "4px 0 0", fontWeight: 500 }}>
                 Rules, tactics, positions and statistics explained graphically. Hover any card to start the animations.
               </p>
             </div>

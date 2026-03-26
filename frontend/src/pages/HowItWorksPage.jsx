@@ -41,6 +41,68 @@ const CSS = `
   transform: translateY(-3px);
 }
 
+/* ── Info panel text — theme-aware ── */
+
+/* DARK MODE (default): white text on dark panel */
+.hiw-info-panel {
+  background: var(--bg-secondary);
+}
+.hiw-rule-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.7;
+  font-weight: 400;
+}
+.hiw-stat-tile-label {
+  color: rgba(255,255,255,0.38);
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.09em; text-transform: uppercase;
+}
+.hiw-stat-tile-val {
+  color: rgba(255,255,255,0.88);
+  font-size: 18px; font-weight: 900; line-height: 1;
+}
+
+/* LIGHT MODE: dark text on white panel */
+[data-theme="light"] .hiw-rule-desc {
+  color: rgba(0,0,0,0.68) !important;
+}
+[data-theme="light"] .hiw-card {
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 2px 16px rgba(0,0,0,.08);
+}
+[data-theme="light"] .hiw-card:hover {
+  border-color: rgba(0,0,0,.22);
+  box-shadow: 0 12px 40px rgba(0,0,0,.14);
+}
+[data-theme="light"] .hiw-card:hover .hiw-stat-tile {
+  border-color: rgba(0,0,0,.18);
+}
+[data-theme="light"] .hiw-stat-tile {
+  background: rgba(0,0,0,.04);
+  border-color: rgba(0,0,0,.10);
+}
+[data-theme="light"] .hiw-stat-tile-label {
+  color: rgba(0,0,0,.45) !important;
+}
+[data-theme="light"] .hiw-stat-tile-val {
+  color: rgba(0,0,0,.85) !important;
+}
+[data-theme="light"] .hiw-tab {
+  color: rgba(0,0,0,.55);
+  border-bottom-color: rgba(0,0,0,.08);
+  background: transparent;
+}
+[data-theme="light"] .hiw-tab:hover {
+  color: rgba(0,0,0,.85);
+  background: rgba(0,0,0,.04);
+}
+/* Any remaining text inside info panels not already handled */
+[data-theme="light"] .hiw-info-panel span,
+[data-theme="light"] .hiw-info-panel p {
+  color: rgba(0,0,0,.68);
+}
+
 /* ── Scene area ── */
 .hiw-scene {
   position: relative;
@@ -96,13 +158,7 @@ const CSS = `
 }
 .hiw-card:hover .hiw-stat-tile { border-color: rgba(255,255,255,.14); }
 
-/* Rule description */
-.hiw-rule-desc {
-  font-size: 11px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  font-weight: 400;
-}
+/* Rule description — defined above with theme variants */
 
 /* Tabs */
 .hiw-tab {
@@ -190,8 +246,8 @@ function OffsideCard() {
           </text>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#ef4444", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Offside Rule</div>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+        <div className="hiw-card-title" style={{ fontSize: 14, fontWeight: 800, color: "#ef4444", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Offside Rule</div>
         <div className="hiw-rule-desc">
           When a teammate plays the ball forward to you, your body (not arms) must have at least one defender between you and the goal at the exact moment the ball is kicked. The goalkeeper counts as one of those defenders. If you are ahead of everyone except the keeper when the pass is made, you are offside and the referee stops play. The green player is onside because a defender is still behind them. The red player has run too far forward and is caught offside as soon as the pass is made.
         </div>
@@ -258,8 +314,8 @@ function PenaltyCard() {
           </text>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Penalty Kick</div>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+        <div className="hiw-card-title" style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Penalty Kick</div>
         <div className="hiw-rule-desc">
           A penalty is awarded when a defending player commits a foul inside their own penalty area. The attacking team gets a one on one chance from the penalty spot, which sits exactly 12 yards (11 metres) from the goal line. The goalkeeper must stay on the goal line until the ball is kicked. All other players must wait outside the penalty area. Penalties are scored approximately 76 percent of the time, making them one of the most decisive moments in any football match. Hover to watch the taker run up, strike the ball into the top corner and the keeper dive the wrong way.
         </div>
@@ -337,8 +393,8 @@ function FreeKickCard() {
           </text>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#28d97a", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Free Kick</div>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+        <div className="hiw-card-title" style={{ fontSize: 14, fontWeight: 800, color: "#28d97a", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Free Kick</div>
         <div className="hiw-rule-desc">
           A free kick is awarded whenever a player commits a foul outside the penalty area. Defenders are allowed to form a wall of players, but that wall must be at least 9.15 metres away from the ball. The kicker can strike the ball directly at goal on a direct free kick. The best free kick takers in the world generate enormous swerve and dip by striking through the side of the ball, causing it to curl around or over the defensive wall before dipping sharply into the net. Hover to see the ball trace its path over the wall and into the top corner.
         </div>
@@ -418,8 +474,8 @@ function CardsCard() {
           </g>
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>Yellow and Red Cards</div>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+        <div className="hiw-card-title" style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>Yellow and Red Cards</div>
         <div className="hiw-rule-desc">
           Referees carry yellow and red cards to discipline players. A yellow card is a formal warning issued for reckless challenges, diving, time wasting or dissent. If a player receives two yellow cards in the same match they are shown a second yellow immediately followed by a red card and must leave the pitch. A direct red card can also be shown for violent conduct or denying an obvious goalscoring opportunity. Once a player is sent off, their team must play the rest of the match with only ten players against eleven, which is a significant disadvantage. Hover to see the cards being raised and the player being dismissed.
         </div>
@@ -522,7 +578,7 @@ function RestartsCard() {
           </>}
         </svg>
       </Scene>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Sora',sans-serif", marginBottom: 5, color: current.col }}>{current.title}</div>
         <div className="hiw-rule-desc">{current.desc}</div>
       </div>
@@ -579,7 +635,7 @@ function TacticsBoardCard() {
           </button>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", background: "var(--bg-tertiary)" }}>
+      <div className="hiw-info-panel" style={{ display: "grid", gridTemplateColumns: "1fr 220px", background: "var(--bg-tertiary)" }}>
         {/* Pitch SVG */}
         <div style={{ position: "relative", paddingTop: "62%", overflow: "hidden" }}>
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 340 210" preserveAspectRatio="xMidYMid meet">
@@ -672,7 +728,7 @@ function TacticsBoardCard() {
           </div>
         </div>
       </div>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div className="hiw-rule-desc">{t.desc}</div>
       </div>
     </div>
@@ -702,7 +758,7 @@ function PositionsCard() {
           </button>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "130px 1fr", background: "var(--bg-tertiary)" }}>
+      <div className="hiw-info-panel" style={{ display: "grid", gridTemplateColumns: "130px 1fr", background: "var(--bg-tertiary)" }}>
         {/* Mini pitch */}
         <div style={{ borderRight: "1px solid rgba(255,255,255,.07)", padding: 4 }}>
           <svg width="122" height="175" viewBox="0 0 122 175">
@@ -733,7 +789,7 @@ function PositionsCard() {
           </div>
         </div>
       </div>
-      <div style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
+      <div className="hiw-info-panel" style={{ padding: "13px 15px", background: "var(--bg-secondary)" }}>
         <div className="hiw-rule-desc">{p.desc}</div>
       </div>
     </div>
@@ -799,7 +855,7 @@ function StatGlossarySection() {
               </>}
             </svg>
           </Scene>
-          <div style={{ padding: "12px 14px", background: "var(--bg-secondary)" }}>
+          <div className="hiw-info-panel" style={{ padding: "12px 14px", background: "var(--bg-secondary)" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 5 }}>
               <span style={{ fontSize: 20, fontWeight: 900, color: s.col, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{s.abbr}</span>
               <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{s.full}</span>
@@ -819,7 +875,7 @@ function MatchStructureCard() {
   return (
     <div className="hiw-card">
       <div className="hiw-top-border" style={{ background: "linear-gradient(90deg,#28d97a,#fbbf24,#ef4444,#a78bfa)", backgroundSize: "300% 100%" }} />
-      <div style={{ padding: "16px 18px", background: "var(--bg-secondary)" }}>
+      <div className="hiw-info-panel" style={{ padding: "16px 18px", background: "var(--bg-secondary)" }}>
         {/* Visual timeline */}
         <div style={{ position: "relative", height: 60, marginBottom: 14 }}>
           <div style={{ position: "absolute", top: 22, left: 0, right: 0, height: 10, background: "rgba(255,255,255,.06)", borderRadius: 999, overflow: "hidden" }}>
@@ -852,37 +908,6 @@ function MatchStructureCard() {
   );
 }
 
-/* ─────────────────────────────────────
-   PAGE FOOTER
-───────────────────────────────────── */
-function PageFooter() {
-  return (
-    <footer style={{
-      position:"relative", zIndex:2, flexShrink:0,
-      background:"var(--glass-bg)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
-      borderTop:"1px solid var(--border)", fontFamily:"'Inter',system-ui,sans-serif", marginTop:8,
-    }}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:"0 28px",height:52}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-            <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
-            <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
-            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
-            <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
-            <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
-          </svg>
-          <span style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",letterSpacing:"-.03em"}}>StatinSite</span>
-          <span style={{fontSize:11,color:"var(--text-muted)",letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px",background:"var(--bg-glass)",border:"1px solid var(--border)",borderRadius:999,flexShrink:0}}>
-          <span style={{fontSize:10,color:"var(--text-muted)",letterSpacing:".1em",textTransform:"uppercase"}}>Built by</span>
-          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Rutej Talati</span>
-        </div>
-        <span style={{fontSize:11,color:"var(--text-dim)",flexShrink:0}}>© {new Date().getFullYear()} StatinSite</span>
-      </div>
-    </footer>
-  );
-}
 
 /* ─────────────────────────────────────
    MAIN PAGE
@@ -967,7 +992,6 @@ export default function HowItWorksPage() {
         </div>
 
       </div>
-      <PageFooter/>
     </div>
   );
 }

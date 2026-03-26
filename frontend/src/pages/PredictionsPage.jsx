@@ -699,13 +699,127 @@ function KPITile({label, value, delta, color, icon, sublabel, spark}) {
 }
 
 // ─── Prediction row — new VS split card design ───────────────────
-function PredRow({match, T, onSelect, isSelected, navigate, index}) {
-  const [open,setOpen]   = useState(false);
-  const [hov,setHov]     = useState(false);
-  const [tab2,setTab2]   = useState("stats");
-  const [visible,setVisible] = useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setVisible(true),index*40);return()=>clearTimeout(t);},[index]);
+// ── Modal overlay for expanded card view ─────────────────────────────────────
 
+// ── iOS-style round action buttons ───────────────────────────────────────────
+// Each button: circular frosted pill, icon top, label below.
+// On hover: icon background fills with the item's accent colour, label brightens.
+function IosActions({match,navigate}) {
+  const ACTIONS = [
+    {
+      label:"Match Hub",
+      color:"#0a84ff",
+      onClick:()=>navigate(`/match/${match.fixture_id}`),
+      icon:(
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M7 13l6-6M13 7H8M13 12V7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      label:"Bookmark",
+      color:"#ff9f0a",
+      onClick:()=>{},
+      icon:(
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M5 3.5h10a1 1 0 011 1v12l-6-3.5L4 16.5v-12a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      label:"Simulate",
+      color:"#30d158",
+      onClick:()=>{},
+      icon:(
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <polyline points="2,14 5.5,9 9,11.5 12.5,6 18,10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="18" cy="7.5" r="2" fill="currentColor" opacity="0.7"/>
+        </svg>
+      ),
+    },
+    {
+      label:"Share",
+      color:"#bf5af2",
+      onClick:()=>{},
+      icon:(
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="15" cy="5" r="2.2" stroke="currentColor" strokeWidth="1.5"/>
+          <circle cx="15" cy="15" r="2.2" stroke="currentColor" strokeWidth="1.5"/>
+          <circle cx="5" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="7.1" y1="8.9" x2="12.9" y2="6.2" stroke="currentColor" strokeWidth="1.4"/>
+          <line x1="7.1" y1="11.1" x2="12.9" y2="13.8" stroke="currentColor" strokeWidth="1.4"/>
+        </svg>
+      ),
+    },
+    {
+      label:"H2H",
+      color:"#ff453a",
+      onClick:()=>{},
+      icon:(
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="6" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+          <circle cx="14" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M2 17c0-2.76 1.79-5 4-5M18 17c0-2.76-1.79-5-4-5M10 17c0-2.76-1.79-5-4-5s4 2.24 4 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <div style={{
+      display:"flex",gap:10,
+      padding:"16px 20px 4px",
+      overflowX:"auto",scrollbarWidth:"none",
+      justifyContent:"space-around",
+    }}>
+      {ACTIONS.map(({label,color,onClick,icon},i)=>(
+        <IosActionBtn key={i} label={label} color={color} onClick={onClick} icon={icon}/>
+      ))}
+    </div>
+  );
+}
+
+function IosActionBtn({label,color,onClick,icon}) {
+  const [hov,setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+        background:"transparent",border:"none",cursor:"pointer",
+        padding:"2px 4px",flexShrink:0,minWidth:52,
+        WebkitTapHighlightColor:"transparent",
+      }}
+    >
+      {/* Circle icon container */}
+      <div style={{
+        width:50,height:50,
+        borderRadius:"50%",
+        background:hov?color:"rgba(255,255,255,.08)",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        transition:"background .18s cubic-bezier(.34,1.56,.64,1), transform .15s ease",
+        transform:hov?"scale(1.08)":"scale(1)",
+        color:hov?"#fff":color,
+        boxShadow:hov?`0 4px 16px ${color}40`:"none",
+      }}>
+        {icon}
+      </div>
+      {/* Label */}
+      <span style={{
+        fontSize:11,fontWeight:500,
+        color:hov?"#fff":"rgba(255,255,255,.45)",
+        fontFamily:"'Inter',sans-serif",
+        letterSpacing:"0.01em",
+        whiteSpace:"nowrap",
+        transition:"color .15s",
+      }}>{label}</span>
+    </button>
+  );
+}
+
+function MatchModal({match,onClose,navigate}) {
   const hp  = match.p_home_win||0;
   const dp  = match.p_draw||0;
   const ap  = match.p_away_win||0;
@@ -719,261 +833,375 @@ function PredRow({match, T, onSelect, isSelected, navigate, index}) {
   const o25 = Math.round((match.over_2_5>1?match.over_2_5:match.over_2_5*100)||0);
   const conf= Math.round(match.confidence||0);
   const fav = hPct>aPct+8?"home":aPct>hPct+8?"away":null;
-  const {day,time} = fmtDate(match.date);
+  const {day,date,time} = fmtDate(match.date);
   const hForm = (Array.isArray(match.home_form)?match.home_form:String(match.home_form||"").split("").filter(c=>"WDL".includes(c))).slice(-5);
   const aForm = (Array.isArray(match.away_form)?match.away_form:String(match.away_form||"").split("").filter(c=>"WDL".includes(c))).slice(-5);
-  const fc = r=>r==="W"?"#e2e8e4":r==="D"?"#f59e0b":"#f87171";
+  const fc = r=>r==="W"?"#34d399":r==="D"?"#f59e0b":"#f87171";
+  const {topScore} = buildProbs(xgH||1.2,xgA||1.0);
+  const [tab2,setTab2] = useState("stats");
+  const confColor = conf>=70?"#34d399":conf>=50?"#f59e0b":"#f87171";
 
-  // Predicted scoreline from Poisson
-  const {topScore} = buildProbs(xgH||1.2, xgA||1.0);
+  // Lock body scroll
+  useEffect(()=>{
+    document.body.style.overflow="hidden";
+    const onKey = e=>{ if(e.key==="Escape") onClose(); };
+    window.addEventListener("keydown",onKey);
+    return()=>{ document.body.style.overflow=""; window.removeEventListener("keydown",onKey); };
+  },[onClose]);
 
-  // Outcome colour for left border
-  const outCol = fav==="home"?"#ffffff":fav==="away"?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.15)";
+  const FormPip = ({r})=>(
+    <div style={{width:22,height:22,borderRadius:6,background:`${fc(r)}15`,border:`1.5px solid ${fc(r)}60`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:fc(r),fontFamily:"'Inter',sans-serif",flexShrink:0}}>{r}</div>
+  );
 
-  const LogoBadge = ({src,size=52})=>(
-    <div style={{
-      width:size,height:size,
-      background:hov?"rgba(255,255,255,.1)":"rgba(255,255,255,.05)",
-      border:`1px solid ${hov?"rgba(255,255,255,.35)":"rgba(255,255,255,.08)"}`,
-      borderRadius:10,
+  const StatBar = ({label,homeVal,awayVal,fmt,isXg})=>{
+    const hv=parseFloat(homeVal)||0,av=parseFloat(awayVal)||0,tot=hv+av||1;
+    const hp2=hv/tot*100,ap2=av/tot*100;
+    return(
+      <div style={{marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <span style={{fontSize:15,fontWeight:700,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{fmt?fmt(hv):hv.toFixed(isXg?2:0)}</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.4)",textTransform:"uppercase",letterSpacing:"0.07em",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+          <span style={{fontSize:15,fontWeight:700,color:"rgba(255,255,255,.55)",fontFamily:"'Inter',sans-serif"}}>{fmt?fmt(av):av.toFixed(isXg?2:0)}</span>
+        </div>
+        <div style={{height:5,borderRadius:999,background:"rgba(255,255,255,.07)",overflow:"hidden",position:"relative",display:"flex"}}>
+          <div style={{flex:hp2,background:"rgba(255,255,255,.8)",borderRadius:"999px 0 0 999px",transition:"flex .6s cubic-bezier(.34,1,.64,1)",minWidth:4}}/>
+          <div style={{flex:ap2,background:"rgba(255,255,255,.3)",borderRadius:"0 999px 999px 0",transition:"flex .6s cubic-bezier(.34,1,.64,1)",minWidth:4}}/>
+        </div>
+      </div>
+    );
+  };
+
+  const ringCirc = 2*Math.PI*22;
+  const ringDash = (conf/100)*ringCirc;
+
+  return(
+    <div onClick={onClose} style={{
+      position:"fixed",inset:0,zIndex:9999,
+      background:"rgba(0,0,0,.75)",
+      backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
       display:"flex",alignItems:"center",justifyContent:"center",
-      flexShrink:0,padding:6,
-      boxShadow:hov?`0 4px 16px rgba(255,255,255,.2)`:"0 2px 8px rgba(0,0,0,.3)",
-      transition:"all 0.15s ease",
+      padding:"16px",animation:"mmFadeIn .18s ease",
     }}>
-      {src
-        ? <img src={src} style={{width:size-14,height:size-14,objectFit:"contain",filter:"drop-shadow(0 1px 3px rgba(0,0,0,.4))"}} onError={e=>e.currentTarget.style.opacity="0"}/>
-        : <div style={{width:size-16,height:size-16,background:"rgba(255,255,255,.12)",borderRadius:6}}/>
-      }
-    </div>
-  );
+      <div onClick={e=>e.stopPropagation()} style={{
+        width:"100%",maxWidth:560,
+        maxHeight:"90vh",
+        overflowY:"auto",
+        background:"#111",
+        borderRadius:20,
+        border:"0.5px solid rgba(255,255,255,.12)",
+        boxShadow:"0 32px 80px rgba(0,0,0,.7),0 0 0 0.5px rgba(255,255,255,.08)",
+        animation:"mmSlideUp .22s cubic-bezier(.34,1.4,.64,1)",
+        scrollbarWidth:"none",
+        fontFamily:"'Inter',sans-serif",
+      }}>
 
-  const FormPips = ({form})=>(
-    <div style={{display:"flex",gap:3,marginTop:4}}>
-      {form.map((r,i)=>(
-        <div key={i} style={{width:17,height:17,borderRadius:4,background:`${fc(r)}18`,border:`1.5px solid ${fc(r)}80`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:fc(r),fontFamily:"'Inter',sans-serif"}}>{r}</div>
-      ))}
-    </div>
-  );
-
-  return (
-    <div style={{opacity:visible?1:0,transform:visible?"translateY(0)":"translateY(8px)",transition:"opacity 0.35s ease, transform 0.35s ease"}}>
-
-      {/* ── COLLAPSED CARD ─────────────────────── */}
-      <div
-        onMouseEnter={()=>setHov(true)}
-        onMouseLeave={()=>setHov(false)}
-        style={{
-          overflow:"hidden",
-          background:hov?NB.y:NB.k,
-          border:`3px solid ${isSelected?NB.r:NB.y}`,
-          borderLeft:`6px solid ${outCol}`,
-          boxShadow:hov?`5px 5px 0 ${NB.y}`:isSelected?`4px 4px 0 ${NB.r}`:`3px 3px 0 rgba(255,255,255,.15)`,
-          transition:"all 0.12s ease",
-          cursor:"pointer",
-          transform:hov?"translate(-2px,-2px)":"none",
-        }}
-        onClick={()=>onSelect&&onSelect()}
-      >
-        {/* ── MAIN ROW ─────────────────────────── */}
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr auto":"1fr 1px auto 1px 1fr auto",alignItems:"center"}}>
-
-          {/* HOME SIDE */}
-          <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,minWidth:0}}>
-            <LogoBadge src={match.home_logo}/>
-            <div style={{minWidth:0,flex:1}}>
-              <div style={{fontSize:14,fontWeight:fav==="home"?900:700,color:hov?NB.k:"#ffffff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif",transition:"color 0.12s"}}>
-                {match.home_team}
-                {fav==="home"&&<span style={{marginLeft:6,fontSize:10,fontWeight:900,color:"#0a0a0a",background:"#ffffff",padding:"2px 6px",fontFamily:"'Inter',sans-serif",letterSpacing:".08em"}}>FAV</span>}
-              </div>
-              <FormPips form={hForm}/>
+        {/* ── MODAL HEADER ─── */}
+        <div style={{position:"sticky",top:0,zIndex:10,background:"rgba(17,17,17,.96)",backdropFilter:"blur(20px)",borderBottom:"0.5px solid rgba(255,255,255,.08)",borderRadius:"20px 20px 0 0",padding:"16px 20px 14px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.35)",fontWeight:500,letterSpacing:"0.04em"}}>{match.league_name||"Match"}</div>
+              {day&&<div style={{fontSize:11,color:"rgba(255,255,255,.25)"}}>· {day} {time}</div>}
             </div>
-            <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:22,fontWeight:900,color:hov?NB.k:"#ffffff",fontFamily:"'Inter',sans-serif",lineHeight:1,letterSpacing:"-.02em",transition:"color 0.12s"}}>{hPct}%</div>
-              {xgH>0&&<div style={{fontSize:11,color:hov?"rgba(0,0,0,.6)":"rgba(255,255,255,.65)",marginTop:3,fontFamily:"'Inter',sans-serif",fontSize:10,transition:"color 0.12s"}}>xG {xgH.toFixed(1)}</div>}
-            </div>
+            <button onClick={onClose} style={{width:28,height:28,borderRadius:"50%",background:"rgba(255,255,255,.1)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,.6)",transition:"background .13s"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.18)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,.1)"}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </button>
           </div>
 
-          {/* CENTRE DIVIDER */}
-          <div style={{width:1,background:hov?"rgba(255,255,255,.2)":"rgba(255,255,255,.08)",alignSelf:"stretch",transition:"background 0.12s"}}/>
-
-          {/* CENTRE SCORE + BAR */}
-          <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,minWidth:140}}>
-            <div style={{fontSize:20,fontWeight:900,color:hov?NB.k:"#ffffff",fontFamily:"'Inter',sans-serif",letterSpacing:"0.02em",transition:"color 0.12s"}}>{topScore}</div>
-            {/* Three-segment bar — hard edges, no radius */}
-            <div style={{display:"flex",height:6,overflow:"hidden",gap:2,width:"100%"}}>
-              <div style={{flex:hPct,background:hov?NB.k:NB.y,minWidth:8}}/>
-              <div style={{flex:dPct,background:hov?"rgba(255,255,255,.15)":"rgba(255,255,255,.18)",minWidth:4}}/>
-              <div style={{flex:aPct,background:NB.r,minWidth:8}}/>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",width:"100%",fontSize:11,fontFamily:"'Inter',sans-serif",fontWeight:700}}>
-              <span style={{color:hov?NB.k:"#e2e8f0",transition:"color 0.12s"}}>{hPct}%</span>
-              <span style={{color:hov?"rgba(0,0,0,.5)":"rgba(255,255,255,.5)"}}>D {dPct}%</span>
-              <span style={{color:NB.r}}>{aPct}%</span>
-            </div>
-            <div style={{fontSize:10,color:hov?"rgba(0,0,0,.5)":"rgba(255,255,255,.55)",fontFamily:"'Inter',sans-serif",letterSpacing:"0.01em",transition:"color 0.12s"}}>{day} {time}</div>
-          </div>
-
-          {/* CENTRE DIVIDER */}
-          <div style={{width:1,background:hov?"rgba(255,255,255,.2)":"rgba(255,255,255,.08)",alignSelf:"stretch",transition:"background 0.12s"}}/>
-
-          {/* AWAY SIDE */}
-          <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,minWidth:0,justifyContent:"flex-end"}}>
-            <div style={{textAlign:"left",flexShrink:0}}>
-              <div style={{fontSize:22,fontWeight:900,color:NB.r,fontFamily:"'Inter',sans-serif",lineHeight:1,letterSpacing:"-.02em"}}>{aPct}%</div>
-              {xgA>0&&<div style={{fontSize:11,color:hov?"rgba(0,0,0,.6)":"rgba(255,255,255,.65)",marginTop:3,fontFamily:"'Inter',sans-serif",fontSize:10,transition:"color 0.12s"}}>xG {xgA.toFixed(1)}</div>}
-            </div>
-            <div style={{minWidth:0,flex:1,textAlign:"right"}}>
-              <div style={{fontSize:14,fontWeight:fav==="away"?900:700,color:hov?NB.k:"#ffffff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif",transition:"color 0.12s"}}>
-                {fav==="away"&&<span style={{marginRight:6,fontSize:10,fontWeight:900,color:"#0a0a0a",background:"rgba(255,255,255,0.85)",padding:"2px 6px",fontFamily:"'Inter',sans-serif",letterSpacing:".08em"}}>FAV</span>}
-                {match.away_team}
+          {/* Teams VS row */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",gap:12}}>
+            {/* Home */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                {match.home_logo&&<img src={match.home_logo} style={{width:40,height:40,objectFit:"contain",filter:"drop-shadow(0 2px 6px rgba(0,0,0,.5))"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:"#fff",letterSpacing:"-.02em"}}>{match.home_team}</div>
+                  {fav==="home"&&<div style={{fontSize:9,fontWeight:700,color:"#34d399",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:2}}>Favourite</div>}
+                </div>
               </div>
-              <div style={{display:"flex",gap:3,marginTop:4,justifyContent:"flex-end"}}>
-                {aForm.map((r,i)=>(
-                  <div key={i} style={{width:17,height:17,borderRadius:4,background:`${fc(r)}18`,border:`1.5px solid ${fc(r)}80`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:fc(r)}}>{r}</div>
-                ))}
-              </div>
+              <div style={{display:"flex",gap:3}}>{hForm.map((r,i)=><FormPip key={i} r={r}/>)}</div>
+              <div style={{fontSize:28,fontWeight:800,color:"#fff",letterSpacing:"-.03em",lineHeight:1}}>{hPct}<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,.4)"}}>%</span></div>
+              {xgH>0&&<div style={{fontSize:11,color:"rgba(255,255,255,.35)"}}>xG {xgH.toFixed(2)}</div>}
             </div>
-            <LogoBadge src={match.away_logo}/>
-          </div>
 
-          {/* EXPAND BUTTON */}
-          <button
-            onClick={e=>{e.stopPropagation();setOpen(o=>!o);}}
-            style={{
-              padding:"0 14px",alignSelf:"stretch",display:"flex",alignItems:"center",justifyContent:"center",
-              background:open?NB.y:"transparent",
-              border:"none",borderLeft:"1px solid rgba(255,255,255,0.12)",
-              cursor:"pointer",gap:5,minWidth:80,flexDirection:"column",
-              transition:"background 0.12s",
-            }}
-          >
-            <span style={{fontSize:10,fontWeight:700,color:open?NB.k:"#e2e8f0",letterSpacing:"0.04em",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{open?"Hide":"See why"}</span>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0)"}}>
-              <path d="M2 3.5l3 3 3-3" stroke={open?NB.k:NB.y} strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
+            {/* Centre */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"0 4px"}}>
+              {/* Confidence ring */}
+              <div style={{position:"relative",width:56,height:56}}>
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="5"/>
+                  <circle cx="28" cy="28" r="22" fill="none" stroke={confColor} strokeWidth="5"
+                    strokeDasharray={`${ringDash} ${ringCirc-ringDash}`}
+                    strokeLinecap="round" transform="rotate(-90 28 28)"
+                    style={{transition:"stroke-dasharray .8s ease"}}/>
+                </svg>
+                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:confColor}}>{conf}%</div>
+              </div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.3)",textAlign:"center",letterSpacing:"0.04em"}}>confidence</div>
+              <div style={{fontSize:22,fontWeight:700,color:"rgba(255,255,255,.9)",letterSpacing:"0.04em"}}>{topScore}</div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,.25)",letterSpacing:"0.08em",textTransform:"uppercase"}}>projected</div>
+              {/* Tri-bar */}
+              <div style={{display:"flex",height:4,borderRadius:999,overflow:"hidden",gap:1,width:80}}>
+                <div style={{flex:hPct,background:"rgba(255,255,255,.85)",minWidth:4,transition:"flex .6s"}}/>
+                <div style={{flex:dPct,background:"rgba(255,255,255,.2)",minWidth:2}}/>
+                <div style={{flex:aPct,background:"rgba(255,255,255,.4)",minWidth:4,transition:"flex .6s"}}/>
+              </div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,.3)"}}>D {dPct}%</div>
+            </div>
+
+            {/* Away */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexDirection:"row-reverse"}}>
+                {match.away_logo&&<img src={match.away_logo} style={{width:40,height:40,objectFit:"contain",filter:"drop-shadow(0 2px 6px rgba(0,0,0,.5))"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:15,fontWeight:700,color:"#fff",letterSpacing:"-.02em"}}>{match.away_team}</div>
+                  {fav==="away"&&<div style={{fontSize:9,fontWeight:700,color:"#34d399",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:2}}>Favourite</div>}
+                </div>
+              </div>
+              <div style={{display:"flex",gap:3,justifyContent:"flex-end"}}>{aForm.map((r,i)=><FormPip key={i} r={r}/>)}</div>
+              <div style={{fontSize:28,fontWeight:800,color:"rgba(255,255,255,.55)",letterSpacing:"-.03em",lineHeight:1,textAlign:"right"}}>{aPct}<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,.3)"}}>%</span></div>
+              {xgA>0&&<div style={{fontSize:11,color:"rgba(255,255,255,.35)",textAlign:"right"}}>xG {xgA.toFixed(2)}</div>}
+            </div>
+          </div>
         </div>
 
-        {/* ── EXPANDED PANEL ────────────────────── */}
-        {open&&(
-          <div style={{borderTop:`3px solid ${NB.y}`}} onClick={e=>e.stopPropagation()}>
-            {/* Sub-tab bar */}
-            <div style={{display:"flex",background:"rgba(10,10,10,0.95)",borderBottom:`2px solid rgba(255,255,255,.2)`,overflowX:"auto"}}>
-              {[["stats","Team Stats"],["scorelines","Scorelines"],["markets","Markets"],["h2h","H2H"]].map(([id,lbl])=>(
-                <button key={id} onClick={()=>setTab2(id)} style={{
-                  padding:"9px 16px",fontSize:11,fontWeight:800,cursor:"pointer",
-                  background:tab2===id?NB.y:"transparent",border:"none",letterSpacing:"0.12em",textTransform:"uppercase",
-                  color:tab2===id?NB.k:NB.y,
-                  borderRight:`1px solid rgba(255,255,255,.1)`,
-                  whiteSpace:"nowrap",transition:"all 0.12s",
-                  fontFamily:"'Inter',sans-serif",
-                }}>{lbl}</button>
-              ))}
+        {/* ── iOS ROUND ACTION BUTTONS ─── */}
+        <IosActions match={match} navigate={navigate}/>
+
+        {/* ── MODEL CALLOUT ─── */}
+        {(xgH>0||xgA>0)&&(
+          <div style={{margin:"0 20px 14px",padding:"12px 14px",background:"rgba(10,132,255,.07)",border:"0.5px solid rgba(10,132,255,.2)",borderRadius:12,display:"flex",gap:10}}>
+            <div style={{width:28,height:28,borderRadius:8,background:"rgba(10,132,255,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><polyline points="2,15 6,9 9.5,12 13,6 18,10" stroke="#0a84ff" strokeWidth="1.8" strokeLinecap="round"/></svg>
             </div>
-
-            <div style={{padding:16,background:NB.k}}>
-
-              {/* STATS TAB */}
-              {tab2==="stats"&&(
-                <div>
-                  {/* Reasoning insight */}
-                  {(xgH>0||xgA>0)&&(
-                    <div style={{background:"rgba(255,255,255,.06)",borderLeft:`4px solid ${NB.y}`,padding:"9px 12px",marginBottom:14,fontSize:12,color:`rgba(255,255,255,.8)`,lineHeight:1.5,fontFamily:"'Inter',sans-serif"}}>
-                      {fav==="home"
-                        ? `${match.home_team?.split(" ").slice(-1)[0]} favoured — xG edge ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Model gives ${hPct}% win probability.`
-                        : fav==="away"
-                        ? `${match.away_team?.split(" ").slice(-1)[0]} favoured away — xG ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Model gives ${aPct}% win probability.`
-                        : `Even contest — xG split ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Draw probability ${dPct}% is significant.`
-                      }
-                    </div>
-                  )}
-                  {/* Side-by-side stats */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1px 1fr",gap:0}}>
-                    {/* Home */}
-                    <div style={{paddingRight:16,display:"flex",flexDirection:"column",gap:12}}>
-                      <div style={{fontSize:11,fontWeight:900,color:NB.y,marginBottom:2,fontFamily:"'Inter',sans-serif",letterSpacing:".05em"}}>{match.home_team}</div>
-                      {[
-                        {label:"xG",val:xgH.toFixed(2),pct:Math.min(xgH/3,1)*100,col:NB.y},
-                        {label:"Win prob",val:`${hPct}%`,pct:hPct,col:NB.y},
-                        {label:"Form",val:null,form:hForm},
-                      ].map(({label,val,pct,col,form},i)=>(
-                        <div key={i}>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:10,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-                            {val&&<span style={{fontSize:14,fontWeight:900,color:col,fontFamily:"'Inter',sans-serif",letterSpacing:".02em"}}>{val}</span>}
-                          </div>
-                          {pct!=null&&<div style={{height:4,background:"rgba(255,255,255,.08)",overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:col}}/></div>}
-                          {form&&<div style={{display:"flex",gap:3}}>{form.map((r,i)=><div key={i} style={{width:20,height:20,borderRadius:5,background:`${fc(r)}18`,border:`1px solid ${fc(r)}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:fc(r)}}>{r}</div>)}</div>}
-                        </div>
-                      ))}
-                    </div>
-                    {/* Divider */}
-                    <div style={{width:3,background:`rgba(255,255,255,.15)`,margin:"0 0"}}/>
-                    {/* Away */}
-                    <div style={{paddingLeft:16,display:"flex",flexDirection:"column",gap:12}}>
-                      <div style={{fontSize:11,fontWeight:900,color:NB.r,marginBottom:2,textAlign:"right",fontFamily:"'Inter',sans-serif",letterSpacing:".05em"}}>{match.away_team}</div>
-                      {[
-                        {label:"xG",val:xgA.toFixed(2),pct:Math.min(xgA/3,1)*100,col:NB.r},
-                        {label:"Win prob",val:`${aPct}%`,pct:aPct,col:NB.r},
-                        {label:"Form",val:null,form:aForm},
-                      ].map(({label,val,pct,col,form},i)=>(
-                        <div key={i}>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            {val&&<span style={{fontSize:14,fontWeight:900,color:col,fontFamily:"'Inter',sans-serif",letterSpacing:".02em"}}>{val}</span>}
-                            <span style={{fontSize:10,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'Inter',sans-serif"}}>{label}</span>
-                          </div>
-                          {pct!=null&&<div style={{height:4,background:"rgba(255,255,255,.08)",overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:col,marginLeft:"auto"}}/></div>}
-                          {form&&<div style={{display:"flex",gap:3,justifyContent:"flex-end"}}>{form.map((r,i)=><div key={i} style={{width:20,height:20,borderRadius:5,background:`${fc(r)}18`,border:`1px solid ${fc(r)}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:fc(r)}}>{r}</div>)}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SCORELINES TAB */}
-              {tab2==="scorelines"&&(
-                <div>
-                  <ScoreGrid topScores={match.top_scorelines||[]} T={T}/>
-                </div>
-              )}
-
-              {/* MARKETS TAB */}
-              {tab2==="markets"&&(
-                <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  {[
-                    {label:"Both Teams to Score",val:btts,col:"#cccccc",hot:btts>=55},
-                    {label:"Over 2.5 Goals",val:o25,col:NB.y,hot:o25>=60},
-                    {label:"Home Win",val:hPct,col:NB.y,hot:hPct>=60},
-                    {label:"Draw",val:dPct,col:`rgba(255,255,255,.5)`,hot:dPct>=32},
-                    {label:"Away Win",val:aPct,col:NB.r,hot:aPct>=60},
-                  ].map(({label,val,col,hot})=>(
-                    <div key={label} style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontSize:11,color:`rgba(255,255,255,.7)`,flex:1,fontFamily:"'Inter',sans-serif"}}>{label}</span>
-                      <div style={{flex:2,height:5,background:"rgba(255,255,255,.07)",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${val}%`,background:col,opacity:hot?1:0.5}}/>
-                      </div>
-                      <span style={{fontSize:13,fontWeight:900,color:hot?col:`rgba(255,255,255,.5)`,fontFamily:"'Inter',sans-serif",minWidth:36,textAlign:"right",letterSpacing:".02em"}}>{val}%</span>
-                      {hot&&<span style={{fontSize:10,fontWeight:900,color:NB.k,background:col,padding:"2px 7px",letterSpacing:"0.08em",fontFamily:"'Inter',sans-serif"}}>HOT</span>}
-                    </div>
-                  ))}
-                  {conf>0&&<div style={{marginTop:4,padding:"8px 12px",background:"rgba(255,255,255,.05)",border:`2px solid rgba(255,255,255,.2)`,fontSize:11,color:NB.y,fontFamily:"'Inter',sans-serif"}}>Model confidence: <span style={{color:conf>=65?"#cccccc":conf>=45?NB.y:NB.r,fontWeight:900,fontFamily:"'Inter',sans-serif",fontSize:16,letterSpacing:".02em"}}>{conf}%</span></div>}
-                </div>
-              )}
-
-              {/* H2H TAB */}
-              {tab2==="h2h"&&(
-                <H2HWidget homeId={match.home_team_id} awayId={match.away_team_id} homeTeam={match.home_team} awayTeam={match.away_team} T={T}/>
-              )}
+            <div style={{fontSize:12,color:"rgba(255,255,255,.7)",lineHeight:1.6,fontFamily:"'Inter',sans-serif"}}>
+              <span style={{display:"block",fontSize:13,color:"#fff",fontWeight:600,marginBottom:3}}>Model signal</span>
+              {fav==="home"
+                ?`${match.home_team?.split(" ").pop()} favoured — xG edge ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Model gives ${hPct}% win probability.`
+                :fav==="away"
+                ?`${match.away_team?.split(" ").pop()} favoured away — xG ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Model gives ${aPct}% win probability.`
+                :`Even contest — xG ${xgH.toFixed(2)} vs ${xgA.toFixed(2)}. Draw at ${dPct}% is significant.`}
             </div>
           </div>
         )}
+
+        {/* ── SUB-TABS ─── */}
+        <div style={{display:"flex",borderTop:"0.5px solid rgba(255,255,255,.08)",borderBottom:"0.5px solid rgba(255,255,255,.08)",background:"rgba(0,0,0,.3)",overflowX:"auto",scrollbarWidth:"none"}}>
+          {[["stats","Stats"],["scorelines","Scorelines"],["markets","Markets"],["h2h","H2H"]].map(([id,lbl])=>(
+            <button key={id} onClick={()=>setTab2(id)} style={{
+              flex:1,padding:"11px 10px",fontSize:12,fontWeight:tab2===id?700:500,
+              cursor:"pointer",border:"none",whiteSpace:"nowrap",minWidth:70,
+              background:"transparent",
+              color:tab2===id?"#fff":"rgba(255,255,255,.35)",
+              borderBottom:tab2===id?"1.5px solid #fff":"1.5px solid transparent",
+              transition:"all .15s",fontFamily:"'Inter',sans-serif",
+              letterSpacing:"0.01em",
+            }}>{lbl}</button>
+          ))}
+        </div>
+
+        {/* ── TAB CONTENT ─── */}
+        <div style={{padding:"18px 20px 24px",background:"#111"}}>
+
+          {/* STATS */}
+          {tab2==="stats"&&(
+            <div>
+              <StatBar label="xG" homeVal={xgH} awayVal={xgA} isXg/>
+              <StatBar label="Win probability" homeVal={hPct} awayVal={aPct} fmt={v=>`${Math.round(v)}%`}/>
+              {/* Form comparison */}
+              <div style={{marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{display:"flex",gap:3}}>{hForm.map((r,i)=><FormPip key={i} r={r}/>)}</div>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,.35)",letterSpacing:"0.07em",textTransform:"uppercase"}}>Form</span>
+                  <div style={{display:"flex",gap:3,flexDirection:"row-reverse"}}>{aForm.map((r,i)=><FormPip key={i} r={r}/>)}</div>
+                </div>
+              </div>
+              <StatBar label="BTTS" homeVal={btts} awayVal={100-btts} fmt={v=>`${Math.round(v)}%`}/>
+            </div>
+          )}
+
+          {/* SCORELINES */}
+          {tab2==="scorelines"&&(
+            <div>
+              <ScoreGrid topScores={match.top_scorelines||[]} T={T}/>
+            </div>
+          )}
+
+          {/* MARKETS */}
+          {tab2==="markets"&&(
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {[
+                {label:"Home Win",val:hPct,hot:hPct>=58},
+                {label:"Draw",val:dPct,hot:dPct>=32},
+                {label:"Away Win",val:aPct,hot:aPct>=58},
+                {label:"Both Teams Score",val:btts,hot:btts>=55},
+                {label:"Over 2.5 Goals",val:o25,hot:o25>=55},
+              ].map(({label,val,hot})=>(
+                <div key={label}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                    <span style={{fontSize:12,color:"rgba(255,255,255,.55)",fontFamily:"'Inter',sans-serif"}}>{label}</span>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      {hot&&<span style={{fontSize:9,fontWeight:700,color:"#34d399",background:"rgba(52,211,153,.12)",borderRadius:999,padding:"2px 8px",letterSpacing:"0.06em"}}>VALUE</span>}
+                      <span style={{fontSize:14,fontWeight:700,color:hot?"#fff":"rgba(255,255,255,.55)",fontFamily:"'Inter',sans-serif"}}>{val}%</span>
+                    </div>
+                  </div>
+                  <div style={{height:4,borderRadius:999,background:"rgba(255,255,255,.07)",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${val}%`,background:hot?"rgba(255,255,255,.75)":"rgba(255,255,255,.2)",borderRadius:999,transition:"width .8s cubic-bezier(.34,1,.64,1)"}}/>
+                  </div>
+                </div>
+              ))}
+              {conf>0&&(
+                <div style={{marginTop:4,padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:12,color:"rgba(255,255,255,.45)",fontFamily:"'Inter',sans-serif"}}>Model confidence</span>
+                  <span style={{fontSize:18,fontWeight:700,color:confColor,fontFamily:"'Inter',sans-serif"}}>{conf}%</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* H2H */}
+          {tab2==="h2h"&&(
+            <H2HWidget homeId={match.home_team_id} awayId={match.away_team_id} homeTeam={match.home_team} awayTeam={match.away_team} T={T}/>
+          )}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes mmFadeIn  { from{opacity:0} to{opacity:1} }
+        @keyframes mmSlideUp { from{opacity:0;transform:translateY(20px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+      `}</style>
     </div>
   );
 }
 
+// ── Collapsed prediction card row ─────────────────────────────────────────────
+function PredRow({match, T, onSelect, isSelected, navigate, index}) {
+  const [modalOpen,setModalOpen] = useState(false);
+  const [hov,setHov]             = useState(false);
+  const [visible,setVisible]     = useState(false);
+  useEffect(()=>{const t=setTimeout(()=>setVisible(true),index*40);return()=>clearTimeout(t);},[index]);
+
+  const hp  = match.p_home_win||0;
+  const dp  = match.p_draw||0;
+  const ap  = match.p_away_win||0;
+  const tot = hp+dp+ap||1;
+  const hPct= Math.round(hp/tot*100);
+  const dPct= Math.round(dp/tot*100);
+  const aPct= Math.round(ap/tot*100);
+  const xgH = parseFloat(match.xg_home)||0;
+  const xgA = parseFloat(match.xg_away)||0;
+  const conf= Math.round(match.confidence||0);
+  const fav = hPct>aPct+8?"home":aPct>hPct+8?"away":null;
+  const {day,time} = fmtDate(match.date);
+  const hForm = (Array.isArray(match.home_form)?match.home_form:String(match.home_form||"").split("").filter(c=>"WDL".includes(c))).slice(-5);
+  const aForm = (Array.isArray(match.away_form)?match.away_form:String(match.away_form||"").split("").filter(c=>"WDL".includes(c))).slice(-5);
+  const fc = r=>r==="W"?"#34d399":r==="D"?"#f59e0b":"#f87171";
+  const {topScore} = buildProbs(xgH||1.2,xgA||1.0);
+  const confColor = conf>=70?"#34d399":conf>=50?"#f59e0b":"#f87171";
+
+  const FormPips = ({form,right=false})=>(
+    <div style={{display:"flex",gap:3,marginTop:4,justifyContent:right?"flex-end":"flex-start"}}>
+      {form.map((r,i)=>(
+        <div key={i} style={{width:16,height:16,borderRadius:4,background:`${fc(r)}12`,border:`1px solid ${fc(r)}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:fc(r)}}>{r}</div>
+      ))}
+    </div>
+  );
+
+  const LogoBadge = ({src})=>(
+    <div style={{width:42,height:42,borderRadius:10,background:"rgba(255,255,255,.05)",border:"0.5px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:5}}>
+      {src?<img src={src} style={{width:30,height:30,objectFit:"contain"}} onError={e=>e.currentTarget.style.opacity="0"}/>
+          :<div style={{width:24,height:24,borderRadius:5,background:"rgba(255,255,255,.08)"}}/>}
+    </div>
+  );
+
+  return(
+    <>
+      {modalOpen&&<MatchModal match={match} onClose={()=>setModalOpen(false)} navigate={navigate}/>}
+
+      <div style={{opacity:visible?1:0,transform:visible?"translateY(0)":"translateY(8px)",transition:"opacity 0.3s ease, transform 0.3s ease"}}>
+        <div
+          onMouseEnter={()=>setHov(true)}
+          onMouseLeave={()=>setHov(false)}
+          onClick={()=>{ onSelect&&onSelect(); }}
+          style={{
+            background:hov?"rgba(255,255,255,.04)":"rgba(255,255,255,.025)",
+            border:`0.5px solid ${isSelected?"rgba(255,255,255,.35)":hov?"rgba(255,255,255,.18)":"rgba(255,255,255,.08)"}`,
+            borderLeft:`3px solid ${fav==="home"?"rgba(255,255,255,.8)":fav==="away"?"rgba(255,255,255,.4)":"rgba(255,255,255,.1)"}`,
+            borderRadius:12,
+            overflow:"hidden",
+            cursor:"pointer",
+            transition:"all .16s ease",
+            transform:hov?"translateY(-1px)":"none",
+            boxShadow:hov?"0 4px 20px rgba(0,0,0,.3)":"none",
+            marginBottom:1,
+          }}
+        >
+          <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr auto",alignItems:"center"}}>
+
+            {/* HOME */}
+            <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+              <LogoBadge src={match.home_logo}/>
+              <div style={{minWidth:0,flex:1}}>
+                <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.88)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-.01em"}}>
+                  {match.home_team}
+                </div>
+                <FormPips form={hForm}/>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0,paddingLeft:6}}>
+                <div style={{fontSize:20,fontWeight:700,color:"#fff",lineHeight:1,letterSpacing:"-.03em"}}>{hPct}<span style={{fontSize:11,fontWeight:400,color:"rgba(255,255,255,.35)"}}>%</span></div>
+                {xgH>0&&<div style={{fontSize:10,color:"rgba(255,255,255,.3)",marginTop:2}}>xG {xgH.toFixed(1)}</div>}
+              </div>
+            </div>
+
+            {/* CENTRE */}
+            <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:110,borderLeft:"0.5px solid rgba(255,255,255,.06)",borderRight:"0.5px solid rgba(255,255,255,.06)"}}>
+              <div style={{fontSize:16,fontWeight:700,color:"rgba(255,255,255,.7)",letterSpacing:"0.04em"}}>{topScore}</div>
+              <div style={{display:"flex",height:3,borderRadius:999,overflow:"hidden",gap:1,width:"80px"}}>
+                <div style={{flex:hPct,background:"rgba(255,255,255,.8)",borderRadius:999}}/>
+                <div style={{flex:dPct,background:"rgba(255,255,255,.18)"}}/>
+                <div style={{flex:aPct,background:"rgba(255,255,255,.35)",borderRadius:999}}/>
+              </div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,.3)",letterSpacing:"0.04em"}}>{day} {time}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:confColor,marginTop:1}} title={`${conf}% confidence`}/>
+            </div>
+
+            {/* AWAY */}
+            <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,minWidth:0,justifyContent:"flex-end"}}>
+              <div style={{textAlign:"right",flexShrink:0,paddingRight:6}}>
+                <div style={{fontSize:20,fontWeight:700,color:"rgba(255,255,255,.55)",lineHeight:1,letterSpacing:"-.03em"}}>{aPct}<span style={{fontSize:11,fontWeight:400,color:"rgba(255,255,255,.25)"}}>%</span></div>
+                {xgA>0&&<div style={{fontSize:10,color:"rgba(255,255,255,.3)",marginTop:2}}>xG {xgA.toFixed(1)}</div>}
+              </div>
+              <div style={{minWidth:0,flex:1,textAlign:"right"}}>
+                <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.88)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"-.01em"}}>{match.away_team}</div>
+                <FormPips form={aForm} right/>
+              </div>
+              <LogoBadge src={match.away_logo}/>
+            </div>
+
+            {/* SEE WHY BUTTON */}
+            <button
+              onClick={e=>{e.stopPropagation();setModalOpen(true);}}
+              style={{
+                padding:"0 14px",alignSelf:"stretch",
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,
+                background:"transparent",border:"none",
+                borderLeft:"0.5px solid rgba(255,255,255,.08)",
+                cursor:"pointer",minWidth:70,
+                transition:"background .13s",
+              }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.06)"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+            >
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="rgba(255,255,255,.4)" strokeWidth="1.4"/><path d="M10 9v5M10 7.5v.5" stroke="rgba(255,255,255,.6)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              <span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.35)",letterSpacing:"0.03em",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>See why</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 function SidebarMatchRow({match,T,navigate,showEdge,showXg}){
   const [hov,setHov]=useState(false);
@@ -2237,109 +2465,58 @@ const BACKEND_LEAGUE = {
 // ── Intricate animated background ───────────────────────────────────────────
 function IntricateBg() {
   return (
-    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      {/* Deep black base with layered radial glows */}
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
-      {/* Radial glows */}
-      <div style={{position:"absolute",top:"-20%",left:"20%",width:"70vw",height:"70vw",
-        background:"radial-gradient(ellipse,rgba(255,255,255,.018) 0%,transparent 60%)",transform:"rotate(-12deg)"}}/>
-      <div style={{position:"absolute",bottom:"-10%",right:"10%",width:"55vw",height:"55vw",
-        background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 55%)"}}/>
+
+      {/* Subtle radial glows */}
+      <div style={{position:"absolute",top:"-10%",left:"10%",width:"60vw",height:"60vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.028) 0%,transparent 65%)",
+        transform:"rotate(-15deg)"}}/>
+      <div style={{position:"absolute",bottom:"-5%",right:"5%",width:"50vw",height:"50vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.018) 0%,transparent 60%)"}}/>
+
       {/* Fine grid */}
       <div style={{position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px)",
-        backgroundSize:"40px 40px"}}/>
-      {/* Bold grid */}
+        backgroundImage:"linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px)",
+        backgroundSize:"48px 48px"}}/>
+
+      {/* Coarser accent grid on top */}
       <div style={{position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)",
-        backgroundSize:"160px 160px"}}/>
-      {/* SVG patterns */}
-      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
+        backgroundSize:"192px 192px"}}/>
+
+      {/* Diagonal slash lines */}
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
         <defs>
-          <pattern id="pr-slash" width="100" height="100" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,.012)" strokeWidth="0.7"/>
+          <pattern id="pred-slash" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="120" x2="120" y2="0" stroke="rgba(255,255,255,.018)" strokeWidth="0.8"/>
           </pattern>
-          <pattern id="pr-dot" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="20" cy="20" r="0.7" fill="rgba(255,255,255,.07)"/>
-          </pattern>
-          <pattern id="pr-diamond" width="60" height="60" patternUnits="userSpaceOnUse">
-            <polygon points="30,2 58,30 30,58 2,30" fill="none" stroke="rgba(255,255,255,.016)" strokeWidth="0.6"/>
-          </pattern>
-          <pattern id="pr-hex" width="52" height="44" patternUnits="userSpaceOnUse">
-            <polygon points="26,2 50,12 50,32 26,42 2,32 2,12" fill="none" stroke="rgba(255,255,255,.018)" strokeWidth="0.5"/>
+          <pattern id="pred-dots" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+            <circle cx="24" cy="24" r="0.8" fill="rgba(255,255,255,.07)"/>
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#pr-slash)"/>
-        <rect width="100%" height="100%" fill="url(#pr-dot)"/>
-        <rect x="0" y="0" width="40%" height="55%" fill="url(#pr-diamond)" opacity="0.7"/>
-        <rect x="62%" y="50%" width="38%" height="50%" fill="url(#pr-hex)" opacity="0.6"/>
+        <rect width="100%" height="100%" fill="url(#pred-slash)"/>
+        <rect width="100%" height="100%" fill="url(#pred-dots)"/>
       </svg>
-      {/* HUD corner brackets — all 4 */}
-      <svg style={{position:"absolute",top:0,left:0,width:180,height:180,opacity:.1}} viewBox="0 0 180 180">
-        <polyline points="12,70 12,12 70,12" fill="none" stroke="white" strokeWidth="1.2"/>
-        <polyline points="12,90 12,12 90,12" fill="none" stroke="white" strokeWidth=".4"/>
-        <circle cx="12" cy="12" r="2.5" fill="none" stroke="white" strokeWidth=".8"/>
+
+      {/* Corner bracket decorations */}
+      <svg style={{position:"absolute",top:0,left:0,width:160,height:160,opacity:.12}} viewBox="0 0 160 160">
+        <polyline points="10,60 10,10 60,10" fill="none" stroke="white" strokeWidth="1"/>
+        <polyline points="10,80 10,10 80,10" fill="none" stroke="white" strokeWidth=".4"/>
       </svg>
-      <svg style={{position:"absolute",top:0,right:0,width:180,height:180,opacity:.08}} viewBox="0 0 180 180">
-        <polyline points="168,70 168,12 110,12" fill="none" stroke="white" strokeWidth="1.2"/>
-        <polyline points="168,90 168,12 90,12" fill="none" stroke="white" strokeWidth=".4"/>
+      <svg style={{position:"absolute",top:0,right:0,width:160,height:160,opacity:.12}} viewBox="0 0 160 160">
+        <polyline points="150,60 150,10 100,10" fill="none" stroke="white" strokeWidth="1"/>
+        <polyline points="150,80 150,10 80,10" fill="none" stroke="white" strokeWidth=".4"/>
       </svg>
-      <svg style={{position:"absolute",bottom:0,left:0,width:180,height:180,opacity:.07}} viewBox="0 0 180 180">
-        <polyline points="12,110 12,168 70,168" fill="none" stroke="white" strokeWidth="1"/>
-      </svg>
-      <svg style={{position:"absolute",bottom:0,right:0,width:180,height:180,opacity:.07}} viewBox="0 0 180 180">
-        <polyline points="168,110 168,168 110,168" fill="none" stroke="white" strokeWidth="1"/>
-      </svg>
-      {/* Ghost text */}
-      <div style={{position:"absolute",top:"5vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontWeight:900,
-        fontSize:"clamp(80px,13vw,170px)",color:"rgba(255,255,255,.02)",lineHeight:1,userSelect:"none",letterSpacing:"-.05em"}}>xG</div>
-      <div style={{position:"absolute",top:"42vh",right:"-1%",fontFamily:"'Inter',sans-serif",fontWeight:900,
-        fontSize:"clamp(55px,9vw,130px)",color:"rgba(255,255,255,.015)",lineHeight:1,userSelect:"none",letterSpacing:"-.05em"}}>ELO</div>
-      <div style={{position:"absolute",bottom:"6vh",left:"4%",fontFamily:"'Inter',sans-serif",fontWeight:900,
-        fontSize:"clamp(40px,7vw,100px)",color:"rgba(255,255,255,.013)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>1–0</div>
+
+      {/* Giant ghost text */}
+      <div style={{position:"absolute",top:"6vh",left:"-2%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(90px,14vw,180px)",fontWeight:900,color:"rgba(255,255,255,.022)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>xG</div>
+      <div style={{position:"absolute",top:"45vh",right:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(60px,10vw,140px)",fontWeight:900,color:"rgba(255,255,255,.018)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>ELO</div>
+      <div style={{position:"absolute",bottom:"8vh",left:"3%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(50px,8vw,110px)",fontWeight:900,color:"rgba(255,255,255,.015)",lineHeight:1,userSelect:"none",letterSpacing:"-.04em"}}>1–0</div>
     </div>
   );
 }
-
-
-// ── Page Footer ──────────────────────────────────────────────────────────────
-function PageFooter({isMobile}) {
-  return (
-    <footer style={{
-      borderTop:"1px solid rgba(255,255,255,0.08)",
-      marginTop:48,paddingTop:32,paddingBottom:max_pb,
-      position:"relative",zIndex:2,
-    }}>
-      <div style={{
-        display:"flex",flexDirection:isMobile?"column":"row",
-        alignItems:isMobile?"flex-start":"center",
-        justifyContent:"space-between",gap:isMobile?20:24,
-      }}>
-        <div style={{display:"flex",flexDirection:"column",gap:5}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:3,height:22,background:"rgba(255,255,255,.7)",borderRadius:2}}/>
-            <span style={{fontSize:20,fontWeight:900,color:"#ffffff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
-          </div>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.35)",fontFamily:"'Inter',sans-serif",letterSpacing:".03em",paddingLeft:13}}>
-            Football Intelligence · ELO · Dixon-Coles · xG
-          </span>
-        </div>
-        <div style={{
-          display:"flex",flexDirection:"column",alignItems:isMobile?"flex-start":"center",gap:4,
-          padding:"14px 28px",border:"1px solid rgba(255,255,255,0.1)",
-          borderRadius:10,background:"rgba(255,255,255,0.03)",
-        }}>
-          <div style={{fontSize:10,color:"rgba(255,255,255,.3)",letterSpacing:".14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</div>
-          <div style={{fontSize:17,fontWeight:800,color:"#ffffff",letterSpacing:"-.02em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",alignItems:isMobile?"flex-start":"flex-end",gap:5}}>
-          <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.55)",fontFamily:"'Inter',sans-serif"}}>statinsite.com</span>
-          <span style={{fontSize:10,color:"rgba(255,255,255,.2)",fontFamily:"'Inter',sans-serif"}}>© 2025 StatinSite</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-const max_pb = 40;
 
 export default function PredictionsPage({league:propLeague,slugMap}){
   const isMobile = useWindowWidth() < 640;
@@ -2395,10 +2572,14 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const avgXgA=matches.length?(matches.reduce((s,m)=>s+(parseFloat(m.xg_away)||0),0)/matches.length).toFixed(2):"0.00";
 
   return(
-    <div className="sn-page-wrap" style={{background:"#080808",position:"relative",fontFamily:"'Inter',sans-serif",color:"#ffffff"}}>
+    <div className="sn-page-wrap" style={{background:"#080808",position:"relative",fontFamily:"'Inter',sans-serif",color:"#e2e8f0"}}>
 
-      {/* ── Intricate Background ────────────────── */}
-      <IntricateBg/>
+      {/* -- Neobrutalist BG stripes */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,
+        background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",
+        animation:"nbStripes 25s linear infinite"}}/>
+      {/* BG floater text */}
+      <div style={{position:"fixed",top:"8vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(100px,16vw,200px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
       <div style={{position:"fixed",top:"50vh",right:"0%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(70px,12vw,150px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>2–1</div>
 
       <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:isMobile?"0 12px 80px":"0 24px 64px"}}>
@@ -2519,7 +2700,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
         {/* -- PREDICTIONS TAB -------------------------------- */}
         {tab==="predictions"&&(
-          <div style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20,minWidth:0}}>
+          <div style={{display:"flex",flexDirection:"column",gap:16,paddingTop:20}}>
 
 
 
@@ -2709,8 +2890,6 @@ export default function PredictionsPage({league:propLeague,slugMap}){
             )}
           </div>
         )}
-
-      <PageFooter isMobile={isMobile}/>
 
       {/* -- Page-specific CSS --------------------------------------- */}
       <style>{`

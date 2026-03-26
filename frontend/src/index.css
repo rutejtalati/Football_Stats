@@ -189,23 +189,47 @@
 ══════════════════════════════════════════════════════════ */
 *, *::before, *::after {
   box-sizing: border-box;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Smooth theme transitions — ONLY on elements that need it, not * */
+body,
+.sn-page-wrap,
+.page-shell,
+.sn-card, .sn-panel, .sn-glass,
+.sn-btn, .sn-chip, .sn-input, .sn-select,
+.fpl-tbl th, .fpl-tbl td,
+.fpl-tip, .fpl-modal, .fpl-pill,
+.hiw-page, .hiw-card,
+.season-sim-page, .season-sim-wrap,
+.sn-site-footer,
+.hp4-root, .hp4-hero, .hp6-hero,
+.hp4-card, .hp6-tool-card, .hp6-pred-card,
+.hp6-comp-card, .hp6-player-card, .hp6-hero-panel,
+.hp4-fixture-card, .hp5-insight-card,
+.ni-shell, .pi-shell, .pp-shell,
+.sn-news-card, .sn-match-card, .sn-player-row,
+.sn-article-overlay,
+.sn-trending-chip, .sn-chip,
+[class*="hp4-"], [class*="hp5-"], [class*="hp6-"] {
   transition:
     background-color 0.22s cubic-bezier(0.4,0,0.2,1),
     border-color     0.22s cubic-bezier(0.4,0,0.2,1),
     color            0.18s cubic-bezier(0.4,0,0.2,1),
     box-shadow       0.22s cubic-bezier(0.4,0,0.2,1);
 }
-/* Never transition SVG internals — kills animations */
-svg *, canvas { transition: none !important; }
 
 /* ══════════════════════════════════════════════════════════
    NON-COLOUR TOKENS
 ══════════════════════════════════════════════════════════ */
 :root {
-  --r-xs:   6px; --r-sm:  10px; --r-md: 14px;
-  --r-lg:  18px; --r-xl:  22px; --r-2xl: 28px; --r-pill: 999px;
+  --r-xs:   6px;  --r-sm:   8px;  --r-md:  12px;
+  --r-lg:  16px;  --r-xl:  20px;  --r-2xl: 24px; --r-pill: 999px;
   --page-px: 20px; --page-max: 1280px;
+  --nav-h:      48px;
+  --ticker-h:   36px;
+  --bar-total:  0px;
   --ease: cubic-bezier(0.22,1,0.36,1);
   --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
   --t-fast: 0.13s; --t-med: 0.22s; --t-slow: 0.36s;

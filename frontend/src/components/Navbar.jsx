@@ -266,6 +266,11 @@ export default function Navbar() {
 
   const SW = collapsed ? 68 : 220;
 
+  // Keep CSS variable in sync so index.css rules react to collapse/expand
+  useEffect(() => {
+    document.documentElement.style.setProperty("--sidebar-w", `${SW}px`);
+  }, [SW]);
+
   return (
     <>
       <style>{`
@@ -541,27 +546,29 @@ export default function Navbar() {
           flex-shrink: 0;
         }
 
-        /* ── Sidebar width CSS variable — read by sn-page-wrap in index.css ── */
-        :root {
-          --sidebar-w: ${SW}px;
-        }
-
         /* ── Page offset for sidebar ── */
         .sn7-page-offset {
           margin-left: ${SW}px;
           transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
         }
 
-        /* ── Also update sn-page-wrap so App.jsx layout responds ── */
-        .sn-page-wrap {
+        /* ── Reinforce sn-page-wrap and footer in case index.css loads late ── */
+        .sn-page-wrap, .sn-site-footer {
           margin-left: ${SW}px !important;
-          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
+          width: calc(100vw - ${SW}px) !important;
+          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1), width 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        @media (max-width: 820px) {
+          .sn-page-wrap, .sn-site-footer { margin-left: 0 !important; width: 100% !important; }
         }
 
-        /* ── Fixed background decorators (stripes, watermarks) hug sidebar ── */
+        /* ── Fixed background decorators hug sidebar edge ── */
         .sn-fixed-bg {
           left: ${SW}px !important;
           transition: left 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        @media (max-width: 820px) {
+          .sn-fixed-bg { left: 0 !important; }
         }
 
         /* ── Mobile top bar ── */

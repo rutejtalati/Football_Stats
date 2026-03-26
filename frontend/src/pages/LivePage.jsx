@@ -728,7 +728,7 @@ export default function LivePage() {
   const todayCount = fixtures.filter(f=>dayBucket(f.kickoff)==="today").length;
 
   return (
-    <div className="sn-page-wrap">
+    <div style={{minHeight:"100vh"}}>
       <style>{`
         @keyframes lc-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.68)} }
         @keyframes lc-spin  { to{transform:rotate(360deg)} }

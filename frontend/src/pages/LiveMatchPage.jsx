@@ -73,8 +73,8 @@ function SectionLabel({ children, accent }) {
       <MatchBg/>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
-      <div className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div className="sn-fixed-bg" style={{position:"fixed",top:"5vh",right:"auto",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"auto",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
       <span style={{ fontSize:10, fontWeight:500, letterSpacing:"0.16em", color:accent||"#ffffff", textTransform:"uppercase", fontFamily:"'Inter',sans-serif", borderBottom:`2px solid ${accent||"rgba(255,255,255,.3)"}`, paddingBottom:4, borderBottom:`1px solid ${accent||"rgba(255,255,255,.12)"}` }}>
         {children}
@@ -2318,7 +2318,7 @@ export default function LiveMatchPage() {
   const tabs = TABS_BY_MODE[mode] || TABS_BY_MODE.prematch;
 
   return (
-    <div className="sn-page-wrap" style={{ position:"relative" }}>
+    <div style={{ position:"relative" }}>
       <div style={{ minHeight:"100vh", color:"var(--text)", position:"relative" }}>
       
       <style>{`

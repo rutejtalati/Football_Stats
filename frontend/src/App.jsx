@@ -43,14 +43,12 @@ function SiteFooter() {
           position: relative;
           z-index: 10;
           flex-shrink: 0;
-          margin-left: 220px;
           background: rgba(255,255,255,0.025);
           border-top: 0.5px solid rgba(255,255,255,0.08);
           font-family: 'Inter', system-ui, sans-serif;
-          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
         }
         @media (max-width: 820px) {
-          .sn-site-footer { margin-left: 0 !important; margin-bottom: 64px; }
+          .sn-site-footer { margin-bottom: 64px; }
         }
         .sn-footer-inner {
           display: flex;
@@ -157,7 +155,7 @@ export default function App() {
 
         <Navbar />
 
-        <main className="sn-page-wrap">
+        <main className="sn-page-wrap" style={{minHeight:"100vh"}}>
           <Routes>
             <Route path="/"                          element={<HomePage />} />
             <Route path="/live"                      element={<LivePage />} />

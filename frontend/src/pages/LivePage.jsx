@@ -163,13 +163,18 @@ function FeaturedCard({ f, onClick }) {
         position:"relative", overflow:"hidden",
         borderRadius:16, cursor:"pointer", flexShrink:0,
         width:272, padding:"18px 18px 14px",
-        background: isL ? "rgba(255,40,40,.04)" : "rgba(255,255,255,.025)",
-        border:`0.5px solid ${isL ? `rgba(255,69,58,${hov?.4:.15})` : `rgba(255,255,255,${hov?.1:.05})`}`,
+        background: isL
+          ? "color-mix(in srgb, var(--red) 5%, var(--bg-card))"
+          : "var(--bg-card)",
+        border:`1px solid ${isL
+          ? `rgba(255,69,58,${hov?.4:.18})`
+          : hov ? "var(--border-strong)" : "var(--border)"}`,
         boxShadow: hov
-          ? `0 20px 50px rgba(0,0,0,0.55), inset 0 0 0 1px ${lg?.color||"#fff"}14`
-          : "0 4px 18px rgba(0,0,0,0.3)",
+          ? `var(--shadow-lift), inset 0 0 0 1px ${lg?.color||"#fff"}14`
+          : "var(--shadow-card)",
         transform: hov ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
         transition:"all 0.22s cubic-bezier(.22,.61,.36,1)",
+        backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
       }}
     >
       {/* Top color bar */}
@@ -182,8 +187,8 @@ function FeaturedCard({ f, onClick }) {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
         <LeagueLabel k={f.league} />
         {isL && <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, fontWeight:900, color:"#ff4444" }}><LiveDot />{f.minute?`${f.minute}'`:"LIVE"}</span>}
-        {isFT && <span style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.22)", letterSpacing:".08em" }}>FT</span>}
-        {!isL && !isFT && <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.3)" }}>{fmtKickoffLabel(f.kickoff)}</span>}
+        {isFT && <span style={{ fontSize:9, fontWeight:800, color:"var(--text-muted)", letterSpacing:".08em" }}>FT</span>}
+        {!isL && !isFT && <span style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)" }}>{fmtKickoffLabel(f.kickoff)}</span>}
       </div>
 
       {/* Teams */}
@@ -191,16 +196,16 @@ function FeaturedCard({ f, onClick }) {
         {[[f.home_logo,f.home_team,hS,hw],[f.away_logo,f.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
           <div key={i} style={{ display:"flex", alignItems:"center", gap:9 }}>
             <Logo src={logo} size={22} />
-            <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"#f0f6ff":"rgba(255,255,255,0.7)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-            {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"rgba(255,255,255,.12)", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
+            <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"var(--text)":"var(--text-secondary)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
+            {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"var(--text)":"var(--border-strong)", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
           </div>
         ))}
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop:"1px solid rgba(255,255,255,.04)", paddingTop:10, minHeight:22 }}>
-        {f.xg_home!=null && <span style={{ fontSize:10, color:"rgba(255,255,255,.22)", marginRight:10 }}><span style={{ color:"#34d399", fontWeight:700 }}>xG</span> {f.xg_home}–{f.xg_away}</span>}
-        {!hasSc && insightLine(f) && <span style={{ fontSize:10, color:"rgba(255,255,255,.28)", fontStyle:"italic" }}>{insightLine(f)}</span>}
+      <div style={{ borderTop:"1px solid var(--border-soft)", paddingTop:10, minHeight:22 }}>
+        {f.xg_home!=null && <span style={{ fontSize:10, color:"var(--text-muted)", marginRight:10 }}><span style={{ color:"var(--green)", fontWeight:700 }}>xG</span> {f.xg_home}–{f.xg_away}</span>}
+        {!hasSc && insightLine(f) && <span style={{ fontSize:10, color:"var(--text-muted)", fontStyle:"italic" }}>{insightLine(f)}</span>}
       </div>
     </div>
   );
@@ -218,7 +223,7 @@ function FeaturedRail({ fixtures, onNavigate }) {
   if (!cards.length) return null;
   return (
     <div style={{ marginBottom:32 }}>
-      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".14em", color:"#fff", textTransform:"uppercase", marginBottom:12 }}>Featured</div>
+      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".14em", color:"var(--text-secondary)", textTransform:"uppercase", marginBottom:12 }}>Featured</div>
       <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:4 }}>
         {cards.map(f => <FeaturedCard key={f.fixture_id} f={f} onClick={() => onNavigate(f.fixture_id)} />)}
       </div>
@@ -243,9 +248,9 @@ export function ScheduledCard({ fixture, onClick }) {
         position:"relative", overflow:"hidden",
         padding:"12px 14px 11px",
         borderRadius:12, cursor:"pointer",
-        background: hov ? "rgba(255,255,255,.045)" : "rgba(255,255,255,.02)",
-        border:`1px solid rgba(255,255,255,${hov?.075:.038})`,
-        boxShadow: hov ? "0 8px 26px rgba(0,0,0,0.32)" : "none",
+        background: hov ? "var(--bg-hover)" : "var(--bg-glass)",
+        border:`1px solid ${hov ? "var(--border-strong)" : "var(--border)"}`,
+        boxShadow: hov ? "var(--shadow-card)" : "none",
         transform: hov ? "translateY(-2px)" : "translateY(0)",
         transition:"all .18s ease",
       }}
@@ -255,22 +260,22 @@ export function ScheduledCard({ fixture, onClick }) {
       <div style={{ paddingLeft:10 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <LeagueLabel k={fixture.league} />
-          <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.28)" }}>{fmtKickoffLabel(fixture.kickoff)}</span>
+          <span style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)" }}>{fmtKickoffLabel(fixture.kickoff)}</span>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom: (line||market)?9:0 }}>
           {[[fixture.home_logo,fixture.home_team],[fixture.away_logo,fixture.away_team]].map(([logo,name],i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:7 }}>
               <Logo src={logo} size={16} />
-              <span style={{ fontSize:12, fontWeight:700, color:"#a8bdd4", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:"var(--text-secondary)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
             </div>
           ))}
         </div>
 
         {(line||market) && (
-          <div style={{ borderTop:"1px solid rgba(255,255,255,.04)", paddingTop:7, display:"flex", gap:7, alignItems:"center", flexWrap:"wrap" }}>
-            {line   && <span style={{ fontSize:9.5, color:"rgba(255,255,255,.25)", fontStyle:"italic", flex:1 }}>{line}</span>}
-            {market && <span style={{ fontSize:9, fontWeight:800, letterSpacing:".06em", color:"#34d399", background:"rgba(52,211,153,.07)", padding:"2px 7px", borderRadius:999 }}>{market}</span>}
+          <div style={{ borderTop:"1px solid var(--border-soft)", paddingTop:7, display:"flex", gap:7, alignItems:"center", flexWrap:"wrap" }}>
+            {line   && <span style={{ fontSize:9.5, color:"var(--text-muted)", fontStyle:"italic", flex:1 }}>{line}</span>}
+            {market && <span style={{ fontSize:9, fontWeight:800, letterSpacing:".06em", color:"var(--green)", background:"var(--green-soft)", padding:"2px 7px", borderRadius:999 }}>{market}</span>}
           </div>
         )}
       </div>
@@ -298,7 +303,7 @@ export function LiveCard({ fixture, onClick }) {
         position:"relative", overflow:"hidden",
         padding:"12px 14px 11px",
         borderRadius:12, cursor:"pointer",
-        background: hov ? "#160a0a" : "#0f0606",
+        background: hov ? "color-mix(in srgb, var(--red) 8%, var(--bg-secondary))" : "color-mix(in srgb, var(--red) 4%, var(--bg-secondary))",
         border:`1px solid rgba(255,44,44,${hov?.28:.14})`,
         boxShadow: hov ? "0 10px 34px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,44,44,.08)" : "0 2px 10px rgba(0,0,0,.28)",
         transform: hov ? "translateY(-2px)" : "translateY(0)",
@@ -322,20 +327,20 @@ export function LiveCard({ fixture, onClick }) {
           {[[fixture.home_logo,fixture.home_team,hS,hw],[fixture.away_logo,fixture.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:7 }}>
               <Logo src={logo} size={16} />
-              <span style={{ fontSize:12, fontWeight:bold?800:600, color:bold?"#edf4ff":"rgba(255,255,255,0.65)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-              <span style={{ fontSize:18, fontWeight:900, color:bold?"#f0f6ff":"rgba(255,255,255,.12)", fontFamily:"'JetBrains Mono',monospace", minWidth:20, textAlign:"center" }}>{score}</span>
+              <span style={{ fontSize:12, fontWeight:bold?800:600, color:bold?"var(--text)":"var(--text-secondary)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
+              <span style={{ fontSize:18, fontWeight:900, color:bold?"var(--text)":"var(--border-strong)", fontFamily:"'JetBrains Mono',monospace", minWidth:20, textAlign:"center" }}>{score}</span>
             </div>
           ))}
         </div>
 
-        <div style={{ borderTop:"1px solid rgba(255,255,255,.035)", paddingTop:7, display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+        <div style={{ borderTop:"1px solid var(--border-soft)", paddingTop:7, display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
           {fixture.xg_home!=null && (
-            <span style={{ fontSize:9.5, color:"rgba(255,255,255,.3)" }}>
-              <span style={{ color:"#34d399", fontWeight:700 }}>xG</span> {fixture.xg_home}–{fixture.xg_away}
+            <span style={{ fontSize:9.5, color:"var(--text-muted)" }}>
+              <span style={{ color:"var(--green)", fontWeight:700 }}>xG</span> {fixture.xg_home}–{fixture.xg_away}
             </span>
           )}
           {fixture.latest_event && (
-            <span style={{ fontSize:9.5, color:"rgba(255,255,255,.22)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{fixture.latest_event}</span>
+            <span style={{ fontSize:9.5, color:"var(--text-muted)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{fixture.latest_event}</span>
           )}
         </div>
       </div>
@@ -362,9 +367,9 @@ export function FullTimeCard({ fixture, onClick }) {
         position:"relative", overflow:"hidden",
         padding:"12px 14px 11px",
         borderRadius:12, cursor:"pointer",
-        background: hov ? "#07090f" : "#050710",
-        border:`1px solid rgba(255,255,255,${hov?.055:.025})`,
-        boxShadow: hov ? "0 6px 18px rgba(0,0,0,.28)" : "none",
+        background: hov ? "var(--bg-hover)" : "var(--bg-glass)",
+        border:`1px solid ${hov ? "var(--border-strong)" : "var(--border)"}`,
+        boxShadow: hov ? "var(--shadow-card)" : "none",
         transform: hov ? "translateY(-1px)" : "translateY(0)",
         transition:"all .18s ease",
         opacity: hov ? 1 : .78,
@@ -375,23 +380,23 @@ export function FullTimeCard({ fixture, onClick }) {
       <div style={{ paddingLeft:10 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <LeagueLabel k={fixture.league} />
-          <span style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.18)", background:"rgba(255,255,255,.035)", padding:"2px 7px", borderRadius:999, letterSpacing:".08em" }}>FT</span>
+          <span style={{ fontSize:9, fontWeight:800, color:"var(--text-muted)", background:"var(--bg-glass)", padding:"2px 7px", borderRadius:999, letterSpacing:".08em" }}>FT</span>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:fixture.xg_home!=null?8:0 }}>
           {[[fixture.home_logo,fixture.home_team,hS,hw],[fixture.away_logo,fixture.away_team,aS,aw]].map(([logo,name,score,bold],i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:7 }}>
               <Logo src={logo} size={16} />
-              <span style={{ fontSize:12, fontWeight:bold?800:500, color:bold?"#c8daf0":"rgba(255,255,255,0.55)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-              <span style={{ fontSize:16, fontWeight:bold?900:600, color:bold?"#c0d4ec":"#1e2f40", fontFamily:"'JetBrains Mono',monospace", minWidth:18, textAlign:"center" }}>{score}</span>
+              <span style={{ fontSize:12, fontWeight:bold?800:500, color:bold?"var(--text)":"var(--text-muted)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
+              <span style={{ fontSize:16, fontWeight:bold?900:600, color:bold?"var(--text)":"var(--text-dim)", fontFamily:"'JetBrains Mono',monospace", minWidth:18, textAlign:"center" }}>{score}</span>
             </div>
           ))}
         </div>
 
         {fixture.xg_home!=null && (
-          <div style={{ borderTop:"1px solid rgba(255,255,255,.025)", paddingTop:6 }}>
-            <span style={{ fontSize:9.5, color:"rgba(255,255,255,.15)" }}>
-              <span style={{ color:"rgba(52,211,153,.45)", fontWeight:700 }}>xG</span> {fixture.xg_home}–{fixture.xg_away}
+          <div style={{ borderTop:"1px solid var(--border-soft)", paddingTop:6 }}>
+            <span style={{ fontSize:9.5, color:"var(--text-muted)" }}>
+              <span style={{ color:"var(--green)", fontWeight:700, opacity:0.55 }}>xG</span> {fixture.xg_home}–{fixture.xg_away}
             </span>
           </div>
         )}
@@ -411,12 +416,12 @@ function Section({ title, count, accent, collapsible, defaultOpen=true, children
         style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, cursor:collapsible?"pointer":"default", userSelect:"none" }}
       >
         {accent && <div style={{ width:3, height:14, borderRadius:2, background:accent, flexShrink:0 }} />}
-        <span style={{ fontSize:10, fontWeight:900, letterSpacing:".14em", color:"rgba(255,255,255,0.78)", textTransform:"uppercase" }}>{title}</span>
+        <span style={{ fontSize:10, fontWeight:900, letterSpacing:".14em", color:"var(--text-secondary)", textTransform:"uppercase" }}>{title}</span>
         {count!=null && (
-          <span style={{ fontSize:9, fontWeight:800, color:accent||"rgba(255,255,255,.3)", background:accent?`${accent}14`:"rgba(255,255,255,.04)", padding:"1px 7px", borderRadius:999 }}>{count}</span>
+          <span style={{ fontSize:9, fontWeight:800, color:accent||"var(--text-muted)", background:accent?`${accent}14`:"var(--bg-glass)", padding:"1px 7px", borderRadius:999 }}>{count}</span>
         )}
         {collapsible && (
-          <span style={{ marginLeft:"auto", fontSize:11, color:"rgba(255,255,255,.15)", display:"inline-block", transition:"transform .2s", transform:open?"rotate(0)":"rotate(-90deg)" }}>▾</span>
+          <span style={{ marginLeft:"auto", fontSize:11, color:"var(--text-dim)", display:"inline-block", transition:"transform .2s", transform:open?"rotate(0)":"rotate(-90deg)" }}>▾</span>
         )}
       </div>
       {(!collapsible || open) && (
@@ -440,8 +445,8 @@ function CardRouter({ f, onNavigate }) {
 
 function WidgetShell({ title, children }) {
   return (
-    <div style={{ background:"#080e1c", border:"1px solid rgba(255,255,255,.045)", borderRadius:14, padding:"14px 15px", marginBottom:10 }}>
-      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".13em", color:"#fff", textTransform:"uppercase", marginBottom:12 }}>{title}</div>
+    <div style={{ background:"var(--bg-glass)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid var(--border)", borderRadius:14, padding:"14px 15px", marginBottom:10 }}>
+      <div style={{ fontSize:9, fontWeight:900, letterSpacing:".13em", color:"var(--text-secondary)", textTransform:"uppercase", marginBottom:12 }}>{title}</div>
       {children}
     </div>
   );
@@ -475,14 +480,14 @@ function NextKickoffWidget({ fixtures }) {
     <WidgetShell title="Next Kick Off" accent="#60a5fa">
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
         <Logo src={next.home_logo} size={18} />
-        <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.45)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{next.home_team?.split(" ").pop()}</span>
-        <span style={{ fontSize:9, color:"rgba(255,255,255,.2)", fontWeight:600 }}>vs</span>
-        <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.45)", flex:1, textAlign:"right", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{next.away_team?.split(" ").pop()}</span>
+        <span style={{ fontSize:11, fontWeight:700, color:"var(--text-secondary)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{next.home_team?.split(" ").pop()}</span>
+        <span style={{ fontSize:9, color:"var(--text-dim)", fontWeight:600 }}>vs</span>
+        <span style={{ fontSize:11, fontWeight:700, color:"var(--text-secondary)", flex:1, textAlign:"right", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{next.away_team?.split(" ").pop()}</span>
         <Logo src={next.away_logo} size={18} />
       </div>
       <div style={{ textAlign:"center" }}>
-        <div style={{ fontSize:24, fontWeight:900, color:"#60a5fa", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"-0.02em" }}>{cd}</div>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,.18)", marginTop:3 }}>{fmtTime(next.kickoff)} · <LeagueLabel k={next.league} small /></div>
+        <div style={{ fontSize:24, fontWeight:900, color:"var(--blue)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:"-0.02em" }}>{cd}</div>
+        <div style={{ fontSize:10, color:"var(--text-muted)", marginTop:3 }}>{fmtTime(next.kickoff)} · <LeagueLabel k={next.league} small /></div>
       </div>
     </WidgetShell>
   );
@@ -493,18 +498,18 @@ function LiveTrackerWidget({ fixtures }) {
   return (
     <WidgetShell title="Live Tracker" accent="#ff4444">
       {live.length===0
-        ? <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", textAlign:"center", padding:"6px 0" }}>No matches in progress</div>
+        ? <div style={{ fontSize:11, color:"var(--text-muted)", textAlign:"center", padding:"6px 0" }}>No matches in progress</div>
         : (
           <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
             {live.map(f => (
               <div key={f.fixture_id} style={{ display:"flex", alignItems:"center", gap:7 }}>
-                <span style={{ fontSize:9, fontWeight:900, color:"#ff4444", minWidth:26, fontFamily:"'JetBrains Mono',monospace" }}>
+                <span style={{ fontSize:9, fontWeight:900, color:"var(--red)", minWidth:26, fontFamily:"'JetBrains Mono',monospace" }}>
                   {f.minute?`${f.minute}'`:"–"}
                 </span>
-                <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,.38)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                <span style={{ fontSize:10, fontWeight:700, color:"var(--text-muted)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                   {f.home_team?.split(" ").pop()} {f.home_score??0}–{f.away_score??0} {f.away_team?.split(" ").pop()}
                 </span>
-                <div style={{ width:5, height:5, borderRadius:"50%", background:LEAGUES[f.league]?.color||"#555", flexShrink:0 }} />
+                <div style={{ width:5, height:5, borderRadius:"50%", background:LEAGUES[f.league]?.color||"var(--border-strong)", flexShrink:0 }} />
               </div>
             ))}
           </div>
@@ -530,9 +535,9 @@ function LeagueSummaryWidget({ fixtures }) {
           return (
             <div key={key} style={{ display:"flex", alignItems:"center", gap:7 }}>
               <div style={{ width:2, height:14, borderRadius:2, background:c.color, flexShrink:0 }} />
-              <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,.35)", flex:1 }}>{c.label}</span>
-              {live>0 && <span style={{ fontSize:9, fontWeight:800, color:"#ff4444", background:"rgba(255,40,40,.09)", padding:"1px 6px", borderRadius:999 }}>{live} live</span>}
-              <span style={{ fontSize:9, fontWeight:700, color:"#fff" }}>{total}</span>
+              <span style={{ fontSize:10, fontWeight:700, color:"var(--text-secondary)", flex:1 }}>{c.label}</span>
+              {live>0 && <span style={{ fontSize:9, fontWeight:800, color:"var(--red)", background:"var(--red-soft)", padding:"1px 6px", borderRadius:999 }}>{live} live</span>}
+              <span style={{ fontSize:9, fontWeight:700, color:"var(--text)" }}>{total}</span>
             </div>
           );
         })}
@@ -550,8 +555,8 @@ function LiveBg() {
     <div aria-hidden="true" style={{
       position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden",
     }}>
-      {/* Pure black base */}
-      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      {/* Theme-aware base */}
+      <div style={{position:"absolute",inset:0,background:"var(--bg)",transition:"background 0.25s"}}/>
 
       {/* Very subtle radial glows — pure white, very low opacity */}
       <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",
@@ -611,7 +616,7 @@ function LiveBg() {
 
 function PageFooter() {
   return (
-    <footer style={{position:"relative",zIndex:2,flexShrink:0,background:"rgba(255,255,255,0.025)",borderTop:"0.5px solid rgba(255,255,255,0.08)",fontFamily:"'Inter',system-ui,sans-serif"}}>
+    <footer style={{position:"relative",zIndex:2,flexShrink:0,background:"var(--glass-bg)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderTop:"1px solid var(--border)",fontFamily:"'Inter',system-ui,sans-serif",marginTop:40}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:"0 28px",height:52}}>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
@@ -621,14 +626,14 @@ function PageFooter() {
             <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
             <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
           </svg>
-          <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)",letterSpacing:"-.03em"}}>StatinSite</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,0.25)",letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+          <span style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",letterSpacing:"-.03em"}}>StatinSite</span>
+          <span style={{fontSize:11,color:"var(--text-muted)",letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px",background:"rgba(255,255,255,0.04)",border:"0.5px solid rgba(255,255,255,0.09)",borderRadius:999,flexShrink:0}}>
-          <span style={{fontSize:10,color:"rgba(255,255,255,0.28)",letterSpacing:".1em",textTransform:"uppercase"}}>Built by</span>
-          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.75)"}}>Rutej Talati</span>
+        <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px",background:"var(--bg-glass)",border:"1px solid var(--border)",borderRadius:999,flexShrink:0}}>
+          <span style={{fontSize:10,color:"var(--text-muted)",letterSpacing:".1em",textTransform:"uppercase"}}>Built by</span>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Rutej Talati</span>
         </div>
-        <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>© {new Date().getFullYear()} StatinSite</span>
+        <span style={{fontSize:11,color:"var(--text-dim)",flexShrink:0}}>© {new Date().getFullYear()} StatinSite</span>
       </div>
     </footer>
   );
@@ -756,17 +761,17 @@ export default function LivePage() {
         *{box-sizing:border-box}
       `}</style>
 
-      <div style={{ background:"#080808", minHeight:"100vh", fontFamily:"'Inter',system-ui,sans-serif", position:"relative" }}>
+      <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Inter',system-ui,sans-serif", position:"relative" }}>
         <LiveBg/>
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 20px", position:"relative", zIndex:1 }}>
 
           {/* ══ HERO HEADER ══ */}
-          <div style={{ padding:"26px 0 18px", borderBottom:"1px solid rgba(255,255,255,.04)", marginBottom:22 }}>
+          <div style={{ padding:"26px 0 18px", borderBottom:"1px solid var(--border)", marginBottom:22 }}>
             {/* Top row: title + counters */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
               <div>
-                <h1 style={{ fontSize:28, fontWeight:900, color:"#f0f6ff", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
-                <p style={{ color:"#fff", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
+                <h1 style={{ fontSize:28, fontWeight:900, color:"var(--text)", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
+                <p style={{ color:"var(--text-secondary)", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
                   {isPastView ? `Results · ${dayLabel(dayOffset)}` : isFutureView ? `Fixtures · ${dayLabel(dayOffset)}` : "Today & live · Top 5 leagues"}
                 </p>
               </div>
@@ -776,12 +781,12 @@ export default function LivePage() {
                     <LiveDot /><span style={{ fontSize:11, fontWeight:800, color:"#ff5252" }}>{liveCount} Live</span>
                   </div>
                 )}
-                <div style={{ background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.05)", borderRadius:999, padding:"5px 12px" }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.25)" }}>{todayCount} Today</span>
+                <div style={{ background:"var(--bg-glass)", border:"1px solid var(--border)", borderRadius:999, padding:"5px 12px" }}>
+                  <span style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)" }}>{todayCount} Today</span>
                 </div>
                 {lastUp && (
-                  <div style={{ background:"rgba(255,255,255,.015)", border:"1px solid rgba(255,255,255,.035)", borderRadius:999, padding:"5px 10px" }}>
-                    <span style={{ fontSize:10, color:"rgba(255,255,255,0.6)", fontWeight:600 }}>
+                  <div style={{ background:"var(--bg-glass)", border:"1px solid var(--border-soft)", borderRadius:999, padding:"5px 10px" }}>
+                    <span style={{ fontSize:10, color:"var(--text-secondary)", fontWeight:600 }}>
                       {lastUp.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
                     </span>
                   </div>
@@ -795,8 +800,8 @@ export default function LivePage() {
                 {/* Prev week */}
                 <button onClick={prevWeek} style={{
                   width:32, height:32, borderRadius:8, flexShrink:0,
-                  border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)",
-                  color:"rgba(255,255,255,.45)", fontSize:15, cursor:"pointer",
+                  border:"1px solid var(--border)", background:"var(--bg-glass)",
+                  color:"var(--text-muted)", fontSize:15, cursor:"pointer",
                   display:"flex", alignItems:"center", justifyContent:"center",
                 }}>‹</button>
 
@@ -846,8 +851,8 @@ export default function LivePage() {
                 {/* Next week */}
                 <button onClick={nextWeek} style={{
                   width:32, height:32, borderRadius:8, flexShrink:0,
-                  border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)",
-                  color:"rgba(255,255,255,.45)", fontSize:15, cursor:"pointer",
+                  border:"1px solid var(--border)", background:"var(--bg-glass)",
+                  color:"var(--text-muted)", fontSize:15, cursor:"pointer",
                   display:"flex", alignItems:"center", justifyContent:"center",
                 }}>›</button>
               </div>
@@ -876,9 +881,9 @@ export default function LivePage() {
                   <button key={l} onClick={() => setFilter(l)} style={{
                     padding:"5px 13px", borderRadius:999, cursor:"pointer",
                     fontSize:11, fontWeight:700, letterSpacing:".03em",
-                    border:`1px solid ${active?col+"40":"rgba(255,255,255,.045)"}`,
-                    background: active?col+"12":"rgba(255,255,255,.012)",
-                    color: active?col:"rgba(255,255,255,.22)",
+                    border:`1px solid ${active?col+"40":"var(--border)"}`,
+                    background: active?col+"12":"var(--bg-glass)",
+                    color: active?col:"var(--text-muted)",
                     transition:"all .15s",
                   }}>
                     {l==="all"?"All":c?.label}
@@ -890,8 +895,8 @@ export default function LivePage() {
 
           {/* ══ STATES ══ */}
           {loading && (
-            <div style={{ textAlign:"center", padding:"56px 0", color:"#fff", fontSize:13 }}>
-              <div style={{ width:26, height:26, borderRadius:"50%", border:"2px solid rgba(96,165,250,.1)", borderTopColor:"#60a5fa", margin:"0 auto 12px", animation:"lc-spin .8s linear infinite" }} />
+            <div style={{ textAlign:"center", padding:"56px 0", color:"var(--text-secondary)", fontSize:13 }}>
+              <div style={{ width:26, height:26, borderRadius:"50%", border:"2px solid var(--border)", borderTopColor:"var(--blue)", margin:"0 auto 12px", animation:"lc-spin .8s linear infinite" }} />
               Loading fixtures…
             </div>
           )}
@@ -915,7 +920,7 @@ export default function LivePage() {
                 {/* Left: sections */}
                 <div>
                   {filtered.length===0 && (
-                    <div style={{ textAlign:"center", padding:"44px 0", color:"rgba(255,255,255,0.6)", fontSize:13 }}>No fixtures for this filter.</div>
+                    <div style={{ textAlign:"center", padding:"44px 0", color:"var(--text-muted)", fontSize:13 }}>No fixtures for this filter.</div>
                   )}
 
                   {/* ── PAST RESULTS VIEW ── */}

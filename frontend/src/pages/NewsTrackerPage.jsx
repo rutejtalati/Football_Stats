@@ -523,11 +523,11 @@ function MagSmallCard({article,onClick}){
   return(
     <div ref={ref} onClick={()=>onClick(article)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{borderRadius:8,overflow:"hidden",cursor:"pointer",display:"flex",flexDirection:"column",
-        background:"rgba(20,20,20,0.95)",
-        border:hov?"1px solid "+tm.color+"45":"1px solid rgba(255,255,255,0.07)",
+        background:"var(--bg-card)",
+        border:hov?"1px solid "+tm.color+"45":"1px solid var(--border)",
         transform:hov?"translateY(-2px)":vis?"translateY(0)":"translateY(8px)",
         opacity:vis?1:0,transition:"all 0.2s cubic-bezier(.22,1,.36,1)",
-        boxShadow:hov?"0 8px 24px rgba(0,0,0,0.45)":"none"}}>
+        boxShadow:hov?"var(--shadow-card)":"none"}}>
       <div style={{height:2.5,background:tm.color,flexShrink:0}}/>
       <div style={{height:64,overflow:"hidden",flexShrink:0,position:"relative"}}>
         <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%"}} zoom={hov}/>
@@ -538,10 +538,10 @@ function MagSmallCard({article,onClick}){
           <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:tm.color,background:tm.color+"12",border:"1px solid "+tm.color+"25",borderRadius:3,padding:"1px 5px"}}>{tm.label}</span>
           {article.league&&article.league!=="general"&&<span style={{fontSize:10,fontWeight:600,color:league.color,background:league.bg,borderRadius:3,padding:"1px 5px"}}>{league.abbr}</span>}
         </div>
-        <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:700,lineHeight:1.35,color:hov?"#ffffff":"rgba(255,255,255,0.88)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:700,lineHeight:1.35,color:hov?"var(--text)":"var(--text-secondary)",margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",flex:1}}>{article.title}</p>
         <div style={{display:"flex",alignItems:"center",gap:4,marginTop:"auto"}}>
-          {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,.3)",fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{article.source}</span>}
-          <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,0.25)",flexShrink:0}}>{timeAgo(article.published_at)}</span>
+          {article.source&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"var(--text-muted)",fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{article.source}</span>}
+          <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"var(--text-dim)",flexShrink:0}}>{timeAgo(article.published_at)}</span>
         </div>
       </div>
     </div>
@@ -704,45 +704,44 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
 function TrendingBar({clubs,activeClub,onSelect}){
   if(!clubs?.length)return null;
   return(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
-    <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"rgba(255,255,255,.25)",textTransform:"uppercase",flexShrink:0}}>Trending</span>
+    <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"var(--text-muted)",textTransform:"uppercase",flexShrink:0}}>Trending</span>
     {clubs.map(club=>(<button key={club} onClick={()=>onSelect(club===activeClub?null:club)}
-      style={{fontSize:10,fontWeight:800,color:club===activeClub?"#f0f6ff":"rgba(255,255,255,.55)",
-        background:club===activeClub?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.035)",
-        border:club===activeClub?"1px solid rgba(255,255,255,0.38)":"1px solid rgba(255,255,255,0.07)",
+      style={{fontSize:10,fontWeight:800,color:club===activeClub?"var(--text)":"var(--text-secondary)",
+        background:club===activeClub?"var(--bg-active)":"var(--bg-glass)",
+        border:club===activeClub?"1px solid var(--border-strong)":"1px solid var(--border)",
         borderRadius:999,padding:"5px 12px",flexShrink:0,cursor:"pointer",transition:"all .17s ease",
-        boxShadow:club===activeClub?"0 0 12px rgba(255,255,255,0.14)":"none",fontFamily:"'Inter',sans-serif"}}>{club}</button>))}
+        boxShadow:club===activeClub?"var(--shadow-glow-blue)":"none",fontFamily:"'Inter',sans-serif"}}>{club}</button>))}
   </div>);
 }
 
-function Chip({label,active,color="rgba(255,255,255,.85)",onClick,count}){
+function Chip({label,active,color="var(--text-secondary)",onClick,count}){
   const[hov,setHov]=useState(false);
   return(<button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
     style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 16px",borderRadius:0,
-      border:active?"1.5px solid "+color+"60":hov?"1.5px solid rgba(255,255,255,0.14)":"1.5px solid rgba(255,255,255,0.07)",
-      background:active?color+"12":hov?"rgba(255,255,255,0.055)":"rgba(255,255,255,.03)",
-      
-      color:active?color:hov?"rgba(255,255,255,.9)":"rgba(255,255,255,.4)",
+      border:active?"1.5px solid var(--border-strong)":hov?"1.5px solid var(--border-strong)":"1.5px solid var(--border)",
+      background:active?"var(--bg-active)":hov?"var(--bg-hover)":"var(--bg-glass)",
+      color:active?"var(--text)":hov?"var(--text-secondary)":"var(--text-muted)",
       fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,letterSpacing:"0.04em",
       cursor:"pointer",transition:"all .17s ease",whiteSpace:"nowrap",flexShrink:0,
-      boxShadow:active?"0 0 16px "+color+"18":"none"}}>
-    {active&&<span style={{width:5,height:5,borderRadius:"50%",background:color,boxShadow:"0 0 7px "+color,flexShrink:0}}/>}
+      boxShadow:active?"var(--shadow-glow-blue)":"none"}}>
+    {active&&<span style={{width:5,height:5,borderRadius:"50%",background:"var(--blue)",boxShadow:"0 0 7px var(--blue-glow)",flexShrink:0}}/>}
     {label}
-    {count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:active?color:"rgba(255,255,255,.25)",background:active?color+"18":"rgba(255,255,255,0.035)",borderRadius:999,padding:"1px 5px"}}>{count}</span>}
+    {count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:active?"var(--blue)":"var(--text-muted)",background:active?"var(--blue-soft)":"var(--bg-glass)",borderRadius:999,padding:"1px 5px"}}>{count}</span>}
   </button>);
 }
 
 function Skeleton({h=200}){
-  return(<div style={{borderRadius:18,height:h,background:"linear-gradient(90deg,rgba(255,255,255,0.025) 0%,rgba(255,255,255,0.055) 50%,rgba(255,255,255,0.025) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.6s ease-in-out infinite",border:"1px solid rgba(255,255,255,0.04)"}}/>);
+  return(<div style={{borderRadius:18,height:h,background:"linear-gradient(90deg,var(--bg-glass) 0%,var(--bg-hover) 50%,var(--bg-glass) 100%)",backgroundSize:"400% 100%",animation:"shimmer 1.6s ease-in-out infinite",border:"1px solid var(--border)"}}/>);
 }
 
-function SectionHead({title,sub,accent="rgba(255,255,255,.85)",count}){
+function SectionHead({title,sub,accent="var(--blue)",count}){
   return(<div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:20}}>
     <div style={{width:3,height:36,borderRadius:2,background:"linear-gradient(180deg,"+accent+",transparent)",flexShrink:0,marginTop:2}}/>
     <div style={{flex:1}}>
-      <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:900,color:"#ffffff",margin:0,letterSpacing:"-0.02em"}}>{title}</h2>
-      {sub&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.25)",margin:"2px 0 0",fontWeight:600}}>{sub}</p>}
+      <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:900,color:"var(--text)",margin:0,letterSpacing:"-0.02em"}}>{title}</h2>
+      {sub&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"var(--text-muted)",margin:"2px 0 0",fontWeight:600}}>{sub}</p>}
     </div>
-    {count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:"rgba(255,255,255,.25)",fontWeight:700,marginTop:6}}>{count}</span>}
+    {count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:"var(--text-muted)",fontWeight:700,marginTop:6}}>{count}</span>}
   </div>);
 }
 
@@ -759,16 +758,16 @@ function IntelligenceTicker(){
     return()=>clearInterval(t);
   },[items.length]);
   if(!items.length)return null;
-  const COLORS={green:"rgba(255,255,255,.75)",red:"rgba(255,255,255,.65)",blue:"rgba(255,255,255,.85)",amber:"rgba(255,255,255,.7)"};
-  return(<div style={{width:"100%",background:"rgba(255,255,255,.03)",borderBottom:"2px solid rgba(255,255,255,.12)",borderTop:"2px solid rgba(255,255,255,.12)",padding:"8px 0",overflow:"hidden",position:"relative",marginBottom:24}}>
+  const COLORS={green:"var(--green)",red:"var(--red)",blue:"var(--blue)",amber:"var(--amber)"};
+  return(<div style={{width:"100%",background:"var(--bg-glass)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:"1px solid var(--border)",borderTop:"1px solid var(--border)",padding:"8px 0",overflow:"hidden",position:"relative",marginBottom:24}}>
     <div style={{display:"flex",alignItems:"center",gap:0}}>
-      <div style={{flexShrink:0,padding:"0 16px",borderRight:"1px solid rgba(255,255,255,0.08)",marginRight:16}}>
-        <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.85)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live</span>
+      <div style={{flexShrink:0,padding:"0 16px",borderRight:"1px solid var(--border)",marginRight:16}}>
+        <span style={{fontSize:10,fontWeight:700,color:"var(--text-secondary)",letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live</span>
       </div>
       <div style={{flex:1,overflow:"hidden"}}>
         <div style={{display:"flex",gap:40,animation:"tickerScroll 40s linear infinite",whiteSpace:"nowrap"}}>
           {[...items,...items].map((item,i)=>{
-            const c=COLORS[item.color]||"#94a3b8";
+            const c=COLORS[item.color]||"var(--text-secondary)";
             return(<span key={i} style={{fontSize:11,fontWeight:600,color:c,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:8,flexShrink:0}}>
               <span style={{width:4,height:4,borderRadius:"50%",background:c,display:"inline-block",flexShrink:0}}/>
               {item.text}
@@ -777,7 +776,7 @@ function IntelligenceTicker(){
         </div>
       </div>
     </div>
-    <style>{"@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}"}</style>
+    <style>{"@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"}</style>
   </div>);
 }
 
@@ -818,7 +817,7 @@ function TransferHub({items}){
 function NewsIntricateBg() {
   return (
     <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",inset:0,background:"var(--bg)"}}/>
 
       {/* Radial glows */}
       <div style={{position:"absolute",top:"-15%",right:"15%",width:"55vw",height:"55vw",
@@ -892,7 +891,7 @@ function NewsIntricateBg() {
 function NewsBg() {
   return (
     <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",inset:0,background:"var(--bg)"}}/>
       <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
       <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
       <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px)",backgroundSize:"44px 44px"}}/>
@@ -923,7 +922,7 @@ function NewsBg() {
 function PageFooter() {
   return (
     <footer style={{
-      borderTop: "1px solid rgba(255,255,255,0.08)",
+      borderTop: "1px solid var(--border)",
       paddingTop: 32,
       paddingBottom: 40,
     }}>
@@ -937,10 +936,10 @@ function PageFooter() {
         {/* Branding */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 3, height: 22, background: "rgba(255,255,255,.7)", borderRadius: 2 }} />
-            <span style={{ fontSize: 20, fontWeight: 900, color: "#ffffff", letterSpacing: "-.04em" }}>StatinSite</span>
+            <div style={{ width: 3, height: 22, background: "var(--blue)", borderRadius: 2 }} />
+            <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", letterSpacing: "-.04em" }}>StatinSite</span>
           </div>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)", letterSpacing: ".03em", paddingLeft: 13 }}>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: ".03em", paddingLeft: 13 }}>
             Football Intelligence · Model Predictions
           </span>
         </div>
@@ -949,18 +948,18 @@ function PageFooter() {
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
           padding: "16px 28px",
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "1px solid var(--border)",
           borderRadius: 12,
-          background: "rgba(255,255,255,0.03)",
+          background: "var(--bg-glass)",
         }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)", letterSpacing: ".14em", textTransform: "uppercase" }}>Built by</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#ffffff", letterSpacing: "-.02em" }}>Rutej Talati</div>
+          <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: ".14em", textTransform: "uppercase" }}>Built by</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", letterSpacing: "-.02em" }}>Rutej Talati</div>
         </div>
 
         {/* Right info */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.6)", letterSpacing: ".04em" }}>statinsite.com</span>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,.2)" }}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)", letterSpacing: ".04em" }}>statinsite.com</span>
+          <span style={{ fontSize: 10, color: "var(--text-dim)" }}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
         </div>
       </div>
     </footer>
@@ -1054,7 +1053,7 @@ export default function NewsTrackerPage(){
   const isMob = mobileWidth < 640;
   const isTablet = mobileWidth < 960;
 
-  return(<div style={{minHeight:"100vh",background:"#080808",fontFamily:"'Inter',sans-serif",color:"#ffffff",position:"relative"}}>
+  return(<div style={{minHeight:"100vh",background:"var(--bg)",fontFamily:"'Inter',sans-serif",color:"var(--text)",position:"relative"}}>
 
     {/* ── Keyframes ────────────────────────────────────────── */}
     <style>{`
@@ -1078,7 +1077,7 @@ export default function NewsTrackerPage(){
 
     {/* ── Intricate Background ─────────────────────────────── */}
     <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",inset:0,background:"var(--bg)",transition:"background 0.25s"}}/>
       {/* Radial glows */}
       <div style={{position:"absolute",top:"-15%",right:"10%",width:"65vw",height:"65vw",
         background:"radial-gradient(ellipse,rgba(255,255,255,.016) 0%,transparent 60%)"}}/>
@@ -1086,11 +1085,11 @@ export default function NewsTrackerPage(){
         background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 55%)"}}/>
       {/* Fine grid */}
       <div style={{position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px)",
+        backgroundImage:"linear-gradient(var(--border-soft) 1px,transparent 1px),linear-gradient(90deg,var(--border-soft) 1px,transparent 1px)",
         backgroundSize:"42px 42px"}}/>
       {/* Bold grid */}
       <div style={{position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
+        backgroundImage:"linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px)",
         backgroundSize:"168px 168px"}}/>
       {/* SVG intricate */}
       <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -1154,7 +1153,7 @@ export default function NewsTrackerPage(){
       {/* ── PAGE HEADER ──────────────────────────────────────── */}
       <div style={{
         padding:isMob?"20px 0 16px":"36px 0 22px",
-        borderBottom:"1px solid rgba(255,255,255,0.07)",
+        borderBottom:"1px solid var(--border)",
         marginBottom:0,
       }}>
         <div style={{display:"flex",alignItems:isMob?"flex-start":"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
@@ -1163,19 +1162,19 @@ export default function NewsTrackerPage(){
             <div style={{
               display:"flex",flexDirection:"column",justifyContent:"center",gap:3,
               width:3,height:isMob?36:50,flexShrink:0,
-              background:"linear-gradient(180deg,#ffffff 0%,rgba(255,255,255,.3) 100%)",
+              background:"linear-gradient(180deg,var(--blue) 0%,transparent 100%)",
               borderRadius:2,
             }}/>
             <div>
               <h1 style={{
                 fontFamily:"'Inter',sans-serif",
                 fontSize:isMob?24:32,
-                fontWeight:900,color:"#ffffff",
+                fontWeight:900,color:"var(--text)",
                 margin:0,letterSpacing:"-0.04em",lineHeight:1.05,
               }}>Football Intelligence</h1>
               <p style={{
                 fontFamily:"'Inter',sans-serif",fontSize:isMob?11:12,
-                color:"rgba(255,255,255,.4)",margin:"5px 0 0",fontWeight:500,
+                color:"var(--text-muted)",margin:"5px 0 0",fontWeight:500,
                 letterSpacing:".01em",
               }}>
                 Model previews · Transfers · Tactical insights · Live signals
@@ -1187,14 +1186,14 @@ export default function NewsTrackerPage(){
           <div style={{
             display:"flex",alignItems:"center",gap:7,
             padding:"7px 16px",borderRadius:999,
-            background:"rgba(255,255,255,0.05)",
-            border:"1px solid rgba(255,255,255,0.15)",
+            background:"var(--bg-glass)",
+            border:"1px solid var(--border-strong)",
             flexShrink:0,
           }}>
-            <span style={{width:7,height:7,borderRadius:"50%",background:"#ffffff",
-              boxShadow:"0 0 10px rgba(255,255,255,0.6)",
+            <span style={{width:7,height:7,borderRadius:"50%",background:"var(--text)",
+              boxShadow:"0 0 10px var(--blue-glow)",
               animation:"nbPulse 2.2s ease-in-out infinite",display:"inline-block",flexShrink:0}}/>
-            <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.8)",
+            <span style={{fontSize:11,fontWeight:700,color:"var(--text-secondary)",
               letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live feed</span>
           </div>
         </div>
@@ -1213,9 +1212,9 @@ export default function NewsTrackerPage(){
           overflowX:"auto",paddingBottom:8,alignItems:"center",
         }}>
           {TF.map(f=><Chip key={f.key} label={f.label} active={activeType===f.key} color={f.color} count={counts[f.key]} onClick={()=>setActiveType(f.key)}/>)}
-          <div style={{width:1,height:20,background:"rgba(255,255,255,.08)",flexShrink:0,margin:"0 4px"}}/>
+          <div style={{width:1,height:20,background:"var(--border)",flexShrink:0,margin:"0 4px"}}/>
           {LF.map(f=><Chip key={f.key} label={f.label} active={activeLeague===f.key} color={f.color} onClick={()=>setActiveLeague(f.key)}/>)}
-          <div style={{width:1,height:20,background:"rgba(255,255,255,.08)",flexShrink:0,margin:"0 4px"}}/>
+          <div style={{width:1,height:20,background:"var(--border)",flexShrink:0,margin:"0 4px"}}/>
           {SF.map(s=><Chip key={s.key} label={s.label} active={sortMode===s.key} color="rgba(255,255,255,.4)" onClick={()=>setSortMode(s.key)}/>)}
         </div>
       </div>
@@ -1224,9 +1223,9 @@ export default function NewsTrackerPage(){
       {error&&(
         <div style={{
           padding:"14px 18px",marginBottom:20,
-          background:"rgba(255,255,255,0.04)",
-          border:"1px solid rgba(255,255,255,0.12)",
-          borderRadius:8,fontSize:13,color:"rgba(255,255,255,.65)",
+          background:"var(--bg-glass)",
+          border:"1px solid var(--border)",
+          borderRadius:8,fontSize:13,color:"var(--text-secondary)",
         }}>Failed to load: {error}</div>
       )}
 

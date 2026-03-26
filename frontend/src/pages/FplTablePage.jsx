@@ -1,803 +1,466 @@
-// pages/FplTablePage.jsx — upgraded columns, better algorithms, full names
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { getFplPredictorTable } from "../api/api";
+/*
+ * StatinSite — iOS Glass Design System v2
+ * Apple-inspired: depth, motion, clarity, glassmorphism
+ * Light + Dark via [data-theme] on <html>
+ * Drop: frontend/src/index.css
+ */
 
-/* ── Responsive hook ── */
-function useIsMobile(bp = 768) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
+/* ══════════════════════════════════════════════════════════
+   FONTS
+══════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ══════════════════════════════════════════════════════════
+   DARK THEME (default)
+══════════════════════════════════════════════════════════ */
+:root, [data-theme="dark"] {
+  --bg:              #0a0a0a;
+  --bg-secondary:    #111111;
+  --bg-tertiary:     #1a1a1a;
+  --bg-card:         rgba(18, 18, 18, 0.92);
+  --bg-glass:        rgba(255, 255, 255, 0.048);
+  --bg-glass-strong: rgba(255, 255, 255, 0.08);
+  --bg-hover:        rgba(255, 255, 255, 0.055);
+  --bg-active:       rgba(255, 255, 255, 0.09);
+  --bg-input:        rgba(255, 255, 255, 0.06);
+
+  --text:            rgba(255, 255, 255, 0.92);
+  --text-secondary:  rgba(255, 255, 255, 0.60);
+  --text-muted:      rgba(255, 255, 255, 0.36);
+  --text-dim:        rgba(255, 255, 255, 0.18);
+  --text-soft:       rgba(255, 255, 255, 0.78);
+  --text-mid:        rgba(255, 255, 255, 0.28);
+
+  --border:          rgba(255, 255, 255, 0.08);
+  --border-soft:     rgba(255, 255, 255, 0.05);
+  --border-strong:   rgba(255, 255, 255, 0.14);
+  --border-focus:    rgba(10, 132, 255, 0.55);
+
+  --glass-bg:        rgba(255, 255, 255, 0.04);
+  --glass-border:    rgba(255, 255, 255, 0.10);
+  --glass-blur:      blur(20px) saturate(180%);
+
+  --blue:            #0a84ff;
+  --blue-soft:       rgba(10, 132, 255, 0.15);
+  --blue-glow:       rgba(10, 132, 255, 0.35);
+  --blue-dark:       #1d6fa4;
+  --green:           #30d158;
+  --green-bright:    #30d158;
+  --green-soft:      rgba(48, 209, 88, 0.15);
+  --amber:           #ff9f0a;
+  --amber-bright:    #ff9f0a;
+  --amber-soft:      rgba(255, 159, 10, 0.15);
+  --red:             #ff453a;
+  --red-soft:        rgba(255, 69, 58, 0.15);
+  --red-live:        #ff453a;
+  --purple:          #bf5af2;
+  --purple-soft:     rgba(191, 90, 242, 0.15);
+  --cyan:            #64d2ff;
+  --pink:            #ff375f;
+  --orange:          #ff9f0a;
+
+  --shadow-card:     0 2px 20px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.30);
+  --shadow-hover:    0 8px 40px rgba(0,0,0,.60), 0 0 0 1px rgba(255,255,255,.08);
+  --shadow-lift:     0 20px 60px rgba(0,0,0,.55), 0 4px 16px rgba(0,0,0,.40);
+  --shadow-glow-blue:   0 0 20px rgba(10,132,255,.30);
+  --shadow-glow-green:  0 0 20px rgba(48,209,88,.30);
+  --shadow-glow-amber:  0 0 20px rgba(255,159,10,.30);
+  --shadow-glow-red:    0 0 20px rgba(255,69,58,.30);
+
+  --scrollbar-thumb: rgba(255,255,255,.10);
+  --scrollbar-hover: rgba(255,255,255,.20);
+
+  --table-bg:           rgba(255,255,255,.025);
+  --table-header-bg:    rgba(255,255,255,.04);
+  --table-header-color: rgba(255,255,255,.38);
+  --table-border:       rgba(255,255,255,.06);
+  --table-row-hover:    rgba(255,255,255,.04);
+  --table-sticky-bg:    #0d0d0d;
+
+  --pill-bg:            rgba(255,255,255,.05);
+  --pill-border:        rgba(255,255,255,.10);
+  --pill-color:         rgba(255,255,255,.45);
+  --pill-active-bg:     rgba(10,132,255,.18);
+  --pill-active-border: rgba(10,132,255,.50);
+  --pill-active-color:  #0a84ff;
+  --input-bg:           rgba(255,255,255,.06);
+  --input-border:       rgba(255,255,255,.10);
+  --input-color:        rgba(255,255,255,.88);
+
+  --tooltip-bg:     rgba(10,12,20,.97);
+  --tooltip-border: rgba(10,132,255,.30);
+  --modal-bg:       #0d1424;
+  --modal-border:   rgba(10,132,255,.20);
+  --modal-overlay:  rgba(0,0,0,.72);
+
+  --orb-1: radial-gradient(ellipse 600px 400px at 20% -10%, rgba(10,132,255,.12), transparent);
+  --orb-2: radial-gradient(ellipse 500px 350px at 80% 110%, rgba(48,209,88,.08), transparent);
 }
 
-/* ── Club colours ── */
-const TEAM_COLORS = {
-  ARS:"#ef0107",AVL:"#95bfe5",BOU:"#da291c",BRE:"#e30613",
-  BHA:"#0057b8",CHE:"#034694",CRY:"#1b458f",EVE:"#003399",
-  FUL:"#ffffff",IPS:"#3A64A3",LEI:"#0053A0",LIV:"#c8102e",
-  MCI:"#6cabdd",MUN:"#da291c",NEW:"#241f20",NFO:"#dd0000",
-  SOU:"#D71920",TOT:"#132257",WHU:"#7a263a",WOL:"#fdb913",
-};
-const TEAM_BADGES = {
-  ARS:"https://resources.premierleague.com/premierleague/badges/50/t3.png",
-  AVL:"https://resources.premierleague.com/premierleague/badges/50/t7.png",
-  BOU:"https://resources.premierleague.com/premierleague/badges/50/t91.png",
-  BRE:"https://resources.premierleague.com/premierleague/badges/50/t94.png",
-  BHA:"https://resources.premierleague.com/premierleague/badges/50/t36.png",
-  CHE:"https://resources.premierleague.com/premierleague/badges/50/t8.png",
-  CRY:"https://resources.premierleague.com/premierleague/badges/50/t31.png",
-  EVE:"https://resources.premierleague.com/premierleague/badges/50/t11.png",
-  FUL:"https://resources.premierleague.com/premierleague/badges/50/t54.png",
-  IPS:"https://resources.premierleague.com/premierleague/badges/50/t40.png",
-  LEI:"https://resources.premierleague.com/premierleague/badges/50/t13.png",
-  LIV:"https://resources.premierleague.com/premierleague/badges/50/t14.png",
-  MCI:"https://resources.premierleague.com/premierleague/badges/50/t43.png",
-  MUN:"https://resources.premierleague.com/premierleague/badges/50/t1.png",
-  NEW:"https://resources.premierleague.com/premierleague/badges/50/t4.png",
-  NFO:"https://resources.premierleague.com/premierleague/badges/50/t17.png",
-  SOU:"https://resources.premierleague.com/premierleague/badges/50/t20.png",
-  TOT:"https://resources.premierleague.com/premierleague/badges/50/t6.png",
-  WHU:"https://resources.premierleague.com/premierleague/badges/50/t21.png",
-  WOL:"https://resources.premierleague.com/premierleague/badges/50/t39.png",
-};
+/* ══════════════════════════════════════════════════════════
+   LIGHT THEME — iOS white/frosted
+══════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg:              #f5f5f7;
+  --bg-secondary:    #ffffff;
+  --bg-tertiary:     #f0f0f2;
+  --bg-card:         rgba(255,255,255,.92);
+  --bg-glass:        rgba(255,255,255,.72);
+  --bg-glass-strong: rgba(255,255,255,.92);
+  --bg-hover:        rgba(0,0,0,.04);
+  --bg-active:       rgba(0,0,0,.07);
+  --bg-input:        rgba(0,0,0,.04);
 
-/* ── Column tooltip definitions ── */
-const TIPS = {
-  form:            "FPL rolling form score (avg points over last 4 gameweeks). Higher = hotter player.",
-  threat:          "FPL Threat score derived from shots and shot quality. Higher = more likely to score.",
-  creativity:      "FPL Creativity score derived from chances created and key passes. Higher = more assists potential.",
-  attack:          "Combined attacking involvement = Threat + Creativity. Best single number for all-round attack.",
-  c_score:         "Captain Score: EP×2 adjusted for form trajectory, differential value, and ownership. Higher = better armband pick.",
-  fdr:             "Fixture Difficulty Rating for next gameweek (1=very easy, 5=very hard). From official FPL data.",
-  fixture_run:     "Fixture Run Score 0–10 for next 5 gameweeks. Weighted so the upcoming GW counts more. 10 = easiest run.",
-  minutes:         "Minutes Security 0–100. Combines injury status (45%), season minutes rate (35%), and recent form presence (20%).",
-  reliability:     "Reliability Score 0–100. Combines Minutes Security, availability chance, projected points and form. Best overall 'safe pick' indicator.",
-  start_pct:       "Official FPL probability of playing next round (from Premier League). 100% = fully fit, 75%/50%/25% = varying doubt.",
-  status:          "Player availability: ✓ Available · ? Doubtful · ✗ Injured · ⊘ Suspended",
-  gw:              "Model-projected FPL points for this specific gameweek (form × FDR multiplier).",
-  next5:           "Total projected FPL points across the next 5 gameweeks.",
-  season_total:    "Projected total FPL points for the remainder of the season.",
-  pts_per_million: "Expected Points per £1m of cost, scaled by position so GK/DEF/MID/FWD are comparable.",
-  season_pts:      "Actual FPL points accumulated so far this season.",
-  owned:           "Percentage of FPL managers who own this player.",
-  transfers_in:    "Number of times this player was transferred IN this gameweek.",
-  transfers_out:   "Number of times this player was transferred OUT this gameweek.",
-  goals:           "Goals scored this season.",
-  assists:         "Assists recorded this season.",
-  clean_sheets:    "Clean sheets kept this season.",
-  bonus:           "Average FPL bonus points per game this season.",
-  xg90:            "Expected goals per 90 minutes (goals ÷ 90-minute appearances). Better than raw goals for predicting future scoring.",
-  xa90:            "Expected assists per 90 minutes (assists ÷ 90-minute appearances). Better than raw assists for predicting future creativity.",
-  yellow_cards:    "Yellow cards this season. High number = suspension risk.",
-};
+  --text:            rgba(0,0,0,.88);
+  --text-secondary:  rgba(0,0,0,.55);
+  --text-muted:      rgba(0,0,0,.38);
+  --text-dim:        rgba(0,0,0,.20);
+  --text-soft:       rgba(0,0,0,.72);
+  --text-mid:        rgba(0,0,0,.30);
 
-/* ── Helpers ── */
-function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+  --border:          rgba(0,0,0,.10);
+  --border-soft:     rgba(0,0,0,.06);
+  --border-strong:   rgba(0,0,0,.18);
+  --border-focus:    rgba(0,122,255,.55);
 
-function formatPlayerName(name) {
-  if (!name) return "-";
-  const clean = String(name).replace(/\s+/g, " ").trim();
-  const parts = clean.split(" ").filter(Boolean);
-  if (parts.length <= 2) return clean;
-  const conn = ["van","von","de","da","del","di","la","le"];
-  const sl = parts[parts.length - 2]?.toLowerCase();
-  if (conn.includes(sl)) return `${parts[parts.length - 2]} ${parts[parts.length - 1]}`;
-  return `${parts[0]} ${parts[parts.length - 1]}`;
+  --glass-bg:        rgba(255,255,255,.72);
+  --glass-border:    rgba(0,0,0,.10);
+  --glass-blur:      blur(20px) saturate(200%);
+
+  --blue:            #007aff;
+  --blue-soft:       rgba(0,122,255,.12);
+  --blue-glow:       rgba(0,122,255,.25);
+  --blue-dark:       #005ec4;
+  --green:           #34c759;
+  --green-bright:    #34c759;
+  --green-soft:      rgba(52,199,89,.12);
+  --amber:           #ff9500;
+  --amber-bright:    #ff9500;
+  --amber-soft:      rgba(255,149,0,.12);
+  --red:             #ff3b30;
+  --red-soft:        rgba(255,59,48,.12);
+  --red-live:        #ff3b30;
+  --purple:          #af52de;
+  --purple-soft:     rgba(175,82,222,.12);
+  --cyan:            #32ade6;
+  --pink:            #ff2d55;
+  --orange:          #ff9500;
+
+  --shadow-card:     0 2px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.06);
+  --shadow-hover:    0 8px 32px rgba(0,0,0,.13), 0 2px 8px rgba(0,0,0,.08);
+  --shadow-lift:     0 20px 48px rgba(0,0,0,.16), 0 4px 12px rgba(0,0,0,.10);
+  --shadow-glow-blue:   0 0 16px rgba(0,122,255,.20);
+  --shadow-glow-green:  0 0 16px rgba(52,199,89,.20);
+  --shadow-glow-amber:  0 0 16px rgba(255,149,0,.20);
+  --shadow-glow-red:    0 0 16px rgba(255,59,48,.20);
+
+  --scrollbar-thumb: rgba(0,0,0,.14);
+  --scrollbar-hover: rgba(0,0,0,.26);
+
+  --table-bg:           rgba(255,255,255,.95);
+  --table-header-bg:    rgba(0,0,0,.04);
+  --table-header-color: rgba(0,0,0,.50);
+  --table-border:       rgba(0,0,0,.09);
+  --table-row-hover:    rgba(0,122,255,.04);
+  --table-sticky-bg:    #ffffff;
+
+  --pill-bg:            rgba(0,0,0,.04);
+  --pill-border:        rgba(0,0,0,.12);
+  --pill-color:         rgba(0,0,0,.45);
+  --pill-active-bg:     rgba(0,122,255,.10);
+  --pill-active-border: rgba(0,122,255,.40);
+  --pill-active-color:  #007aff;
+  --input-bg:           rgba(0,0,0,.04);
+  --input-border:       rgba(0,0,0,.12);
+  --input-color:        rgba(0,0,0,.88);
+
+  --tooltip-bg:     rgba(255,255,255,.97);
+  --tooltip-border: rgba(0,122,255,.25);
+  --modal-bg:       #ffffff;
+  --modal-border:   rgba(0,0,0,.12);
+  --modal-overlay:  rgba(0,0,0,.40);
+
+  --orb-1: radial-gradient(ellipse 600px 400px at 20% -10%, rgba(0,122,255,.07), transparent);
+  --orb-2: radial-gradient(ellipse 500px 350px at 80% 110%, rgba(52,199,89,.05), transparent);
 }
 
-function getTeamTextColor(team) {
-  return ["FUL","WOL","AVL","MCI"].includes(team) ? "#050505" : "#ffffff";
+/* ══════════════════════════════════════════════════════════
+   SMOOTH THEME TRANSITIONS
+══════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+  transition:
+    background-color 0.22s cubic-bezier(0.4,0,0.2,1),
+    border-color     0.22s cubic-bezier(0.4,0,0.2,1),
+    color            0.18s cubic-bezier(0.4,0,0.2,1),
+    box-shadow       0.22s cubic-bezier(0.4,0,0.2,1);
+}
+/* Never transition SVG internals — kills animations */
+svg *, canvas { transition: none !important; }
+
+/* ══════════════════════════════════════════════════════════
+   NON-COLOUR TOKENS
+══════════════════════════════════════════════════════════ */
+:root {
+  --r-xs:   6px; --r-sm:  10px; --r-md: 14px;
+  --r-lg:  18px; --r-xl:  22px; --r-2xl: 28px; --r-pill: 999px;
+  --page-px: 20px; --page-max: 1280px;
+  --ease: cubic-bezier(0.22,1,0.36,1);
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --t-fast: 0.13s; --t-med: 0.22s; --t-slow: 0.36s;
+  --font-body:    -apple-system, 'Inter', system-ui, sans-serif;
+  --font-display: -apple-system, 'Inter', system-ui, sans-serif;
+  --font-mono:    'SF Mono','JetBrains Mono','Fira Code',monospace;
 }
 
-/* ── Availability parsing from FPL news string ──
-   FPL news examples:
-     "Knock - 75% chance of playing"
-     "Calf injury - Expected back 01 Mar"
-     "Suspended for 1 match"
-     ""  (fully available)
-*/
-function parseAvailability(row) {
-  const status  = row?.status || "a";          // a/d/i/s/u/n from FPL
-  const chance  = row?.chance_next_round;       // 0/25/50/75/100/null
-  const news    = String(row?.news || "").trim();
-
-  // Extract injury type from news: everything before the first " - " or "injury"
-  let injuryType = "";
-  if (news) {
-    // "Calf injury - Expected back..."  → "Calf injury"
-    // "Knock - 75% chance..."           → "Knock"
-    // "Suspended for 1 match"           → "Suspended"
-    const dashIdx = news.indexOf(" - ");
-    const raw = dashIdx > -1 ? news.slice(0, dashIdx) : news;
-    // Capitalise first letter, truncate if very long
-    injuryType = raw.length > 30 ? raw.slice(0, 28) + "…" : raw;
-  }
-
-  // Determine display chance %
-  let pct = 100;
-  if (status === "s") pct = 0;
-  else if (status === "u") pct = 0;
-  else if (chance !== null && chance !== undefined) pct = Number(chance);
-  else if (status === "i") pct = 25;
-  else if (status === "d") pct = 75;
-
-  // Build display string
-  let display;
-  if (pct === 100 && !injuryType) {
-    display = "100%";
-  } else if (status === "s") {
-    display = `Suspended${injuryType ? ` (${injuryType})` : ""}`;
-  } else if (injuryType) {
-    display = `${pct}% (${injuryType})`;
-  } else {
-    display = `${pct}%`;
-  }
-
-  // Colour
-  const color = pct === 100 ? "#22c55e"
-    : pct >= 75  ? "#a3e635"
-    : pct >= 50  ? "#f59e0b"
-    : pct >= 25  ? "#ef4444"
-    : "#9333ea";   // suspended = purple
-
-  return { display, color, pct, injuryType };
+/* ══════════════════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════════════════ */
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.6;
+  min-height: 100vh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+#root { min-height: 100vh; position: relative; z-index: 1; }
+.app-shell { display: flex; flex-direction: column; min-height: 100vh; }
 
-function formatSigned(v) {
-  const n = Number(v);
-  if (isNaN(n) || n === 0) return "0";
-  return n > 0 ? `+${n.toLocaleString()}` : n.toLocaleString();
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.025em; color: var(--text); line-height: 1.2;
 }
+h1 { font-size: clamp(22px,4vw,30px); }
+h2 { font-size: clamp(18px,3vw,22px); }
+h3 { font-size: clamp(14px,2.5vw,17px); }
+p  { color: var(--text-secondary); line-height: 1.65; }
+a  { color: inherit; text-decoration: none; }
+button, input, select, textarea { font-family: var(--font-body); color: var(--text); }
 
-/* ── Heat-map colour scale ── */
-function heatColor(value, min, max) {
-  const num = Number(value);
-  if (isNaN(num) || max <= min) return "transparent";
-  const ratio = clamp((num - min) / (max - min), 0, 1);
-  if (ratio <= 0.20) return "#4b0f13";
-  if (ratio <= 0.40) return "#8e1b1b";
-  if (ratio <= 0.60) return "#c26519";
-  if (ratio <= 0.75) return "#d8b53e";
-  if (ratio <= 0.90) return "#8ccf6d";
-  return "#19b45a";
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+* { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+
+/* ══════════════════════════════════════════════════════════
+   PAGE LAYOUT
+══════════════════════════════════════════════════════════ */
+.sn-page-wrap {
+  margin-left: 220px; min-height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1), background 0.25s;
 }
-function heatText(bg) {
-  return ["#d8b53e","#8ccf6d","#19b45a"].includes(bg) ? "#06110a" : "#ffffff";
+@media (max-width: 820px) {
+  .sn-page-wrap { margin-left: 0 !important; padding-top: 52px; padding-bottom: 72px; }
 }
-
-/* ── Components ── */
-function SortArrow({ active, dir }) {
-  if (!active) return <span style={{opacity:0.2,marginLeft:4,fontSize:10}}>↕</span>;
-  return <span style={{marginLeft:4,fontSize:10,color:"#67b1ff"}}>{dir==="asc"?"↑":"↓"}</span>;
+.sn-content { max-width: var(--page-max); margin: 0 auto; padding: 0 var(--page-px); }
+.sn-section { margin-bottom: 48px; }
+.sn-section-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
+.sn-section-bar {
+  width: 3px; height: 36px; border-radius: 2px; flex-shrink: 0; margin-top: 2px;
+  background: linear-gradient(180deg, var(--blue), transparent);
 }
-function RankBadge({ rank }) {
-  const gold=rank===1, silver=rank===2, bronze=rank===3;
-  const bg = gold?"#c8972a":silver?"#8a9aaa":bronze?"#9b6840":"rgba(255,255,255,0.06)";
-  const fg = gold||silver||bronze ? "#fff" : "#5a7a9a";
-  return (
-    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
-      width:22,height:22,borderRadius:5,background:bg,color:fg,fontSize:10,fontWeight:800,
-      flexShrink:0,boxShadow:gold?"0 0 8px rgba(200,151,42,0.5)":"none"}}>{rank}</span>
-  );
+.sn-section-bar--green  { background: linear-gradient(180deg, var(--green), transparent); }
+.sn-section-bar--amber  { background: linear-gradient(180deg, var(--amber), transparent); }
+.sn-section-bar--red    { background: linear-gradient(180deg, var(--red), transparent); }
+.sn-section-bar--purple { background: linear-gradient(180deg, var(--purple), transparent); }
+.sn-section-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin: 0; }
+.sn-section-sub { font-size: 11px; color: var(--text-muted); font-weight: 600; margin: 2px 0 0; }
+.sn-section-count { font-size: 10px; color: var(--text-dim); font-weight: 700; margin-left: auto; margin-top: 6px; }
+
+/* ══════════════════════════════════════════════════════════
+   iOS GLASS CARD SYSTEM
+══════════════════════════════════════════════════════════ */
+.sn-card {
+  border-radius: var(--r-xl);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
-function DiffPill({ label }) {
-  const cfg = {
-    Easy:{bg:"#1f7d3d",fg:"#eafff1"},
-    Medium:{bg:"#a87d1b",fg:"#fff7df"},
-    Hard:{bg:"#8f2424",fg:"#fff0f0"},
-  }[label] || {bg:"#2d2d2d",fg:"#fff"};
-  return (
-    <span style={{display:"inline-block",marginLeft:6,padding:"2px 7px",borderRadius:999,
-      background:cfg.bg,color:cfg.fg,fontSize:10,fontWeight:700}}>{label}</span>
-  );
+.sn-card--glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
 }
-
-function HeatCell({ value, min, max, title, display, onMouseEnter, onMouseLeave }) {
-  const bg = heatColor(Number(value), min, max);
-  return (
-    <td title={title}
-      style={{background:bg,color:heatText(bg),fontWeight:700,fontSize:13}}
-      onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-      {display ?? value}
-    </td>
-  );
+.sn-card--interactive { cursor: pointer; }
+.sn-card--interactive:hover {
+  transform: translateY(-4px) scale(1.005);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lift);
 }
+.sn-card--interactive:active { transform: translateY(-1px) scale(0.995); }
 
-/* ── Main export ── */
-export default function FplTablePage() {
-  const isMobile = useIsMobile();
-  const navigate = useNavigate();
-
-  const [rows,       setRows]       = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [team,       setTeam]       = useState("ALL");
-  const [position,   setPosition]   = useState("ALL");
-  const [maxCost,    setMaxCost]    = useState(15.5);
-  const [minProb,    setMinProb]    = useState(0);
-  const [startGw,    setStartGw]    = useState(30);
-  const [search,     setSearch]     = useState("");
-  const [sortKey,    setSortKey]    = useState("next5_points");
-  const [sortDir,    setSortDir]    = useState("desc");
-  const [showFilters,setShowFilters]= useState(!isMobile);
-  const [tooltip,    setTooltip]    = useState(null);
-  const [modal,      setModal]      = useState(null);
-
-  /* ── Fetch ── */
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getFplPredictorTable({ start_gw:startGw, max_cost:maxCost, min_prob:minProb, team, position })
-      .then(d => { if (!cancelled) { setRows(d.rows || []); setLoading(false); } })
-      .catch(e => { console.error(e); if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [team, position, maxCost, minProb, startGw]);
-
-  /* ── Enrich rows: resolve field aliases + compute derived metrics ── */
-  const enriched = useMemo(() => rows.map(r => {
-    // ── Field resolution (backend field names → frontend names) ──────────
-    const playerName    = r.player || r.name || r.web_name || "";
-    const appearance    = Number(r.appearance_prob ?? r.prob_appear ?? 0);
-    const totalPts      = Number(r.points_so_far   ?? r.total_points  ?? 0);
-    const projSeason    = Number(r.pts_rest_season  ?? r.projected_points ?? 0);
-    const valueScore    = Number(r.value_rest_season ?? r.value_score ?? 0);
-
-    // ── Raw FPL ICT components ───────────────────────────────────────────
-    const creativity = Number(r.creativity   || 0);
-    const threat     = Number(r.threat       || 0);
-    const influence  = Number(r.influence    || 0);
-    const ict        = Number(r.ict_index    || 0);
-    const form       = Number(r.form         || 0);
-
-    // ── Per-GW projected points ──────────────────────────────────────────
-    const p1 = Number(r.pts_gw_1 || 0);
-    const p2 = Number(r.pts_gw_2 || 0);
-    const p3 = Number(r.pts_gw_3 || 0);
-    const p4 = Number(r.pts_gw_4 || 0);
-    const p5 = Number(r.pts_gw_5 || 0);
-    const next5 = p1 + p2 + p3 + p4 + p5;
-
-    // ── Attacking profile (normalised 0-10 scale) ────────────────────────
-    // Threat: FPL raw scale ~0–900, normalise to 0–10
-    const threatNorm = Number(clamp(threat / 90, 0, 10).toFixed(2));
-    // Creativity: FPL raw scale ~0–1500, normalise to 0–10
-    const creativityNorm = Number(clamp(creativity / 150, 0, 10).toFixed(2));
-    // Attack: weighted sum (goals matter more than assists in FPL)
-    const attack = Number((threatNorm * 0.55 + creativityNorm * 0.45).toFixed(2));
-
-    // ── Captain Score — from backend if available, else local formula ───
-    const captainScore = Number(
-      r.captain_score ??
-      (p1 * 0.58 + attack * 1.2 + appearance * 2.4 + valueScore * 0.42).toFixed(2)
-    );
-
-    // ── Fixture difficulty (from backend or derived) ──────────────────
-    const fdr         = Number(r.fixture_difficulty ?? 3);
-    const fixRun      = Number(r.fixture_run_score  ?? clamp((next5 / 35) * 10, 0, 10).toFixed(1));
-    const difLabel    = fdr <= 2 ? "Easy" : fdr >= 4 ? "Hard" : "Medium";
-
-    // ── Minutes Security from backend (upgraded algorithm) ───────────
-    const minsecurity = Number(
-      r.minutes_security ??
-      clamp(appearance * 65 + (appearance * 100) * 0.3 + clamp(form / 8, 0, 1) * 5, 0, 100).toFixed(1)
-    );
-
-    // ── Reliability (safe pick) — composite score ──────────────────────
-    const reliability = Number(clamp(
-      minsecurity * 0.40 +
-      (appearance * 100) * 0.25 +
-      clamp((next5 / 30) * 100, 0, 100) * 0.20 +
-      clamp((form / 8) * 100, 0, 100) * 0.15,
-      0, 100
-    ).toFixed(1));
-
-    // ── Pts per £m (backend upgraded, position-scaled) ────────────────
-    const ptsPerMillion = Number(r.value_score ?? valueScore ?? (p1 / Math.max(r.cost, 1)).toFixed(2));
-
-    // ── Availability ─────────────────────────────────────────────────
-    const avail = parseAvailability(r);
-
-    // ── Transfer data ─────────────────────────────────────────────────
-    const xfersIn  = Number(r.transfers_in_gw  || 0);
-    const xfersOut = Number(r.transfers_out_gw || 0);
-
-    // ── Season stats ─────────────────────────────────────────────────
-    const goals   = Number(r.goals_this_season ?? r.goals   ?? 0);
-    const assists = Number(r.assists_this_season ?? r.assists ?? 0);
-    const cs      = Number(r.clean_sheets_season ?? r.clean_sheets ?? 0);
-    const bonusPg = Number(r.bonus_per_game ?? (Number(r.bonus || 0) / Math.max(Number(r.minutes || 90) / 90, 1)).toFixed(2));
-    const xg90    = Number(r.xg_per90 ?? (goals / Math.max(Number(r.minutes || 90) / 90, 1)).toFixed(2));
-    const xa90    = Number(r.xa90 ?? r.xa_per90 ?? (assists / Math.max(Number(r.minutes || 90) / 90, 1)).toFixed(2));
-    const yellows = Number(r.yellow_cards || 0);
-
-    // ── Merit: ep_next is the cleanest single-GW quality signal ──────
-    const merit = Number(r.merit ?? r.ep_next ?? p1);
-
-    return {
-      ...r,
-      // Resolved fields
-      player:           playerName,
-      player_display:   formatPlayerName(playerName),
-      _posColor:        {GK:"#f2c94c",DEF:"#4f9eff",MID:"#00e09e",FWD:"#ff6b6b"}[r.position] || "#4f9eff",
-      prob_appear:      appearance,
-      value_rest_season: valueScore,
-      pts_rest_season:  projSeason,
-      points_so_far:    totalPts,
-      // Computed
-      merit,
-      threat_norm:      threatNorm,
-      creativity_norm:  creativityNorm,
-      attack,
-      captain_score:    captainScore,
-      fixture_label:    difLabel,
-      fixture_run_score: fixRun,
-      minutes_security:  minsecurity,
-      reliability,
-      pts_per_million:   ptsPerMillion,
-      next5_points:     Number(next5.toFixed(1)),
-      avail_display:    avail.display,
-      avail_color:      avail.color,
-      avail_pct:        avail.pct,
-      transfers_in_gw:  xfersIn,
-      transfers_out_gw: xfersOut,
-      // Season stats
-      goals, assists, clean_sheets: cs, bonus_per_game: bonusPg,
-      xg_per90: xg90, xa_per90: xa90, yellow_cards: yellows,
-    };
-  }), [rows]);
-
-  /* ── Filter + sort ── */
-  const allTeams = useMemo(() =>
-    ["ALL", ...Array.from(new Set(enriched.map(r => r.team))).sort()],
-    [enriched]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return enriched.filter(r => {
-      if (q && !String(r.player || "").toLowerCase().includes(q) &&
-               !String(r.player_display || "").toLowerCase().includes(q) &&
-               !String(r.team || "").toLowerCase().includes(q) &&
-               !String(r.position || "").toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [enriched, search]);
-
-  const sorted = useMemo(() => {
-    const copy = [...filtered];
-    if (!sortKey) return copy;
-    copy.sort((a, b) => {
-      const n1 = Number(a[sortKey]), n2 = Number(b[sortKey]);
-      if (!isNaN(n1) && !isNaN(n2)) return sortDir === "asc" ? n1-n2 : n2-n1;
-      const s1 = String(a[sortKey] ?? "").toLowerCase();
-      const s2 = String(b[sortKey] ?? "").toLowerCase();
-      return sortDir === "asc" ? s1.localeCompare(s2) : s2.localeCompare(s1);
-    });
-    return copy;
-  }, [filtered, sortKey, sortDir]);
-
-  /* ── Heat-map ranges (computed on sorted rows for relative colouring) ── */
-  const ranges = useMemo(() => {
-    const rng = key => ({
-      min: Math.min(...sorted.map(r => Number(r[key] || 0)), 0),
-      max: Math.max(...sorted.map(r => Number(r[key] || 0)), 0.01),
-    });
-    return {
-      merit:          rng("merit"),
-      form:           rng("form"),
-      threat_norm:    rng("threat_norm"),
-      creativity_norm:rng("creativity_norm"),
-      attack:         rng("attack"),
-      captain_score:  rng("captain_score"),
-      fixture_difficulty: rng("fixture_difficulty"),
-      fixture_run_score:  rng("fixture_run_score"),
-      minutes_security:   rng("minutes_security"),
-      reliability:        rng("reliability"),
-      avail_pct:          { min:0, max:100 },
-      pts_gw_1:  rng("pts_gw_1"), pts_gw_2: rng("pts_gw_2"), pts_gw_3: rng("pts_gw_3"),
-      next5_points:    rng("next5_points"),
-      pts_rest_season: rng("pts_rest_season"),
-      pts_per_million: rng("pts_per_million"),
-      points_so_far:   rng("points_so_far"),
-      selected_by_pct: rng("selected_by_pct"),
-      transfers_in_gw: rng("transfers_in_gw"),
-      transfers_out_gw:rng("transfers_out_gw"),
-      goals:           rng("goals"),
-      assists:         rng("assists"),
-      clean_sheets:    rng("clean_sheets"),
-      bonus_per_game:  rng("bonus_per_game"),
-      xg_per90:        rng("xg_per90"),
-      xa_per90:        rng("xa_per90"),
-      yellow_cards:    rng("yellow_cards"),
-    };
-  }, [sorted]);
-
-  function handleSort(key) {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("desc"); }
-  }
-
-  function Th({ col, children, tip, style }) {
-    const active = sortKey === col;
-    return (
-      <th onClick={() => handleSort(col)} title={tip}
-        style={{ cursor:"pointer", whiteSpace:"nowrap", ...style }}>
-        {children}<SortArrow active={active} dir={sortDir}/>
-      </th>
-    );
-  }
-
-  /* ── Loading ── */
-  if (loading) return (
-    <div className="page-shell" style={{ color:"#4a7a9a", padding:24 }}>
-      Loading FPL table…
-    </div>
-  );
-
-  /* ── Render ── */
-  return (
-    <>
-    <div className="page-shell" style={{ paddingBottom: isMobile ? 80 : 40 }}>
-      <style>{`
-        .fpl-tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
-        .fpl-tbl-wrap::-webkit-scrollbar { height:4px; }
-        .fpl-tbl-wrap::-webkit-scrollbar-thumb { background:rgba(103,177,255,0.25); border-radius:4px; }
-        .fpl-tbl { border-collapse:collapse; width:100%; min-width:${isMobile ? "900px" : "1400px"}; }
-        .fpl-tbl th {
-          background:#060d18; color:#4a7a9a; font-size:11px; font-weight:800;
-          padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.07);
-          position:sticky; top:0; z-index:2; white-space:nowrap; letter-spacing:0.04em;
-        }
-        .fpl-tbl td { padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:#c8d8f0; }
-        .fpl-tbl tr:hover td { background:rgba(103,177,255,0.07); }
-        .fpl-tbl tbody tr { transition:transform 160ms cubic-bezier(0.22,1,0.36,1),box-shadow 160ms ease; cursor:pointer; }
-        .fpl-tbl tbody tr:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.4); position:relative; z-index:1; }
-        .sticky-player { position:sticky; left:0; z-index:1; background:#060a14; min-width:${isMobile ? "140px" : "190px"}; }
-        .sticky-player-head { background:#060d18 !important; z-index:3 !important; }
-        .team-badge-cell { font-size:11px; font-weight:800; text-align:center; padding:4px 6px !important; }
-        /* col group separators */
-        .fpl-tbl th.col-sep, .fpl-tbl td.col-sep { border-left:1px solid rgba(103,177,255,0.12); }
-        /* filter pills */
-        .fpl-pill { padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800;
-          cursor:pointer; border:1px solid rgba(255,255,255,0.1);
-          background:rgba(255,255,255,0.05); color:#4a7a9a; font-family:inherit; white-space:nowrap; min-height:36px; transition:all 0.15s; }
-        .fpl-pill.active { background:rgba(103,177,255,0.18); border-color:rgba(103,177,255,0.45); color:#67b1ff; }
-        .fpl-pill:hover { background:rgba(255,255,255,0.09); }
-        /* tooltip */
-        .fpl-tip { position:fixed; z-index:9999; pointer-events:none; background:rgba(6,13,24,0.97);
-          border:1px solid rgba(103,177,255,0.3); border-radius:12px; padding:12px 16px;
-          min-width:220px; box-shadow:0 8px 32px rgba(0,0,0,0.7);
-          animation:fplTipIn 140ms cubic-bezier(0.22,1,0.36,1); }
-        @keyframes fplTipIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-        /* modal */
-        .fpl-modal-bg { position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.72);
-          backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
-        .fpl-modal { background:#08101e; border:1px solid rgba(103,177,255,0.2); border-radius:20px;
-          padding:28px 28px 24px; width:min(560px,94vw); max-height:88vh; overflow-y:auto; position:relative; }
-        .fpl-modal::-webkit-scrollbar{width:4px}
-        .fpl-modal::-webkit-scrollbar-thumb{background:rgba(103,177,255,0.2);border-radius:4px}
-      `}</style>
-
-      <div className="page-content-wide">
-
-        {/* ── Header ── */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          flexWrap:"wrap", gap:10, marginBottom:12 }}>
-          <div>
-            <h1 className="page-title-left" style={{ marginBottom:2, fontSize:isMobile?20:26 }}>
-              FPL Analytics Table
-            </h1>
-            <div style={{ fontSize:10, color:"#2a4a6a", fontWeight:700 }}>
-              {sorted.length} players · click headers to sort · hover cells for tooltips · click rows for full analytics
-            </div>
-          </div>
-          {isMobile && (
-            <button onClick={() => setShowFilters(v => !v)} style={{
-              padding:"7px 14px", borderRadius:10, fontSize:11, fontWeight:800,
-              background:showFilters?"rgba(103,177,255,0.15)":"rgba(255,255,255,0.05)",
-              border:"1px solid rgba(103,177,255,0.3)", color:"#67b1ff", cursor:"pointer", fontFamily:"inherit",
-            }}>
-              {showFilters ? "▲ Filters" : "▼ Filters"}
-            </button>
-          )}
-        </div>
-
-        {/* ── Filters ── */}
-        {(showFilters || !isMobile) && (
-          <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)",
-            borderRadius:14, padding:isMobile?"12px":"16px 20px", marginBottom:12 }}>
-            {/* Position + Team pills */}
-            <div style={{ display:"flex", gap:5, flexWrap:"nowrap", overflowX:"auto",
-              WebkitOverflowScrolling:"touch", scrollbarWidth:"none", marginBottom:10, paddingBottom:2 }}>
-              {["ALL","GK","DEF","MID","FWD"].map(p => (
-                <button key={p} className={`fpl-pill${position===p?" active":""}`}
-                  onClick={() => setPosition(p)}>{p}</button>
-              ))}
-              <div style={{ width:1, height:28, background:"rgba(255,255,255,0.08)", flexShrink:0, alignSelf:"center" }}/>
-              {allTeams.slice(0, isMobile ? 8 : allTeams.length).map(t => (
-                <button key={t} className={`fpl-pill${team===t?" active":""}`}
-                  onClick={() => setTeam(t)}>{t}</button>
-              ))}
-            </div>
-            {/* Inputs */}
-            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr 1fr auto", gap:8 }}>
-              {[
-                { label:"MAX COST",  val:maxCost,  set:setMaxCost,  type:"number", step:0.1 },
-                { label:"START GW",  val:startGw,  set:setStartGw,  type:"number" },
-                { label:"MIN PROB",  val:minProb,  set:setMinProb,  type:"number", step:0.01, min:0, max:1 },
-              ].map(({ label, val, set, type, step, min, max }) => (
-                <div key={label} style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                  <label style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>{label}</label>
-                  <input type={type} step={step} min={min} max={max} value={val}
-                    onChange={e => set(Number(e.target.value))}
-                    style={{ padding:"7px 10px", borderRadius:8, fontSize:13, background:"rgba(255,255,255,0.05)",
-                      border:"1px solid rgba(255,255,255,0.1)", color:"#e8f0ff", outline:"none", minHeight:36 }}/>
-                </div>
-              ))}
-              <div style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:isMobile?"1/-1":"auto" }}>
-                <label style={{ fontSize:9, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.08em" }}>SEARCH</label>
-                <input type="text" placeholder="Player, team, position…" value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  style={{ padding:"7px 10px", borderRadius:8, fontSize:14, background:"rgba(255,255,255,0.05)",
-                    border:"1px solid rgba(255,255,255,0.1)", color:"#e8f0ff", outline:"none", minHeight:36 }}/>
-              </div>
-              <button onClick={() => { setTeam("ALL"); setPosition("ALL"); setMaxCost(15.5); setMinProb(0); setStartGw(30); setSearch(""); }}
-                style={{ padding:"7px 14px", borderRadius:8, fontSize:11, fontWeight:800,
-                  background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)",
-                  color:"#4a7a9a", cursor:"pointer", fontFamily:"inherit", alignSelf:"flex-end",
-                  minHeight:36, gridColumn:isMobile?"1/-1":"auto" }}>
-                Clear
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Table ── */}
-        <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.07)",
-          borderRadius:14, overflow:"hidden" }}>
-          <div className="fpl-tbl-wrap">
-            <table className="fpl-tbl">
-              <thead>
-                <tr>
-                  {/* Identity */}
-                  <th className="sticky-player sticky-player-head"># &nbsp; Player</th>
-                  <Th col="team">Team</Th>
-                  <Th col="position">Pos</Th>
-                  <Th col="cost">Cost</Th>
-                  {/* Attacking profile */}
-                  <Th col="form"           tip={TIPS.form}       style={{}} className="col-sep">Form</Th>
-                  <Th col="threat_norm"    tip={TIPS.threat}>Threat</Th>
-                  <Th col="creativity_norm"tip={TIPS.creativity}>Creativity</Th>
-                  <Th col="attack"         tip={TIPS.attack}>Attack</Th>
-                  <Th col="captain_score"  tip={TIPS.c_score}>Captain Score</Th>
-                  {/* Fixtures */}
-                  <th className="col-sep">Next Opponent</th>
-                  <Th col="fixture_difficulty" tip={TIPS.fdr}>FDR</Th>
-                  <Th col="fixture_run_score"  tip={TIPS.fixture_run}>Fixture Run (5)</Th>
-                  {/* Availability */}
-                  <Th col="minutes_security"tip={TIPS.minutes} className="col-sep">Minutes</Th>
-                  <Th col="reliability"    tip={TIPS.reliability}>Reliability</Th>
-                  <Th col="avail_pct"      tip={TIPS.start_pct}>Start %</Th>
-                  <th title={TIPS.status}>Status</th>
-                  {/* GW projections */}
-                  <Th col="pts_gw_1"   tip={TIPS.gw} className="col-sep">GW{startGw}</Th>
-                  <Th col="pts_gw_2"   tip={TIPS.gw}>GW{startGw+1}</Th>
-                  <Th col="pts_gw_3"   tip={TIPS.gw}>GW{startGw+2}</Th>
-                  <Th col="next5_points" tip={TIPS.next5}>Next 5 GWs</Th>
-                  <Th col="pts_rest_season" tip={TIPS.season_total}>Season Total Pts</Th>
-                  <Th col="pts_per_million" tip={TIPS.pts_per_million}>Pts per £m</Th>
-                  <Th col="points_so_far"   tip={TIPS.season_pts}>Season Points So Far</Th>
-                  {/* Ownership + transfers */}
-                  <Th col="selected_by_pct" tip={TIPS.owned} className="col-sep">Owned %</Th>
-                  <Th col="transfers_in_gw" tip={TIPS.transfers_in}>Transferred In</Th>
-                  <Th col="transfers_out_gw"tip={TIPS.transfers_out}>Transferred Out</Th>
-                  {/* Season stats */}
-                  <Th col="goals"          tip={TIPS.goals}  className="col-sep">Goals</Th>
-                  <Th col="assists"        tip={TIPS.assists}>Assists</Th>
-                  <Th col="clean_sheets"   tip={TIPS.clean_sheets}>Clean Sheets</Th>
-                  <Th col="bonus_per_game" tip={TIPS.bonus}>Bonus / Game</Th>
-                  <Th col="xg_per90"       tip={TIPS.xg90}>xG / 90</Th>
-                  <Th col="xa_per90"       tip={TIPS.xa90}>xA / 90</Th>
-                  <Th col="yellow_cards"   tip={TIPS.yellow_cards}>Yellow Cards</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((r, idx) => (
-                  <tr key={r.player_id} onClick={() => setModal(r)}>
-                    {/* ── Identity ── */}
-                    <td className="sticky-player">
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <RankBadge rank={idx+1}/>
-                        <img src={TEAM_BADGES[r.team]} alt={r.team}
-                          style={{ width:16, height:16, objectFit:"contain", flexShrink:0 }}
-                          onError={e => { e.currentTarget.style.display="none"; }}/>
-                        <span style={{ fontWeight:700, fontSize:isMobile?12:13, color:"#f0f6ff",
-                          whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:isMobile?90:150 }}>
-                          {r.player_display}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="team-badge-cell"
-                      style={{ background:TEAM_COLORS[r.team]||"#222", color:getTeamTextColor(r.team) }}>
-                      {r.team}
-                    </td>
-                    <td style={{ fontWeight:700, color:"#8ab8e0", fontSize:11, letterSpacing:"0.06em" }}>{r.position}</td>
-                    <td style={{ fontWeight:700 }}>£{r.cost}m</td>
-
-                    {/* ── Attacking profile ── */}
-                    <HeatCell value={r.form}            min={ranges.form.min}            max={ranges.form.max}            tip={TIPS.form}       className="col-sep"/>
-                    <HeatCell value={r.threat_norm}     min={ranges.threat_norm.min}     max={ranges.threat_norm.max}     tip={TIPS.threat}
-                      onMouseEnter={e => setTooltip({ key:"threat",      x:e.clientX+12, y:e.clientY-8 })}
-                      onMouseLeave={() => setTooltip(null)}/>
-                    <HeatCell value={r.creativity_norm} min={ranges.creativity_norm.min} max={ranges.creativity_norm.max} tip={TIPS.creativity}
-                      onMouseEnter={e => setTooltip({ key:"creativity",  x:e.clientX+12, y:e.clientY-8 })}
-                      onMouseLeave={() => setTooltip(null)}/>
-                    <HeatCell value={r.attack}          min={ranges.attack.min}          max={ranges.attack.max}          tip={TIPS.attack}
-                      onMouseEnter={e => setTooltip({ key:"attack",      x:e.clientX+12, y:e.clientY-8 })}
-                      onMouseLeave={() => setTooltip(null)}/>
-                    <HeatCell value={r.captain_score}   min={ranges.captain_score.min}   max={ranges.captain_score.max}   tip={TIPS.c_score}/>
-
-                    {/* ── Fixtures ── */}
-                    <td className="col-sep" style={{ whiteSpace:"nowrap", fontSize:11 }}>
-                      {r.next_opp}<DiffPill label={r.fixture_label}/>
-                    </td>
-                    <HeatCell value={r.fixture_difficulty}  min={ranges.fixture_difficulty.min}  max={ranges.fixture_difficulty.max}  tip={TIPS.fdr}/>
-                    <HeatCell value={r.fixture_run_score}   min={ranges.fixture_run_score.min}   max={ranges.fixture_run_score.max}   tip={TIPS.fixture_run}/>
-
-                    {/* ── Availability ── */}
-                    <HeatCell value={r.minutes_security} min={ranges.minutes_security.min} max={ranges.minutes_security.max}
-                      tip={TIPS.minutes} display={`${r.minutes_security}`} className="col-sep"/>
-                    <HeatCell value={r.reliability}      min={ranges.reliability.min}      max={ranges.reliability.max}      tip={TIPS.reliability}/>
-                    <HeatCell value={r.avail_pct}        min={0}                           max={100}                         tip={TIPS.start_pct}
-                      display={`${r.avail_pct}%`}/>
-                    <td title={r.avail_display} style={{ fontSize:11, color:r.avail_color, whiteSpace:"nowrap", fontWeight:600 }}>
-                      {r.avail_display}
-                    </td>
-
-                    {/* ── GW projections ── */}
-                    <HeatCell value={r.pts_gw_1} min={ranges.pts_gw_1.min} max={ranges.pts_gw_1.max} tip={TIPS.gw} className="col-sep"/>
-                    <HeatCell value={r.pts_gw_2} min={ranges.pts_gw_2.min} max={ranges.pts_gw_2.max} tip={TIPS.gw}/>
-                    <HeatCell value={r.pts_gw_3} min={ranges.pts_gw_3.min} max={ranges.pts_gw_3.max} tip={TIPS.gw}/>
-                    <HeatCell value={r.next5_points}    min={ranges.next5_points.min}    max={ranges.next5_points.max}    tip={TIPS.next5}/>
-                    <HeatCell value={r.pts_rest_season} min={ranges.pts_rest_season.min} max={ranges.pts_rest_season.max} tip={TIPS.season_total}/>
-                    <HeatCell value={r.pts_per_million} min={ranges.pts_per_million.min} max={ranges.pts_per_million.max} tip={TIPS.pts_per_million}/>
-                    <HeatCell value={r.points_so_far}   min={ranges.points_so_far.min}   max={ranges.points_so_far.max}   tip={TIPS.season_pts}/>
-
-                    {/* ── Ownership + transfers ── */}
-                    <HeatCell value={r.selected_by_pct}  min={ranges.selected_by_pct.min}  max={ranges.selected_by_pct.max}
-                      display={`${Number(r.selected_by_pct).toFixed(1)}%`} tip={TIPS.owned} className="col-sep"/>
-                    <HeatCell value={r.transfers_in_gw}  min={ranges.transfers_in_gw.min}  max={ranges.transfers_in_gw.max}
-                      display={r.transfers_in_gw.toLocaleString()} tip={TIPS.transfers_in}/>
-                    <HeatCell value={r.transfers_out_gw} min={0} max={ranges.transfers_out_gw.max}
-                      display={r.transfers_out_gw.toLocaleString()} tip={TIPS.transfers_out}/>
-
-                    {/* ── Season stats ── */}
-                    <HeatCell value={r.goals}         min={ranges.goals.min}         max={ranges.goals.max}         tip={TIPS.goals}        className="col-sep"/>
-                    <HeatCell value={r.assists}       min={ranges.assists.min}       max={ranges.assists.max}       tip={TIPS.assists}/>
-                    <HeatCell value={r.clean_sheets}  min={ranges.clean_sheets.min}  max={ranges.clean_sheets.max}  tip={TIPS.clean_sheets}/>
-                    <HeatCell value={r.bonus_per_game}min={ranges.bonus_per_game.min}max={ranges.bonus_per_game.max}tip={TIPS.bonus}
-                      display={r.bonus_per_game.toFixed(2)}/>
-                    <HeatCell value={r.xg_per90}      min={ranges.xg_per90.min}      max={ranges.xg_per90.max}      tip={TIPS.xg90}
-                      display={r.xg_per90.toFixed(2)}/>
-                    <HeatCell value={r.xa_per90}      min={ranges.xa_per90.min}      max={ranges.xa_per90.max}      tip={TIPS.xa90}
-                      display={r.xa_per90.toFixed(2)}/>
-                    <HeatCell value={r.yellow_cards}  min={0}                        max={Math.max(ranges.yellow_cards.max,1)}
-                      tip={TIPS.yellow_cards}/>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* ── Tooltip ── */}
-    {tooltip && (
-      <div className="fpl-tip" style={{ left:tooltip.x, top:tooltip.y }}>
-        <div style={{ fontSize:9, fontWeight:800, color:"#4a7a9a", letterSpacing:"0.1em", marginBottom:6, textTransform:"uppercase" }}>
-          {tooltip.key.replace(/_/g," ")}
-        </div>
-        <div style={{ fontSize:12, color:"#c8d8f0", lineHeight:1.65 }}>
-          {TIPS[tooltip.key] || ""}
-        </div>
-      </div>
-    )}
-
-    {/* ── Player Modal ── */}
-    {modal && (
-      <div className="fpl-modal-bg" onClick={() => setModal(null)}>
-        <div className="fpl-modal" onClick={e => e.stopPropagation()}>
-          <button onClick={() => setModal(null)} style={{
-            position:"absolute", top:16, right:16, width:32, height:32, borderRadius:8,
-            background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)",
-            color:"#8ab8e0", cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center",
-          }}>×</button>
-
-          {/* Header */}
-          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
-            <div style={{ width:52, height:52, borderRadius:"50%", overflow:"hidden",
-              border:`2px solid ${modal._posColor}33`, background:"rgba(255,255,255,0.05)", flexShrink:0 }}>
-              <img src={`https://resources.premierleague.com/premierleague/photos/players/110x140/p${modal.code||0}.png`}
-                alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}
-                onError={e => { e.target.style.display="none"; }}/>
-            </div>
-            <div>
-              <div style={{ fontSize:18, fontWeight:900, color:"#f0f6ff", fontFamily:"'Sora',sans-serif", marginBottom:2 }}>
-                {modal.player}
-              </div>
-              <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                <span style={{ fontSize:10, fontWeight:800, color:"#4a7a9a" }}>{modal.team}</span>
-                <span style={{ fontSize:10, fontWeight:700, padding:"1px 7px", borderRadius:999,
-                  background:`${modal._posColor}18`, border:`1px solid ${modal._posColor}33`, color:modal._posColor }}>
-                  {modal.position}
-                </span>
-                <span style={{ fontSize:10, color:"#3a5a7a", fontFamily:"DM Mono,monospace" }}>£{modal.cost}m</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Availability status */}
-          <div style={{ marginBottom:16, padding:"8px 12px", borderRadius:8,
-            background:`${modal.avail_color}14`, border:`1px solid ${modal.avail_color}33` }}>
-            <span style={{ fontSize:12, fontWeight:700, color:modal.avail_color }}>{modal.avail_display}</span>
-            {modal.news && <span style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginLeft:8 }}>{modal.news}</span>}
-          </div>
-
-          {/* Key metrics grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16 }}>
-            {[
-              { label:"Next GW",       val:(modal.pts_gw_1||0).toFixed(1),      color:"#67b1ff" },
-              { label:"Next 5 GWs",    val:(modal.next5_points||0).toFixed(1),  color:"#9ff1b4" },
-              { label:"Form",          val:(modal.form||0).toFixed(1),           color:"#f2c94c" },
-              { label:"Captain Score", val:(modal.captain_score||0).toFixed(1), color:"#ffa94d" },
-              { label:"Start %",       val:`${modal.avail_pct}%`,               color:modal.avail_color },
-              { label:"Owned",         val:`${Number(modal.selected_by_pct||0).toFixed(1)}%`, color:"#b388ff" },
-            ].map(m => (
-              <div key={m.label} style={{ padding:"10px 12px", borderRadius:10,
-                background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize:8, fontWeight:800, color:"#2a4a6a", letterSpacing:"0.1em", marginBottom:4, textTransform:"uppercase" }}>
-                  {m.label}
-                </div>
-                <div style={{ fontSize:20, fontWeight:800, color:m.color, fontFamily:"DM Mono,monospace", lineHeight:1 }}>
-                  {m.val}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Season stats */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
-            {[
-              { label:"Goals",    val:modal.goals },
-              { label:"Assists",  val:modal.assists },
-              { label:"CS",       val:modal.clean_sheets },
-              { label:"Bonus/G",  val:modal.bonus_per_game?.toFixed(2) },
-              { label:"xG/90",    val:modal.xg_per90?.toFixed(2) },
-              { label:"xA/90",    val:modal.xa_per90?.toFixed(2) },
-              { label:"Yellows",  val:modal.yellow_cards },
-              { label:"Season Pts",val:modal.points_so_far },
-            ].map(m => (
-              <div key={m.label} style={{ padding:"8px 10px", borderRadius:8,
-                background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.05)", textAlign:"center" }}>
-                <div style={{ fontSize:8, fontWeight:700, color:"#2a4a6a", marginBottom:3, textTransform:"uppercase" }}>{m.label}</div>
-                <div style={{ fontSize:15, fontWeight:800, color:"#c8d8f0", fontFamily:"DM Mono,monospace" }}>{m.val ?? "—"}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Action */}
-          <button onClick={() => { setModal(null); navigate(`/player/${modal.player_id}`); }}
-            style={{ width:"100%", padding:"10px 16px", borderRadius:10,
-              background:"rgba(103,177,255,0.15)", border:"1px solid rgba(103,177,255,0.35)",
-              color:"#67b1ff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-            Full Player Analysis →
-          </button>
-        </div>
-      </div>
-    )}
-    </>
-  );
+.sn-glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border); border-radius: var(--r-xl);
 }
+.sn-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--shadow-card); }
+.sn-divider { height: 1px; background: var(--border); border: none; }
+.sn-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: var(--r-md);
+  font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+  border: none; cursor: pointer; font-family: inherit;
+}
+.sn-btn:active { transform: scale(0.96); }
+.sn-btn--primary { background: var(--blue); color: #fff; box-shadow: 0 2px 12px var(--blue-glow); }
+.sn-btn--primary:hover { filter: brightness(1.1); }
+.sn-btn--ghost { background: var(--bg-glass); color: var(--text); border: 1px solid var(--border); }
+.sn-btn--ghost:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+
+/* ══════════════════════════════════════════════════════════
+   PAGE SHELL (used by FplTablePage, SeasonSimulator, etc)
+══════════════════════════════════════════════════════════ */
+.page-shell {
+  min-height: 100vh; padding: 28px 24px;
+  background: var(--bg); color: var(--text);
+}
+.page-content-wide { max-width: 100%; }
+.page-title-left { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.03em; margin-bottom: 4px; }
+.page-title { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.03em; margin-bottom: 8px; }
+.panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 20px; box-shadow: var(--shadow-card); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background: var(--table-header-bg); color: var(--table-header-color); padding: 10px 14px; font-size: 11px; font-weight: 700; border-bottom: 1.5px solid var(--table-border); text-align: left; letter-spacing: 0.06em; text-transform: uppercase; }
+.data-table td { padding: 10px 14px; color: var(--text); border-bottom: 1px solid var(--table-border); font-size: 13px; }
+.data-table tbody tr:hover td { background: var(--bg-hover); }
+
+/* ══════════════════════════════════════════════════════════
+   FPL TABLE — full theme tokens
+══════════════════════════════════════════════════════════ */
+.fpl-tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--r-md); }
+.fpl-tbl-wrap::-webkit-scrollbar { height: 4px; }
+.fpl-tbl-wrap::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+.fpl-tbl { border-collapse: collapse; width: 100%; }
+.fpl-tbl th {
+  background: var(--table-header-bg) !important;
+  color: var(--table-header-color) !important;
+  font-size: 11px; font-weight: 700; padding: 8px 10px;
+  border-bottom: 1.5px solid var(--table-border) !important;
+  position: sticky; top: 0; z-index: 2; white-space: nowrap; letter-spacing: 0.04em;
+}
+.fpl-tbl td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--table-border) !important;
+  font-size: 12px; color: var(--text) !important;
+}
+.fpl-tbl tr:hover td { background: var(--table-row-hover) !important; }
+.fpl-tbl tbody tr { cursor: pointer; }
+.fpl-tbl tbody tr:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); position: relative; z-index: 1; }
+
+.sticky-player { position: sticky !important; left: 0; z-index: 1 !important; background: var(--table-sticky-bg) !important; }
+.sticky-player-head { background: var(--table-header-bg) !important; z-index: 3 !important; }
+
+/* Light: thicker table borders */
+[data-theme="light"] .fpl-tbl th { border-bottom: 2px solid rgba(0,0,0,.16) !important; }
+[data-theme="light"] .fpl-tbl td { border-bottom: 1px solid rgba(0,0,0,.08) !important; }
+
+/* FPL filter pills */
+.fpl-pill {
+  padding: 6px 12px; border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  border: 1px solid var(--pill-border);
+  background: var(--pill-bg); color: var(--pill-color);
+  font-family: inherit; white-space: nowrap; min-height: 36px;
+}
+.fpl-pill.active { background: var(--pill-active-bg); border-color: var(--pill-active-border); color: var(--pill-active-color); }
+.fpl-pill:hover { background: var(--bg-hover); }
+
+/* FPL tooltip */
+.fpl-tip {
+  position: fixed; z-index: 9999; pointer-events: none;
+  background: var(--tooltip-bg) !important;
+  border: 1px solid var(--tooltip-border) !important;
+  border-radius: var(--r-md); padding: 12px 16px;
+  min-width: 220px; box-shadow: var(--shadow-lift);
+  animation: fplTipIn 140ms var(--ease);
+}
+@keyframes fplTipIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* FPL modal */
+.fpl-modal-bg {
+  position: fixed; inset: 0; z-index: 10000;
+  background: var(--modal-overlay) !important;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.fpl-modal {
+  background: var(--modal-bg) !important;
+  border: 1px solid var(--modal-border) !important;
+  border-radius: var(--r-2xl); padding: 28px 28px 24px;
+  width: min(560px,94vw); max-height: 88vh; overflow-y: auto;
+  position: relative; box-shadow: var(--shadow-lift);
+}
+.fpl-modal::-webkit-scrollbar { width: 4px; }
+.fpl-modal::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+/* ══════════════════════════════════════════════════════════
+   HOW IT WORKS — bg only, cards stay intact
+══════════════════════════════════════════════════════════ */
+.hiw-page { background: var(--bg) !important; color: var(--text) !important; min-height: 100vh; }
+[data-theme="light"] .hiw-page { background: #f5f5f7 !important; }
+
+/* ══════════════════════════════════════════════════════════
+   SEASON SIMULATOR
+══════════════════════════════════════════════════════════ */
+.season-sim-page { min-height: 100vh; padding: 32px 24px; background: var(--bg); color: var(--text); }
+.season-sim-wrap { background: var(--table-bg); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-card); }
+.season-sim-table { width: 100%; border-collapse: collapse; }
+.season-sim-table th { background: var(--table-header-bg); color: var(--table-header-color); font-size: 11px; font-weight: 700; padding: 10px 14px; text-align: left; border-bottom: 1.5px solid var(--table-border); letter-spacing: 0.06em; text-transform: uppercase; }
+.season-sim-table td { padding: 10px 14px; color: var(--text); border-bottom: 1px solid var(--table-border); font-size: 13px; }
+.season-sim-table tbody tr:hover td { background: var(--bg-hover); }
+
+/* ══════════════════════════════════════════════════════════
+   HOMEPAGE hp6-* light-mode overrides (bg/border only)
+══════════════════════════════════════════════════════════ */
+[data-theme="light"] .hp6-comp-card { background: rgba(255,255,255,.92) !important; border-color: rgba(0,0,0,.08) !important; }
+[data-theme="light"] .hp6-player-card { background: rgba(255,255,255,.92) !important; border-color: rgba(0,0,0,.08) !important; }
+[data-theme="light"] .hp6-model-card { background: rgba(0,0,0,.025) !important; border-color: rgba(0,0,0,.06) !important; }
+[data-theme="light"] .hp6-fact-card { background: rgba(255,255,255,.92) !important; border-color: rgba(0,0,0,.08) !important; }
+[data-theme="light"] .hp6-capt-row { background: rgba(0,0,0,.025) !important; border-color: rgba(0,0,0,.06) !important; }
+[data-theme="light"] .hp6-platform-note { background: rgba(0,0,0,.025) !important; border-color: rgba(0,0,0,.06) !important; }
+[data-theme="light"] .hp6-cc-feat { background: rgba(0,0,0,.04) !important; border-color: rgba(0,0,0,.08) !important; color: rgba(0,0,0,.45) !important; }
+
+/* ══════════════════════════════════════════════════════════
+   SITE FOOTER
+══════════════════════════════════════════════════════════ */
+.sn-site-footer {
+  position: relative; z-index: 10; flex-shrink: 0;
+  margin-left: 220px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  transition: margin-left 0.25s var(--ease), background 0.22s, border-color 0.22s;
+}
+@media (max-width: 820px) { .sn-site-footer { margin-left: 0 !important; margin-bottom: 64px; } }
+.sn-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 28px; height: 52px; }
+.sn-footer-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.sn-footer-brand-name { font-size: 13px; font-weight: 700; color: var(--text-secondary); letter-spacing: -0.03em; }
+.sn-footer-tagline { font-size: 11px; color: var(--text-muted); }
+.sn-footer-built { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: var(--bg-glass); border: 1px solid var(--border); border-radius: var(--r-pill); flex-shrink: 0; }
+.sn-footer-built-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.sn-footer-built-name { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.sn-footer-copy { font-size: 11px; color: var(--text-dim); flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 600px) { .sn-footer-tagline, .sn-footer-copy { display: none; } }
+.site-footer { display: none; }
+
+/* ══════════════════════════════════════════════════════════
+   KEYFRAMES
+══════════════════════════════════════════════════════════ */
+@keyframes sn-fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes sn-fade-in { from{opacity:0} to{opacity:1} }
+@keyframes sn-scale-in { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+@keyframes sn-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+@keyframes sn-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.sn-anim-fade-up  { animation: sn-fade-up  0.36s var(--ease) both; }
+.sn-anim-fade-in  { animation: sn-fade-in  0.28s var(--ease) both; }
+.sn-anim-scale-in { animation: sn-scale-in 0.28s var(--ease) both; }

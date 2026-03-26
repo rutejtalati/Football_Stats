@@ -26,17 +26,46 @@ import { useNavigate } from "react-router-dom";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";
 
-// ─── League registry ─────────────────────────────────────────────────────────
+// ─── League / competition registry ──────────────────────────────────────────
 
 const LEAGUES = {
-  epl:        { label:"Premier League", short:"PL", color:"#60a5fa", glow:"rgba(96,165,250,0.16)"  },
-  laliga:     { label:"La Liga",        short:"LL", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
-  seriea:     { label:"Serie A",        short:"SA", color:"#34d399", glow:"rgba(52,211,153,0.16)"  },
-  bundesliga: { label:"Bundesliga",     short:"BL", color:"#f59e0b", glow:"rgba(245,158,11,0.16)"  },
-  ligue1:     { label:"Ligue 1",        short:"L1", color:"#a78bfa", glow:"rgba(167,139,250,0.16)" },
+  // Domestic
+  epl:        { label:"Premier League",   short:"PL",   color:"#60a5fa", glow:"rgba(96,165,250,0.16)",  group:"domestic"       },
+  laliga:     { label:"La Liga",          short:"LL",   color:"#f97316", glow:"rgba(249,115,22,0.16)",  group:"domestic"       },
+  seriea:     { label:"Serie A",          short:"SA",   color:"#34d399", glow:"rgba(52,211,153,0.16)",  group:"domestic"       },
+  bundesliga: { label:"Bundesliga",       short:"BL",   color:"#f59e0b", glow:"rgba(245,158,11,0.16)",  group:"domestic"       },
+  ligue1:     { label:"Ligue 1",          short:"L1",   color:"#a78bfa", glow:"rgba(167,139,250,0.16)", group:"domestic"       },
+  // European
+  ucl:        { label:"Champions League", short:"UCL",  color:"#3b82f6", glow:"rgba(59,130,246,0.16)",  group:"european"       },
+  uel:        { label:"Europa League",    short:"UEL",  color:"#f97316", glow:"rgba(249,115,22,0.16)",  group:"european"       },
+  uecl:       { label:"Conference Lge",   short:"UECL", color:"#22c55e", glow:"rgba(34,197,94,0.16)",   group:"european"       },
+  // Cup
+  facup:      { label:"FA Cup",           short:"FAC",  color:"#ef4444", glow:"rgba(239,68,68,0.16)",   group:"cup"            },
+  // International
+  wcq_uefa:       { label:"WCQ UEFA",     short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  wcq_conmebol:   { label:"WCQ CONMEBOL", short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  wcq_concacaf:   { label:"WCQ CONCACAF", short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  wcq_caf:        { label:"WCQ CAF",      short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  wcq_afc:        { label:"WCQ AFC",      short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  nations_league: { label:"Nations Lge",  short:"UNL",  color:"#e879f9", glow:"rgba(232,121,249,0.16)", group:"international"  },
+  euro:           { label:"Euros",        short:"EURO", color:"#3b82f6", glow:"rgba(59,130,246,0.16)",  group:"international"  },
+  euro_q:         { label:"Euro Qual",    short:"EQ",   color:"#3b82f6", glow:"rgba(59,130,246,0.16)",  group:"international"  },
+  afcon:          { label:"AFCON",        short:"AFCON",color:"#22c55e", glow:"rgba(34,197,94,0.16)",   group:"international"  },
+  copa_america:   { label:"Copa América", short:"CA",   color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  gold_cup:       { label:"Gold Cup",     short:"GC",   color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  world_cup:      { label:"World Cup",    short:"WC",   color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
+  international_friendly: { label:"Friendly", short:"FR", color:"#94a3b8", glow:"rgba(148,163,184,0.16)", group:"international" },
 };
 
-const LEAGUE_FILTER = ["all","epl","laliga","seriea","bundesliga","ligue1"];
+// Filter groups shown as pill rows in the UI
+const FILTER_GROUPS = [
+  { key:"domestic",      label:"Domestic",      filters:["epl","laliga","seriea","bundesliga","ligue1"] },
+  { key:"european",      label:"European",      filters:["ucl","uel","uecl"] },
+  { key:"cup",           label:"Cup",           filters:["facup"] },
+  { key:"international", label:"International", filters:["wcq_uefa","wcq_conmebol","wcq_concacaf","wcq_caf","wcq_afc","nations_league","euro","euro_q","afcon","copa_america","gold_cup","world_cup","international_friendly"] },
+];
+
+const LEAGUE_FILTER = ["all", ...FILTER_GROUPS.flatMap(g => g.filters)];
 const LIVE_SET      = new Set(["1H","2H","HT","ET","BT","P"]);
 const FT_SET        = new Set(["FT","AET","PEN","AWD","WO"]);
 
@@ -45,11 +74,36 @@ const FT_SET        = new Set(["FT","AET","PEN","AWD","WO"]);
 function normalizeLeague(l) {
   if (!l) return "";
   const v = String(l).toLowerCase();
-  if (v==="39"  || v.includes("premier"))                          return "epl";
-  if (v==="140" || (v.includes("liga") && !v.includes("bundes"))) return "laliga";
-  if (v==="135" || v.includes("serie"))                            return "seriea";
-  if (v==="78"  || v.includes("bundes"))                           return "bundesliga";
-  if (v==="61"  || v.includes("ligue"))                            return "ligue1";
+  // Domestic
+  if (v==="39"  || v.includes("premier"))                               return "epl";
+  if (v==="140" || (v.includes("liga") && !v.includes("bundes")))       return "laliga";
+  if (v==="135" || v.includes("serie"))                                  return "seriea";
+  if (v==="78"  || v.includes("bundes"))                                 return "bundesliga";
+  if (v==="61"  || v.includes("ligue"))                                  return "ligue1";
+  // European
+  if (v==="2"   || v.includes("champions"))                              return "ucl";
+  if (v==="3"   || v.includes("europa"))                                 return "uel";
+  if (v==="848" || v.includes("conference"))                             return "uecl";
+  // Cup
+  if (v==="45"  || v.includes("fa cup") || v.includes("facup"))         return "facup";
+  // International — WCQ
+  if (v==="32"  || v.includes("wcq_uefa")   || (v.includes("world cup qual") && v.includes("uefa")))     return "wcq_uefa";
+  if (v==="29"  || v.includes("wcq_conmebol")|| (v.includes("world cup qual") && v.includes("conmebol"))) return "wcq_conmebol";
+  if (v==="30"  || v.includes("wcq_concacaf")|| (v.includes("world cup qual") && v.includes("concacaf"))) return "wcq_concacaf";
+  if (v==="31"  || v.includes("wcq_caf")    || (v.includes("world cup qual") && v.includes("caf")))      return "wcq_caf";
+  if (v==="36"  || v.includes("wcq_afc")    || (v.includes("world cup qual") && v.includes("afc")))      return "wcq_afc";
+  if (v==="33"  || v.includes("wcq_ofc")    || (v.includes("world cup qual") && v.includes("ofc")))      return "wcq_ofc";
+  // International — Tournaments
+  if (v==="5"   || v.includes("nations_league") || v.includes("nations league"))                          return "nations_league";
+  if (v==="4"   || v==="euro"  || v.includes("european championship"))                                    return "euro";
+  if (v==="960" || v.includes("euro_q") || v.includes("euro qual"))                                       return "euro_q";
+  if (v==="6"   || v.includes("afcon") || v.includes("africa cup"))                                       return "afcon";
+  if (v==="9"   || v.includes("copa_america") || v.includes("copa am"))                                   return "copa_america";
+  if (v==="16"  || v.includes("gold_cup") || v.includes("gold cup"))                                      return "gold_cup";
+  if (v==="1"   || v.includes("world_cup") || v==="world cup")                                            return "world_cup";
+  if (v==="10"  || v.includes("friendly"))                                                                 return "international_friendly";
+  // Pass-through for already-normalised slugs
+  if (v in LEAGUES) return v;
   return v;
 }
 
@@ -626,14 +680,28 @@ export default function LivePage() {
   const fetchData = (offset = dayOffset) => {
     setLoading(true);
     setError(null);
-    let url;
-    if (offset < 0) url = `${BACKEND}/api/matches/results?days_ago=${Math.abs(offset)}`;
-    else if (offset > 0) url = `${BACKEND}/api/matches/future?days_ahead=${offset}`;
-    else url = `${BACKEND}/api/matches/upcoming`;
-    fetch(url)
-      .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => { setChips(d.matches||d.chips||[]); setLoading(false); setLastUp(new Date()); setError(null); })
-      .catch(e => { setError(e.message); setLoading(false); });
+    let clubUrl;
+    if (offset < 0) clubUrl = `${BACKEND}/api/matches/results?days_ago=${Math.abs(offset)}`;
+    else if (offset > 0) clubUrl = `${BACKEND}/api/matches/future?days_ahead=${offset}`;
+    else clubUrl = `${BACKEND}/api/matches/upcoming`;
+
+    // Fetch club fixtures + international fixtures in parallel
+    const daysBack   = offset <= 0 ? Math.abs(Math.min(offset, 0)) : 0;
+    const daysAhead  = offset >= 0 ? Math.max(offset, 0) + 1 : 0;
+    const intlUrl    = `${BACKEND}/api/international/fixtures?days_back=${daysBack}&days_ahead=${daysAhead}`;
+
+    Promise.allSettled([
+      fetch(clubUrl).then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+      fetch(intlUrl).then(r => r.ok ? r.json() : { fixtures: [] }),
+    ]).then(([clubRes, intlRes]) => {
+      const clubMatches  = clubRes.status === "fulfilled"  ? (clubRes.value.matches  || clubRes.value.chips || []) : [];
+      const intlMatches  = intlRes.status === "fulfilled"  ? (intlRes.value.fixtures || []) : [];
+      // Merge — international fixtures use same field names thanks to _norm_fixture in backend
+      setChips([...clubMatches, ...intlMatches]);
+      setLoading(false);
+      setLastUp(new Date());
+      setError(null);
+    }).catch(e => { setError(e.message); setLoading(false); });
   };
 
   // Re-fetch when offset changes; auto-refresh only on today view
@@ -686,16 +754,20 @@ export default function LivePage() {
 
   const fixtures = useMemo(() => chips.map(c => ({
     fixture_id:  c.fixture_id,
-    league:      normalizeLeague(c.league||c.league_id),
+    league:      normalizeLeague(c.competition || c.league || c.league_id || c.competition_id),
+    league_name: c.competition_name || c.league_name || c.league,
     home_team:   c.home_team,  away_team:  c.away_team,
     home_logo:   c.home_logo,  away_logo:  c.away_logo,
     home_score:  c.home_score??null, away_score: c.away_score??null,
     status:      c.status,     minute:     c.minute,
     kickoff:     c.kickoff||c.date,
     xg_home:     c.xg_home??null,  xg_away:    c.xg_away??null,
-    p_home_win:  c.p_home_win??null, p_draw:     c.p_draw??null,    p_away_win: c.p_away_win??null,
-    p_btts:      c.p_btts??null,     p_over25:   c.p_over25??null,
-    insight:     c.insight??null,    latest_event: c.latest_event??null,
+    p_home_win:  c.p_home_win??null, p_draw:     c.p_draw??null, p_away_win: c.p_away_win??null,
+    p_btts:      c.p_btts??null,    p_over25:   c.p_over25??null,
+    insight:     c.insight??null,   latest_event: c.latest_event??null,
+    is_international: c.is_international ?? false,
+    competition_flag: c.competition_flag ?? null,
+    confederation:    c.confederation ?? null,
   })), [chips]);
 
   const filtered = useMemo(() => filter==="all" ? fixtures : fixtures.filter(f=>f.league===filter), [fixtures,filter]);
@@ -747,7 +819,7 @@ export default function LivePage() {
               <div>
                 <h1 style={{ fontSize:28, fontWeight:900, color:"var(--text)", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
                 <p style={{ color:"var(--text-secondary)", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
-                  {isPastView ? `Results · ${dayLabel(dayOffset)}` : isFutureView ? `Fixtures · ${dayLabel(dayOffset)}` : "Today & live · Top 5 leagues"}
+                  {isPastView ? `Results · ${dayLabel(dayOffset)}` : isFutureView ? `Fixtures · ${dayLabel(dayOffset)}` : "Today & live · Domestic · European · International"}
                 </p>
               </div>
               <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", justifyContent:"flex-end" }}>
@@ -846,23 +918,42 @@ export default function LivePage() {
               </div>
             </div>
 
-            {/* League filter tabs */}
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {LEAGUE_FILTER.map(l => {
-                const c      = LEAGUES[l];
-                const active = filter===l;
-                const col    = c?.color||"#60a5fa";
+            {/* League / competition filter — grouped by category */}
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {FILTER_GROUPS.map(group => {
+                const groupActive = group.filters.some(f => f === filter);
                 return (
-                  <button key={l} onClick={() => setFilter(l)} style={{
-                    padding:"5px 13px", borderRadius:999, cursor:"pointer",
-                    fontSize:11, fontWeight:700, letterSpacing:".03em",
-                    border:`1px solid ${active?col+"40":"var(--border)"}`,
-                    background: active?col+"12":"var(--bg-glass)",
-                    color: active?col:"var(--text-muted)",
-                    transition:"all .15s",
-                  }}>
-                    {l==="all"?"All":c?.label}
-                  </button>
+                  <div key={group.key} style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                    <span style={{
+                      fontSize:9, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase",
+                      color:"var(--text-muted)", opacity:.55, minWidth:72, flexShrink:0,
+                    }}>{group.label}</span>
+                    {group.key === "domestic" && (
+                      <button onClick={() => setFilter("all")} style={{
+                        padding:"4px 12px", borderRadius:999, cursor:"pointer",
+                        fontSize:11, fontWeight:700, letterSpacing:".03em",
+                        border:`1px solid ${filter==="all"?"rgba(255,255,255,.4)":"var(--border)"}`,
+                        background: filter==="all"?"rgba(255,255,255,.1)":"var(--bg-glass)",
+                        color: filter==="all"?"#fff":"var(--text-muted)",
+                        transition:"all .15s",
+                      }}>All</button>
+                    )}
+                    {group.filters.map(l => {
+                      const c      = LEAGUES[l];
+                      const active = filter === l;
+                      const col    = c?.color || "#60a5fa";
+                      return (
+                        <button key={l} onClick={() => setFilter(active ? "all" : l)} style={{
+                          padding:"4px 12px", borderRadius:999, cursor:"pointer",
+                          fontSize:11, fontWeight:700, letterSpacing:".03em",
+                          border:`1px solid ${active ? col+"55" : "var(--border)"}`,
+                          background: active ? col+"18" : "var(--bg-glass)",
+                          color: active ? col : "var(--text-muted)",
+                          transition:"all .15s",
+                        }}>{c?.short || l.toUpperCase()}</button>
+                      );
+                    })}
+                  </div>
                 );
               })}
             </div>

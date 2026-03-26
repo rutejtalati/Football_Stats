@@ -145,6 +145,18 @@ const SLUG_MAP = {
   "conference-league":"uecl","fa-cup":"facup",
   "epl":"epl","laliga":"laliga","seriea":"seriea","ligue1":"ligue1",
   "ucl":"ucl","uel":"uel","uecl":"uecl","facup":"facup",
+  // International
+  "wcq-uefa":"wcq_uefa","wcq-conmebol":"wcq_conmebol","wcq-concacaf":"wcq_concacaf",
+  "wcq-caf":"wcq_caf","wcq-afc":"wcq_afc",
+  "nations-league":"nations_league","euros":"euro","euro-qual":"euro_q",
+  "afcon":"afcon","copa-america":"copa_america","gold-cup":"gold_cup",
+  "world-cup":"world_cup","intl-friendly":"international_friendly",
+  // Pass-through codes
+  "wcq_uefa":"wcq_uefa","wcq_conmebol":"wcq_conmebol","wcq_concacaf":"wcq_concacaf",
+  "wcq_caf":"wcq_caf","wcq_afc":"wcq_afc",
+  "nations_league":"nations_league","euro":"euro","euro_q":"euro_q",
+  "copa_america":"copa_america","gold_cup":"gold_cup","world_cup":"world_cup",
+  "international_friendly":"international_friendly",
 };
 
 /* ───────────────── App Root ───────────────── */

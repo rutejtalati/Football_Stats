@@ -51,16 +51,25 @@ const LEAGUE_LABELS = {
   seriea:"Serie A", ligue1:"Ligue 1",
   ucl:"Champions League", uel:"Europa League",
   uecl:"Conference League", facup:"FA Cup",
+  // International
+  wcq_uefa:"WCQ UEFA", wcq_conmebol:"WCQ CONMEBOL", wcq_concacaf:"WCQ CONCACAF",
+  wcq_caf:"WCQ CAF", wcq_afc:"WCQ AFC",
+  nations_league:"Nations League", euro:"Euros", euro_q:"Euro Qual",
+  afcon:"AFCON", copa_america:"Copa América", gold_cup:"Gold Cup",
+  world_cup:"World Cup", international_friendly:"Friendly",
 };
 
 // Competition accent colours
 const COMP_COLORS = {
   epl:"#60a5fa", laliga:"#f97316", bundesliga:"#f59e0b",
   seriea:"#e2e8e4", ligue1:"#a78bfa",
-  ucl:"#1e40af",    // deep UCL blue
-  uel:"#f97316",    // Europa orange
-  uecl:"#16a34a",   // Conference green
-  facup:"#dc2626",  // FA Cup red
+  ucl:"#1e40af", uel:"#f97316", uecl:"#16a34a", facup:"#dc2626",
+  // International
+  wcq_uefa:"#fbbf24", wcq_conmebol:"#fbbf24", wcq_concacaf:"#fbbf24",
+  wcq_caf:"#fbbf24", wcq_afc:"#fbbf24",
+  nations_league:"#e879f9", euro:"#3b82f6", euro_q:"#3b82f6",
+  afcon:"#22c55e", copa_america:"#fbbf24", gold_cup:"#fbbf24",
+  world_cup:"#fbbf24", international_friendly:"#94a3b8",
 };
 
 // Competition theme overrides — all share the same NB base, different accents
@@ -69,6 +78,20 @@ const COMP_THEMES = {
   uel:  {...UNIFIED, accent:NB.y,  accent2:"#cccccc", awayCol:"#cccccc", label:"Europa League"},
   uecl: {...UNIFIED, accent:NB.y,  accent2:"#cccccc", awayCol:"#cccccc", label:"Conference League"},
   facup:{...UNIFIED, accent:NB.y,  accent2:NB.r,      awayCol:NB.r,      label:"FA Cup"},
+  // International
+  wcq_uefa:       {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ UEFA"},
+  wcq_conmebol:   {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ CONMEBOL"},
+  wcq_concacaf:   {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ CONCACAF"},
+  wcq_caf:        {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ CAF"},
+  wcq_afc:        {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ AFC"},
+  nations_league: {...UNIFIED, accent:"#e879f9", accent2:NB.r, awayCol:NB.r, label:"Nations League"},
+  euro:           {...UNIFIED, accent:"#3b82f6", accent2:NB.r, awayCol:NB.r, label:"UEFA Euros"},
+  euro_q:         {...UNIFIED, accent:"#3b82f6", accent2:NB.r, awayCol:NB.r, label:"Euro Qualification"},
+  afcon:          {...UNIFIED, accent:"#22c55e", accent2:NB.r, awayCol:NB.r, label:"AFCON"},
+  copa_america:   {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"Copa América"},
+  gold_cup:       {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"Gold Cup"},
+  world_cup:      {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"World Cup"},
+  international_friendly:{...UNIFIED, accent:"#94a3b8", accent2:NB.r, awayCol:NB.r, label:"International Friendly"},
 };
 
 const THEMES = {
@@ -88,7 +111,21 @@ const LEAGUE_TABS = [
   {code:"uel",        slug:"europa-league",     label:"UEL",            group:"european", hasKnockout:true},
   {code:"uecl",       slug:"conference-league", label:"UECL",           group:"european", hasKnockout:true},
   // Cup
-  {code:"facup",      slug:"fa-cup",            label:"FA Cup",         group:"cup",      hasKnockout:true},
+  {code:"facup",      slug:"fa-cup",            label:"FA Cup",         group:"cup", hasKnockout:true},
+  // International
+  {code:"wcq_uefa",       slug:"wcq-uefa",       label:"WCQ UEFA",       group:"international", isIntl:true},
+  {code:"wcq_conmebol",   slug:"wcq-conmebol",   label:"WCQ CONMEBOL",   group:"international", isIntl:true},
+  {code:"wcq_concacaf",   slug:"wcq-concacaf",   label:"WCQ CONCACAF",   group:"international", isIntl:true},
+  {code:"wcq_caf",        slug:"wcq-caf",        label:"WCQ CAF",        group:"international", isIntl:true},
+  {code:"wcq_afc",        slug:"wcq-afc",        label:"WCQ AFC",        group:"international", isIntl:true},
+  {code:"nations_league", slug:"nations-league", label:"Nations Lge",    group:"international", isIntl:true},
+  {code:"euro",           slug:"euros",          label:"Euros",          group:"international", isIntl:true, hasKnockout:true},
+  {code:"euro_q",         slug:"euro-qual",      label:"Euro Qual",      group:"international", isIntl:true},
+  {code:"afcon",          slug:"afcon",          label:"AFCON",          group:"international", isIntl:true, hasKnockout:true},
+  {code:"copa_america",   slug:"copa-america",   label:"Copa América",   group:"international", isIntl:true, hasKnockout:true},
+  {code:"gold_cup",       slug:"gold-cup",       label:"Gold Cup",       group:"international", isIntl:true, hasKnockout:true},
+  {code:"world_cup",      slug:"world-cup",      label:"World Cup",      group:"international", isIntl:true, hasKnockout:true},
+  {code:"international_friendly", slug:"intl-friendly", label:"Friendly", group:"international", isIntl:true},
 ];
 
 /* ----------------------------------------------------------
@@ -2450,15 +2487,14 @@ const SeasonSimulatorTab = ({ standings, standLoad, league, T }) => {
 // Maps frontend league code // backend API code
 // All codes now match directly  bundesliga added to backend LEAGUE_IDS
 const BACKEND_LEAGUE = {
-  epl:        "epl",
-  laliga:     "laliga",
-  bundesliga: "bundesliga",
-  seriea:     "seriea",
-  ligue1:     "ligue1",
-  ucl:        "ucl",
-  uel:        "uel",
-  uecl:       "uecl",
-  facup:      "facup",
+  epl:"epl", laliga:"laliga", bundesliga:"bundesliga", seriea:"seriea", ligue1:"ligue1",
+  ucl:"ucl", uel:"uel", uecl:"uecl", facup:"facup",
+  // International — these use the /api/international/predictions/:comp endpoint
+  wcq_uefa:"wcq_uefa", wcq_conmebol:"wcq_conmebol", wcq_concacaf:"wcq_concacaf",
+  wcq_caf:"wcq_caf", wcq_afc:"wcq_afc",
+  nations_league:"nations_league", euro:"euro", euro_q:"euro_q",
+  afcon:"afcon", copa_america:"copa_america", gold_cup:"gold_cup",
+  world_cup:"world_cup", international_friendly:"international_friendly",
 };
 
 
@@ -2523,7 +2559,25 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   const{league:paramLeague}=useParams();
   const navigate=useNavigate();
   const raw=paramLeague||propLeague||"premier-league";
-  const DEFAULTS={"premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1","champions-league":"ucl","europa-league":"uel","conference-league":"uecl","fa-cup":"facup","epl":"epl","laliga":"laliga","bundesliga":"bundesliga","seriea":"seriea","ligue1":"ligue1","ucl":"ucl","uel":"uel","uecl":"uecl","facup":"facup"};
+  const DEFAULTS={
+    // Domestic
+    "premier-league":"epl","la-liga":"laliga","serie-a":"seriea","ligue-1":"ligue1",
+    "champions-league":"ucl","europa-league":"uel","conference-league":"uecl","fa-cup":"facup",
+    "epl":"epl","laliga":"laliga","bundesliga":"bundesliga","seriea":"seriea","ligue1":"ligue1",
+    "ucl":"ucl","uel":"uel","uecl":"uecl","facup":"facup",
+    // International slugs → codes
+    "wcq-uefa":"wcq_uefa","wcq-conmebol":"wcq_conmebol","wcq-concacaf":"wcq_concacaf",
+    "wcq-caf":"wcq_caf","wcq-afc":"wcq_afc",
+    "nations-league":"nations_league","euros":"euro","euro-qual":"euro_q",
+    "afcon":"afcon","copa-america":"copa_america","gold-cup":"gold_cup",
+    "world-cup":"world_cup","intl-friendly":"international_friendly",
+    // Pass-through for already-resolved codes
+    "wcq_uefa":"wcq_uefa","wcq_conmebol":"wcq_conmebol","wcq_concacaf":"wcq_concacaf",
+    "wcq_caf":"wcq_caf","wcq_afc":"wcq_afc",
+    "nations_league":"nations_league","euro":"euro","euro_q":"euro_q",
+    "copa_america":"copa_america","gold_cup":"gold_cup","world_cup":"world_cup",
+    "international_friendly":"international_friendly",
+  };
   const league=(slugMap||DEFAULTS)[raw]||raw;
   const T=THEMES[league]||THEMES.epl;
 
@@ -2540,10 +2594,58 @@ export default function PredictionsPage({league:propLeague,slugMap}){
     fn().then(json=>{const d=json.standings||json.predictions||json.data||json||[];const arr=Array.isArray(d)?d:[];setter(arr);try{sessionStorage.setItem(key,JSON.stringify({data:arr,ts:Date.now()}));}catch{}}).catch(e=>setErr&&setErr(e.message)).finally(()=>setLoading(false));
   },[]);
 
+  // International competition codes
+  const INTL_CODES = new Set([
+    "wcq_uefa","wcq_conmebol","wcq_concacaf","wcq_caf","wcq_afc",
+    "nations_league","euro","euro_q","afcon","copa_america","gold_cup",
+    "world_cup","international_friendly",
+  ]);
+  const isIntl = INTL_CODES.has(league);
+
+  const INTL_BACKEND = "https://football-stats-lw4b.onrender.com";
+
   useEffect(()=>{
     const apiLeague = BACKEND_LEAGUE[league] || league;
-    cache("stn_v6_"+league,()=>getStandings(apiLeague),setStandings,setStandLoad,setStandErr);
-    cache("pred_v6_"+league,()=>getLeaguePredictions(apiLeague),setMatches,setPredLoad,setPredErr);
+
+    if (isIntl) {
+      // International: use /api/international/predictions/:comp and /api/international/standings/:comp
+      setStandLoad(true); setPredLoad(true); setPredErr(null); setStandErr(null);
+      const cacheKey = "intl_pred_v1_" + league;
+      const cacheKeyS = "intl_stn_v1_" + league;
+
+      // Predictions
+      try {
+        const r = sessionStorage.getItem(cacheKey);
+        if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<3600000){setMatches(p.data);setPredLoad(false);} }
+      } catch {}
+      fetch(`${INTL_BACKEND}/api/international/predictions/${apiLeague}`)
+        .then(r=>r.ok?r.json():Promise.reject(r.status))
+        .then(json=>{
+          const arr = json.predictions || [];
+          setMatches(arr);
+          try{sessionStorage.setItem(cacheKey,JSON.stringify({data:arr,ts:Date.now()}));}catch{}
+        })
+        .catch(e=>setPredErr(String(e)))
+        .finally(()=>setPredLoad(false));
+
+      // Standings (groups)
+      try {
+        const r = sessionStorage.getItem(cacheKeyS);
+        if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<3600000){setStandings(p.data);setStandLoad(false);} }
+      } catch {}
+      fetch(`${INTL_BACKEND}/api/international/standings/${apiLeague}`)
+        .then(r=>r.ok?r.json():Promise.reject(r.status))
+        .then(json=>{
+          const arr = json.standings || [];
+          setStandings(arr);
+          try{sessionStorage.setItem(cacheKeyS,JSON.stringify({data:arr,ts:Date.now()}));}catch{}
+        })
+        .catch(e=>setStandErr(String(e)))
+        .finally(()=>setStandLoad(false));
+    } else {
+      cache("stn_v6_"+league,()=>getStandings(apiLeague),setStandings,setStandLoad,setStandErr);
+      cache("pred_v6_"+league,()=>getLeaguePredictions(apiLeague),setMatches,setPredLoad,setPredErr);
+    }
     setSelectedMatch(null);
   },[league,cache]);
 
@@ -2614,16 +2716,18 @@ export default function PredictionsPage({league:propLeague,slugMap}){
           {/* League nav pills */}
           <nav style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             {[
-              {group:"domestic", label:"Domestic"},
-              {group:"european", label:"European"},
-              {group:"cup",      label:"Cup"},
+              {group:"domestic",      label:"Domestic"},
+              {group:"european",      label:"European"},
+              {group:"cup",           label:"Cup"},
+              {group:"international", label:"International"},
             ].map(({group,label})=>{
               const groupTabs = LEAGUE_TABS.filter(t=>t.group===group);
               return groupTabs.length===0 ? null : (
                 <div key={group} style={{display:"flex",alignItems:"center",gap:4,flexWrap:"nowrap"}}>
                   <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.4)",letterSpacing:"0.08em",textTransform:"uppercase",flexShrink:0,paddingRight:6,borderRight:"1px solid rgba(255,255,255,.1)",marginRight:4,fontFamily:"'Inter',sans-serif"}}>{label}</span>
-                  {groupTabs.map(({code,slug,label:tabLabel})=>{
+                  {groupTabs.map(({code,slug,label:tabLabel,isIntl})=>{
                     const active=league===code;
+                    const accent = COMP_COLORS[code] || NB.y;
                     return(
                       <NavLink key={code} to={`/predictions/${slug}`} style={{
                         display:"flex",alignItems:"center",gap:7,
@@ -2640,11 +2744,16 @@ export default function PredictionsPage({league:propLeague,slugMap}){
                         onMouseEnter={e=>{if(!active){e.currentTarget.style.background=NB.y;e.currentTarget.style.color=NB.k;e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow=`4px 4px 0 rgba(255,255,255,.3)`;}}}
                         onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=NB.y;e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}}
                       >
-                        {(code==="epl"||code==="laliga"||code==="bundesliga"||code==="seriea"||code==="ligue1")&&<LeagueFlag code={code} size={14}/>}
-                        {(code==="ucl")&&<img src="https://media.api-sports.io/football/leagues/2.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-                        {(code==="uel")&&<img src="https://media.api-sports.io/football/leagues/3.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-                        {(code==="uecl")&&<img src="https://media.api-sports.io/football/leagues/848.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
-                        {(code==="facup")&&<img src="https://media.api-sports.io/football/leagues/45.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                        {code==="epl"&&<LeagueFlag code={code} size={14}/>}
+                        {code==="laliga"&&<LeagueFlag code={code} size={14}/>}
+                        {code==="bundesliga"&&<LeagueFlag code={code} size={14}/>}
+                        {code==="seriea"&&<LeagueFlag code={code} size={14}/>}
+                        {code==="ligue1"&&<LeagueFlag code={code} size={14}/>}
+                        {code==="ucl"&&<img src="https://media.api-sports.io/football/leagues/2.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                        {code==="uel"&&<img src="https://media.api-sports.io/football/leagues/3.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                        {code==="uecl"&&<img src="https://media.api-sports.io/football/leagues/848.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                        {code==="facup"&&<img src="https://media.api-sports.io/football/leagues/45.png" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
+                        {isIntl&&<span style={{fontSize:12}}>🌐</span>}
                         {tabLabel}
                       </NavLink>
                     );

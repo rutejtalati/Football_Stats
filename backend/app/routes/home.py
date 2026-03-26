@@ -36,8 +36,12 @@ router = APIRouter(prefix="/api/home", tags=["home"])
 
 # ── Re-use constants & helpers from main.py via import ──────────────────────
 # We deliberately import only pure helpers — no circular imports.
-import os
-_API_KEY          = os.getenv("API_FOOTBALL_KEY", "")
+
+# Lazy getter — reads env var at call time, not at import time.
+# This matters on container platforms (e.g. Render) where env vars may be
+# injected after the process starts.
+def _api_key() -> str:
+    return os.getenv("API_FOOTBALL_KEY", "")
 _API_BASE         = "https://v3.football.api-sports.io"
 _CURRENT_SEASON   = int(os.getenv("CURRENT_SEASON", "2025"))
 _FPL_BASE         = "https://fantasy.premierleague.com/api"
@@ -76,7 +80,8 @@ TTL_DAY    = 86400  # 24 hr   — static/semi-static (glossary, model meta)
 
 async def _api(path: str, params: dict, ttl: float = TTL_MEDIUM) -> list:
     """Async API-Football request with per-key caching. Returns response[] list."""
-    if not _API_KEY:
+    key = _api_key()
+    if not key:
         return []
     cache_key = f"api:{path}:{sorted(params.items())}"
     hit = _cget(cache_key, ttl)
@@ -86,7 +91,7 @@ async def _api(path: str, params: dict, ttl: float = TTL_MEDIUM) -> list:
         async with httpx.AsyncClient(timeout=15) as c:
             r = await c.get(
                 f"{_API_BASE}/{path.lstrip('/')}",
-                headers={"x-apisports-key": _API_KEY},
+                headers={"x-apisports-key": key},
                 params=params,
             )
             if r.status_code == 200:
@@ -174,6 +179,9 @@ async def top_predictions(league: str = Query("epl")):
     Shape matches PredictionStrip exactly:
       { home, away, homeProb, awayProb, draw, col, conf, score,
         fixture_id, home_logo, away_logo, league, kickoff }
+
+    Uses build_xg_from_team_stats() from football_engine (same as win_prob.py)
+    so probabilities are consistent across the whole app.
     """
     cache_key = f"home:top_predictions:{league}"
     hit = _cget(cache_key, TTL_SHORT)
@@ -193,61 +201,86 @@ async def top_predictions(league: str = Query("epl")):
         "from": today, "to": end, "status": "NS"
     }, TTL_SHORT)
 
-    # Try to pull cached predictions from the league_predictions endpoint
-    # by calling the shared helper directly
+    # Import canonical xG builder — same function used by win_prob.py and
+    # league_predictions so probabilities are consistent everywhere.
+    try:
+        from app.football_engine import build_xg_from_team_stats, LEAGUE_AVG_GOALS, FALLBACK_AVG
+    except ImportError:
+        build_xg_from_team_stats = None
+        LEAGUE_AVG_GOALS = {}
+        FALLBACK_AVG = {"home": 1.35, "away": 1.05}
+
+    def _poisson_p(lam, k):
+        return (lam ** k) * math.exp(-lam) / math.factorial(k)
+
     preds_out = []
     for fx in fixtures[:6]:
         try:
             teams = fx.get("teams", {}); fix = fx.get("fixture", {})
             home_t = teams.get("home", {}); away_t = teams.get("away", {})
-            lg     = fx.get("league", {})
 
-            # Basic Poisson estimate from team stats
-            home_stats = await _api("/teams/statistics", {
+            home_stats_raw = await _api("/teams/statistics", {
                 "team": home_t.get("id"), "league": lid,
                 "season": _CURRENT_SEASON
             }, TTL_LONG)
-            away_stats = await _api("/teams/statistics", {
+            away_stats_raw = await _api("/teams/statistics", {
                 "team": away_t.get("id"), "league": lid,
                 "season": _CURRENT_SEASON
             }, TTL_LONG)
 
-            def _xg_from(s_list):
-                s = s_list[0] if s_list else {}
+            def _normalise_stats(raw):
+                s = raw[0] if raw else {}
                 fx2 = s.get("fixtures", {}); gl = s.get("goals", {})
-                ph = _safe(fx2, "played", "home"); pa = _safe(fx2, "played", "away")
-                sc_h = _safe(gl, "for", "total", "home")
-                sc_a = _safe(gl, "for", "total", "away")
-                cc_h = _safe(gl, "against", "total", "home")
-                cc_a = _safe(gl, "against", "total", "away")
-                p = max(ph + pa, 1)
-                return (sc_h + sc_a) / p, (cc_h + cc_a) / p
+                return {
+                    "played_home":   (fx2.get("played") or {}).get("home", 0),
+                    "played_away":   (fx2.get("played") or {}).get("away", 0),
+                    "scored_home":   ((gl.get("for") or {}).get("total") or {}).get("home", 0),
+                    "scored_away":   ((gl.get("for") or {}).get("total") or {}).get("away", 0),
+                    "conceded_home": ((gl.get("against") or {}).get("total") or {}).get("home", 0),
+                    "conceded_away": ((gl.get("against") or {}).get("total") or {}).get("away", 0),
+                    "form":          s.get("form", ""),
+                }
 
-            h_att, h_def = _xg_from(home_stats)
-            a_att, a_def = _xg_from(away_stats)
-            avg = 1.35
-            xg_h = round(max(0.3, min(4.5, h_att * a_def / max(avg, 0.1))), 2)
-            xg_a = round(max(0.2, min(4.0, a_att * h_def / max(avg, 0.1))), 2)
+            home_stats = _normalise_stats(home_stats_raw)
+            away_stats = _normalise_stats(away_stats_raw)
 
-            # Simple Poisson probabilities
-            def _p(lam, k):
-                return (lam ** k) * math.exp(-lam) / math.factorial(k)
+            # Use canonical xG engine (consistent with win_prob.py)
+            if build_xg_from_team_stats is not None:
+                league_avg = LEAGUE_AVG_GOALS.get(lid, FALLBACK_AVG)
+                xg_h, xg_a = build_xg_from_team_stats(
+                    home_team_id=home_t.get("id", 0),
+                    away_team_id=away_t.get("id", 0),
+                    home_stats=home_stats,
+                    away_stats=away_stats,
+                    league_avg=league_avg,
+                    elo=None,
+                    home_team_name=home_t.get("name", ""),
+                    away_team_name=away_t.get("name", ""),
+                    home_form=home_stats.get("form", ""),
+                    away_form=away_stats.get("form", ""),
+                )
+            else:
+                # Minimal fallback if football_engine unavailable
+                avg = FALLBACK_AVG
+                xg_h = round(avg.get("home", 1.35), 2)
+                xg_a = round(avg.get("away", 1.05), 2)
 
+            # Poisson match probabilities
             hw = dw = aw_p = 0.0
             for h in range(8):
                 for a in range(8):
-                    prob = _p(xg_h, h) * _p(xg_a, a)
+                    prob = _poisson_p(xg_h, h) * _poisson_p(xg_a, a)
                     if h > a:   hw   += prob
                     elif h < a: aw_p += prob
                     else:       dw   += prob
             total = hw + dw + aw_p or 1
             hw = round(hw / total * 100); aw_p = round(aw_p / total * 100); dw = 100 - hw - aw_p
 
-            # Most likely score
+            # Most likely scoreline
             best_p, mls = 0.0, "1-0"
             for h in range(6):
                 for a in range(6):
-                    p = _p(xg_h, h) * _p(xg_a, a)
+                    p = _poisson_p(xg_h, h) * _poisson_p(xg_a, a)
                     if p > best_p:
                         best_p = p; mls = f"{h}-{a}"
 
@@ -295,6 +328,10 @@ async def model_edges():
     Fixtures where the model's probability diverges most from the
     market implied odds (value betting signals).
     Returns up to 5 edges with team names, model prob, edge direction.
+
+    NOTE: market_home uses a league-average implied probability (45% EPL home win).
+    This is an approximation — real bookmaker odds are not integrated.
+    The `indicative_only` flag is set in every edge to communicate this.
     """
     cache_key = "home:model_edges"
     hit = _cget(cache_key, TTL_MEDIUM)
@@ -308,25 +345,27 @@ async def model_edges():
     edges = []
     for p in preds:
         hw = p.get("homeProb", 50)
-        # Rough bookmaker implied prob (home win market): avg ~45% EPL
-        # Model edge = model_prob - market_implied
-        market_home = 45  # placeholder average; could inject real odds API
+        # EPL long-run average home-win implied probability ≈ 45%.
+        # Real bookmaker odds would give a per-fixture figure; we don't
+        # have a live odds feed so this is an approximation.
+        market_home = 45
         edge_val = hw - market_home
         if abs(edge_val) >= 8:
             direction = "home" if edge_val > 0 else "away"
             edges.append({
-                "fixture_id":    p["fixture_id"],
-                "home":          p["home"],
-                "away":          p["away"],
-                "model_prob":    hw if edge_val > 0 else p["awayProb"],
-                "edge":          round(abs(edge_val), 1),
-                "direction":     direction,
-                "label":         f"{p['home'] if direction=='home' else p['away']} edge",
-                "col":           "#00e09e" if edge_val > 0 else "#b388ff",
-                "fixture_id":    p.get("fixture_id"),
+                "fixture_id":     p.get("fixture_id"),
+                "home":           p["home"],
+                "away":           p["away"],
+                "model_prob":     hw if edge_val > 0 else p["awayProb"],
+                "edge":           round(abs(edge_val), 1),
+                "direction":      direction,
+                "label":          f"{p['home'] if direction=='home' else p['away']} edge",
+                "col":            "#00e09e" if edge_val > 0 else "#b388ff",
+                "indicative_only": True,  # remind frontend: market prob is a league average
             })
 
-    result = {"edges": edges[:5], "generated_at": datetime.now(timezone.utc).isoformat()}
+    result = {"edges": edges[:5], "indicative_only": True,
+              "generated_at": datetime.now(timezone.utc).isoformat()}
     _cset(cache_key, result)
     return result
 
@@ -620,9 +659,12 @@ async def transfer_brief_home():
 @router.get("/tactical_insight")
 async def tactical_insight(league: str = Query("epl")):
     """
-    The highest-pressing team this week (lowest PPDA proxy) and
-    the most possession-dominant team — for the Stat of the Day widget.
-    Returns the shape expected by StatOfMoment.
+    Goals-per-game stat highlights for the top 5 league teams.
+    Returns the highest-scoring team as the primary insight, plus all 5.
+
+    Note: this is a goals-per-game metric derived from standings data.
+    It is NOT a PPDA or pressing intensity metric — the free API tier
+    does not expose per-match pressing stats.
     """
     cache_key = f"home:tactical_insight:{league}"
     hit = _cget(cache_key, TTL_LONG)
@@ -633,17 +675,14 @@ async def tactical_insight(league: str = Query("epl")):
     raw = await _api("/standings", {"league": lid, "season": _CURRENT_SEASON}, TTL_MEDIUM)
     standings = _parse_standings(raw)
 
-    # Pick the top 3 teams and derive a tactical stat highlight
     insights = []
     ICONS    = ["⚡", "🎯", "🧠", "⚽", "🔥"]
     COLORS   = ["#f2c94c", "#4f9eff", "#00e09e", "#b388ff", "#ff8c42"]
 
     for i, team in enumerate(standings[:5]):
         form_str  = (team.get("form") or "")[-5:]
-        form_pts  = _form_pts(form_str)
         gf_pg     = round(team["goals_for"]     / max(team["played"], 1), 2)
         ga_pg     = round(team["goals_against"] / max(team["played"], 1), 2)
-        gd_pg     = round(gf_pg - ga_pg, 2)
 
         insights.append({
             "stat":    str(gf_pg),
@@ -652,15 +691,22 @@ async def tactical_insight(league: str = Query("epl")):
             "context": (
                 f"{team['team_name']} are scoring {gf_pg} goals per game in the "
                 f"{LEAGUE_NAMES.get(league, 'league')}, ranked {team['rank']} with "
-                f"{team['points']} points. Recent form: {form_str or 'N/A'}."
+                f"{team['points']} points. Recent form: {form_str or 'N/A'}. "
+                f"Conceding {ga_pg} per game."
             ),
             "col":     COLORS[i % len(COLORS)],
             "icon":    ICONS[i % len(ICONS)],
             "team_id": team.get("team_id"),
+            "stat_type": "goals_per_game",  # explicit so frontend can label correctly
         })
 
-    # Return the best-form team as the primary insight
-    best = max(insights, key=lambda x: float(x["stat"]), default=insights[0] if insights else {})
+    if not insights:
+        result = {"primary": None, "all": [], "generated_at": datetime.now(timezone.utc).isoformat()}
+        _cset(cache_key, result)
+        return result
+
+    # Primary = highest goals-per-game team (the most attacking team in the top 5)
+    best = max(insights, key=lambda x: float(x["stat"]))
 
     result = {
         "primary": best,
@@ -708,13 +754,24 @@ async def model_metrics():
     except Exception:
         pass
 
-    # by_market: only include if backend actually computes per-market stats
-    # Currently not computed — frontend handles empty state gracefully
+    # by_market: per-outcome accuracy breakdown.
+    # We only populate this if outcome_accuracy is available from the predictions DB.
+    # An empty list is returned when data is insufficient — the frontend renders an
+    # empty state. We do NOT fabricate entries here.
     by_market = []
-    if overall is not None:
-        by_market = [
-            {"l": "Match Result", "v": round(overall, 1), "col": "#00e09e"},
-        ]
+    outcome_accuracy = None
+    try:
+        from app.routes.predictions import model_performance as _mp
+        perf_full = await _mp(league=None, window=200)
+        outcome_accuracy = perf_full.get("outcome_accuracy")  # {home, draw, away}
+        if outcome_accuracy and overall is not None:
+            by_market = [
+                {"l": "Home Win",  "v": round(outcome_accuracy.get("home", 0), 1), "col": "#4f9eff"},
+                {"l": "Draw",      "v": round(outcome_accuracy.get("draw", 0), 1), "col": "#f2c94c"},
+                {"l": "Away Win",  "v": round(outcome_accuracy.get("away", 0), 1), "col": "#b388ff"},
+            ]
+    except Exception:
+        pass
 
     # No fake trend fallback — if no verified predictions, trend stays empty
     # Frontend renders a clean empty state when trend is []
@@ -729,13 +786,15 @@ async def model_metrics():
         pass
 
     result = {
-        "overall_accuracy": overall,    # None if no verified data (no fake 64)
+        "overall_accuracy": overall,    # None if no verified data
         "log_loss":         log_loss_v,
         "brier_score":      brier,
         "last_30_accuracy": last30,
-        "trend":            trend,      # [] if no data (no fake GW28-35)
-        "by_market":        by_market,  # [] if not computed (no fake 68/71/38)
-        "fixtures_count":   fixtures_count,  # real count or None (no fake "15,000+")
+        "trend":            trend,      # [] if no data
+        "by_market":        by_market,  # [] if insufficient data; populated per-outcome when available
+        "by_market_computed": len(by_market) > 0,
+        "outcome_accuracy": outcome_accuracy,  # {home, draw, away} or None
+        "fixtures_count":   fixtures_count,
         "leagues_note":     "EPL, La Liga, Serie A, Ligue 1, Bundesliga",
         "generated_at":     datetime.now(timezone.utc).isoformat(),
     }
@@ -750,9 +809,16 @@ async def model_metrics():
 @router.get("/power_rankings")
 async def power_rankings(league: str = Query("epl"), n: int = Query(8)):
     """
-    Composite power score = 0.35×Elo_norm + 0.25×form_pts + 0.20×gd_norm
-                            + 0.10×ppg_norm + 0.10×xg_diff_norm
-    Returns top N teams with score, rank delta vs standings position.
+    Composite power score = 0.35×pts_norm + 0.25×form_norm
+                            + 0.20×gd_norm + 0.20×ppg_norm
+
+    pts_norm  — current points / max points in league
+    form_norm — last-5 form points / 15 (max possible)
+    gd_norm   — goal diff normalised to [0,1] across all teams
+    ppg_norm  — points per game / 3.0 (max possible)
+
+    Returns top N teams with power_score, power_rank, and rank_delta
+    (positive = model ranks them higher than the league table does).
     """
     cache_key = f"home:power_rankings:{league}:{n}"
     hit = _cget(cache_key, TTL_MEDIUM)
@@ -931,14 +997,17 @@ async def value_players(n: int = Query(6)):
 async def high_scoring_matches(n: int = Query(5)):
     """
     Upcoming fixtures with the highest predicted total goals (xG_home + xG_away).
-    Reuses top_predictions across all leagues.
+    Gathers predictions from all leagues. Results are cached at the cross-league
+    level (TTL_SHORT) to avoid cascading API calls on every dashboard request.
     """
     cache_key = f"home:high_scoring:{n}"
     hit = _cget(cache_key, TTL_SHORT)
     if hit is not None:
         return hit
 
-    # Gather predictions from all leagues in parallel
+    # Use a shared cross-league predictions cache so that if dashboard() has already
+    # called top_predictions() for EPL (index 0), those results are cache-hits here.
+    # All 5 leagues fire concurrently — each top_predictions() call is itself cached.
     tasks = [top_predictions(league=code) for code in TOP5]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -947,14 +1016,23 @@ async def high_scoring_matches(n: int = Query(5)):
         if isinstance(r, dict):
             all_preds.extend(r.get("predictions", []))
 
-    # Sort by predicted total goals
+    # Deduplicate by fixture_id (same fixture shouldn't appear from two leagues)
+    seen_ids: set = set()
+    unique_preds = []
     for p in all_preds:
+        fid = p.get("fixture_id")
+        if fid and fid not in seen_ids:
+            seen_ids.add(fid)
+            unique_preds.append(p)
+
+    # Sort by predicted total goals
+    for p in unique_preds:
         p["total_xg"] = round(p.get("xg_home", 0) + p.get("xg_away", 0), 2)
 
-    all_preds.sort(key=lambda p: -p.get("total_xg", 0))
+    unique_preds.sort(key=lambda p: -p.get("total_xg", 0))
 
     result = {
-        "matches":  all_preds[:n],
+        "matches":  unique_preds[:n],
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     _cset(cache_key, result)
@@ -969,6 +1047,7 @@ async def high_scoring_matches(n: int = Query(5)):
 async def defense_table(league: str = Query("epl"), n: int = Query(6)):
     """
     Top N teams by defensive record: goals against, clean sheets, GA/game.
+    Clean sheet counts are fetched from /teams/statistics for the top N teams.
     """
     cache_key = f"home:defense_table:{league}:{n}"
     hit = _cget(cache_key, TTL_MEDIUM)
@@ -985,10 +1064,35 @@ async def defense_table(league: str = Query("epl"), n: int = Query(6)):
 
     # Sort by fewest goals against per game, then total goals against
     standings.sort(key=lambda t: (t["ga_pg"], t["goals_against"]))
+    top_n = standings[:n]
 
-    # Fetch clean sheet data per team from team stats
+    # Fetch clean sheet data for the top N teams in parallel
+    async def _clean_sheets(team_id: int) -> int:
+        if not team_id:
+            return 0
+        try:
+            ts = await _api("/teams/statistics", {
+                "team": team_id, "league": lid, "season": _CURRENT_SEASON
+            }, TTL_LONG)
+            if ts:
+                fixtures = (ts[0].get("fixtures") or {})
+                # API returns clean sheets under fixtures.draws (no — it's under clean_sheets)
+                # Structure: {"clean_sheet": {"home": N, "away": N, "total": N}}
+                cs = ts[0].get("clean_sheet") or {}
+                return int(cs.get("total") or 0)
+        except Exception:
+            pass
+        return 0
+
+    cs_results = await asyncio.gather(
+        *[_clean_sheets(t.get("team_id", 0)) for t in top_n],
+        return_exceptions=True,
+    )
+    for t, cs in zip(top_n, cs_results):
+        t["clean_sheets"] = cs if isinstance(cs, int) else 0
+
     result = {
-        "table":    standings[:n],
+        "table":    top_n,
         "league":   LEAGUE_NAMES.get(league, league),
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -1239,7 +1343,10 @@ async def recent_results(n: int = Query(5)):
     try:
         from app.routes.predictions import _fetch_all, _verify_recent_results
         await _verify_recent_results()
-        raw = _fetch_all(limit=n, verified_only=False)
+        # Use verified_only=True: pending predictions are already surfaced in
+        # accountability_summary — duplicating them here with "Pending" status
+        # alongside verified rows creates confusing inconsistencies.
+        raw = _fetch_all(limit=n, verified_only=True)
         for r in raw:
             rows.append({
                 "home":    r.get("home_team", ""),
@@ -1311,11 +1418,25 @@ async def dashboard():
         analytics_term(rotate=True),            # 15
         performance_summary(),                  # 16 — truthful model perf
         accountability_summary(),               # 17 — truthful accountability
+        form_table(league="epl", n=6),          # 18 — form table (was missing)
+        featured_fixtures(),                    # 19 — featured fixtures (was missing)
         return_exceptions=True,
     )
 
     def _safe_result(r, fallback=None):
         return r if not isinstance(r, Exception) else (fallback or {})
+
+    perf_data = _safe_result(results[16], {})
+
+    # hero_stats: use logged count (all predictions ever recorded) as the primary
+    # fixture count — it's always available and doesn't depend on verification timing.
+    # Fall back to verified_count if logged isn't present.
+    try:
+        from app.routes.predictions import predictions_health
+        _health = predictions_health()
+        fixtures_predicted = _health.get("logged", 0) or perf_data.get("verified_count") or 0
+    except Exception:
+        fixtures_predicted = perf_data.get("verified_count") or 0
 
     payload = {
         "top_predictions":        _safe_result(results[0],  {"predictions": []}),
@@ -1334,12 +1455,14 @@ async def dashboard():
         "defense_table":          _safe_result(results[13], {"table": []}),
         "recent_results":         _safe_result(results[14], {"results": []}),
         "analytics_term":         _safe_result(results[15], {}),
-        "performance_summary":    _safe_result(results[16], {}),
+        "performance_summary":    perf_data,
         "accountability_summary": _safe_result(results[17], {}),
+        "form_table":             _safe_result(results[18], {"table": []}),
+        "featured_fixtures":      _safe_result(results[19], {"fixtures": []}),
         "hero_stats": {
             "competitions_count": 9,
-            "fixtures_predicted": _safe_result(results[16], {}).get("verified_count") or 0,
-            "verified_accuracy":  _safe_result(results[16], {}).get("overall_accuracy") or 0,
+            "fixtures_predicted": fixtures_predicted,
+            "verified_accuracy":  perf_data.get("overall_accuracy") or 0,
         },
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }

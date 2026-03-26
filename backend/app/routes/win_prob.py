@@ -34,6 +34,11 @@ async def _api(ep: str, params: dict) -> list:
     return []
 
 
+async def _empty() -> list:
+    """No-op coroutine — used instead of asyncio.coroutine() which was removed in Python 3.11."""
+    return []
+
+
 def _safe(d, *keys, default=0.0):
     for k in keys:
         if not isinstance(d, dict): return default
@@ -181,8 +186,8 @@ async def win_probability(fixture_id: int):
 
     # Fetch season stats in parallel
     home_s_raw, away_s_raw = await asyncio.gather(
-        _api("teams/statistics", {"team": home_id, "league": league_id, "season": season}) if home_id else asyncio.coroutine(lambda: [])(),
-        _api("teams/statistics", {"team": away_id, "league": league_id, "season": season}) if away_id else asyncio.coroutine(lambda: [])(),
+        _api("teams/statistics", {"team": home_id, "league": league_id, "season": season}) if home_id else _empty(),
+        _api("teams/statistics", {"team": away_id, "league": league_id, "season": season}) if away_id else _empty(),
     )
 
     home_stats = _normalise_season(home_s_raw)

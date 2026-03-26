@@ -139,6 +139,8 @@ async def performance_summary() -> dict:
             "confidence_bands": conf_breakdown,  # [{bracket, count, correct, accuracy}]
             "trend": trend,  # [{end_index, accuracy}]
             "outcome_accuracy": outcome_accuracy,  # {home, draw, away}
+            "assessed": assessed,   # top-level alias — matches accountability_summary shape
+            "correct": correct,     # top-level alias
             "insufficient": assessed < 10,
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }

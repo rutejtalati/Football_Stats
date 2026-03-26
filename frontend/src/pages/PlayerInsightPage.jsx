@@ -51,8 +51,7 @@ function PRow({p,rank,sk,sl,sc,max,onClick}){
   const[hov,sh]=useState(false);const[ref,vis]=useReveal();
   const ac=PC(p.position);const lc=LC[p.league_slug]||C.muted;const val=p[sk];
   return(
-    <div ref={ref} onClick={()=>
-      <PIBg/>onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
+    <div ref={ref} onClick={()=>onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
       style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:12,cursor:"pointer",
         background:hov?"rgba(12,20,40,0.99)":C.card,
         border:hov?"1px solid "+ac+"40":"1px solid "+C.border,
@@ -305,6 +304,59 @@ function StatTiles({pRows,tRows,pCurrent,tCurrent}){
 }
 
 // ── MAIN ──────────────────────────────────────────────────────
+
+// ── Intricate background ──────────────────────────────────────────────────────
+function PageBg() {
+  return (
+    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
+      <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px)",backgroundSize:"44px 44px"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.042) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.042) 1px,transparent 1px)",backgroundSize:"176px 176px"}}/>
+      <svg style={{position:"absolute",top:0,left:0,width:140,height:140,opacity:.07}} viewBox="0 0 140 140">
+        <polyline points="10,55 10,10 55,10" fill="none" stroke="white" strokeWidth="1.1"/>
+        <circle cx="10" cy="10" r="2" fill="none" stroke="white" strokeWidth=".7"/>
+      </svg>
+      <svg style={{position:"absolute",bottom:0,right:0,width:140,height:140,opacity:.06}} viewBox="0 0 140 140">
+        <polyline points="130,85 130,130 85,130" fill="none" stroke="white" strokeWidth="1.1"/>
+      </svg>
+    </div>
+  );
+}
+
+// ── Page Footer ───────────────────────────────────────────────────────────────
+function PageFooter() {
+  return (
+    <footer style={{position:"relative",zIndex:2,marginTop:"auto",fontFamily:"'Inter',sans-serif"}}>
+      <div style={{height:"0.5px",background:"linear-gradient(90deg,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent)",marginBottom:32}}/>
+      <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:24,padding:"0 24px 40px"}}>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+              <rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+              <rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+              <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+              <rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+              <rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/>
+            </svg>
+            <span style={{fontSize:17,fontWeight:700,color:"#fff",letterSpacing:"-.04em"}}>StatinSite</span>
+          </div>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",paddingLeft:32}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"14px 28px",background:"rgba(255,255,255,.04)",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:14,backdropFilter:"blur(12px)"}}>
+          <span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.28)",letterSpacing:".12em",textTransform:"uppercase"}}>Built by</span>
+          <span style={{fontSize:17,fontWeight:700,color:"#fff",letterSpacing:"-.025em"}}>Rutej Talati</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.45)"}}>statinsite.com</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.18)"}}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export default function PlayerProfilePage(){
   const[league,setLeague]=useState("all");
   const[pTab,setPTab]=useState("scorers");
@@ -386,6 +438,7 @@ export default function PlayerProfilePage(){
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Inter',sans-serif",
       backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
       backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
+      <PageBg/>
       <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
 
       {sel&&selType==="player"&&<PDetail p={sel} onClose={()=>setSel(null)}/>}
@@ -527,5 +580,5 @@ export default function PlayerProfilePage(){
     </div>
   );
       <PageFooter/>
-  );
+  
 }

@@ -436,5 +436,5 @@ export default function PlayerBrowsePage() {
     </div>
   );
       <PageFooter/>
-  );
+  
 }

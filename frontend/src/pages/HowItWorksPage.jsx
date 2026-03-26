@@ -934,6 +934,7 @@ export default function HowItWorksPage() {
         </div>
 
       </div>
+      <PageFooter/>
     </div>
   );
 }

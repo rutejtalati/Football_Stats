@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 /* ───────────────── Components ───────────────── */
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 /* ───────────────── Pages ───────────────── */
 import HomePage from "./pages/HomePage";
@@ -64,7 +65,7 @@ export default function App() {
 
         <Navbar />
 
-        <div className="sn-page-wrap">
+        <main className="sn-page-wrap">
           <Routes>
 
             {/* Home */}
@@ -119,17 +120,9 @@ export default function App() {
             <Route path="/news"  element={<NewsTrackerPage />} />
 
           </Routes>
-        </div>
+        </main>
 
-        <footer className="site-footer">
-          <span className="site-footer-text">
-            <span className="footer-name">Rutej Talati</span>
-            <span className="footer-sep">©</span>
-            2026
-            <span className="footer-sep"> | </span>
-            StatinSite · Sports Analytics & Predictions
-          </span>
-        </footer>
+        <Footer />
 
       </div>
     </BrowserRouter>

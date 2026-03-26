@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
 const C = {
-  bg:"#000",card:"rgba(6,6,10,0.98)",border:"rgba(255,255,255,0.09)",
+  bg:"#080808",card:"rgba(6,6,10,0.98)",border:"rgba(255,255,255,0.09)",
   text:"#ffffff",muted:"rgba(220,230,245,0.9)",dim:"rgba(255,255,255,0.3)",soft:"#e8eeff",
-  blue:"#00fff0",green:"#00ff9d",amber:"#ffd60a",red:"#ff4560",
+  blue:"#ffffff",green:"#00ff9d",amber:"#ffd60a",red:"#ff4560",
   purple:"#c084fc",orange:"#ff7c2a",teal:"#00e5ff",pink:"#ff3ea5",
 };
 
@@ -44,14 +44,15 @@ function Form({f}){if(!f)return null;return <div style={{display:"flex",gap:2}}>
 function Lbadge({slug,color}){if(!slug||slug==="all")return null;return <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:color||C.muted,background:(color||C.muted)+"10",border:"1px solid "+(color||C.muted)+"25",borderRadius:4,padding:"1px 5px",flexShrink:0}}>{LA[slug]||slug.toUpperCase()}</span>;}
 
 // ── Rank medal ────────────────────────────────────────────────
-function Rnk({n}){const mc=["#f2c94c","#94a3b8","#fb923c"];const c=n<=3?mc[n-1]:C.dim;return <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:c,width:20,textAlign:"right",flexShrink:0}}>{n}</span>;}
+function Rnk({n}){const mc=["#f2c94c","#94a3b8","#fb923c"];const c=n<=3?mc[n-1]:C.dim;return <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:900,color:c,width:20,textAlign:"right",flexShrink:0}}>{n}</span>;}
 
 // ── Player row ─────────────────────────────────────────────────
 function PRow({p,rank,sk,sl,sc,max,onClick}){
   const[hov,sh]=useState(false);const[ref,vis]=useReveal();
   const ac=PC(p.position);const lc=LC[p.league_slug]||C.muted;const val=p[sk];
   return(
-    <div ref={ref} onClick={()=>onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
+    <div ref={ref} onClick={()=>
+      <PIBg/>onClick(p)} onMouseEnter={()=>sh(true)} onMouseLeave={()=>sh(false)}
       style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:12,cursor:"pointer",
         background:hov?"rgba(12,20,40,0.99)":C.card,
         border:hov?"1px solid "+ac+"40":"1px solid "+C.border,
@@ -66,7 +67,7 @@ function PRow({p,rank,sk,sl,sc,max,onClick}){
           <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:ac,background:ac+"0e",border:"1px solid "+ac+"20",borderRadius:4,padding:"1px 4px",flexShrink:0}}>{p.position||"—"}</span>
           <Lbadge slug={p.league_slug} color={lc}/>
         </div>
-        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
         <div style={{display:"flex",gap:4,alignItems:"center",marginTop:1}}>
           {p.team_logo&&<img src={p.team_logo} alt="" style={{width:10,height:10,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
           <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.team}</span>
@@ -75,7 +76,7 @@ function PRow({p,rank,sk,sl,sc,max,onClick}){
       <div style={{display:"flex",alignItems:"center",gap:7,minWidth:100,flexShrink:0}}>
         <Bar v={val||0} max={max} color={sc}/>
         <div style={{textAlign:"right",minWidth:32}}>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
           <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{sl}</div>
         </div>
       </div>
@@ -103,13 +104,13 @@ function TRow({t,rank,sk,sl,sc,max,onClick}){
           <Lbadge slug={t.league_slug} color={lc}/>
           <Form f={t.form}/>
         </div>
-        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.team}</p>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:800,color:hov?C.text:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.team}</p>
         <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.dim}}>{t.played}PL · {t.wins}W {t.draws}D {t.losses}L</span>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:7,minWidth:100,flexShrink:0}}>
         <Bar v={val||0} max={max} color={sc}/>
         <div style={{textAlign:"right",minWidth:32}}>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:sc,lineHeight:1}}>{typeof val==="number"&&val%1!==0?val.toFixed(1):val??0}</div>
           <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{sl}</div>
         </div>
       </div>
@@ -130,7 +131,7 @@ function PDetail({p,onClose}){
             {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
           </div>
           <div style={{flex:1,minWidth:0}}>
-            <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px",lineHeight:1.2}}>{p.name}</h2>
+            <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px",lineHeight:1.2}}>{p.name}</h2>
             <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
               <span style={{fontSize:7,fontWeight:900,textTransform:"uppercase",color:ac,background:ac+"10",border:"1px solid "+ac+"22",borderRadius:4,padding:"2px 5px"}}>{p.position}</span>
               <Lbadge slug={p.league_slug} color={lc}/>
@@ -147,7 +148,7 @@ function PDetail({p,onClose}){
         <div style={{padding:"11px 15px",display:"flex",gap:5,flexWrap:"wrap"}}>
           {[{l:"Goals",v:p.goals,c:C.red},{l:"Assists",v:p.assists,c:C.green},{l:"Apps",v:p.appearances,c:C.blue},{l:"Mins",v:p.minutes,c:C.muted},p.rating&&{l:"Rating",v:Number(p.rating).toFixed(1),c:C.amber}].filter(Boolean).map(s=>(
             <div key={s.l} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"7px 9px",borderRadius:9,background:"rgba(255,255,255,0.022)",border:"1px solid "+s.c+"18",minWidth:50}}>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:s.c,lineHeight:1}}>{s.v??0}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:s.c,lineHeight:1}}>{s.v??0}</span>
               <span style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>{s.l}</span>
             </div>
           ))}
@@ -158,7 +159,7 @@ function PDetail({p,onClose}){
             <div key={r.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}>
               <span style={{fontSize:10,color:C.muted,width:76,flexShrink:0,textAlign:"right"}}>{r.l}</span>
               <Bar v={r.v} max={r.max} color={r.c}/>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:r.c,width:22,textAlign:"right",fontWeight:700,flexShrink:0}}>{r.v}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:r.c,width:22,textAlign:"right",fontWeight:700,flexShrink:0}}>{r.v}</span>
             </div>
           ))}
         </div>
@@ -167,14 +168,14 @@ function PDetail({p,onClose}){
             <div style={{fontSize:7,fontWeight:900,color:ac,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9}}>Per 90 Minutes</div>
             <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
               {[{l:"Goals",v:(p.goals_per90||0).toFixed(2)},{l:"Assists",v:(p.assists_per90||0).toFixed(2)},{l:"Shots",v:(p.shots_per90||0).toFixed(2)}].map(s=>(
-                <div key={s.l}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:900,color:ac}}>{s.v}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.l}</div></div>
+                <div key={s.l}><div style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:900,color:ac}}>{s.v}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.l}</div></div>
               ))}
             </div>
           </div>
         )}
         <div style={{margin:"0 15px 15px",display:"flex",gap:7}}>
-          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(245,158,11,0.07)",border:"1px solid rgba(245,158,11,0.18)",textAlign:"center"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:900,color:C.amber}}>{p.yellow_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Yellow</div></div>
-          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(248,113,113,0.07)",border:"1px solid rgba(248,113,113,0.18)",textAlign:"center"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:900,color:C.red}}>{p.red_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Red</div></div>
+          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(245,158,11,0.07)",border:"1px solid rgba(245,158,11,0.18)",textAlign:"center"}}><div style={{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:900,color:C.amber}}>{p.yellow_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Yellow</div></div>
+          <div style={{flex:1,padding:"8px",borderRadius:9,background:"rgba(248,113,113,0.07)",border:"1px solid rgba(248,113,113,0.18)",textAlign:"center"}}><div style={{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:900,color:C.red}}>{p.red_cards||0}</div><div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>Red</div></div>
         </div>
       </div>
     </div>
@@ -192,7 +193,7 @@ function TDetail({t,onClose}){
           <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:13}}>
             {t.team_logo&&<img src={t.team_logo} alt="" style={{width:40,height:40,objectFit:"contain"}} onError={e=>e.currentTarget.style.display="none"}/>}
             <div style={{flex:1,minWidth:0}}>
-              <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px"}}>{t.team}</h2>
+              <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:"0 0 3px"}}>{t.team}</h2>
               <div style={{display:"flex",gap:5,alignItems:"center"}}>
                 <Lbadge slug={t.league_slug} color={lc}/>
                 <span style={{fontSize:9,color:C.dim}}>#{t.rank}</span>
@@ -204,7 +205,7 @@ function TDetail({t,onClose}){
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:13}}>
             {[{l:"W",v:t.wins,c:C.green},{l:"D",v:t.draws,c:C.amber},{l:"L",v:t.losses,c:C.red},{l:"PTS",v:t.points,c:C.blue}].map(s=>(
               <div key={s.l} style={{textAlign:"center",padding:"7px 4px",borderRadius:9,background:"rgba(255,255,255,0.022)",border:"1px solid "+s.c+"18"}}>
-                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:900,color:s.c}}>{s.v}</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:s.c}}>{s.v}</div>
                 <div style={{fontSize:7,fontWeight:800,color:C.dim,letterSpacing:"0.1em",textTransform:"uppercase"}}>{s.l}</div>
               </div>
             ))}
@@ -213,7 +214,7 @@ function TDetail({t,onClose}){
             <div key={s.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:7}}>
               <span style={{fontSize:9,color:C.muted,width:90,flexShrink:0,textAlign:"right"}}>{s.l}</span>
               <Bar v={parseFloat(s.v)||0} max={s.max} color={s.c}/>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:s.c,width:30,textAlign:"right",fontWeight:700,flexShrink:0}}>{typeof s.v==="number"?s.v.toFixed?s.v.toFixed(1):s.v:s.v||0}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:s.c,width:30,textAlign:"right",fontWeight:700,flexShrink:0}}>{typeof s.v==="number"?s.v.toFixed?s.v.toFixed(1):s.v:s.v||0}</span>
             </div>
           ))}
         </div>
@@ -227,16 +228,16 @@ function SHead({title,color,count,loading}){
   return(
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
       <div style={{width:3,height:28,borderRadius:2,background:"linear-gradient(180deg,"+color+",transparent)",flexShrink:0}}/>
-      <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:0,flex:1,letterSpacing:"-0.02em"}}>{title}</h2>
+      <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:900,color:C.text,margin:0,flex:1,letterSpacing:"-0.02em"}}>{title}</h2>
       {loading&&<span style={{fontSize:9,color:C.dim,fontFamily:"'Inter',sans-serif"}}>Loading…</span>}
-      {!loading&&count!=null&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:C.dim,fontWeight:700}}>{count}</span>}
+      {!loading&&count!=null&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:C.dim,fontWeight:700}}>{count}</span>}
     </div>
   );
 }
 
 
 // ── League Donut (Viz 3) ──────────────────────────────────────────
-const LEAGUE_COLORS_BRIGHT={epl:"#00fff0",laliga:"#ffd60a",seriea:"#00ff9d",bundesliga:"#ff7c2a",ligue1:"#c084fc",all:C.muted};
+const LEAGUE_COLORS_BRIGHT={epl:"#ffffff",laliga:"#ffd60a",seriea:"#00ff9d",bundesliga:"#ff7c2a",ligue1:"#c084fc",all:C.muted};
 function LeagueDonut({rows,sk,color,label}){
   if(!rows||rows.length===0)return null;
   const byLeague={};
@@ -294,7 +295,7 @@ function StatTiles({pRows,tRows,pCurrent,tCurrent}){
       {tiles.map((t,i)=>(
         <div key={i} style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"11px 13px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:t.col}}/>
-          <div style={{fontSize:20,fontWeight:900,color:t.col,fontFamily:"'JetBrains Mono',monospace",lineHeight:1,textShadow:`0 0 20px ${t.col}80`}}>{t.val}</div>
+          <div style={{fontSize:20,fontWeight:900,color:t.col,fontFamily:"'Inter',sans-serif",lineHeight:1,textShadow:`0 0 20px ${t.col}80`}}>{t.val}</div>
           <div style={{fontSize:8,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:3}}>{t.label}</div>
           <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:2}}>{t.name}</div>
         </div>
@@ -382,7 +383,7 @@ export default function PlayerProfilePage(){
   const onLeague=lg=>{setLeague(lg);cacheRef.current={};setCache({});};
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Sora',sans-serif",
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Inter',sans-serif",
       backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
       backgroundSize:"80px 80px",backgroundAttachment:"fixed"}}>
       <style>{"@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}"}</style>
@@ -398,7 +399,7 @@ export default function PlayerProfilePage(){
             <div style={{display:"flex",alignItems:"center",gap:14}}>
               <div style={{width:4,height:46,borderRadius:2,background:"linear-gradient(180deg,#38bdf8,#34d399)",flexShrink:0}}/>
               <div>
-                <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:26,fontWeight:900,color:C.text,margin:0,letterSpacing:"-0.03em"}}>Stats Hub</h1>
+                <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.text,margin:0,letterSpacing:"-0.03em"}}>Stats Hub</h1>
                 <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:C.dim,margin:"3px 0 0",fontWeight:600}}>Goals · Assists · Clean sheets · Team form across all 5 European leagues</p>
               </div>
             </div>
@@ -428,12 +429,12 @@ export default function PlayerProfilePage(){
                         {p.photo?<img src={p.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.style.display="none"}/>:(p.name||"?")[0]}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <p style={{fontFamily:"'Sora',sans-serif",fontSize:12,fontWeight:700,color:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+                        <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:700,color:C.soft,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
                         <p style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:C.muted,margin:0}}>{p.team} · {p.position} · {p.league}</p>
                       </div>
                       <div style={{display:"flex",gap:8,flexShrink:0}}>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:C.red}}>{p.goals}G</span>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:900,color:C.green}}>{p.assists}A</span>
+                        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:900,color:C.red}}>{p.goals}G</span>
+                        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:900,color:C.green}}>{p.assists}A</span>
                       </div>
                     </div>
                   ))}
@@ -450,7 +451,7 @@ export default function PlayerProfilePage(){
               style={{padding:"7px 16px",borderRadius:8,
                 border:league===l.key?`2px solid ${l.color}`:"1px solid rgba(255,255,255,0.1)",
                 background:league===l.key?l.color:"transparent",
-                color:league===l.key?"#000":"rgba(255,255,255,0.55)",
+                color:league===l.key?"#080808":"rgba(255,255,255,0.55)",
                 fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:800,
                 cursor:"pointer",transition:"all .16s",flexShrink:0,whiteSpace:"nowrap",
                 boxShadow:league===l.key?`0 0 20px ${l.color}60`:"none",
@@ -524,5 +525,7 @@ export default function PlayerProfilePage(){
         </div>
       </div>
     </div>
+  );
+      <PageFooter/>
   );
 }

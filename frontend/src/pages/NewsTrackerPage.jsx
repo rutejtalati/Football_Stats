@@ -662,7 +662,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
               {paras.length>0
                 ?paras.map((p,i)=><p key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:15.5,lineHeight:1.82,color:i===paras.length-1?"rgba(255,255,255,.9)":"rgba(200,215,230,0.85)",margin:0}}>{p}</p>)
                 :<p style={{fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.75,color:"rgba(255,255,255,.7)",margin:0}}>{article.standfirst||article.summary}</p>}
-              {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#000",fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
+              {article.url&&<a href={article.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 22px",borderRadius:999,background:accent,color:"#080808",fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,textDecoration:"none",width:"fit-content",marginTop:8}}>Read full article at {article.source} →</a>}
             </div>)}
             {ms&&(<div style={{marginTop:32,padding:"18px 20px",borderRadius:0,background:"rgba(255,255,255,0.018)",border:"1px solid "+accent+"14"}}>
               <div style={{fontSize:11,fontWeight:700,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:16}}>Key Statistics</div>
@@ -887,6 +887,80 @@ function NewsIntricateBg() {
   );
 }
 
+
+// ── Intricate background ──────────────────────────────────────────────────────
+function NewsBg() {
+  return (
+    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
+      <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px)",backgroundSize:"44px 44px"}}/>
+      <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(255,255,255,.042) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.042) 1px,transparent 1px)",backgroundSize:"176px 176px"}}/>
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="NewsBg-sl" width="110" height="110" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="110" x2="110" y2="0" stroke="rgba(255,255,255,.009)" strokeWidth="0.6"/>
+          </pattern>
+          <pattern id="NewsBg-dt" width="44" height="44" patternUnits="userSpaceOnUse">
+            <circle cx="22" cy="22" r="0.65" fill="rgba(255,255,255,.055)"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#NewsBg-sl)"/>
+        <rect width="100%" height="100%" fill="url(#NewsBg-dt)"/>
+      </svg>
+      <svg style={{position:"absolute",top:0,left:0,width:140,height:140,opacity:.07}} viewBox="0 0 140 140">
+        <polyline points="10,55 10,10 55,10" fill="none" stroke="white" strokeWidth="1.1"/>
+        <circle cx="10" cy="10" r="2" fill="none" stroke="white" strokeWidth=".7"/>
+      </svg>
+      <svg style={{position:"absolute",bottom:0,right:0,width:140,height:140,opacity:.06}} viewBox="0 0 140 140">
+        <polyline points="130,85 130,130 85,130" fill="none" stroke="white" strokeWidth="1.1"/>
+      </svg>
+    </div>
+  );
+}
+
+// ── iOS-style Page Footer ────────────────────────────────────────────────────
+function PageFooter() {
+  return (
+    <footer style={{
+      position:"relative",zIndex:2,marginTop:"auto",
+    }}>
+      <div style={{
+        height:"0.5px",
+        background:"linear-gradient(90deg,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent)",
+        marginBottom:32,
+      }}/>
+      <div style={{
+        display:"flex",flexWrap:"wrap",alignItems:"center",
+        justifyContent:"space-between",gap:24,paddingBottom:40,
+        padding:"0 24px 40px",
+      }}>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+              <rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+              <rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+              <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+              <rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+              <rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/>
+            </svg>
+            <span style={{fontSize:17,fontWeight:700,color:"#ffffff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
+          </div>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:"'Inter',sans-serif",paddingLeft:32}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"14px 28px",background:"rgba(255,255,255,.04)",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:14,backdropFilter:"blur(12px)"}}>
+          <span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.28)",letterSpacing:".12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</span>
+          <span style={{fontSize:17,fontWeight:700,color:"#ffffff",letterSpacing:"-.025em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.45)",fontFamily:"'Inter',sans-serif"}}>statinsite.com</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.18)",fontFamily:"'Inter',sans-serif"}}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
 export default function NewsTrackerPage(){
   const[articles,setArticles]=useState([]);
   const[transferItems,setTransferItems]=useState([]);

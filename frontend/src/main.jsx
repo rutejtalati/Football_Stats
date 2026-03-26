@@ -3,11 +3,11 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Set theme synchronously before first render to prevent any flash of light theme.
-// Defaults to dark; only uses light if the user explicitly saved that preference.
+// Apply saved theme synchronously before first paint — no flash.
+// Defaults to dark on first visit; remembers whatever the user last toggled to after that.
 (function () {
-  const theme = localStorage.getItem("sn-theme") === "light" ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", theme);
+  const saved = localStorage.getItem("sn-theme");
+  document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "dark");
 })();
 
 // Wake-up ping — GET so FastAPI handles it without a separate @app.head decorator

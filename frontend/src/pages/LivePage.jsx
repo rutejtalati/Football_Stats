@@ -161,10 +161,10 @@ function FeaturedCard({ f, onClick }) {
       onMouseLeave={() => setHov(false)}
       style={{
         position:"relative", overflow:"hidden",
-        borderRadius:18, cursor:"pointer", flexShrink:0,
+        borderRadius:16, cursor:"pointer", flexShrink:0,
         width:272, padding:"18px 18px 14px",
-        background: isL ? "linear-gradient(145deg,#170b0b,#0e0505)" : "linear-gradient(145deg,#0c1726,#070f1b)",
-        border:`1px solid ${isL ? `rgba(255,55,55,${hov?.28:.14})` : `rgba(255,255,255,${hov?.09:.045})`}`,
+        background: isL ? "rgba(255,40,40,.04)" : "rgba(255,255,255,.025)",
+        border:`0.5px solid ${isL ? `rgba(255,69,58,${hov?.4:.15})` : `rgba(255,255,255,${hov?.1:.05})`}`,
         boxShadow: hov
           ? `0 20px 50px rgba(0,0,0,0.55), inset 0 0 0 1px ${lg?.color||"#fff"}14`
           : "0 4px 18px rgba(0,0,0,0.3)",
@@ -192,7 +192,7 @@ function FeaturedCard({ f, onClick }) {
           <div key={i} style={{ display:"flex", alignItems:"center", gap:9 }}>
             <Logo src={logo} size={22} />
             <span style={{ fontSize:13, fontWeight:bold?900:600, color:bold?"#f0f6ff":"rgba(255,255,255,0.7)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-            {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"#2a3a4c", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
+            {hasSc && <span style={{ fontSize:20, fontWeight:900, color:bold?"#f0f6ff":"rgba(255,255,255,.12)", fontFamily:"'JetBrains Mono',monospace", minWidth:22, textAlign:"center" }}>{score}</span>}
           </div>
         ))}
       </div>
@@ -243,7 +243,7 @@ export function ScheduledCard({ fixture, onClick }) {
         position:"relative", overflow:"hidden",
         padding:"12px 14px 11px",
         borderRadius:12, cursor:"pointer",
-        background: hov ? "#0c1828" : "#080f1c",
+        background: hov ? "rgba(255,255,255,.045)" : "rgba(255,255,255,.02)",
         border:`1px solid rgba(255,255,255,${hov?.075:.038})`,
         boxShadow: hov ? "0 8px 26px rgba(0,0,0,0.32)" : "none",
         transform: hov ? "translateY(-2px)" : "translateY(0)",
@@ -323,7 +323,7 @@ export function LiveCard({ fixture, onClick }) {
             <div key={i} style={{ display:"flex", alignItems:"center", gap:7 }}>
               <Logo src={logo} size={16} />
               <span style={{ fontSize:12, fontWeight:bold?800:600, color:bold?"#edf4ff":"rgba(255,255,255,0.65)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{name}</span>
-              <span style={{ fontSize:18, fontWeight:900, color:bold?"#f0f6ff":"#2a3a4c", fontFamily:"'JetBrains Mono',monospace", minWidth:20, textAlign:"center" }}>{score}</span>
+              <span style={{ fontSize:18, fontWeight:900, color:bold?"#f0f6ff":"rgba(255,255,255,.12)", fontFamily:"'JetBrains Mono',monospace", minWidth:20, textAlign:"center" }}>{score}</span>
             </div>
           ))}
         </div>
@@ -543,6 +543,147 @@ function LeagueSummaryWidget({ fixtures }) {
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
+
+// ── Intricate background ──────────────────────────────────────────────────────
+function LiveBg() {
+  return (
+    <div aria-hidden="true" style={{
+      position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden",
+    }}>
+      {/* Pure black base */}
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+
+      {/* Very subtle radial glows — pure white, very low opacity */}
+      <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
+      <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
+
+      {/* Fine grid — very subtle, no colour tint */}
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px)",
+        backgroundSize:"44px 44px"}}/>
+
+      {/* Accent grid at 4× spacing */}
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.042) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.042) 1px,transparent 1px)",
+        backgroundSize:"176px 176px"}}/>
+
+      {/* SVG decorative layer */}
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}
+        preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="lb-slash" width="110" height="110" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="110" x2="110" y2="0" stroke="rgba(255,255,255,.009)" strokeWidth="0.6"/>
+          </pattern>
+          <pattern id="lb-dot" width="44" height="44" patternUnits="userSpaceOnUse">
+            <circle cx="22" cy="22" r="0.65" fill="rgba(255,255,255,.055)"/>
+          </pattern>
+          <pattern id="lb-hex" width="56" height="48" patternUnits="userSpaceOnUse">
+            <polygon points="28,2 54,14 54,34 28,46 2,34 2,14"
+              fill="none" stroke="rgba(255,255,255,.016)" strokeWidth="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#lb-slash)"/>
+        <rect width="100%" height="100%" fill="url(#lb-dot)"/>
+        {/* Hex zone top-right */}
+        <rect x="62%" y="0" width="38%" height="45%" fill="url(#lb-hex)" opacity="0.7"/>
+        {/* Diamond zone bottom-left */}
+        <rect x="0" y="58%" width="32%" height="42%" fill="url(#lb-hex)" opacity="0.5"/>
+      </svg>
+
+      {/* HUD corner brackets */}
+      <svg style={{position:"absolute",top:0,left:0,width:160,height:160,opacity:.08}} viewBox="0 0 160 160">
+        <polyline points="10,60 10,10 60,10" fill="none" stroke="white" strokeWidth="1.1"/>
+        <polyline points="10,78 10,10 78,10" fill="none" stroke="white" strokeWidth=".35"/>
+        <circle cx="10" cy="10" r="2" fill="none" stroke="white" strokeWidth=".7"/>
+      </svg>
+      <svg style={{position:"absolute",top:0,right:0,width:160,height:160,opacity:.06}} viewBox="0 0 160 160">
+        <polyline points="150,60 150,10 100,10" fill="none" stroke="white" strokeWidth="1.1"/>
+      </svg>
+      <svg style={{position:"absolute",bottom:0,right:0,width:160,height:160,opacity:.06}} viewBox="0 0 160 160">
+        <polyline points="150,100 150,150 100,150" fill="none" stroke="white" strokeWidth="1.1"/>
+      </svg>
+    </div>
+  );
+}
+
+
+// ── iOS-style Page Footer ────────────────────────────────────────────────────
+function PageFooter() {
+  return (
+    <footer style={{
+      marginTop:64,
+      paddingTop:0,
+      position:"relative",
+      zIndex:2,
+    }}>
+      {/* Top separator line */}
+      <div style={{
+        height:"0.5px",
+        background:"linear-gradient(90deg,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent)",
+        marginBottom:32,
+      }}/>
+
+      <div style={{
+        display:"flex",
+        flexWrap:"wrap",
+        alignItems:"center",
+        justifyContent:"space-between",
+        gap:24,
+        paddingBottom:40,
+      }}>
+        {/* Left — brand */}
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {/* Brand mark */}
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+              <rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+              <rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+              <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+              <rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+              <rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/>
+            </svg>
+            <span style={{fontSize:17,fontWeight:700,color:"#ffffff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
+          </div>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:"'Inter',sans-serif",letterSpacing:".01em",paddingLeft:32}}>
+            Football Intelligence · ELO · Dixon-Coles · xG
+          </span>
+        </div>
+
+        {/* Centre — built by card */}
+        <div style={{
+          display:"flex",flexDirection:"column",alignItems:"center",gap:5,
+          padding:"14px 28px",
+          background:"rgba(255,255,255,.04)",
+          border:"0.5px solid rgba(255,255,255,.1)",
+          borderRadius:14,
+          backdropFilter:"blur(12px)",
+        }}>
+          <span style={{
+            fontSize:10,fontWeight:500,
+            color:"rgba(255,255,255,.28)",
+            letterSpacing:".12em",textTransform:"uppercase",
+            fontFamily:"'Inter',sans-serif",
+          }}>Built by</span>
+          <span style={{
+            fontSize:17,fontWeight:700,
+            color:"#ffffff",
+            letterSpacing:"-.025em",
+            fontFamily:"'Inter',sans-serif",
+          }}>Rutej Talati</span>
+        </div>
+
+        {/* Right — links */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.45)",fontFamily:"'Inter',sans-serif",letterSpacing:".02em"}}>statinsite.com</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.18)",fontFamily:"'Inter',sans-serif"}}>© 2025 StatinSite. All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export default function LivePage() {
   const navigate = useNavigate();
   const [chips,      setChips]      = useState([]);
@@ -665,8 +806,9 @@ export default function LivePage() {
         *{box-sizing:border-box}
       `}</style>
 
-      <div style={{ background:"#000", minHeight:"100vh", fontFamily:"'Inter','Sora',system-ui,sans-serif" }}>
-        <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 20px" }}>
+      <div style={{ background:"#080808", minHeight:"100vh", fontFamily:"'Inter',system-ui,sans-serif", position:"relative" }}>
+        <LiveBg/>
+        <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 20px", position:"relative", zIndex:1 }}>
 
           {/* ══ HERO HEADER ══ */}
           <div style={{ padding:"26px 0 18px", borderBottom:"1px solid rgba(255,255,255,.04)", marginBottom:22 }}>
@@ -743,7 +885,7 @@ export default function LivePage() {
                           opacity: inRange ? 1 : 0.35,
                         }}>
                         <span style={{ fontSize:8.5, fontWeight:700, color:labelCol, letterSpacing:".03em" }}>{dayName}</span>
-                        <span style={{ fontSize:14, fontWeight:900, color:textCol, lineHeight:1, fontFamily:"monospace" }}>{dateNum}</span>
+                        <span style={{ fontSize:14, fontWeight:900, color:textCol, lineHeight:1, fontFamily:"'Inter',sans-serif" }}>{dateNum}</span>
                         {/* indicator dot */}
                         <div style={{ width:5, height:5, borderRadius:"50%", background: active ? col : (isToday?"rgba(239,68,68,.9)":colBorder), flexShrink:0 }}/>
                       </button>
@@ -874,6 +1016,7 @@ export default function LivePage() {
 
             </div>
           )}
+          <PageFooter/>
         </div>
       </div>
     </>

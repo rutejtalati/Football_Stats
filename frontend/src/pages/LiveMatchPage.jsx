@@ -1300,7 +1300,7 @@ function Timeline({ events, homeTeam, awayTeam }) {
               padding:"7px 10px",
               borderBottom:"1px solid rgba(255,255,255,0.025)",
               borderLeft: (ev.type||"").toLowerCase()==="goal" ? "3px solid #34d399" : (ev.detail||"").toLowerCase().includes("yellow") ? "3px solid #fbbf24" : (ev.detail||"").toLowerCase().includes("red") ? "3px solid #ef4444" : (ev.type||"").toLowerCase()==="subst" ? "3px solid #60a5fa" : "3px solid transparent",
-              background: (ev.type||"").toLowerCase()==="goal" ? "rgba(52,211,153,.04)" : "transparent",
+              background: (ev.type||"").toLowerCase()==="goal" ? "rgba(255,255,255,.009)" : "transparent",
               borderRadius: 4,
             }}>
               {isHome ? (
@@ -2045,7 +2045,7 @@ function CommentaryPanel({
             Match Intelligence
           </div>
           {insights.map((ins,i)=>(
-            <div key={i} style={{padding:"9px 13px",borderRadius:9,marginBottom:6,background:"rgba(52,211,153,.05)",border:"1px solid rgba(52,211,153,.12)"}}>
+            <div key={i} style={{padding:"9px 13px",borderRadius:9,marginBottom:6,background:"rgba(255,255,255,.009)",border:"1px solid rgba(52,211,153,.12)"}}>
               <div style={{fontSize:9,fontWeight:800,color:"#34d399",letterSpacing:".06em",marginBottom:4}}>{(ins.title||"").toUpperCase()}</div>
               <div style={{fontSize:12,color:"rgba(255,255,255,.6)",lineHeight:1.6}}>{ins.body}</div>
             </div>

@@ -920,47 +920,33 @@ function NewsBg() {
   );
 }
 
-// ── iOS-style Page Footer ────────────────────────────────────────────────────
 function PageFooter() {
   return (
-    <footer style={{
-      position:"relative",zIndex:2,marginTop:"auto",
-    }}>
-      <div style={{
-        height:"0.5px",
-        background:"linear-gradient(90deg,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent)",
-        marginBottom:32,
-      }}/>
-      <div style={{
-        display:"flex",flexWrap:"wrap",alignItems:"center",
-        justifyContent:"space-between",gap:24,paddingBottom:40,
-        padding:"0 24px 40px",
-      }}>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
-              <rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
-              <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
-              <rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
-              <rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/>
-            </svg>
-            <span style={{fontSize:17,fontWeight:700,color:"#ffffff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
-          </div>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:"'Inter',sans-serif",paddingLeft:32}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+    <footer style={{position:"relative",zIndex:2,flexShrink:0,background:"rgba(255,255,255,0.025)",borderTop:"0.5px solid rgba(255,255,255,0.08)",fontFamily:"'Inter',system-ui,sans-serif"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:"0 28px",height:52}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+            <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+            <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+            <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
+          </svg>
+          <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)",letterSpacing:"-.03em"}}>StatinSite</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,0.25)",letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
         </div>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"14px 28px",background:"rgba(255,255,255,.04)",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:14,backdropFilter:"blur(12px)"}}>
-          <span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.28)",letterSpacing:".12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</span>
-          <span style={{fontSize:17,fontWeight:700,color:"#ffffff",letterSpacing:"-.025em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</span>
+        <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px",background:"rgba(255,255,255,0.04)",border:"0.5px solid rgba(255,255,255,0.09)",borderRadius:999,flexShrink:0}}>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.28)",letterSpacing:".1em",textTransform:"uppercase"}}>Built by</span>
+          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.75)"}}>Rutej Talati</span>
         </div>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
-          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.45)",fontFamily:"'Inter',sans-serif"}}>statinsite.com</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.18)",fontFamily:"'Inter',sans-serif"}}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
-        </div>
+        <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>© {new Date().getFullYear()} StatinSite</span>
       </div>
     </footer>
+      <PageFooter/>
   );
 }
+
+
 export default function NewsTrackerPage(){
   const[articles,setArticles]=useState([]);
   const[transferItems,setTransferItems]=useState([]);

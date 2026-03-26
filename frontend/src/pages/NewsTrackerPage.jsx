@@ -922,27 +922,48 @@ function NewsBg() {
 
 function PageFooter() {
   return (
-    <footer style={{position:"relative",zIndex:2,flexShrink:0,background:"rgba(255,255,255,0.025)",borderTop:"0.5px solid rgba(255,255,255,0.08)",fontFamily:"'Inter',system-ui,sans-serif"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,padding:"0 28px",height:52}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-            <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
-            <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
-            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
-            <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
-            <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
-          </svg>
-          <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)",letterSpacing:"-.03em"}}>StatinSite</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,0.25)",letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+    <footer style={{
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      paddingTop: 32,
+      paddingBottom: 40,
+    }}>
+      <div style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 24,
+      }}>
+        {/* Branding */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 3, height: 22, background: "rgba(255,255,255,.7)", borderRadius: 2 }} />
+            <span style={{ fontSize: 20, fontWeight: 900, color: "#ffffff", letterSpacing: "-.04em" }}>StatinSite</span>
+          </div>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)", letterSpacing: ".03em", paddingLeft: 13 }}>
+            Football Intelligence · Model Predictions
+          </span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px",background:"rgba(255,255,255,0.04)",border:"0.5px solid rgba(255,255,255,0.09)",borderRadius:999,flexShrink:0}}>
-          <span style={{fontSize:10,color:"rgba(255,255,255,0.28)",letterSpacing:".1em",textTransform:"uppercase"}}>Built by</span>
-          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.75)"}}>Rutej Talati</span>
+
+        {/* Built by */}
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+          padding: "16px 28px",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 12,
+          background: "rgba(255,255,255,0.03)",
+        }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)", letterSpacing: ".14em", textTransform: "uppercase" }}>Built by</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#ffffff", letterSpacing: "-.02em" }}>Rutej Talati</div>
         </div>
-        <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>© {new Date().getFullYear()} StatinSite</span>
+
+        {/* Right info */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.6)", letterSpacing: ".04em" }}>statinsite.com</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,.2)" }}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
+        </div>
       </div>
     </footer>
-      <PageFooter/>
   );
 }
 

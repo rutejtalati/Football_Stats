@@ -816,7 +816,7 @@ function TransferHub({items}){
 // ── Intricate animated background for NewsTracker ─────────────────────────
 function NewsIntricateBg() {
   return (
-    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,background:"var(--bg)"}}/>
 
       {/* Radial glows */}
@@ -890,7 +890,7 @@ function NewsIntricateBg() {
 // ── Intricate background ──────────────────────────────────────────────────────
 function NewsBg() {
   return (
-    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div aria-hidden="true" className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,background:"var(--bg)"}}/>
       <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
       <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
@@ -1053,7 +1053,7 @@ export default function NewsTrackerPage(){
   const isMob = mobileWidth < 640;
   const isTablet = mobileWidth < 960;
 
-  return(<div className="sn-page-wrap" style={{fontFamily:"'Inter',sans-serif",position:"relative"}}>
+  return(<div style={{fontFamily:"'Inter',sans-serif",position:"relative"}}>
 
     {/* ── Keyframes ────────────────────────────────────────── */}
     <style>{`
@@ -1076,7 +1076,7 @@ export default function NewsTrackerPage(){
     `}</style>
 
     {/* ── Intricate Background ─────────────────────────────── */}
-    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div aria-hidden="true" className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,background:"var(--bg)",transition:"background 0.25s"}}/>
       {/* Radial glows */}
       <div style={{position:"absolute",top:"-15%",right:"10%",width:"65vw",height:"65vw",

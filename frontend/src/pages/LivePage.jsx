@@ -552,8 +552,8 @@ function LeagueSummaryWidget({ fixtures }) {
 // ── Intricate background ──────────────────────────────────────────────────────
 function LiveBg() {
   return (
-    <div aria-hidden="true" style={{
-      position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden",
+    <div aria-hidden="true" className="sn-fixed-bg" style={{
+      position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden",
     }}>
       {/* Theme-aware base */}
       <div style={{position:"absolute",inset:0,background:"var(--bg)",transition:"background 0.25s"}}/>

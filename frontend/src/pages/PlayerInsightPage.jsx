@@ -308,7 +308,7 @@ function StatTiles({pRows,tRows,pCurrent,tCurrent}){
 // ── Intricate background ──────────────────────────────────────────────────────
 function PageBg() {
   return (
-    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div aria-hidden="true" className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
       <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
       <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>

@@ -164,8 +164,8 @@ function ABar({pct,color="#28d97a",h=5,delay=0}) {
       <GWIBg/>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      <div className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div className="sn-fixed-bg" style={{position:"fixed",top:"5vh",right:"auto",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
       <div style={{height:"100%",width:w+"%",background:color,borderRadius:3,
         transition:"width .85s cubic-bezier(.4,0,.2,1)",boxShadow:`0 0 6px ${color}55`}}/>
@@ -401,7 +401,7 @@ function PosRadarCard({pos,player,vals,color}) {
 // ── Intricate background ──────────────────────────────────────────────────────
 function GWIBg() {
   return (
-    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div aria-hidden="true" className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
       <div style={{position:"absolute",top:"-20%",left:"15%",width:"65vw",height:"65vw",
         background:"radial-gradient(ellipse,rgba(255,255,255,.016) 0%,transparent 60%)"}}/>

@@ -2465,7 +2465,7 @@ const BACKEND_LEAGUE = {
 // ── Intricate animated background ───────────────────────────────────────────
 function IntricateBg() {
   return (
-    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       {/* Deep black base with layered radial glows */}
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
 
@@ -2575,11 +2575,11 @@ export default function PredictionsPage({league:propLeague,slugMap}){
     <div className="sn-page-wrap" style={{position:"relative",fontFamily:"'Inter',sans-serif"}}>
 
       {/* -- Neobrutalist BG stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,
+      <div className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,
         background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",
         animation:"nbStripes 25s linear infinite"}}/>
       {/* BG floater text */}
-      <div style={{position:"fixed",top:"8vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(100px,16vw,200px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      <div className="sn-fixed-bg" style={{position:"fixed",top:"8vh",right:"auto",fontFamily:"'Inter',sans-serif",fontSize:"clamp(100px,16vw,200px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
       <div style={{position:"fixed",top:"50vh",right:"0%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(70px,12vw,150px)",color:"rgba(255,255,255,.025)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>2–1</div>
 
       <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:isMobile?"0 12px 80px":"0 24px 64px"}}>
@@ -2589,11 +2589,6 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
           {/* Title block */}
           <div style={{display:"flex",alignItems:"center",gap:0}}>
-            {/* Black kicker pill */}
-            <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:6,padding:"4px 14px",marginRight:16,flexShrink:0}}>
-              <span style={{width:6,height:6,background:"#ffffff",borderRadius:"50%",animation:"nbBlink 1.1s step-start infinite",flexShrink:0}}/>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,letterSpacing:".1em",textTransform:"uppercase",color:"#ffffff",fontWeight:600}}>PREDICTIONS</span>
-            </div>
             <div>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
                 <LeagueFlag code={league} size={22}/>

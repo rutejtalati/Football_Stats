@@ -685,18 +685,27 @@ export default function LivePage() {
     else if (offset > 0) clubUrl = `${BACKEND}/api/matches/future?days_ahead=${offset}`;
     else clubUrl = `${BACKEND}/api/matches/upcoming`;
 
-    // Fetch club fixtures + international fixtures in parallel
-    const daysBack   = offset <= 0 ? Math.abs(Math.min(offset, 0)) : 0;
-    const daysAhead  = offset >= 0 ? Math.max(offset, 0) + 1 : 0;
-    const intlUrl    = `${BACKEND}/api/international/fixtures?days_back=${daysBack}&days_ahead=${daysAhead}`;
+    // Compute the exact target date so the international endpoint fetches
+    // the same single day as the club endpoint — never bleed into adjacent days.
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + offset);
+    const yyyy = targetDate.getFullYear();
+    const mm   = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const dd   = String(targetDate.getDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    // For today (offset=0) we want live matches too, so use a tiny window around now.
+    // For past/future we fetch exactly that one day.
+    const daysBack   = offset === 0 ? 0 : offset < 0 ? Math.abs(offset) : 0;
+    const daysAhead  = offset === 0 ? 0 : offset > 0 ? offset : 0;
+    const intlUrl    = `${BACKEND}/api/international/fixtures?date=${dateStr}&days_back=${daysBack}&days_ahead=${daysAhead}`;
 
     Promise.allSettled([
       fetch(clubUrl).then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
       fetch(intlUrl).then(r => r.ok ? r.json() : { fixtures: [] }),
     ]).then(([clubRes, intlRes]) => {
-      const clubMatches  = clubRes.status === "fulfilled"  ? (clubRes.value.matches  || clubRes.value.chips || []) : [];
-      const intlMatches  = intlRes.status === "fulfilled"  ? (intlRes.value.fixtures || []) : [];
-      // Merge — international fixtures use same field names thanks to _norm_fixture in backend
+      const clubMatches = clubRes.status === "fulfilled" ? (clubRes.value.matches || clubRes.value.chips || []) : [];
+      const intlMatches = intlRes.status === "fulfilled" ? (intlRes.value.fixtures || []) : [];
       setChips([...clubMatches, ...intlMatches]);
       setLoading(false);
       setLastUp(new Date());

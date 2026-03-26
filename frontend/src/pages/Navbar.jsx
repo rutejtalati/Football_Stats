@@ -649,13 +649,7 @@ export default function Navbar() {
           .sn7-mobile-drawer { display: flex; }
           .sn7-backdrop  { display: block; }
         }
-        @media (min-width: 821px) {
-          .sn-page-wrap { margin-left: ${SW}px !important; }
-        }
-
-        /* ── Global page padding ── */
-        .sn-page-wrap {
-          margin-left: ${SW}px;
+        px;
           transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
           min-height: 100vh;
         }

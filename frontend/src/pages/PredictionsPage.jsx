@@ -12,14 +12,14 @@ import {
    Fonts: Bebas Neue (display) · Space Grotesk (body) · DM Mono (mono)
 ---------------------------------------------------------- */
 const NB = {
-  y:"#ffffff",   // white — primary text/accent
-  k:"#0a0a0a",   // near-black background
-  r:"#e2e8e4",   // off-white — secondary accent
-  w:"#f5f5f5",   // light
+  y:"#ffffff",
+  k:"#0d0d0d",
+  r:"rgba(255,255,255,0.65)",
+  w:"#f5f5f5",
 };
 
 const UNIFIED = {
-  bg: NB.k,
+  bg: "#080808",
   grad: "none",
   accent:  NB.y,
   accent2: NB.r,
@@ -283,7 +283,7 @@ const H2HWidget=({homeId,awayId,homeTeam,awayTeam,T})=>{
           <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"rgba(255,255,255,.03)",border:`1px solid rgba(255,255,255,.08)`}}>
             <span style={{fontSize:11,color:"rgba(255,255,255,.35)",minWidth:70,fontFamily:"'Inter',sans-serif"}}>{r.date}</span>
             <span style={{flex:1,fontSize:11,fontWeight:700,color:`rgba(255,255,255,.6)`,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>{r.home_team}</span>
-            <span style={{padding:"3px 10px",background:"#ffffff",fontSize:12,fontWeight:900,color:"#0a0a0a",fontFamily:"'Inter',sans-serif",minWidth:44,textAlign:"center",letterSpacing:".05em"}}>{r.home_goals}–{r.away_goals}</span>
+            <span style={{padding:"3px 10px",background:"#ffffff",fontSize:12,fontWeight:900,color:"#0d0d0d",fontFamily:"'Inter',sans-serif",minWidth:44,textAlign:"center",letterSpacing:".05em"}}>{r.home_goals}–{r.away_goals}</span>
             <span style={{flex:1,fontSize:11,fontWeight:700,color:`rgba(255,255,255,.6)`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"'Inter',sans-serif"}}>{r.away_team}</span>
           </div>
         ))}
@@ -472,7 +472,7 @@ function KnockoutBracketTab({league, T}) {
               padding:"4px 12px",
               background:i===rounds.length-1?"#ffffff":"transparent",
               border:`1px solid ${i===rounds.length-1?"#ffffff":"rgba(255,255,255,.2)"}`,
-              fontSize:11,fontWeight:700,color:i===rounds.length-1?"#0a0a0a":"rgba(255,255,255,0.7)",
+              fontSize:11,fontWeight:700,color:i===rounds.length-1?"#0d0d0d":"rgba(255,255,255,0.7)",
               letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif",
             }}>{r}</div>
           ))}
@@ -678,7 +678,7 @@ function KPITile({label, value, delta, color, icon, sublabel, spark}) {
         {delta!=null&&(
           <span style={{
             fontSize:11,fontWeight:800,
-            color:posChange?"#0a0a0a":"rgba(255,255,255,0.6)",
+            color:posChange?"#0d0d0d":"rgba(255,255,255,0.6)",
             background:posChange?"#ffffff":"transparent",
             border:posChange?"none":"1px solid rgba(255,255,255,0.3)",
             padding:"2px 7px",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",
@@ -1277,7 +1277,7 @@ function ProbTooltip({ label, value, sub, color, visible }) {
       <div style={{fontSize:16,fontWeight:900,color:NB.y,fontFamily:"'Inter',sans-serif"}}>{value}</div>
       {sub && <div style={{fontSize:10,color:NB.y,marginTop:2}}>{sub}</div>}
       <div style={{position:"absolute",bottom:-5,left:"50%",
-        width:8,height:8,background:"#0a0a0a",border:`1px solid ${color}40`,
+        width:8,height:8,background:"#0d0d0d",border:`1px solid ${color}40`,
         borderTop:"none",borderLeft:"none",transform:"translateX(-50%) rotate(45deg)"}}/>
     </div>
   );
@@ -1328,7 +1328,7 @@ const ScenarioSimulator=({match,T})=>{
           <div style={{fontSize:13,fontWeight:700,color:"#ffffff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:"'Inter',sans-serif"}}>
             {match.home_team} <span style={{color:"rgba(255,255,255,.4)",fontWeight:400}}>vs</span> {match.away_team}
           </div>
-          {isModified&&<button onClick={()=>applyPreset(0)} style={{fontSize:10,fontWeight:900,color:"#0a0a0a",background:"#ffffff",border:"none",padding:"3px 10px",cursor:"pointer",flexShrink:0,marginLeft:8,borderRadius:5,fontFamily:"'Inter',sans-serif",letterSpacing:".04em",textTransform:"uppercase"}}>Reset</button>}
+          {isModified&&<button onClick={()=>applyPreset(0)} style={{fontSize:10,fontWeight:900,color:"#0d0d0d",background:"#ffffff",border:"none",padding:"3px 10px",cursor:"pointer",flexShrink:0,marginLeft:8,borderRadius:5,fontFamily:"'Inter',sans-serif",letterSpacing:".04em",textTransform:"uppercase"}}>Reset</button>}
         </div>
       </div>
 
@@ -1394,7 +1394,7 @@ const ScenarioSimulator=({match,T})=>{
           {isModified&&(
             <div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}}>
               {[{l:"Home Win",d:Math.round((scenario.pH-official.pH)*100)},{l:"Draw",d:Math.round((scenario.pD-official.pD)*100)},{l:"Away Win",d:Math.round((scenario.pA-official.pA)*100)}].map(({l,d})=>d!==0&&(
-                <span key={l} style={{fontSize:11,fontWeight:900,color:d>0?"#0a0a0a":"#e2e8e4",background:d>0?"#ffffff":"transparent",border:d>0?"none":"1px solid rgba(255,255,255,0.3)",borderRadius:999,padding:"2px 8px",fontFamily:"'Inter',sans-serif",letterSpacing:".06em"}}>{l} {d>0?"+":""}{d}%</span>
+                <span key={l} style={{fontSize:11,fontWeight:900,color:d>0?"#0d0d0d":"#e2e8e4",background:d>0?"#ffffff":"transparent",border:d>0?"none":"1px solid rgba(255,255,255,0.3)",borderRadius:999,padding:"2px 8px",fontFamily:"'Inter',sans-serif",letterSpacing:".06em"}}>{l} {d>0?"+":""}{d}%</span>
               ))}
             </div>
           )}
@@ -2677,7 +2677,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
               padding:"12px 22px",fontSize:12,fontWeight:600,
               cursor:"pointer",border:"none",whiteSpace:"nowrap",
               fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase",
-              color:tab===key?"#0a0a0a":"rgba(255,255,255,0.7)",
+              color:tab===key?"#0d0d0d":"rgba(255,255,255,0.7)",
               background:tab===key?"#ffffff":"transparent",
               borderRight:`1px solid rgba(255,255,255,.1)`,
               transition:"all 0.12s",
@@ -2893,7 +2893,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
       {/* -- Page-specific CSS --------------------------------------- */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;900&family=Sora:wght@700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
         @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
         @keyframes nbBlink  { 50%{opacity:0} }
         @keyframes nbStripes{ to{background-position:90px 0} } @keyframes hp6FadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }

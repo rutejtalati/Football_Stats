@@ -68,7 +68,7 @@
   --page-max: 1280px;
   --nav-h:      48px;   /* fixed navbar height */
   --ticker-h:   36px;   /* fixed live ticker height */
-  --bar-total:  84px;   /* --nav-h + --ticker-h — use this for page offsets */
+  --bar-total:  0px;    /* sidebar nav — no top bar offset needed */
 
   /* ── Transition ── */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -156,8 +156,7 @@ button, input, select, textarea {
    PAGE LAYOUT
 ══════════════════════════════════════════════════════════ */
 
-/* All pages need top padding for the fixed navbar + live ticker */
-.sn-page-wrap {
+/* Page wrapper — sidebar layout */.sn-page-wrap {
   /* Desktop: offset for 220px sidebar */
   margin-left: 220px;
   min-height: 100vh;

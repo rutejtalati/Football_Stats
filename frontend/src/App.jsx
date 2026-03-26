@@ -34,45 +34,106 @@ const ComingSoon = ({ name }) => (
   </div>
 );
 
-/* ── iOS-style global footer — inlined, no extra import ── */
+/* ── Full-width bottom bar footer ── */
 function SiteFooter() {
   return (
-    <footer className="sn-site-footer" style={{position:"relative",zIndex:2,flexShrink:0,fontFamily:"'Inter',system-ui,sans-serif"}}>
+    <footer className="sn-site-footer">
       <style>{`
-        .sn-site-footer { margin-left: 220px; }
+        .sn-site-footer {
+          position: relative;
+          z-index: 10;
+          flex-shrink: 0;
+          margin-left: 220px;
+          background: rgba(255,255,255,0.025);
+          border-top: 0.5px solid rgba(255,255,255,0.08);
+          font-family: 'Inter', system-ui, sans-serif;
+          transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
         @media (max-width: 820px) {
-          .sn-site-footer { margin-left: 0 !important; padding-bottom: 76px; }
+          .sn-site-footer { margin-left: 0 !important; margin-bottom: 64px; }
+        }
+        .sn-footer-inner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 0 28px;
+          height: 52px;
+          max-width: 100%;
+        }
+        .sn-footer-brand {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .sn-footer-brand-name {
+          font-size: 13px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.7);
+          letter-spacing: -0.03em;
+        }
+        .sn-footer-tagline {
+          font-size: 11px;
+          color: rgba(255,255,255,0.25);
+          letter-spacing: 0.01em;
+        }
+        .sn-footer-built {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 16px;
+          background: rgba(255,255,255,0.04);
+          border: 0.5px solid rgba(255,255,255,0.09);
+          border-radius: 999px;
+          flex-shrink: 0;
+        }
+        .sn-footer-built-label {
+          font-size: 10px;
+          color: rgba(255,255,255,0.28);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .sn-footer-built-name {
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.75);
+        }
+        .sn-footer-copy {
+          font-size: 11px;
+          color: rgba(255,255,255,0.2);
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+          .sn-footer-tagline { display: none; }
+          .sn-footer-copy    { display: none; }
+          .sn-footer-inner   { justify-content: space-between; }
         }
       `}</style>
+      <div className="sn-footer-inner">
 
-      <div style={{height:"0.5px",background:"linear-gradient(90deg,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent)",marginBottom:32}}/>
-
-      <div style={{maxWidth:1360,margin:"0 auto",padding:"0 28px 48px",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:24}}>
-
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-              <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
-              <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
-              <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
-              <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
-              <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
-              <rect x="20" y="10" width="3" height="3"   rx="1.5"  fill="#30d158" opacity="0.45"/>
-            </svg>
-            <span style={{fontSize:18,fontWeight:700,color:"#ffffff",letterSpacing:"-.04em"}}>StatinSite</span>
-          </div>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",paddingLeft:34,letterSpacing:".01em"}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        {/* Brand */}
+        <div className="sn-footer-brand">
+          <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+            <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+            <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+            <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
+          </svg>
+          <span className="sn-footer-brand-name">StatinSite</span>
+          <span className="sn-footer-tagline">Football Intelligence · ELO · Dixon-Coles · xG</span>
         </div>
 
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"14px 32px",background:"rgba(255,255,255,.04)",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:14,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}}>
-          <span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.28)",letterSpacing:".14em",textTransform:"uppercase"}}>Built by</span>
-          <span style={{fontSize:17,fontWeight:700,color:"#ffffff",letterSpacing:"-.025em"}}>Rutej Talati</span>
+        {/* Built by pill */}
+        <div className="sn-footer-built">
+          <span className="sn-footer-built-label">Built by</span>
+          <span className="sn-footer-built-name">Rutej Talati</span>
         </div>
 
-        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-          <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.45)",letterSpacing:".02em"}}>statinsite.com</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.18)"}}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
-        </div>
+        {/* Copyright */}
+        <span className="sn-footer-copy">© {new Date().getFullYear()} StatinSite</span>
 
       </div>
     </footer>

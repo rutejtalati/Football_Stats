@@ -11,19 +11,18 @@ import {
 } from "../api/api";
 
 /* ── Neobrutalist theme constants ── */
-const NB = { y:"#e8ff47", k:"#0a0a0a", r:"#ff2744" };
+const NB = { y:"#ffffff", k:"#0d0d0d", r:"rgba(255,255,255,0.65)" };
 const NB_CSS = `
-  @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
   @keyframes nbBlink  { 50%{opacity:0} }
-  @keyframes nbStripes{ to{background-position:90px 0} }
   @keyframes nbFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes nbShimmer{ 0%{background-position:-800px 0} 100%{background-position:800px 0} }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:#0a0a0a; }
-  ::-webkit-scrollbar-thumb { background:rgba(232,255,71,.3); }
-  ::selection { background:#e8ff47; color:#0a0a0a; }
-  input[type=range] { accent-color:#e8ff47; }
+  ::-webkit-scrollbar-track { background:#0d0d0d; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.18); border-radius:2px; }
+  ::selection { background:#ffffff; color:#0d0d0d; }
+  input[type=range] { accent-color:#ffffff; }
 `;
 
 
@@ -162,10 +161,11 @@ function ABar({pct,color="#28d97a",h=5,delay=0}) {
   useEffect(()=>{ const t=setTimeout(()=>setW(Math.min(pct,100)),delay+60); return()=>clearTimeout(t); },[pct,delay]);
   return (
     <div style={{flex:1,height:h,borderRadius:3,background:"rgba(255,255,255,.05)",overflow:"hidden"}}>
+      <GWIBg/>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(232,255,71,.018) 44px,rgba(232,255,71,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
-      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(232,255,71,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"repeating-linear-gradient(92deg,transparent 0,transparent 44px,rgba(255,255,255,.018) 44px,rgba(255,255,255,.018) 45px)",animation:"nbStripes 25s linear infinite"}}/>
+      <div style={{position:"fixed",top:"5vh",left:"-1%",fontFamily:"'Inter',sans-serif",fontSize:"clamp(80px,14vw,180px)",color:"rgba(255,255,255,.022)",pointerEvents:"none",zIndex:0,lineHeight:1,userSelect:"none"}}>xG</div>
 
       <div style={{height:"100%",width:w+"%",background:color,borderRadius:3,
         transition:"width .85s cubic-bezier(.4,0,.2,1)",boxShadow:`0 0 6px ${color}55`}}/>
@@ -246,7 +246,7 @@ function HeroCard({label,rawVal,dec=1,prefix="",suffix="",sub,color,pulse,rank,i
       <div style={{position:"absolute",top:10,right:10,width:7,height:7,borderRadius:"50%",
         background:hex,boxShadow:`0 0 9px ${hex}`,animation:pulse?"gwPulse 2s ease-in-out infinite":"none"}}/>
       <div style={{position:"absolute",left:0,top:14,bottom:14,width:3,background:hex,borderRadius:"0 2px 2px 0",boxShadow:`0 0 7px ${hex}88`}}/>
-      <div style={{fontSize:7.5,fontWeight:900,color:"rgba(232,255,71,.35)",letterSpacing:".14em",paddingLeft:8,marginBottom:3}}>{label}</div>
+      <div style={{fontSize:7.5,fontWeight:900,color:"rgba(255,255,255,.35)",letterSpacing:".14em",paddingLeft:8,marginBottom:3}}>{label}</div>
       <div style={{fontSize:21,fontWeight:900,color:hex,fontFamily:"DM Mono,monospace",lineHeight:1.05,paddingLeft:8}}>{display}</div>
       {sub&&<div style={{fontSize:9,color:"#3a6080",paddingLeft:8,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sub}</div>}
       {extra&&<div style={{paddingLeft:8,marginTop:5}}>{extra}</div>}
@@ -267,7 +267,7 @@ function ScoRow({rank,name,team,val,valLbl,sub,color="#28d97a",maxVal,idx}) {
         transform:hov?"translateX(4px)":"none",transition:"all .16s ease",animation:`gwIn ${.06+idx*.05}s ease both`}}>
       <div style={{width:19,height:19,borderRadius:"50%",flexShrink:0,background:medals[rank-1]||"rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8.5,fontWeight:900,color:"#000"}}>{rank}</div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:11,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name}</div>
+        <div style={{fontSize:11,fontWeight:800,color:"#ffffff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name}</div>
         <div style={{fontSize:8.5,color:"#2a4060"}}>{team}{sub?` · ${sub}`:""}</div>
       </div>
       {maxVal&&<ABar pct={(val/maxVal)*100} color={color} h={3}/>}
@@ -370,7 +370,7 @@ function PosRadarCard({pos,player,vals,color}) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
         <div>
           <div style={{fontSize:8,fontWeight:900,color,letterSpacing:".12em"}}>{pos}</div>
-          <div style={{fontSize:12,fontWeight:800,color:"#e8ff47"}}>{sn(player?.name||"—")}</div>
+          <div style={{fontSize:12,fontWeight:800,color:"#ffffff"}}>{sn(player?.name||"—")}</div>
           <div style={{fontSize:9,color:"#2a4060"}}>{player?.team} · £{player?.cost}m</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -397,6 +397,77 @@ function PosRadarCard({pos,player,vals,color}) {
 // ════════════════════════════════════════════════════════════
 //  MAIN PAGE
 // ════════════════════════════════════════════════════════════
+
+// ── Intricate background ──────────────────────────────────────────────────────
+function GWIBg() {
+  return (
+    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",top:"-20%",left:"15%",width:"65vw",height:"65vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.016) 0%,transparent 60%)"}}/>
+      <div style={{position:"absolute",bottom:"-10%",right:"5%",width:"50vw",height:"50vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.011) 0%,transparent 55%)"}}/>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px)",
+        backgroundSize:"40px 40px"}}/>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
+        backgroundSize:"160px 160px"}}/>
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="GWIBg-sl" width="100" height="100" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,.011)" strokeWidth="0.7"/>
+          </pattern>
+          <pattern id="GWIBg-dt" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="20" cy="20" r="0.7" fill="rgba(255,255,255,.065)"/>
+          </pattern>
+          <pattern id="GWIBg-dm" width="60" height="60" patternUnits="userSpaceOnUse">
+            <polygon points="30,2 58,30 30,58 2,30" fill="none" stroke="rgba(255,255,255,.014)" strokeWidth="0.6"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#GWIBg-sl)"/>
+        <rect width="100%" height="100%" fill="url(#GWIBg-dt)"/>
+        <rect x="0" y="0" width="38%" height="50%" fill="url(#GWIBg-dm)" opacity="0.65"/>
+        <rect x="64%" y="55%" width="36%" height="45%" fill="url(#GWIBg-dm)" opacity="0.5"/>
+      </svg>
+      <svg style={{position:"absolute",top:0,left:0,width:180,height:180,opacity:.09}} viewBox="0 0 180 180">
+        <polyline points="12,70 12,12 70,12" fill="none" stroke="white" strokeWidth="1.2"/>
+        <polyline points="12,90 12,12 90,12" fill="none" stroke="white" strokeWidth=".4"/>
+        <circle cx="12" cy="12" r="2.5" fill="none" stroke="white" strokeWidth=".8"/>
+      </svg>
+      <svg style={{position:"absolute",bottom:0,right:0,width:180,height:180,opacity:.07}} viewBox="0 0 180 180">
+        <polyline points="168,110 168,168 110,168" fill="none" stroke="white" strokeWidth="1.2"/>
+      </svg>
+    </div>
+  );
+}
+
+
+// ── Page Footer ───────────────────────────────────────────────────────────────
+function PageFooter() {
+  return (
+    <footer style={{borderTop:"0.5px solid rgba(255,255,255,.08)",marginTop:56,paddingTop:28,paddingBottom:36,position:"relative",zIndex:2}}>
+      <div style={{maxWidth:1360,margin:"0 auto",padding:"0 24px",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:20}}>
+        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+          <div style={{display:"flex",alignItems:"center",gap:9}}>
+            <div style={{width:3,height:20,background:"rgba(255,255,255,.6)",borderRadius:2}}/>
+            <span style={{fontSize:18,fontWeight:700,color:"#fff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
+          </div>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:"'Inter',sans-serif",paddingLeft:12}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div style={{padding:"12px 24px",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:10,background:"rgba(255,255,255,.03)",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{fontSize:10,color:"rgba(255,255,255,.28)",letterSpacing:".12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#fff",letterSpacing:"-.02em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+          <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.45)",fontFamily:"'Inter',sans-serif"}}>statinsite.com</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,.18)",fontFamily:"'Inter',sans-serif"}}>© 2025 StatinSite</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export default function GameweekInsightsPage() {
   const isMobile = useIsMobile();
   const [gwInfo, setGwInfo]          = useState({ id:null, name:"GW?", label:"Live" });
@@ -494,7 +565,7 @@ export default function GameweekInsightsPage() {
 
   // ── Loading ───────────────────────────────────────────────
   if(loading) return (
-    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"24px 20px"}}>
+    <div style={{minHeight:"100vh",background:"#0d0d0d",padding:"24px 20px"}}>
       <style>{GW_CSS}</style>
       <div style={{maxWidth:1440,margin:"0 auto",display:"flex",flexDirection:"column",gap:16}}>
         <SKEL h={44} w={340} r={10}/>
@@ -507,21 +578,21 @@ export default function GameweekInsightsPage() {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"20px 20px 52px",fontFamily:"Outfit,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#0d0d0d",padding:"20px 20px 52px",fontFamily:"Outfit,sans-serif"}}>
       <style>{GW_CSS}</style>
       <div style={{maxWidth:1440,margin:"0 auto",display:"flex",flexDirection:"column",gap:18}}>
 
         {/* HEADER */}
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
           <div style={{animation:"gwSlideL .25s ease both"}}>
-            <div style={{fontSize:8,fontWeight:900,letterSpacing:".22em",color:"rgba(232,255,71,.25)",marginBottom:5}}>STATPITCH · EPL INTELLIGENCE HUB</div>
+            <div style={{fontSize:8,fontWeight:900,letterSpacing:".22em",color:"rgba(255,255,255,.25)",marginBottom:5}}>STATPITCH · EPL INTELLIGENCE HUB</div>
             <h1 style={{margin:0,fontSize:27,fontWeight:900,color:"#f0f8ff",letterSpacing:"-.02em"}}>
               Gameweek Insights
               <span style={{marginLeft:12,fontSize:17,fontWeight:700,background:"linear-gradient(135deg,#3b9eff,#28d97a)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                 — {gwInfo.name}
               </span>
             </h1>
-            <div style={{fontSize:10.5,color:"rgba(232,255,71,.35)",marginTop:2}}>
+            <div style={{fontSize:10.5,color:"rgba(255,255,255,.35)",marginTop:2}}>
               {gwInfo.label} gameweek · Live FPL projections · EPL scorers & standings · Injury tracker
               {gwInfo.deadline && <span style={{marginLeft:8,color:"#3b5060"}}>Deadline: {new Date(gwInfo.deadline).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>}
             </div>
@@ -645,7 +716,7 @@ export default function GameweekInsightsPage() {
                         onMouseEnter={e=>{e.currentTarget.style.background=`${col}0d`;}} onMouseLeave={e=>{e.currentTarget.style.background=i===0?"rgba(40,217,122,.05)":"rgba(255,255,255,.02)";}}>
                         <span style={{fontSize:9,fontWeight:900,color:col,fontFamily:"DM Mono,monospace",width:14,flexShrink:0}}>{i+1}</span>
                         <div style={{width:80,flexShrink:0}}>
-                          <div style={{fontSize:10.5,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
+                          <div style={{fontSize:10.5,fontWeight:800,color:"#ffffff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sn(p.name)}</div>
                           <div style={{fontSize:8,color:"#2a4060"}}>{p.team} · {p.position}</div>
                         </div>
                         <Spark vals={vals} w={90} h={24} color={col}/>
@@ -742,7 +813,7 @@ export default function GameweekInsightsPage() {
                       onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.07)";e.currentTarget.style.transform="translateX(3px)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,.025)";e.currentTarget.style.transform="none";}}>
                       <span style={{fontSize:9.5,fontWeight:900,color:"#2a4060",fontFamily:"DM Mono,monospace",width:18,flexShrink:0}}>{i+1}</span>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,fontWeight:800,color:"#e8ff47",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                        <div style={{fontSize:11,fontWeight:800,color:"#ffffff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                         <div style={{fontSize:8.5,color:"#2a4060"}}>{p.team} · {p.position} · £{p.cost}m</div>
                       </div>
                       <div style={{width:60,flexShrink:0}}><ABar pct={(val/maxV)*100} color={col} h={3}/></div>

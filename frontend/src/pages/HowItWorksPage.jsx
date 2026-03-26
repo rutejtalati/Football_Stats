@@ -2,9 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=JetBrains+Mono:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
-.hiw-page { min-height:100vh; background:#000; color:#fff; font-family:'Inter',sans-serif; }
+.hiw-page { min-height:100vh; background:#080808; color:#fff; font-family:'Inter',sans-serif; position:relative; }
 
 /* ── Keyframes ── */
 @keyframes hiwScanX { 0%{left:-40%} 100%{left:140%} }
@@ -28,7 +28,7 @@ const CSS = `
 
 /* ── Shared card shell ── */
 .hiw-card {
-  background: #080808;
+  background: rgba(255,255,255,.03);
   border: 1px solid rgba(255,255,255,.09);
   border-radius: 16px;
   overflow: hidden;
@@ -45,7 +45,7 @@ const CSS = `
 .hiw-scene {
   position: relative;
   overflow: hidden;
-  background: #030a04;
+  background: rgba(255,255,255,.015);
 }
 
 /* ── Animated top border ── */
@@ -77,7 +77,7 @@ const CSS = `
   width: 4px; height: 40px; border-radius: 2px; flex-shrink: 0;
 }
 .hiw-section-title {
-  font-family: 'Sora', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 22px; font-weight: 900;
   letter-spacing: -0.025em;
 }
@@ -123,6 +123,7 @@ function Scene({ height = 170, bg = "#030a04", children, style = {} }) {
   return (
     <div className="hiw-scene" style={{ height, background: bg, ...style }}>
       {children}
+      <PageFooter/>
     </div>
   );
 }
@@ -149,7 +150,7 @@ function OffsideCard() {
 
           {/* Defensive line */}
           <line x1="198" y1="6" x2="198" y2="174" stroke="rgba(103,177,255,.55)" strokeWidth="1.5" strokeDasharray="6 3" />
-          <text x="201" y="18" fontSize="8" fill="rgba(103,177,255,.85)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">LAST DEF</text>
+          <text x="201" y="18" fontSize="8" fill="rgba(103,177,255,.85)" fontFamily="'Inter',sans-serif" fontWeight="700">LAST DEF</text>
 
           {/* Defenders */}
           <circle cx="198" cy="76" r="10" fill="#1d4ed8" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
@@ -183,14 +184,14 @@ function OffsideCard() {
           </g>
 
           {/* OFFSIDE label flash */}
-          <text x="170" y="158" textAnchor="middle" fontSize="18" fontWeight="900" fill="#ef4444" fontFamily="'Sora',sans-serif"
+          <text x="170" y="158" textAnchor="middle" fontSize="18" fontWeight="900" fill="#ef4444" fontFamily="'Inter',sans-serif"
             style={{ opacity: hov ? 1 : 0, transition: "opacity .3s ease 1.4s" }}>
             OFFSIDE
           </text>
         </svg>
       </Scene>
       <div style={{ padding: "13px 15px", background: "#000" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#ef4444", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Offside Rule</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#ef4444", fontFamily: "'Inter',sans-serif", marginBottom: 5 }}>The Offside Rule</div>
         <div className="hiw-rule-desc">
           When a teammate plays the ball forward to you, your body (not arms) must have at least one defender between you and the goal at the exact moment the ball is kicked. The goalkeeper counts as one of those defenders. If you are ahead of everyone except the keeper when the pass is made, you are offside and the referee stops play. The green player is onside because a defender is still behind them. The red player has run too far forward and is caught offside as soon as the pass is made.
         </div>
@@ -220,7 +221,7 @@ function PenaltyCard() {
           {[80,90,100].map(y => <line key={y} x1="298" y1={y} x2="332" y2={y} stroke="rgba(255,255,255,.07)" strokeWidth=".8" />)}
 
           {/* 9.15m line label */}
-          <text x="246" y="158" fontSize="8" fill="rgba(255,255,255,.25)" fontFamily="'JetBrains Mono',monospace">12 yards</text>
+          <text x="246" y="158" fontSize="8" fill="rgba(255,255,255,.25)" fontFamily="'Inter',sans-serif">12 yards</text>
           <line x1="268" y1="90" x2="250" y2="90" stroke="rgba(255,255,255,.15)" strokeWidth=".8" strokeDasharray="2 2" />
 
           {/* Penalty spot */}
@@ -251,14 +252,14 @@ function PenaltyCard() {
           {/* GOAL flash */}
           <rect x="298" y="68" width="34" height="44" fill="rgba(40,217,122,0)" rx="2"
             style={{ fill: hov ? "rgba(40,217,122,.35)" : "rgba(40,217,122,0)", transition: "fill .3s ease 1.3s" }} />
-          <text x="170" y="158" textAnchor="middle" fontSize="18" fontWeight="900" fill="#28d97a" fontFamily="'Sora',sans-serif"
+          <text x="170" y="158" textAnchor="middle" fontSize="18" fontWeight="900" fill="#28d97a" fontFamily="'Inter',sans-serif"
             style={{ opacity: hov ? 1 : 0, transition: "opacity .3s ease 1.4s" }}>
             GOAL!
           </text>
         </svg>
       </Scene>
       <div style={{ padding: "13px 15px", background: "#000" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Penalty Kick</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Inter',sans-serif", marginBottom: 5 }}>The Penalty Kick</div>
         <div className="hiw-rule-desc">
           A penalty is awarded when a defending player commits a foul inside their own penalty area. The attacking team gets a one on one chance from the penalty spot, which sits exactly 12 yards (11 metres) from the goal line. The goalkeeper must stay on the goal line until the ball is kicked. All other players must wait outside the penalty area. Penalties are scored approximately 76 percent of the time, making them one of the most decisive moments in any football match. Hover to watch the taker run up, strike the ball into the top corner and the keeper dive the wrong way.
         </div>
@@ -313,7 +314,7 @@ function FreeKickCard() {
           ))}
           {/* 9.15m line */}
           <line x1="180" y1="35" x2="180" y2="110" stroke="rgba(255,255,255,.18)" strokeWidth=".8" strokeDasharray="3 2" />
-          <text x="160" y="32" fontSize="7" fill="rgba(255,255,255,.35)" fontFamily="'JetBrains Mono',monospace">9.15m</text>
+          <text x="160" y="32" fontSize="7" fill="rgba(255,255,255,.35)" fontFamily="'Inter',sans-serif">9.15m</text>
 
           {/* FK taker */}
           <circle cx="72" cy="75" r="10" fill="#28d97a" stroke="#fff" strokeWidth="1.5" />
@@ -330,14 +331,14 @@ function FreeKickCard() {
           {/* Goal flash */}
           <rect x="258" y="55" width="26" height="40" fill="rgba(40,217,122,0)"
             style={{ fill: hov ? "rgba(40,217,122,.4)" : "rgba(40,217,122,0)", transition: "fill .3s ease 1s" }} />
-          <text x="145" y="138" textAnchor="middle" fontSize="14" fontWeight="900" fill="#28d97a" fontFamily="'Sora',sans-serif"
+          <text x="145" y="138" textAnchor="middle" fontSize="14" fontWeight="900" fill="#28d97a" fontFamily="'Inter',sans-serif"
             style={{ opacity: hov ? 1 : 0, transition: "opacity .3s ease 1.1s" }}>
             TOP CORNER!
           </text>
         </svg>
       </Scene>
       <div style={{ padding: "13px 15px", background: "#000" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#28d97a", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>The Free Kick</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#28d97a", fontFamily: "'Inter',sans-serif", marginBottom: 5 }}>The Free Kick</div>
         <div className="hiw-rule-desc">
           A free kick is awarded whenever a player commits a foul outside the penalty area. Defenders are allowed to form a wall of players, but that wall must be at least 9.15 metres away from the ball. The kicker can strike the ball directly at goal on a direct free kick. The best free kick takers in the world generate enormous swerve and dip by striking through the side of the ball, causing it to curl around or over the defensive wall before dipping sharply into the net. Hover to see the ball trace its path over the wall and into the top corner.
         </div>
@@ -406,19 +407,19 @@ function CardsCard() {
           <g style={{ opacity: hov ? 1 : 0, transition: "opacity .4s ease 1.4s" }}>
             <path d="M198 72 L220 90 L240 106 L258 122" stroke="#ef4444" strokeWidth="2" fill="none"
               strokeDasharray="6 3" style={{ strokeDashoffset: hov ? 0 : 60, transition: "stroke-dashoffset 1s ease 1.4s" }} />
-            <text x="200" y="140" fontSize="9" fill="#ef4444" fontFamily="'JetBrains Mono',monospace" fontWeight="700">SENT OFF</text>
+            <text x="200" y="140" fontSize="9" fill="#ef4444" fontFamily="'Inter',sans-serif" fontWeight="700">SENT OFF</text>
           </g>
 
           {/* 10 vs 11 */}
           <g style={{ opacity: hov ? 1 : 0, transition: "opacity .4s ease 1.8s" }}>
             <rect x="8" y="110" width="120" height="34" fill="rgba(239,68,68,.08)" stroke="rgba(239,68,68,.25)" strokeWidth="1" rx="7" />
-            <text x="68" y="124" textAnchor="middle" fontSize="11" fill="#ef4444" fontWeight="700" fontFamily="'Sora',sans-serif">10 vs 11</text>
+            <text x="68" y="124" textAnchor="middle" fontSize="11" fill="#ef4444" fontWeight="700" fontFamily="'Inter',sans-serif">10 vs 11</text>
             <text x="68" y="138" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,.35)">rest of the match</text>
           </g>
         </svg>
       </Scene>
       <div style={{ padding: "13px 15px", background: "#000" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>Yellow and Red Cards</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", fontFamily: "'Inter',sans-serif", marginBottom: 5 }}>Yellow and Red Cards</div>
         <div className="hiw-rule-desc">
           Referees carry yellow and red cards to discipline players. A yellow card is a formal warning issued for reckless challenges, diving, time wasting or dissent. If a player receives two yellow cards in the same match they are shown a second yellow immediately followed by a red card and must leave the pitch. A direct red card can also be shown for violent conduct or denying an obvious goalscoring opportunity. Once a player is sent off, their team must play the rest of the match with only ten players against eleven, which is a significant disadvantage. Hover to see the cards being raised and the player being dismissed.
         </div>
@@ -478,7 +479,7 @@ function RestartsCard() {
             {/* Receiver */}
             <circle cx="180" cy="88" r="10" fill="#7c3aed" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
             <text x="180" y="92" textAnchor="middle" fontSize="8" fill="#fff">R</text>
-            <text x="145" y="120" textAnchor="middle" fontSize="8" fill="rgba(167,139,250,.7)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">Both feet on ground</text>
+            <text x="145" y="120" textAnchor="middle" fontSize="8" fill="rgba(167,139,250,.7)" fontFamily="'Inter',sans-serif" fontWeight="700">Both feet on ground</text>
           </>}
 
           {tab === "corner" && <>
@@ -499,7 +500,7 @@ function RestartsCard() {
             {/* Attacker */}
             <circle cx="120" cy="66" r="10" fill="#28d97a" stroke="#fff" strokeWidth="1.5" />
             <text x="120" y="70" textAnchor="middle" fontSize="8" fill="#000" fontWeight="700">A</text>
-            <text x="120" y="118" textAnchor="middle" fontSize="8" fill="rgba(251,191,36,.7)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">Defender last touch</text>
+            <text x="120" y="118" textAnchor="middle" fontSize="8" fill="rgba(251,191,36,.7)" fontFamily="'Inter',sans-serif" fontWeight="700">Defender last touch</text>
           </>}
 
           {tab === "gk" && <>
@@ -517,12 +518,12 @@ function RestartsCard() {
             {/* Striker */}
             <circle cx="220" cy="93" r="10" fill="#fbbf24" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
             <text x="220" y="97" textAnchor="middle" fontSize="8" fill="#000" fontWeight="700">S</text>
-            <text x="145" y="118" textAnchor="middle" fontSize="8" fill="rgba(239,68,68,.7)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">Attacker last touch</text>
+            <text x="145" y="118" textAnchor="middle" fontSize="8" fill="rgba(239,68,68,.7)" fontFamily="'Inter',sans-serif" fontWeight="700">Attacker last touch</text>
           </>}
         </svg>
       </Scene>
       <div style={{ padding: "13px 15px", background: "#000" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Sora',sans-serif", marginBottom: 5, color: current.col }}>{current.title}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Inter',sans-serif", marginBottom: 5, color: current.col }}>{current.title}</div>
         <div className="hiw-rule-desc">{current.desc}</div>
       </div>
     </div>
@@ -610,12 +611,12 @@ function TacticsBoardCard() {
                   <text x={x} y={y+3} textAnchor="middle" fontSize="7" fill="#000">D</text>
                 </g>
               ))}
-              <text x="250" y="26" fontSize="8" fill="rgba(40,217,122,.85)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">PRESS ZONE</text>
+              <text x="250" y="26" fontSize="8" fill="rgba(40,217,122,.85)" fontFamily="'Inter',sans-serif" fontWeight="700">PRESS ZONE</text>
             </>}
 
             {active === "counter" && <>
               <rect x="20" y="55" width="2" height="100" fill="rgba(103,177,255,.4)" />
-              <text x="25" y="50" fontSize="8" fill="rgba(103,177,255,.8)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">DEFENSIVE SHAPE</text>
+              <text x="25" y="50" fontSize="8" fill="rgba(103,177,255,.8)" fontFamily="'Inter',sans-serif" fontWeight="700">DEFENSIVE SHAPE</text>
               {[[75,74],[70,105],[75,136],[80,90],[80,120]].map(([x,y],i) => (
                 <g key={i}>
                   <circle cx={x} cy={y} r="9" fill="#67b1ff" stroke="#fff" strokeWidth="1.5" />
@@ -625,12 +626,12 @@ function TacticsBoardCard() {
               <path d="M95 105 Q180 72 275 56" stroke="#fbbf24" strokeWidth="2.5" fill="none" strokeDasharray="8 3" style={{ animation: "hiwFlow 1.4s linear infinite" }} />
               <circle cx="265" cy="72" r="10" fill="#fbbf24" stroke="#fff" strokeWidth="1.5" />
               <text x="265" y="76" textAnchor="middle" fontSize="7" fill="#000" fontWeight="900">ST</text>
-              <text x="200" y="186" textAnchor="middle" fontSize="8" fill="rgba(251,191,36,.8)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">FAST BREAK SPACE</text>
+              <text x="200" y="186" textAnchor="middle" fontSize="8" fill="rgba(251,191,36,.8)" fontFamily="'Inter',sans-serif" fontWeight="700">FAST BREAK SPACE</text>
             </>}
 
             {active === "block" && <>
               <rect x="8" y="135" width="210" height="3" fill="rgba(239,68,68,.4)" />
-              <text x="14" y="130" fontSize="8" fill="rgba(239,68,68,.8)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">COMPACT BLOCK</text>
+              <text x="14" y="130" fontSize="8" fill="rgba(239,68,68,.8)" fontFamily="'Inter',sans-serif" fontWeight="700">COMPACT BLOCK</text>
               {[[75,175],[105,175],[135,175],[165,175]].map(([x,y],i) => (
                 <g key={i}><circle cx={x} cy={y} r="9" fill="#ef4444" stroke="#fff" strokeWidth="1.5" /><text x={x} y={y+3} textAnchor="middle" fontSize="7" fill="#fff" fontWeight="700">D</text></g>
               ))}
@@ -645,10 +646,10 @@ function TacticsBoardCard() {
             {active === "halfspace" && <>
               <rect x="82" y="6" width="64" height="198" fill="rgba(192,132,252,.06)" stroke="rgba(192,132,252,.22)" strokeWidth="1" strokeDasharray="5 3" />
               <rect x="194" y="6" width="64" height="198" fill="rgba(192,132,252,.06)" stroke="rgba(192,132,252,.22)" strokeWidth="1" strokeDasharray="5 3" />
-              <text x="100" y="20" textAnchor="middle" fontSize="8" fill="rgba(192,132,252,.85)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">HALF SPACE</text>
-              <text x="226" y="20" textAnchor="middle" fontSize="8" fill="rgba(192,132,252,.85)" fontFamily="'JetBrains Mono',monospace" fontWeight="700">HALF SPACE</text>
+              <text x="100" y="20" textAnchor="middle" fontSize="8" fill="rgba(192,132,252,.85)" fontFamily="'Inter',sans-serif" fontWeight="700">HALF SPACE</text>
+              <text x="226" y="20" textAnchor="middle" fontSize="8" fill="rgba(192,132,252,.85)" fontFamily="'Inter',sans-serif" fontWeight="700">HALF SPACE</text>
               <rect x="146" y="65" width="48" height="46" fill="rgba(239,68,68,.12)" stroke="rgba(239,68,68,.35)" strokeWidth="1" />
-              <text x="170" y="92" textAnchor="middle" fontSize="9" fill="rgba(239,68,68,.9)" fontFamily="'JetBrains Mono',monospace" fontWeight="900">GAP</text>
+              <text x="170" y="92" textAnchor="middle" fontSize="9" fill="rgba(239,68,68,.9)" fontFamily="'Inter',sans-serif" fontWeight="900">GAP</text>
               {[[110,72],[226,72],[170,52]].map(([x,y],i) => (
                 <g key={i}><circle cx={x} cy={y} r="10" fill="#c084fc" stroke="#fff" strokeWidth="1.5" /><text x={x} y={y+3} textAnchor="middle" fontSize="7" fill="#fff" fontWeight="700">IF</text></g>
               ))}
@@ -659,11 +660,11 @@ function TacticsBoardCard() {
         </div>
         {/* Info panel */}
         <div style={{ padding: 14, borderLeft: "1px solid rgba(255,255,255,.07)", background: "#020602", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: t.col, fontFamily: "'Sora',sans-serif" }}>{t.title}</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: t.col, fontFamily: "'Inter',sans-serif" }}>{t.title}</div>
           {t.stats.map(([l, v, c]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 8px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7 }}>
               <span style={{ fontSize: 9, color: "rgba(255,255,255,.45)" }}>{l}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono',monospace" }}>{v}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: c, fontFamily: "'Inter',sans-serif" }}>{v}</span>
             </div>
           ))}
           <div style={{ marginTop: "auto", padding: "7px 9px", background: t.col + "0e", borderRadius: 7, fontSize: 9, color: "rgba(255,255,255,.4)", lineHeight: 1.6 }}>
@@ -715,17 +716,17 @@ function PositionsCard() {
             <rect x={p.zone.x} y={p.zone.y} width={p.zone.w} height={p.zone.h} fill={p.col + "18"} stroke={p.col + "50"} strokeWidth="1.5" rx="3" />
             {/* Position icon */}
             <circle cx={p.zone.x + p.zone.w / 2} cy={p.zone.y + p.zone.h / 2} r="11" fill={p.col + "30"} stroke={p.col} strokeWidth="2" />
-            <text x={p.zone.x + p.zone.w / 2} y={p.zone.y + p.zone.h / 2 + 4} textAnchor="middle" fontSize="9" fill={p.col} fontWeight="900" fontFamily="'Sora',sans-serif">{pos.toUpperCase()}</text>
+            <text x={p.zone.x + p.zone.w / 2} y={p.zone.y + p.zone.h / 2 + 4} textAnchor="middle" fontSize="9" fill={p.col} fontWeight="900" fontFamily="'Inter',sans-serif">{pos.toUpperCase()}</text>
           </svg>
         </div>
         {/* Stats */}
         <div style={{ padding: "12px 14px" }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: p.col, fontFamily: "'Sora',sans-serif", marginBottom: 2 }}>{p.label}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: p.col, fontFamily: "'Inter',sans-serif", marginBottom: 2 }}>{p.label}</div>
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.3)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 10 }}>{p.role}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {p.stats.map(([l, v]) => (
               <div key={l} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "7px 9px" }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: p.col, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{v}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: p.col, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{v}</div>
                 <div style={{ fontSize: 8, color: "rgba(255,255,255,.35)", fontWeight: 700, letterSpacing: ".07em", marginTop: 2, textTransform: "uppercase" }}>{l}</div>
               </div>
             ))}
@@ -770,7 +771,7 @@ function StatGlossarySection() {
                 <circle cx="90" cy="35" r="4.5" fill="rgba(52,211,153,.2)" stroke="#34d399" strokeWidth="1" />
                 <text x="90" y="38" textAnchor="middle" fontSize="5" fill="#fff">0.04</text>
                 <circle cx="115" cy="30" r="3" fill="rgba(96,165,250,.15)" stroke="#60a5fa" strokeWidth="1" />
-                <text x="205" y="30" textAnchor="middle" fontSize="32" fontWeight="900" fill={s.col} fontFamily="'JetBrains Mono',monospace" style={{ opacity: .18 }}>{s.abbr}</text>
+                <text x="205" y="30" textAnchor="middle" fontSize="32" fontWeight="900" fill={s.col} fontFamily="'Inter',sans-serif" style={{ opacity: .18 }}>{s.abbr}</text>
               </>}
               {s.visual === "bar" && <>
                 {[["Penalty", 79, "#ef4444", 14], ["Header close", 38, "#f97316", 38], ["Box shot", 22, "#fbbf24", 62], ["Wide angle", 8, "#34d399", 80]].map(([l, pct, c, y]) => (
@@ -779,7 +780,7 @@ function StatGlossarySection() {
                     <rect x="80" y={y - 6} width="160" height="9" fill="rgba(255,255,255,.06)" rx="4" />
                     <rect x="80" y={y - 6} width={hov === s.key ? pct * 1.6 : 0} height="9" fill={c} rx="4"
                       style={{ transition: hov === s.key ? "width 0.8s cubic-bezier(.22,1,.36,1)" : "width .3s" }} />
-                    <text x={84 + (hov === s.key ? pct * 1.6 : 0) + 4} y={y + 4} fontSize="7.5" fill={c} fontFamily="'JetBrains Mono',monospace" fontWeight="700"
+                    <text x={84 + (hov === s.key ? pct * 1.6 : 0) + 4} y={y + 4} fontSize="7.5" fill={c} fontFamily="'Inter',sans-serif" fontWeight="700"
                       style={{ transition: hov === s.key ? "all .8s" : "all .3s" }}>{pct}%</text>
                   </g>
                 ))}
@@ -789,18 +790,18 @@ function StatGlossarySection() {
                   <path d="M10,75 Q40,68 70,70 Q100,65 130,55 Q160,42 190,34 Q220,22 250,16" fill="none" stroke={s.col} strokeWidth="2.5" strokeLinecap="round" strokeDasharray="300"
                     style={{ strokeDashoffset: hov === s.key ? 0 : 300, transition: "stroke-dashoffset 1.4s cubic-bezier(.22,1,.36,1)" }} />
                   <line x1="10" y1="44" x2="258" y2="44" stroke="rgba(255,255,255,.08)" strokeWidth="1" strokeDasharray="4 3" />
-                  <text x="12" y="40" fontSize="7" fill="rgba(255,255,255,.25)" fontFamily="'JetBrains Mono',monospace">avg</text>
+                  <text x="12" y="40" fontSize="7" fill="rgba(255,255,255,.25)" fontFamily="'Inter',sans-serif">avg</text>
                   {hov === s.key && <circle cx="250" cy="16" r="4" fill={s.col} />}
-                  <text x="10" y="86" fontSize="7" fill="rgba(255,255,255,.2)" fontFamily="'JetBrains Mono',monospace">GW1</text>
-                  <text x="220" y="86" fontSize="7" fill="rgba(255,255,255,.2)" fontFamily="'JetBrains Mono',monospace">GW34</text>
-                  <text x="200" y="38" fontSize="24" fontWeight="900" fill={s.col} fontFamily="'JetBrains Mono',monospace" style={{ opacity: .12 }}>{s.abbr}</text>
+                  <text x="10" y="86" fontSize="7" fill="rgba(255,255,255,.2)" fontFamily="'Inter',sans-serif">GW1</text>
+                  <text x="220" y="86" fontSize="7" fill="rgba(255,255,255,.2)" fontFamily="'Inter',sans-serif">GW34</text>
+                  <text x="200" y="38" fontSize="24" fontWeight="900" fill={s.col} fontFamily="'Inter',sans-serif" style={{ opacity: .12 }}>{s.abbr}</text>
                 </svg>
               </>}
             </svg>
           </Scene>
           <div style={{ padding: "12px 14px", background: "#000" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 5 }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: s.col, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{s.abbr}</span>
+              <span style={{ fontSize: 20, fontWeight: 900, color: s.col, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{s.abbr}</span>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)", fontWeight: 600 }}>{s.full}</span>
             </div>
             <div className="hiw-rule-desc">{s.desc}</div>
@@ -828,7 +829,7 @@ function MatchStructureCard() {
             <div style={{ position: "absolute", left: "94%", width: "6%", height: "100%", background: "rgba(251,191,36,.5)", borderRadius: "0 999px 999px 0" }} />
           </div>
           {[["0'", "0%", "#28d97a"], ["45'", "44%", "#28d97a"], ["HT", "47.5%", "rgba(255,255,255,.4)"], ["90'", "94%", "#67b1ff"], ["ET", "97%", "#fbbf24"]].map(([l, left, c]) => (
-            <div key={l} style={{ position: "absolute", top: 8, left, fontSize: 9, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono',monospace", transform: "translateX(-50%)" }}>{l}</div>
+            <div key={l} style={{ position: "absolute", top: 8, left, fontSize: 9, fontWeight: 700, color: c, fontFamily: "'Inter',sans-serif", transform: "translateX(-50%)" }}>{l}</div>
           ))}
           {[["1st Half", "22%", "rgba(40,217,122,.7)"], ["2nd Half", "72%", "rgba(103,177,255,.7)"], ["ET", "97%", "rgba(251,191,36,.7)"]].map(([l, left, c]) => (
             <div key={l} style={{ position: "absolute", top: 38, left, fontSize: 8, color: c, fontWeight: 700, transform: "translateX(-50%)" }}>{l}</div>
@@ -838,7 +839,7 @@ function MatchStructureCard() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 7 }}>
           {[["90", "Standard mins", "#28d97a"], ["+5", "Avg stoppage", "#fbbf24"], ["15", "Half time break", "#67b1ff"], ["30", "Extra time mins", "#ef4444"], ["5", "Penalty shootout", "#a78bfa"]].map(([v, l, c]) => (
             <div key={l} style={{ background: c + "09", border: `1px solid ${c}22`, borderRadius: 9, padding: "9px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{v}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{v}</div>
               <div style={{ fontSize: 8, color: "rgba(255,255,255,.35)", fontWeight: 700, letterSpacing: ".07em", marginTop: 3, textTransform: "uppercase", lineHeight: 1.4 }}>{l}</div>
             </div>
           ))}
@@ -854,9 +855,81 @@ function MatchStructureCard() {
 /* ─────────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────── */
+
+// ── Intricate background ──────────────────────────────────────────────────────
+function HowBg() {
+  return (
+    <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,background:"#080808"}}/>
+      <div style={{position:"absolute",top:"-20%",left:"15%",width:"65vw",height:"65vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.016) 0%,transparent 60%)"}}/>
+      <div style={{position:"absolute",bottom:"-10%",right:"5%",width:"50vw",height:"50vw",
+        background:"radial-gradient(ellipse,rgba(255,255,255,.011) 0%,transparent 55%)"}}/>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px)",
+        backgroundSize:"40px 40px"}}/>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px)",
+        backgroundSize:"160px 160px"}}/>
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="HowBg-sl" width="100" height="100" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,.011)" strokeWidth="0.7"/>
+          </pattern>
+          <pattern id="HowBg-dt" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="20" cy="20" r="0.7" fill="rgba(255,255,255,.065)"/>
+          </pattern>
+          <pattern id="HowBg-dm" width="60" height="60" patternUnits="userSpaceOnUse">
+            <polygon points="30,2 58,30 30,58 2,30" fill="none" stroke="rgba(255,255,255,.014)" strokeWidth="0.6"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#HowBg-sl)"/>
+        <rect width="100%" height="100%" fill="url(#HowBg-dt)"/>
+        <rect x="0" y="0" width="38%" height="50%" fill="url(#HowBg-dm)" opacity="0.65"/>
+        <rect x="64%" y="55%" width="36%" height="45%" fill="url(#HowBg-dm)" opacity="0.5"/>
+      </svg>
+      <svg style={{position:"absolute",top:0,left:0,width:180,height:180,opacity:.09}} viewBox="0 0 180 180">
+        <polyline points="12,70 12,12 70,12" fill="none" stroke="white" strokeWidth="1.2"/>
+        <polyline points="12,90 12,12 90,12" fill="none" stroke="white" strokeWidth=".4"/>
+        <circle cx="12" cy="12" r="2.5" fill="none" stroke="white" strokeWidth=".8"/>
+      </svg>
+      <svg style={{position:"absolute",bottom:0,right:0,width:180,height:180,opacity:.07}} viewBox="0 0 180 180">
+        <polyline points="168,110 168,168 110,168" fill="none" stroke="white" strokeWidth="1.2"/>
+      </svg>
+    </div>
+  );
+}
+
+
+// ── Page Footer ───────────────────────────────────────────────────────────────
+function PageFooter() {
+  return (
+    <footer style={{borderTop:"0.5px solid rgba(255,255,255,.08)",marginTop:56,paddingTop:28,paddingBottom:36,position:"relative",zIndex:2}}>
+      <div style={{maxWidth:1360,margin:"0 auto",padding:"0 24px",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:20}}>
+        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+          <div style={{display:"flex",alignItems:"center",gap:9}}>
+            <div style={{width:3,height:20,background:"rgba(255,255,255,.6)",borderRadius:2}}/>
+            <span style={{fontSize:18,fontWeight:700,color:"#fff",letterSpacing:"-.04em",fontFamily:"'Inter',sans-serif"}}>StatinSite</span>
+          </div>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:"'Inter',sans-serif",paddingLeft:12}}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div style={{padding:"12px 24px",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:10,background:"rgba(255,255,255,.03)",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{fontSize:10,color:"rgba(255,255,255,.28)",letterSpacing:".12em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Built by</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#fff",letterSpacing:"-.02em",fontFamily:"'Inter',sans-serif"}}>Rutej Talati</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+          <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.45)",fontFamily:"'Inter',sans-serif"}}>statinsite.com</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,.18)",fontFamily:"'Inter',sans-serif"}}>© 2025 StatinSite</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export default function HowItWorksPage() {
   return (
     <div className="hiw-page">
+      <HowBg/>
       <style>{CSS}</style>
 
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 20px 80px" }}>
@@ -866,7 +939,7 @@ export default function HowItWorksPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
             <div style={{ width: 4, height: 52, borderRadius: 2, background: "linear-gradient(180deg,#28d97a,#67b1ff)", flexShrink: 0 }} />
             <div>
-              <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(26px,4vw,38px)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0, background: "linear-gradient(135deg,#fff,rgba(255,255,255,.6))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(26px,4vw,38px)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0, background: "linear-gradient(135deg,#fff,rgba(255,255,255,.6))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 How Football Works
               </h1>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)", margin: "4px 0 0", fontWeight: 500 }}>

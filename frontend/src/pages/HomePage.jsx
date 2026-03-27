@@ -315,7 +315,7 @@ const CSS = `
 }
 
 /* ═══════════════════════════════════════════════════════
-   PURE HERO — only "Read The Game."
+   HERO — CONCEPT 1: RADAR PULSE
 ═══════════════════════════════════════════════════════ */
 .hero-pure {
   position: relative;
@@ -324,166 +324,136 @@ const CSS = `
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: var(--bg);
+  background: #04080f;
 }
-[data-theme="light"] .hero-pure {
-  background: linear-gradient(160deg, #060d1a 0%, #080e20 50%, #06110a 100%);
-}
+[data-theme="light"] .hero-pure { background: #04080f; }
 
-/* orbs */
-.hp-orb { position: absolute; border-radius: 50%; filter: blur(88px); pointer-events: none; z-index: 0; }
-.hp-orb-a { width: 900px; height: 600px; background: radial-gradient(ellipse, rgba(10,132,255,.22), transparent 70%); top: -250px; left: -320px; animation: hpOrb 18s ease-in-out infinite alternate; }
-.hp-orb-b { width: 700px; height: 700px; background: radial-gradient(ellipse, rgba(48,209,88,.15), transparent 70%); bottom: -200px; right: -280px; animation: hpOrb 22s 4s ease-in-out infinite alternate; }
-.hp-orb-c { width: 500px; height: 500px; background: radial-gradient(ellipse, rgba(191,90,242,.14), transparent 70%); top: 50%; left: 50%; animation: hpOrbC 26s ease-in-out infinite alternate; }
-.hp-orb-d { width: 350px; height: 350px; background: radial-gradient(ellipse, rgba(255,159,10,.11), transparent 70%); top: 5%; right: 8%; animation: hpOrb 14s 2s ease-in-out infinite alternate; }
-.hp-orb-e { width: 280px; height: 280px; background: radial-gradient(ellipse, rgba(56,189,248,.13), transparent 70%); bottom: 10%; left: 12%; animation: hpOrb 16s 7s ease-in-out infinite alternate; }
-@keyframes hpOrb { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(36px, 48px) scale(1.14); } }
-@keyframes hpOrbC { 0% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(calc(-50% + 30px), calc(-50% - 22px)) scale(1.08); } 100% { transform: translate(calc(-50% - 20px), calc(-50% + 34px)) scale(.92); } }
-
-.hp-scan { position: absolute; inset: 0; pointer-events: none; z-index: 1; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.016) 3px, rgba(0,0,0,.016) 4px); }
+/* ── Radar canvas sits behind everything ── */
 .hp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
-/* bottom beam */
-.hp-beam { position: absolute; bottom: 0; left: 0; right: 0; height: 1px; z-index: 3; background: linear-gradient(90deg, transparent 0%, rgba(10,132,255,.8) 25%, rgba(48,209,88,.8) 50%, rgba(191,90,242,.8) 75%, transparent 100%); background-size: 250% 100%; animation: hpBeam 3.5s linear infinite; }
-@keyframes hpBeam { 0% { background-position: 250% 0; } 100% { background-position: -250% 0; } }
+/* ── Scan-line texture ── */
+.hp-scan { position: absolute; inset: 0; pointer-events: none; z-index: 1; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.018) 3px, rgba(0,0,0,.018) 4px); }
 
-/* center content */
+/* ── Radial vignette — darkens edges so text pops ── */
+.hp-vignette { position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 70% 65% at 50% 50%, transparent 30%, #04080f 100%); }
+
+/* ── Bottom beam ── */
+.hp-beam { position: absolute; bottom: 0; left: 0; right: 0; height: 1px; z-index: 4; overflow: hidden; }
+.hp-beam::after { content: ''; position: absolute; top: 0; left: -30%; height: 1px; width: 40%; background: linear-gradient(90deg, transparent, rgba(59,130,246,.9), transparent); animation: hpBeamSlide 3.5s ease-in-out infinite; }
+@keyframes hpBeamSlide { 0% { left: -40%; } 100% { left: 130%; } }
+
+/* ── Top beam ── */
+.hp-beam-top { position: absolute; top: 0; left: 0; right: 0; height: 1px; z-index: 4; overflow: hidden; }
+.hp-beam-top::after { content: ''; position: absolute; top: 0; height: 1px; width: 30%; background: linear-gradient(90deg, transparent, rgba(59,130,246,.5), transparent); animation: hpBeamSlide 4.5s 1.2s ease-in-out infinite; }
+
+/* ── Center content ── */
 .hp-center { position: relative; z-index: 2; text-align: center; padding: 0 24px; }
 
-/* eyebrow */
-.hp-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 900; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.28); margin-bottom: 36px; animation: hpFadeUp .8s ease both; }
-[data-theme="light"] .hp-eyebrow { color: rgba(255,255,255,.35); }
-.hp-eyebrow-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.3); animation: hpPulse 2s ease-in-out infinite; }
-.hp-eyebrow-dot:last-child { animation-delay: 1s; }
-@keyframes hpPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.7); } }
-
-/* main title */
-.hp-title { margin: 0 0 32px; line-height: .9; letter-spacing: -.055em; display: flex; flex-direction: column; align-items: center; }
-
-.hp-line { display: block; }
-
-.hp-line-1 {
-  font-size: clamp(72px, 12vw, 160px);
-  font-weight: 900;
-  color: #fff;
-  animation: hpFadeUp .8s .1s ease both;
-  text-shadow: 0 0 80px rgba(255,255,255,.06);
-}
-
-.hp-line-2 {
-  display: flex;
-  align-items: baseline;
-  gap: 0;
-  animation: hpFadeUp .8s .18s ease both;
-}
-
-/* "Game" — animated gradient with glow */
-.hp-game {
-  font-size: clamp(80px, 13.5vw, 178px);
-  font-weight: 900;
-  background: linear-gradient(115deg, #0a84ff 0%, #30d158 32%, #bf5af2 64%, #ff9f0a 88%, #0a84ff 100%);
-  background-size: 280%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: hpGradMove 5s linear infinite, hpFadeUp .8s .18s ease both;
-  position: relative;
-  filter: drop-shadow(0 0 40px rgba(10,132,255,.25));
-}
-@keyframes hpGradMove { 0% { background-position: 0% 50%; } 100% { background-position: 280% 50%; } }
-
-/* "." — white, pops with a bounce */
-.hp-period {
-  font-size: clamp(80px, 13.5vw, 178px);
-  font-weight: 900;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  animation: hpDotBounce 3s 1.2s cubic-bezier(.34,1.56,.64,1) both;
-  display: inline-block;
-}
-@keyframes hpDotBounce {
-  0%   { opacity: 0; transform: translateY(24px) scale(.4); }
-  60%  { opacity: 1; transform: translateY(-8px) scale(1.15); }
-  80%  { transform: translateY(4px) scale(.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* tagline */
-.hp-tagline { font-size: clamp(9px, 1.1vw, 11px); font-weight: 800; letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.2); animation: hpFadeUp .8s .5s ease both; }
-[data-theme="light"] .hp-tagline { color: rgba(255,255,255,.25); }
-
-/* scroll cue */
-.hp-scroll-cue { margin-top: 56px; display: flex; flex-direction: column; align-items: center; animation: hpFadeUp .8s .7s ease both; }
-.hp-scroll-line { width: 1px; height: 52px; background: linear-gradient(180deg, rgba(255,255,255,.35) 0%, transparent 100%); animation: hpScrollLine 2s ease-in-out infinite; }
-@keyframes hpScrollLine { 0%,100% { transform: scaleY(1); opacity: .6; } 50% { transform: scaleY(.4); opacity: .2; } }
-
-/* particles */
-@keyframes hpcl-float {
-  0%,100% { transform: translate(0,0); opacity: .8; }
-  40%     { transform: translate(var(--tx,14px), var(--ty,-28px)); opacity: .25; }
-  70%     { transform: translate(calc(var(--tx,-8px) * .5), calc(var(--ty,-14px) * .6)); opacity: .5; }
-}
-
-/* core animations */
-@keyframes hpFadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-
-/* StatinSite brand above title */
+/* ── Brand row ── */
 .hp-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  animation: hpFadeUp .8s ease both;
+  display: inline-flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+  animation: hpFadeUp .9s ease both;
 }
-.hp-brand-mark {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.hp-brand-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 2.5px;
-  height: 18px;
-}
+.hp-brand-bars { display: flex; align-items: flex-end; gap: 2.5px; height: 18px; }
 .hp-brand-bars span {
-  display: block;
-  width: 3px;
-  border-radius: 2px;
-  background: #0a84ff;
+  display: block; width: 3px; border-radius: 2px; background: #3b82f6;
   animation: hpBarPulse 1.8s ease-in-out infinite;
 }
-.hp-brand-bars span:nth-child(1) { height: 10px; animation-delay: 0s; }
-.hp-brand-bars span:nth-child(2) { height: 16px; animation-delay: .2s; }
-.hp-brand-bars span:nth-child(3) { height: 12px; animation-delay: .4s; }
-.hp-brand-bars span:nth-child(4) { height: 18px; background: #30d158; animation-delay: .6s; }
-@keyframes hpBarPulse {
-  0%,100% { opacity: 1; transform: scaleY(1); }
-  50%     { opacity: .4; transform: scaleY(.55); }
-}
-.hp-brand-pulse {
-  width: 28px;
-  height: 10px;
-  color: rgba(255,255,255,.25);
-}
+.hp-brand-bars span:nth-child(1) { height: 9px;  animation-delay: 0s; }
+.hp-brand-bars span:nth-child(2) { height: 16px; animation-delay: .18s; }
+.hp-brand-bars span:nth-child(3) { height: 11px; animation-delay: .36s; }
+.hp-brand-bars span:nth-child(4) { height: 18px; background: #60a5fa; animation-delay: .54s; }
+@keyframes hpBarPulse { 0%,100% { opacity:1; transform:scaleY(1); } 50% { opacity:.35; transform:scaleY(.45); } }
+.hp-brand-divider { width: 1px; height: 16px; background: rgba(59,130,246,.3); }
 .hp-brand-name {
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: -.01em;
-  color: rgba(255,255,255,.55);
-  font-family: var(--font-display);
+  font-size: 13px; font-weight: 900; letter-spacing: .02em;
+  color: rgba(255,255,255,.55); font-family: var(--font-display);
 }
 .hp-brand-name::after {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #30d158;
-  margin-left: 5px;
-  vertical-align: middle;
-  box-shadow: 0 0 8px #30d158;
-  animation: hpPulse 2s ease-in-out infinite;
+  content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: #3b82f6; margin-left: 6px; vertical-align: middle;
+  box-shadow: 0 0 8px #3b82f6; animation: hpPulse 2.2s ease-in-out infinite;
+}
+.hp-brand-intel {
+  font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(59,130,246,.55);
+}
+@keyframes hpPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.3; transform:scale(.65); } }
+
+/* ── Main title ── */
+.hp-title { margin: 0 0 36px; line-height: .88; letter-spacing: -.052em; display: flex; flex-direction: column; align-items: center; }
+.hp-line { display: block; }
+.hp-line-1 {
+  font-size: clamp(72px, 12vw, 162px);
+  font-weight: 900; color: #ffffff;
+  animation: hpFadeUp .8s .12s ease both;
+  text-shadow: 0 0 120px rgba(59,130,246,.12);
+}
+.hp-line-2 { display: flex; align-items: baseline; gap: 0; animation: hpFadeUp .8s .22s ease both; }
+
+/* "Game" — pure blue shimmer, matches the radar */
+.hp-game {
+  font-size: clamp(80px, 13.5vw, 180px);
+  font-weight: 900;
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 35%, #93c5fd 55%, #60a5fa 75%, #3b82f6 100%);
+  background-size: 220%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: hpGradMove 4s linear infinite, hpFadeUp .8s .22s ease both;
+  filter: drop-shadow(0 0 50px rgba(59,130,246,.3));
+}
+@keyframes hpGradMove { 0% { background-position: 0% 50%; } 100% { background-position: 220% 50%; } }
+
+/* "." — white bounce */
+.hp-period {
+  font-size: clamp(80px, 13.5vw, 180px);
+  font-weight: 900; color: #fff; -webkit-text-fill-color: #fff; display: inline-block;
+  animation: hpDotBounce 2.8s 1s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes hpDotBounce {
+  0%   { opacity:0; transform:translateY(20px) scale(.35); }
+  60%  { opacity:1; transform:translateY(-7px) scale(1.12); }
+  80%  { transform:translateY(3px) scale(.96); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* ── Tagline ── */
+.hp-tagline {
+  font-size: clamp(9px, 1vw, 11px); font-weight: 700; letter-spacing: .26em; text-transform: uppercase;
+  color: rgba(59,130,246,.4); animation: hpFadeUp .8s .5s ease both;
+}
+
+/* ── Scroll cue ── */
+.hp-scroll-cue { margin-top: 60px; display: flex; flex-direction: column; align-items: center; animation: hpFadeUp .8s .72s ease both; }
+.hp-scroll-line { width: 1px; height: 52px; background: linear-gradient(180deg, rgba(59,130,246,.5) 0%, transparent 100%); animation: hpScrollPulse 2s ease-in-out infinite; }
+@keyframes hpScrollPulse { 0%,100% { transform:scaleY(1); opacity:.7; } 50% { transform:scaleY(.4); opacity:.2; } }
+
+/* ── Core animation ── */
+@keyframes hpFadeUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── Blip dots ── */
+.hp-blip {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 2;
+  animation: hpBlipPulse var(--dur, 2s) var(--del, 0s) ease-in-out infinite;
+}
+@keyframes hpBlipPulse {
+  0%,100% { opacity:.5; transform:scale(1); }
+  50%     { opacity:1; transform:scale(1.3); }
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .hp-line-1 { font-size: clamp(52px, 14vw, 78px); }
+  .hp-game   { font-size: clamp(58px, 16vw, 90px); }
+  .hp-period { font-size: clamp(58px, 16vw, 90px); }
+  .hp-scroll-cue { margin-top: 40px; }
+  .hp-scroll-line { height: 36px; }
+  .hp-brand { flex-wrap: wrap; justify-content: center; gap: 8px; }
+}
+@media (max-width: 380px) {
+  .hp-line-1 { font-size: 46px; }
+  .hp-game   { font-size: 52px; }
+  .hp-period { font-size: 52px; }
 }
 
 /* ── Competition Hub ─────────────────────────────────────────────────── */
@@ -805,38 +775,95 @@ function Particles() {
 // SECTION 1 — HERO
 // ════════════════════════════════════════════════════════════════════════
 // ── Hero-only canvas ─────────────────────────────────────────────────────────
-function HeroCanvas() {
+// ════════════════════════════════════════════════════════════════════════
+// HERO — CONCEPT 1: RADAR PULSE
+// Canvas draws: concentric radar rings + cross-hairs + sweep arm
+// Blip dots placed via CSS absolute positioning
+// ════════════════════════════════════════════════════════════════════════
+
+function RadarCanvas() {
   const c = useRef(null);
   useEffect(() => {
     const canvas = c.current; if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let raf, t = 0;
-    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
-    resize(); window.addEventListener('resize', resize);
-    const dk = () => document.documentElement.getAttribute('data-theme') !== 'light';
+    let raf, angle = 0;
+
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
     const draw = () => {
-      const { width: W, height: H } = canvas; ctx.clearRect(0, 0, W, H);
-      const SZ = 64, cols = Math.ceil(W / SZ) + 2, rows = Math.ceil(H / SZ) + 2;
-      const ox = (t * .28) % SZ, oy = (t * .12) % SZ;
-      const d = dk(), ga = d ? 1 : .22;
-      for (let i = -1; i < cols; i++) {
-        const a = (0.014 + 0.007 * Math.sin(i * .4 + t * .005)) * ga;
-        ctx.strokeStyle = `rgba(56,189,248,${a})`; ctx.lineWidth = .5;
-        ctx.beginPath(); ctx.moveTo(i * SZ - ox, 0); ctx.lineTo(i * SZ - ox, H); ctx.stroke();
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const cx = W / 2, cy = H / 2;
+      const maxR = Math.min(W, H) * 0.54;
+      const rings = 5;
+      const ringCol = 'rgba(59,130,246,0.13)';
+      const crossCol = 'rgba(59,130,246,0.07)';
+
+      // Concentric rings
+      for (let i = 1; i <= rings; i++) {
+        const r = (maxR / rings) * i;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = ringCol;
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
       }
-      for (let j = -1; j < rows; j++) {
-        const a = (0.014 + 0.007 * Math.sin(j * .5 + t * .004)) * ga;
-        ctx.strokeStyle = `rgba(56,189,248,${a})`; ctx.lineWidth = .5;
-        ctx.beginPath(); ctx.moveTo(0, j * SZ - oy); ctx.lineTo(W, j * SZ - oy); ctx.stroke();
+
+      // Cross-hairs
+      ctx.strokeStyle = crossCol;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(cx, cy - maxR); ctx.lineTo(cx, cy + maxR); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - maxR, cy); ctx.lineTo(cx + maxR, cy); ctx.stroke();
+      // Diagonals
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.moveTo(cx - maxR * 0.72, cy - maxR * 0.72); ctx.lineTo(cx + maxR * 0.72, cy + maxR * 0.72); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + maxR * 0.72, cy - maxR * 0.72); ctx.lineTo(cx - maxR * 0.72, cy + maxR * 0.72); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Sweep arm
+      const sweepX = cx + Math.cos(angle) * maxR;
+      const sweepY = cy + Math.sin(angle) * maxR;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(sweepX, sweepY);
+      ctx.strokeStyle = 'rgba(59,130,246,0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Sweep fill — fan arc behind the arm
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, maxR, angle - Math.PI * 0.18, angle);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(59,130,246,0.045)';
+      ctx.fill();
+
+      // Fading trail arcs
+      for (let t = 1; t <= 3; t++) {
+        const a0 = angle - (Math.PI * 0.18 * t / 3);
+        const a1 = angle - (Math.PI * 0.18 * (t - 1) / 3);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, maxR, a0, a1);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(59,130,246,${0.025 / t})`;
+        ctx.fill();
       }
-      for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
-        const p = Math.sin(i * .8 + j * .6 + t * .03);
-        if (p > .74) {
-          ctx.fillStyle = `rgba(52,211,153,${(p - .74) * .4 * (d ? 1 : .18)})`;
-          ctx.beginPath(); ctx.arc(i * SZ - ox, j * SZ - oy, 1.3, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      t++; raf = requestAnimationFrame(draw);
+
+      // Centre dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(59,130,246,0.7)';
+      ctx.fill();
+
+      angle += 0.008;
+      raf = requestAnimationFrame(draw);
     };
     draw();
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
@@ -844,79 +871,59 @@ function HeroCanvas() {
   return <canvas ref={c} className="hp-canvas" />;
 }
 
-// ── Hero particles ────────────────────────────────────────────────────────────
-function HeroParticles() {
-  const pts = useMemo(() => Array.from({ length: 28 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    sz: .6 + Math.random() * 2.4,
-    dur: 11 + Math.random() * 18,
-    del: -(Math.random() * 24),
-    c: ['10,132,255','48,209,88','191,90,242','255,159,10','56,189,248'][i % 5],
-    tx: (Math.random() - .5) * 40,
-    ty: -(10 + Math.random() * 36),
-  })), []);
-  const dk = document.documentElement.getAttribute('data-theme') !== 'light';
-  const a = dk ? .55 : .12, ga = dk ? .32 : .06;
-  return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-      {pts.map(p => (
-        <div key={p.id} style={{
-          position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
-          width: p.sz, height: p.sz, borderRadius: '50%',
-          background: `rgba(${p.c},${a})`,
-          boxShadow: `0 0 ${p.sz * 4}px rgba(${p.c},${ga})`,
-          animation: `hpcl-float ${p.dur}s ${p.del}s ease-in-out infinite`,
-          '--tx': `${p.tx}px`, '--ty': `${p.ty}px`,
-        }} />
-      ))}
-    </div>
-  );
-}
+// Fixed blip positions (% from center, as offsets)
+const BLIPS = [
+  { top: '32%', left: '63%', size: 8,  color: '#60a5fa', glow: 'rgba(96,165,250,0.8)',  dur: '2.1s', del: '0s'    },
+  { top: '54%', left: '34%', size: 6,  color: '#34d399', glow: 'rgba(52,211,153,0.8)',  dur: '1.8s', del: '0.5s'  },
+  { top: '26%', left: '44%', size: 7,  color: '#a78bfa', glow: 'rgba(167,139,250,0.8)', dur: '2.4s', del: '0.9s'  },
+  { top: '66%', left: '58%', size: 5,  color: '#f59e0b', glow: 'rgba(245,158,11,0.8)',  dur: '2.0s', del: '1.3s'  },
+  { top: '42%', left: '72%', size: 6,  color: '#60a5fa', glow: 'rgba(96,165,250,0.8)',  dur: '2.6s', del: '0.3s'  },
+  { top: '72%', left: '38%', size: 5,  color: '#34d399', glow: 'rgba(52,211,153,0.8)',  dur: '1.9s', del: '1.7s'  },
+  { top: '20%', left: '58%', size: 4,  color: '#f59e0b', glow: 'rgba(245,158,11,0.8)',  dur: '2.3s', del: '0.7s'  },
+  { top: '60%', left: '22%', size: 5,  color: '#a78bfa', glow: 'rgba(167,139,250,0.8)', dur: '2.2s', del: '2.0s'  },
+];
 
 function HeroSection() {
   return (
     <section className="hero-pure">
-      {/* Animated orbs */}
-      <div className="hp-orb hp-orb-a" />
-      <div className="hp-orb hp-orb-b" />
-      <div className="hp-orb hp-orb-c" />
-      <div className="hp-orb hp-orb-d" />
-      <div className="hp-orb hp-orb-e" />
+      {/* Radar canvas — rings + sweep */}
+      <RadarCanvas />
 
       {/* Scan-line texture */}
       <div className="hp-scan" />
 
-      {/* Sliding bottom beam */}
+      {/* Radial vignette — keeps edges dark */}
+      <div className="hp-vignette" />
+
+      {/* Blip dots scattered over the radar */}
+      {BLIPS.map((b, i) => (
+        <div key={i} className="hp-blip" style={{
+          top: b.top, left: b.left,
+          width: b.size, height: b.size,
+          background: b.color,
+          boxShadow: `0 0 ${b.size * 2}px ${b.glow}`,
+          '--dur': b.dur, '--del': b.del,
+        }} />
+      ))}
+
+      {/* Bottom beam */}
       <div className="hp-beam" />
+      <div className="hp-beam-top" />
 
-      {/* Canvas grid */}
-      <HeroCanvas />
-
-      {/* Floating particles */}
-      <HeroParticles />
-
-      {/* The only content: "Read The Game." */}
+      {/* ── TEXT CONTENT ── */}
       <div className="hp-center">
+
+        {/* Brand row: bars + StatinSite + divider + Football Intelligence */}
         <div className="hp-brand">
-          <div className="hp-brand-mark">
-            <div className="hp-brand-bars">
-              <span /><span /><span /><span />
-            </div>
-            <svg className="hp-brand-pulse" viewBox="0 0 24 8" fill="none">
-              <path d="M1 4 Q4 1 6 4 Q8 7 10 4 Q12 1 14 4 Q16 7 18 4 Q20 1 22 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-            </svg>
+          <div className="hp-brand-bars">
+            <span /><span /><span /><span />
           </div>
           <span className="hp-brand-name">StatinSite</span>
+          <span className="hp-brand-divider" />
+          <span className="hp-brand-intel">Football Intelligence</span>
         </div>
 
-        <div className="hp-eyebrow">
-          <span className="hp-eyebrow-dot" />
-          FOOTBALL INTELLIGENCE
-          <span className="hp-eyebrow-dot" />
-        </div>
-
+        {/* Main title */}
         <h1 className="hp-title">
           <span className="hp-line hp-line-1">Read The</span>
           <span className="hp-line hp-line-2">
@@ -925,13 +932,16 @@ function HeroSection() {
           </span>
         </h1>
 
+        {/* Tagline */}
         <div className="hp-tagline">
           ELO &middot; DIXON-COLES &middot; REAL xG &middot; POISSON
         </div>
 
+        {/* Scroll cue */}
         <div className="hp-scroll-cue">
           <div className="hp-scroll-line" />
         </div>
+
       </div>
     </section>
   );

@@ -109,14 +109,14 @@ export const getLeagueNews        = (lg)        => fetchJson(`/api/news/${lg}`, 
 // ── Homepage ──────────────────────────────────────────────────────────────────
 /** Single dashboard payload — powers the entire homepage. Cached 5 min. */
 export const getDashboard = withCache(
-  "ss_dashboard",
+  `ss_dashboard_${new Date().toDateString()}`,
   () => apiFetch("/api/home/dashboard"),
   300_000,
 );
 
 /** Upcoming + live fixtures. Cached 3 min. */
 export const getUpcoming = withCache(
-  "ss_upcoming",
+  `ss_upcoming_${new Date().toDateString()}`,
   () => apiFetch("/api/matches/upcoming"),
   180_000,
 );

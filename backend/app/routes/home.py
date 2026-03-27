@@ -96,7 +96,8 @@ async def _api(path: str, params: dict, ttl: float = TTL_MEDIUM) -> list:
             )
             if r.status_code == 200:
                 data = r.json().get("response", [])
-                _cset(cache_key, data)
+                if data:  # never cache empty — allow retry on next request
+                    _cset(cache_key, data)
                 return data
     except Exception:
         pass
@@ -194,7 +195,7 @@ async def top_predictions(league: str = Query("epl")):
 
     lid = LEAGUE_IDS.get(league, 39)
     today = date.today().isoformat()
-    end   = (date.today() + timedelta(days=10)).isoformat()
+    end   = (date.today() + timedelta(days=21)).isoformat()
 
     fixtures = await _api("/fixtures", {
         "league": lid, "season": _CURRENT_SEASON,
@@ -482,7 +483,7 @@ async def featured_fixtures():
         return hit
 
     today = date.today().isoformat()
-    end   = (date.today() + timedelta(days=7)).isoformat()
+    end   = (date.today() + timedelta(days=21)).isoformat()
 
     # Fetch upcoming fixtures across all top-5 leagues in parallel
     tasks = [
@@ -1467,5 +1468,22 @@ async def dashboard():
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    _cset(cache_key, payload)
+    # Only cache if at least one data section is populated
+    core_populated = (
+        payload.get("top_predictions", {}).get("predictions") or
+        payload.get("title_race", {}).get("top4") or
+        payload.get("xg_leaders", {}).get("leaders") or
+        payload.get("differential_captains", {}).get("captains")
+    )
+    if core_populated:
+        _cset(cache_key, payload)
     return payload
+
+# ── Cache-bust endpoint — call this to force refresh after server wake ────────
+@router.get("/cache/clear")
+async def clear_cache():
+    """Clears all in-process cache so next request fetches fresh data."""
+    count = len(_cache)
+    _cache.clear()
+    _ctimes.clear()
+    return {"cleared": count, "message": "Cache cleared. Next request will fetch fresh data."}

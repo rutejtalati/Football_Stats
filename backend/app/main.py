@@ -38,6 +38,45 @@ from app.football_engine import EloRatings, TTLCache, predict_match, LEAGUE_AVG_
 app = FastAPI(title="StatinSite API", version="4.0.0")
 
 # ── 6. Middleware ─────────────────────────────────────────────────────────────
+#
+# IMPORTANT ORDER — middleware is applied last-registered-first (LIFO stack):
+#
+#  Request  →  catch_exceptions  →  CORSMiddleware  →  route handler
+#  Response ←  catch_exceptions  ←  CORSMiddleware  ←  route handler
+#
+# catch_exceptions MUST be registered first (before CORS) so it wraps the
+# entire stack. When a 500 fires inside the route, catch_exceptions catches it
+# and returns a plain Response. CORSMiddleware then processes that response and
+# attaches Access-Control-Allow-Origin — so the browser sees the header.
+#
+# Using @app.exception_handler(Exception) does NOT work because unhandled
+# exceptions skip CORSMiddleware entirely and go straight to Starlette's
+# ServerErrorMiddleware which never adds CORS headers.
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+from starlette.responses import Response as StarletteResponse
+
+class CatchExceptionsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        try:
+            return await call_next(request)
+        except Exception as exc:
+            logger.error(
+                "Unhandled exception %s %s: %s",
+                request.method, request.url.path, exc, exc_info=True,
+            )
+            # Plain Response — CORSMiddleware below us will add the CORS header
+            return StarletteResponse(
+                content=f'{{"detail":"Internal server error","error":{str(exc)!r}}}',
+                status_code=500,
+                media_type="application/json",
+            )
+
+# Register catch_exceptions FIRST so it sits outermost in the LIFO stack
+app.add_middleware(CatchExceptionsMiddleware)
+
+# CORS sits inside catch_exceptions so it can process the 500 response
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,28 +84,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ── Global exception handler — ensures CORS headers appear on ALL responses ───
-# FastAPI's CORSMiddleware only injects headers on responses it processes
-# cleanly. Unhandled exceptions that bubble up before the middleware runs
-# produce a bare 500 with no CORS headers, which the browser misreports as a
-# CORS failure. This handler catches every unhandled exception and returns a
-# proper JSON 500 with the required CORS header attached.
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
-@app.exception_handler(Exception)
-async def _global_exception_handler(request: Request, exc: Exception):
-    logger.error("Unhandled exception: %s %s — %s", request.method, request.url.path, exc, exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "error": str(exc)},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
 
 # ── 7. Routers (AFTER app is created) ────────────────────────────────────────
 from app.routes.lineups       import router as lineups_router

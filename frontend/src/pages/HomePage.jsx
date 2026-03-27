@@ -427,6 +427,65 @@ const CSS = `
 /* core animations */
 @keyframes hpFadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
+/* StatinSite brand above title */
+.hp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  animation: hpFadeUp .8s ease both;
+}
+.hp-brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hp-brand-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 18px;
+}
+.hp-brand-bars span {
+  display: block;
+  width: 3px;
+  border-radius: 2px;
+  background: #0a84ff;
+  animation: hpBarPulse 1.8s ease-in-out infinite;
+}
+.hp-brand-bars span:nth-child(1) { height: 10px; animation-delay: 0s; }
+.hp-brand-bars span:nth-child(2) { height: 16px; animation-delay: .2s; }
+.hp-brand-bars span:nth-child(3) { height: 12px; animation-delay: .4s; }
+.hp-brand-bars span:nth-child(4) { height: 18px; background: #30d158; animation-delay: .6s; }
+@keyframes hpBarPulse {
+  0%,100% { opacity: 1; transform: scaleY(1); }
+  50%     { opacity: .4; transform: scaleY(.55); }
+}
+.hp-brand-pulse {
+  width: 28px;
+  height: 10px;
+  color: rgba(255,255,255,.25);
+}
+.hp-brand-name {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -.01em;
+  color: rgba(255,255,255,.55);
+  font-family: var(--font-display);
+}
+.hp-brand-name::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #30d158;
+  margin-left: 5px;
+  vertical-align: middle;
+  box-shadow: 0 0 8px #30d158;
+  animation: hpPulse 2s ease-in-out infinite;
+}
+
 /* mobile */
 @media (max-width: 600px) {
   .hp-line-1 { font-size: clamp(52px, 14vw, 78px); }
@@ -741,6 +800,18 @@ function HeroSection() {
 
       {/* The only content: "Read The Game." */}
       <div className="hp-center">
+        <div className="hp-brand">
+          <div className="hp-brand-mark">
+            <div className="hp-brand-bars">
+              <span /><span /><span /><span />
+            </div>
+            <svg className="hp-brand-pulse" viewBox="0 0 24 8" fill="none">
+              <path d="M1 4 Q4 1 6 4 Q8 7 10 4 Q12 1 14 4 Q16 7 18 4 Q20 1 22 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+            </svg>
+          </div>
+          <span className="hp-brand-name">StatinSite</span>
+        </div>
+
         <div className="hp-eyebrow">
           <span className="hp-eyebrow-dot" />
           FOOTBALL INTELLIGENCE
@@ -1642,16 +1713,12 @@ export default function HomePage() {
       <style>{CSS}</style>
       <HeroSection />
       <LiveStrip    fixtures={fixtures} />
-      <TopPredictions  dash={dash} loading={dl} error={de} />
-      <Div /><TitleRace    dash={dash} loading={dl} error={de} />
-      <Div /><EdgeBoard    dash={dash} loading={dl} error={de} />
+      <TitleRace    dash={dash} loading={dl} error={de} />
       <Div /><CommandGrid  fixtures={fixtures} dash={dash} loading={dl || ul} />
       <Div /><CompetitionHub fixtures={fixtures} />
       <Div /><FPLHub       dash={dash} />
-      <Div /><TrendingPlayers dash={dash} loading={dl} error={de} />
       <Div /><TransferBrief   dash={dash} loading={dl} error={de} />
       <Div /><PowerRankings   dash={dash} loading={dl} error={de} />
-      <Div /><ModelPerformance dash={dash} loading={dl} error={de} />
       <Div /><IntelligenceStack />
     </div>
   );

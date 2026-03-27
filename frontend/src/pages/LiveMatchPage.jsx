@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
 
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#000", r:"rgba(255,255,255,0.7)" };
@@ -326,34 +327,34 @@ function PreMatchHero({ fixture, homeTeam, awayTeam, status }) {
       </div>
 
       {/* Teams */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, maxWidth:600, margin:"0 auto" }}>
-        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
-          <img src={homeTeam?.logo} alt={homeTeam?.name} width={60} height={60}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, maxWidth:600, margin:"0 auto" }}>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+          <img src={homeTeam?.logo} alt={homeTeam?.name} width={52} height={52}
             style={{ objectFit:"contain" }} onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#ffffff", textAlign:"center" }}>{homeTeam?.name}</span>
+          <span style={{ fontSize:13, fontWeight:900, color:"#ffffff", textAlign:"center" }}>{homeTeam?.name}</span>
           <Pill textColor="#94a3b8">Home</Pill>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
           {kickoff ? (
             <>
-              <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"0.06em" }}>KICK OFF</span>
-              <span style={{ fontSize:18, fontWeight:900, color:"#ffffff", letterSpacing:"-0.01em" }}>{kickoff}</span>
+              <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"0.06em" }}>KICK OFF</span>
+              <span style={{ fontSize:16, fontWeight:900, color:"#ffffff", letterSpacing:"-0.01em", textAlign:"center" }}>{kickoff}</span>
             </>
           ) : (
             <span style={{ fontSize:16, fontWeight:700, color:"rgba(255,255,255,.2)" }}>VS</span>
           )}
           {fixture?.venue?.name && (
-            <span style={{ fontSize:10, color:"rgba(255,255,255,.2)", textAlign:"center", maxWidth:160 }}>
+            <span style={{ fontSize:10, color:"rgba(255,255,255,.2)", textAlign:"center", maxWidth:140 }}>
               {fixture.venue.name}{fixture?.venue?.city ? `, ${fixture.venue.city}` : ""}
             </span>
           )}
         </div>
 
-        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
-          <img src={awayTeam?.logo} alt={awayTeam?.name} width={60} height={60}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+          <img src={awayTeam?.logo} alt={awayTeam?.name} width={52} height={52}
             style={{ objectFit:"contain" }} onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#ffffff", textAlign:"center" }}>{awayTeam?.name}</span>
+          <span style={{ fontSize:13, fontWeight:900, color:"#ffffff", textAlign:"center" }}>{awayTeam?.name}</span>
           <Pill textColor="#94a3b8">Away</Pill>
         </div>
       </div>
@@ -506,7 +507,7 @@ function InjuryPanel({ injuries, homeTeam, awayTeam }) {
   return (
     <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
       <SectionLabel>Availability</SectionLabel>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:20 }}>
         {[{ team:homeTeam, list:homeInj },{ team:awayTeam, list:awayInj }].map(({ team, list }) => (
           <div key={team?.id}>
             <div style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,.25)", marginBottom:8 }}>
@@ -1004,7 +1005,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
 
       {/* ── Two detached squad cards below ── */}
       <div style={{
-        display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,
+        display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:8,
         padding:"8px",background:"rgba(0,0,0,.6)",
       }}>
         {/* Home squad card */}
@@ -1211,25 +1212,25 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
       </div>
 
       {/* Score row */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, maxWidth:680, margin:"0 auto" }}>
-        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
-          <img src={homeTeam?.logo} alt={homeTeam?.name} width={56} height={56}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, maxWidth:680, margin:"0 auto" }}>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+          <img src={homeTeam?.logo} alt={homeTeam?.name} width={48} height={48}
             style={{ objectFit:"contain", filter: homeWin ? "drop-shadow(0 0 14px rgba(255,255,255,0.5))" : "none" }}
             onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#ffffff", textAlign:"center" }}>{homeTeam?.name}</span>
+          <span style={{ fontSize:"clamp(11px,3vw,14px)", fontWeight:900, color:"#ffffff", textAlign:"center" }}>{homeTeam?.name}</span>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{
-              fontSize:54, fontWeight:900, lineHeight:1,
+              fontSize:"clamp(36px,10vw,54px)", fontWeight:900, lineHeight:1,
               color: homeWin ? "#ffffff" : awayWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
               fontFamily:"'Inter',sans-serif",
               textShadow: homeWin ? "0 0 30px rgba(255,255,255,0.4)" : "none",
             }}>{hGoals}</span>
-            <span style={{ fontSize:26, fontWeight:300, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>–</span>
+            <span style={{ fontSize:"clamp(18px,5vw,26px)", fontWeight:300, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>–</span>
             <span style={{
-              fontSize:54, fontWeight:900, lineHeight:1,
+              fontSize:"clamp(36px,10vw,54px)", fontWeight:900, lineHeight:1,
               color: awayWin ? "#f87171" : homeWin ? "rgba(255,255,255,0.3)" : "#f0f6ff",
               fontFamily:"'Inter',sans-serif",
               textShadow: awayWin ? "0 0 30px rgba(248,113,113,0.4)" : "none",
@@ -1241,17 +1242,17 @@ function ScoreHero({ fixture, homeTeam, awayTeam, score, status, mode, stats }) 
             </span>
           )}
           {fixture?.venue?.name && (
-            <span style={{ fontSize:10, color:"rgba(255,255,255,0.18)", marginTop:2 }}>
+            <span style={{ fontSize:10, color:"rgba(255,255,255,0.18)", marginTop:2, textAlign:"center", maxWidth:140 }}>
               {fixture.venue.name}
             </span>
           )}
         </div>
 
-        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
-          <img src={awayTeam?.logo} alt={awayTeam?.name} width={56} height={56}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+          <img src={awayTeam?.logo} alt={awayTeam?.name} width={48} height={48}
             style={{ objectFit:"contain", filter: awayWin ? "drop-shadow(0 0 14px rgba(239,68,68,0.5))" : "none" }}
             onError={e => e.currentTarget.style.opacity="0"} />
-          <span style={{ fontSize:14, fontWeight:900, color:"#ffffff", textAlign:"center" }}>{awayTeam?.name}</span>
+          <span style={{ fontSize:"clamp(11px,3vw,14px)", fontWeight:900, color:"#ffffff", textAlign:"center" }}>{awayTeam?.name}</span>
         </div>
       </div>
 
@@ -1407,7 +1408,7 @@ function Timeline({ events, homeTeam, awayTeam }) {
           const min    = fmtMin(ev.time?.elapsed, ev.time?.extra);
           return (
             <div key={i} style={{
-              display:"grid", gridTemplateColumns:"1fr 52px 1fr",
+              display:"grid", gridTemplateColumns:"1fr minmax(40px,52px) 1fr",
               gap:8, alignItems:"center",
               padding:"7px 10px",
               borderBottom:"1px solid rgba(255,255,255,0.025)",
@@ -1547,7 +1548,7 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
           ))}
         </div>
         {pairs.map(([left,right], i) => (
-          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
+          <div key={i} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:12, borderBottom:"1px solid rgba(255,255,255,.04)", paddingBottom:1 }}>
             {left  && <StatBar label={left.label}  home={left.home}  away={left.away}  homeColor={hc} awayColor={ac}/>}
             {right && <StatBar label={right.label} home={right.home} away={right.away} homeColor={hc} awayColor={ac}/>}
           </div>
@@ -1574,7 +1575,7 @@ function StatsPanel({ stats, homeTeam, awayTeam }) {
             <div key={grp.label} style={{ marginBottom:14 }}>
               <div style={{ fontSize:8, fontWeight:900, letterSpacing:".14em", textTransform:"uppercase",
                 color:"rgba(255,255,255,.2)", marginBottom:8 }}>{grp.label}</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:6 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:6 }}>
                 {rows.map(r => {
                   const hN = parseFloat(String(r.home??"0").replace("%","")) || 0;
                   const aN = parseFloat(String(r.away??"0").replace("%","")) || 0;
@@ -2206,6 +2207,7 @@ function PageFooter() {
 export default function LiveMatchPage() {
   const { fixtureId } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [tab,           setTab]          = useState(null);
   const [fixture,       setFixture]      = useState(null);
@@ -2453,7 +2455,7 @@ export default function LiveMatchPage() {
 
       {/* Back nav + competition switcher */}
       <div style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ padding:"12px 20px 10px", display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ padding: isMobile ? "10px 12px 8px" : "12px 20px 10px", display:"flex", alignItems:"center", gap:10 }}>
           <button
             onClick={() => navigate(-1)}
             style={{ background:"none", border:"none", color:"rgba(255,255,255,0.35)", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:"0.04em", padding:0, display:"flex", alignItems:"center", gap:5 }}

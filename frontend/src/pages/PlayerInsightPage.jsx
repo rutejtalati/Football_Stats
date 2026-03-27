@@ -1,6 +1,7 @@
 // pages/PlayerInsightPage.jsx — StatinSite Stats Hub v3
 // Pitch black · Animation-heavy · Professional stats UI
 import { useState, useEffect, useRef, useCallback } from "react";
+function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
 
 const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
 
@@ -56,6 +57,7 @@ const KEYFRAMES = `
   @keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:.35} }
   @keyframes countUp    { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
   @keyframes ringIn     { from{stroke-dashoffset:283!important} to{} }
+  @keyframes drawerUp   { from{transform:translateY(100%)} to{transform:translateY(0)} }
   .si-prow:hover        { background:rgba(255,255,255,0.038)!important; }
   ::-webkit-scrollbar   { width:3px; height:3px; }
   ::-webkit-scrollbar-track { background:transparent; }
@@ -648,6 +650,8 @@ function PageFooter() {
 // MAIN EXPORT
 // ══════════════════════════════════════════════════════════════════════════════
 export default function PlayerInsightPage() {
+  const isMobile = useIsMobile();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [league,    setLeague]    = useState("all");
   const [pTab,      setPTab]      = useState("scorers");
   const [tTab,      setTTab]      = useState("tgoals");
@@ -727,8 +731,8 @@ export default function PlayerInsightPage() {
   }, []);
 
   const onLeague   = lg => { setLeague(lg); cacheRef.current = {}; setCache({}); setSelPlayer(null); setSelTeam(null); };
-  const openPlayer = p  => { setSelPlayer(p); setSelTeam(null);   setSrOpen(false); setSearch(""); };
-  const openTeam   = t  => { setSelTeam(t);   setSelPlayer(null); setSrOpen(false); setSearch(""); };
+  const openPlayer = p  => { setSelPlayer(p); setSelTeam(null);   setSrOpen(false); setSearch(""); if(isMobile) setDrawerOpen(true); };
+  const openTeam   = t  => { setSelTeam(t);   setSelPlayer(null); setSrOpen(false); setSearch(""); if(isMobile) setDrawerOpen(true); };
   const hasDetail  = selPlayer || selTeam;
 
   return (
@@ -746,14 +750,14 @@ export default function PlayerInsightPage() {
         backgroundSize: "64px 64px",
       }}/>
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "0 24px 60px" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 12px 80px" : "0 24px 60px" }}>
 
         {/* Header */}
-        <div style={{ padding: "28px 0 20px", borderBottom: `1px solid ${T.line}`, marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ padding: isMobile ? "16px 0 14px" : "28px 0 20px", borderBottom: `1px solid ${T.line}`, marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 3, height: 48, background: T.blue, flexShrink: 0 }}/>
             <div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.6px", margin: 0, lineHeight: 1 }}>Stats Hub</h1>
+              <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 800, letterSpacing: "-.6px", margin: 0, lineHeight: 1 }}>Stats Hub</h1>
               <p style={{ fontSize: 11, color: T.muted, margin: "5px 0 0", fontWeight: 500 }}>
                 Goals · Assists · Clean sheets · Team form across all 5 European leagues
               </p>
@@ -761,7 +765,7 @@ export default function PlayerInsightPage() {
           </div>
 
           {/* Search */}
-          <div ref={searchRef} style={{ position: "relative", width: "min(300px,100%)" }}>
+          <div ref={searchRef} style={{ position: "relative", width: isMobile ? "100%" : "min(300px,100%)" }}>
             <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
               width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.28)" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -807,7 +811,7 @@ export default function PlayerInsightPage() {
         </div>
 
         {/* League filter */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 20, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 2 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 20, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 2, WebkitOverflowScrolling: "touch" }}>
           {LEAGUES.map(l => (
             <button key={l.key} onClick={() => onLeague(l.key)}
               style={{ padding: "7px 16px", borderRadius: 8, border: league === l.key ? `1px solid ${l.color}50` : `1px solid ${T.line}`, background: league === l.key ? `${l.color}12` : "transparent", color: league === l.key ? l.color : T.muted, fontFamily: "inherit", fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all .18s", flexShrink: 0, whiteSpace: "nowrap", letterSpacing: ".02em" }}>
@@ -816,16 +820,16 @@ export default function PlayerInsightPage() {
           ))}
         </div>
 
-        {/* KPI row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 10, marginBottom: 20 }}>
+        {/* KPI row — 4 cols desktop, 2×2 mobile */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,minmax(0,1fr))", gap: isMobile ? 8 : 10, marginBottom: 20 }}>
           <KpiTile label="Leader"          value={pTop ? fmt(pTop[pCurrent.sk], pCurrent.dec) : "—"} sub={pTop?.name?.split(" ").slice(-1)[0] || ""}   color={pCurrent.sc} delay={0}    />
           <KpiTile label="League avg"      value={fmt(pAvg, 1)}                                       sub={`${pCurrent.sl} per player`}                  color={T.blue}      delay={0.05} />
           <KpiTile label="Players tracked" value={pRows.length || "—"}                                sub="Active this season"                            color={T.green}     delay={0.1}  />
           <KpiTile label="Per game (top)"  value={fmt(pTopPG, 2)}                                     sub={`${pCurrent.sl} per appearance`}               color={T.amber}     delay={0.15} />
         </div>
 
-        {/* 3-column main grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 340px", gap: 14 }}>
+        {/* Main layout — 3-col desktop, stacked on mobile */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 340px", gap: 14 }}>
 
           {/* Player rankings */}
           <div style={{ background: "#050505", border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden" }}>
@@ -861,23 +865,39 @@ export default function PlayerInsightPage() {
             ))}
           </div>
 
-          {/* Detail panel */}
-          <div style={{ background: "#050505", border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden", overflowY: "auto", maxHeight: "82vh" }}>
-            {!hasDetail && (
-              <div style={{ padding: "60px 20px", textAlign: "center", color: "rgba(255,255,255,.14)", fontSize: 12 }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"
-                  style={{ display: "block", margin: "0 auto 12px", opacity: .35 }}>
-                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                </svg>
-                Select a player or team to view their full profile
-              </div>
-            )}
-            {hasDetail && selPlayer && <PlayerDetail p={selPlayer} allRows={pRows} cfg={pCurrent}/>}
-            {hasDetail && selTeam   && <TeamDetail   t={selTeam}   allRows={tRows} cfg={tCurrent}/>}
-          </div>
-
+          {/* Detail panel — sidebar on desktop, bottom drawer on mobile */}
+          {!isMobile && (
+            <div style={{ background: "#050505", border: `1px solid ${T.line}`, borderRadius: 16, overflow: "hidden", overflowY: "auto", maxHeight: "82vh" }}>
+              {!hasDetail && (
+                <div style={{ padding: "60px 20px", textAlign: "center", color: "rgba(255,255,255,.14)", fontSize: 12 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"
+                    style={{ display: "block", margin: "0 auto 12px", opacity: .35 }}>
+                    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
+                  Select a player or team to view their full profile
+                </div>
+              )}
+              {hasDetail && selPlayer && <PlayerDetail p={selPlayer} allRows={pRows} cfg={pCurrent}/>}
+              {hasDetail && selTeam   && <TeamDetail   t={selTeam}   allRows={tRows} cfg={tCurrent}/>}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Mobile detail drawer */}
+      {isMobile && drawerOpen && hasDetail && (
+        <>
+          <div onClick={() => setDrawerOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.65)", zIndex: 800, backdropFilter: "blur(4px)" }}/>
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: "#080808", border: `1px solid ${T.line}`, borderRadius: "20px 20px 0 0", maxHeight: "85vh", overflowY: "auto", animation: "drawerUp .28s cubic-bezier(.22,1,.36,1) both" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 0" }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,.15)", margin: "0 auto" }}/>
+            </div>
+            <button onClick={() => setDrawerOpen(false)} style={{ position: "absolute", top: 14, right: 16, background: "rgba(255,255,255,.08)", border: "none", color: "#fff", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            {selPlayer && <PlayerDetail p={selPlayer} allRows={pRows} cfg={pCurrent}/>}
+            {selTeam   && <TeamDetail   t={selTeam}   allRows={tRows} cfg={tCurrent}/>}
+          </div>
+        </>
+      )}
 
       <PageFooter/>
     </div>

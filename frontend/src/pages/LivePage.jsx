@@ -23,6 +23,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
 
 import { API_BASE as BACKEND } from "@/api/api";
 
@@ -737,6 +738,7 @@ function LiveBg() {
 
 export default function LivePage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [chips,      setChips]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
@@ -887,12 +889,12 @@ export default function LivePage() {
 
       <div style={{ minHeight:"100vh", fontFamily:"'Inter',system-ui,sans-serif", position:"relative" }}>
         <LiveBg/>
-        <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 20px", position:"relative", zIndex:1 }}>
+        <div style={{ maxWidth:1280, margin:"0 auto", padding: isMobile ? "0 12px" : "0 20px", position:"relative", zIndex:1 }}>
 
           {/* ══ HERO HEADER ══ */}
           <div style={{ padding:"26px 0 18px", borderBottom:"1px solid var(--border)", marginBottom:22 }}>
             {/* Top row: title + counters */}
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14, flexWrap:"wrap", gap:10 }}>
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
                 {/* Competition logo — shown when a specific filter is active */}
                 {(() => {
@@ -913,7 +915,7 @@ export default function LivePage() {
                     <LiveDot/>
                     <span style={{ fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", color:"rgba(255,255,255,0.7)" }}>Live Centre</span>
                   </div>
-                  <h1 style={{ fontSize:28, fontWeight:900, color:"var(--text)", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>
+                  <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight:900, color:"var(--text)", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>
                     {filter !== "all"
                       ? (COMP_NAV_TABS.find(t=>t.code===filter)?.label || "Live Centre")
                       : "Live Centre"}
@@ -954,7 +956,7 @@ export default function LivePage() {
                 }}>‹</button>
 
                 {/* 7 day cells */}
-                <div style={{ flex:1, display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", gap:4 }}>
+                <div style={{ flex:1, display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", gap: isMobile ? 3 : 4, overflowX: isMobile ? "auto" : "visible", minWidth: isMobile ? 0 : undefined }}>
                   {weekDays.map((d,i) => {
                     const offset  = dateToOffset(d);
                     const isToday = offset === 0;
@@ -1006,7 +1008,7 @@ export default function LivePage() {
               </div>
 
               {/* Zone legend */}
-              <div style={{ display:"flex", gap:16, marginTop:7, paddingLeft:40 }}>
+              <div style={{ display:"flex", gap: isMobile ? 10 : 16, marginTop:7, paddingLeft: isMobile ? 0 : 40, flexWrap:"wrap" }}>
                 <span style={{ fontSize:9, fontWeight:700, color:"rgba(167,139,250,.45)", letterSpacing:".06em", display:"flex", alignItems:"center", gap:4 }}>
                   <span style={{ width:6, height:2, background:"rgba(167,139,250,.4)", borderRadius:1, display:"inline-block" }}/>PAST RESULTS
                 </span>
@@ -1050,7 +1052,7 @@ export default function LivePage() {
               <FeaturedRail fixtures={filtered} onNavigate={id => navigate(`/match/${id}`)} />
 
               {/* ══ MAIN GRID ══ */}
-              <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1fr) 236px", gap:22, alignItems:"start" }}>
+              <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1fr) 236px", gap:22, alignItems:"start" }}>
 
                 {/* Left: sections */}
                 <div>
@@ -1097,7 +1099,7 @@ export default function LivePage() {
                 </div>
 
                 {/* Sidebar */}
-                <div style={{ position:"sticky", top:16 }}>
+                <div style={{ position: isMobile ? "static" : "sticky", top:16 }}>
                   <NextKickoffWidget  fixtures={filtered} />
                   <LiveTrackerWidget  fixtures={filtered} />
                   <LeagueSummaryWidget fixtures={filtered} />

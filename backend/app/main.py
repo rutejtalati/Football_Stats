@@ -46,6 +46,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Global exception handler — ensures CORS headers appear on ALL responses ───
+# FastAPI's CORSMiddleware only injects headers on responses it processes
+# cleanly. Unhandled exceptions that bubble up before the middleware runs
+# produce a bare 500 with no CORS headers, which the browser misreports as a
+# CORS failure. This handler catches every unhandled exception and returns a
+# proper JSON 500 with the required CORS header attached.
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def _global_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception: %s %s — %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
 # ── 7. Routers (AFTER app is created) ────────────────────────────────────────
 from app.routes.lineups       import router as lineups_router
 from app.routes.momentum      import router as momentum_router

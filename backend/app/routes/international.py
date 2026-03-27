@@ -129,7 +129,7 @@ COMPETITIONS: Dict[str, Dict[str, Any]] = {
     },
     "gold_cup": {
         "id": 16, "name": "CONCACAF Gold Cup", "short": "Gold Cup",
-        "confederation": "CONCACAF", "type": "tournament", "season": 2025,
+        "confederation": "CONCACAF", "type": "tournament", "season": None,
         "flag": "🌎",
     },
     "afc_asian_cup": {
@@ -511,15 +511,11 @@ async def international_predictions(
     limit: int = Query(20, ge=1, le=50),
 ):
     """
-    Upcoming fixtures for a competition with win-probability predictions.
-    Uses the same Poisson / Monte Carlo model as club predictions but with
-    international team stats. Returns fixtures enriched with:
-      p_home_win, p_draw, p_away_win, xg_home, xg_away,
-      over_1_5, over_2_5, over_3_5, btts, clean_sheet_home, clean_sheet_away,
-      top_scorelines (top 5 from 10 000-run Monte Carlo), mc_n,
-      home_advantage_label, venue_note, goal_expectation,
-      home_goals_pg, away_goals_pg, home_conceded_pg, away_conceded_pg,
-      home_form_pts, away_form_pts, model_edge
+    Upcoming fixtures with full win-probability predictions.
+    Uses Dixon-Coles Poisson + 10 000-run Monte Carlo.
+    Returns: p_home_win, p_draw, p_away_win, xg_home, xg_away,
+             over_1_5/2_5/3_5, btts, clean_sheet_home/away,
+             top_scorelines (MC), form, goals_pg, conceded_pg, model_edge.
     """
     if not _api_key():
         raise HTTPException(500, "API_FOOTBALL_KEY not configured")
@@ -530,20 +526,19 @@ async def international_predictions(
     comp   = COMPETITIONS[competition]
     season = _season_for(comp)
 
-    cache_key = f"intl_predictions:{competition}:{season}"
+    cache_key = f"intl_predictions_v3:{competition}:{season}"
     if (hit := _get(cache_key, _TTL_LONG)) is not None:
         return hit
 
     today  = date.today()
-    from_d = (today - timedelta(days=1)).isoformat()   # include matches starting today
-    to_d   = (today + timedelta(days=60)).isoformat()  # 60-day window (was 21)
+    from_d = (today - timedelta(days=1)).isoformat()
+    to_d   = (today + timedelta(days=60)).isoformat()
 
     raw = await _api("fixtures", {
         "league":   comp["id"],
         "season":   season,
         "from":     from_d,
         "to":       to_d,
-        # No status filter — let date window handle it; avoids missing PST/TBD matches
         "timezone": "UTC",
     })
 
@@ -556,55 +551,64 @@ async def international_predictions(
             "count": 0,
         }
 
-    # Fetch team stats in parallel for all fixtures
-    team_ids = set()
+    # ── Team stats (parallel) ──────────────────────────────────────────────────
+    team_ids: set = set()
     for f in raw[:limit]:
         teams = f.get("teams", {}) or {}
-        home_id = (teams.get("home") or {}).get("id")
-        away_id = (teams.get("away") or {}).get("id")
-        if home_id: team_ids.add(home_id)
-        if away_id: team_ids.add(away_id)
+        h = (teams.get("home") or {}).get("id")
+        a = (teams.get("away") or {}).get("id")
+        if h: team_ids.add(h)
+        if a: team_ids.add(a)
 
-    async def fetch_team_stats(tid: int) -> dict:
-        cache_k = f"intl_team_stats:{tid}:{comp['id']}:{season}"
-        if (hit := _get(cache_k, _TTL_LONG)) is not None:
+    async def _fetch_stats(tid: int) -> dict:
+        ck = f"intl_ts_v3:{tid}:{comp['id']}:{season}"
+        if (hit := _get(ck, _TTL_LONG)) is not None:
             return hit
-        raw_s = await _api("teams/statistics", {
-            "team":   tid,
-            "league": comp["id"],
-            "season": season,
-        })
-        result = raw_s[0] if raw_s else {}
-        _set(cache_k, result)
-        return result
+        rs = await _api("teams/statistics", {"team": tid, "league": comp["id"], "season": season})
+        r  = rs[0] if rs else {}
+        _set(ck, r)
+        return r
 
-    team_stats_list = await asyncio.gather(*[fetch_team_stats(tid) for tid in team_ids])
-    stats_by_id = {}
-    for i, tid in enumerate(team_ids):
-        stats_by_id[tid] = team_stats_list[i]
+    stats_list = await asyncio.gather(*[_fetch_stats(tid) for tid in team_ids])
+    stats_by_id = {tid: stats_list[i] for i, tid in enumerate(team_ids)}
 
-    # Shared helpers
+    # ── Helpers (all defined BEFORE the loop, outside any try block) ───────────
     import math as _math
 
-    def _pp(lam, k):
-        if lam <= 0: return 1.0 if k == 0 else 0.0
-        return (lam ** k * _math.exp(-lam)) / _math.factorial(k)
+    # International averages — always available as fallback
+    intl_avg = {"home": 1.25, "away": 0.95}
 
-    def _match_probs_analytic(xg_h, xg_a, max_g=8):
+    # Try to load the club-level engine (optional — degrades gracefully)
+    _build_xg = None
+    try:
+        from app.football_engine import build_xg_from_team_stats as _bx
+        _build_xg = _bx
+    except Exception:
+        pass
+
+    def _pp(lam: float, k: int) -> float:
+        if lam <= 0:
+            return 1.0 if k == 0 else 0.0
+        try:
+            return (lam ** k * _math.exp(-lam)) / _math.factorial(k)
+        except Exception:
+            return 0.0
+
+    def _analytic_probs(xg_h: float, xg_a: float, max_g: int = 8):
         pw = pd = pa = 0.0
-        top_sl = {}
+        best_score, best_p = "1-0", 0.0
         for h in range(max_g + 1):
             for a in range(max_g + 1):
                 p = _pp(xg_h, h) * _pp(xg_a, a)
-                top_sl[f"{h}-{a}"] = round(p * 100, 2)
                 if h > a: pw += p
                 elif h == a: pd += p
                 else: pa += p
-        tot = pw + pd + pa or 1
-        return round(pw/tot*100, 1), round(pd/tot*100, 1), round(pa/tot*100, 1), top_sl
+                if p > best_p: best_p = p; best_score = f"{h}-{a}"
+        tot = pw + pd + pa or 1.0
+        return round(pw/tot*100,1), round(pd/tot*100,1), round(pa/tot*100,1), best_score
 
-    # Monte Carlo 10 000 runs (numpy if available, pure-python fallback)
-    def _monte_carlo(xg_h, xg_a, n=10_000):
+    def _monte_carlo(xg_h: float, xg_a: float, n: int = 10_000):
+        """10 000-run Monte Carlo. numpy if available, pure-Python fallback."""
         try:
             import numpy as np
             rng = np.random.default_rng(seed=42)
@@ -613,189 +617,149 @@ async def international_predictions(
             hw = int(np.sum(hg > ag))
             dw = int(np.sum(hg == ag))
             aw = int(np.sum(hg < ag))
-            scores = {}
+            scores: dict = {}
             for h, a in zip(hg.tolist(), ag.tolist()):
                 k = f"{h}-{a}"; scores[k] = scores.get(k, 0) + 1
             top = sorted(scores.items(), key=lambda x: -x[1])[:5]
-            return (
-                round(hw/n*100, 1), round(dw/n*100, 1), round(aw/n*100, 1),
-                [{"score": s, "probability": round(c/n*100, 2)} for s, c in top],
-                n,
-            )
-        except ImportError:
-            import random
-            random.seed(42)
+            return (round(hw/n*100,1), round(dw/n*100,1), round(aw/n*100,1),
+                    [{"score": s, "probability": round(c/n*100,2)} for s,c in top], n)
+        except Exception:
+            import random; random.seed(42)
             def _ps(lam):
-                L = _math.exp(-min(lam, 20)); k = 0; p = 1.0
-                while p > L: k += 1; p *= random.random()
-                return k - 1
-            hw = dw = aw = 0
-            scores = {}
+                L = _math.exp(-min(lam,20)); k=0; p=1.0
+                while p>L: k+=1; p*=random.random()
+                return k-1
+            hw=dw=aw=0; scores={}
             for _ in range(n):
-                h = _ps(max(xg_h, 0.05)); a = _ps(max(xg_a, 0.05))
-                if h > a: hw += 1
-                elif h == a: dw += 1
-                else: aw += 1
-                k = f"{h}-{a}"; scores[k] = scores.get(k, 0) + 1
-            top = sorted(scores.items(), key=lambda x: -x[1])[:5]
-            return (
-                round(hw/n*100, 1), round(dw/n*100, 1), round(aw/n*100, 1),
-                [{"score": s, "probability": round(c/n*100, 2)} for s, c in top],
-                n,
-            )
+                h=_ps(max(xg_h,0.05)); a=_ps(max(xg_a,0.05))
+                if h>a: hw+=1
+                elif h==a: dw+=1
+                else: aw+=1
+                k=f"{h}-{a}"; scores[k]=scores.get(k,0)+1
+            top=sorted(scores.items(),key=lambda x:-x[1])[:5]
+            return (round(hw/n*100,1), round(dw/n*100,1), round(aw/n*100,1),
+                    [{"score":s,"probability":round(c/n*100,2)} for s,c in top], n)
 
-    # Try to import club-level engine helpers
-    try:
-        from app.football_engine import build_xg_from_team_stats, LEAGUE_AVG_GOALS, FALLBACK_AVG
-        intl_avg = {"home": 1.25, "away": 0.95}
-        _engine_available = True
-    except ImportError:
-        _engine_available = False
-        intl_avg = {"home": 1.25, "away": 0.95}
-
-    def _norm_intl_stats(raw_s: dict) -> dict:
+    def _norm_stats(raw_s: dict) -> dict:
         if not raw_s:
             return {}
         fx    = raw_s.get("fixtures", {}) or {}
         goals = raw_s.get("goals", {}) or {}
-        ph    = (fx.get("played") or {}).get("home", 0) or 0
-        pa    = (fx.get("played") or {}).get("away", 0) or 0
-        scored_h   = ((goals.get("for")     or {}).get("total") or {}).get("home", 0) or 0
-        scored_a   = ((goals.get("for")     or {}).get("total") or {}).get("away", 0) or 0
-        conceded_h = ((goals.get("against") or {}).get("total") or {}).get("home", 0) or 0
-        conceded_a = ((goals.get("against") or {}).get("total") or {}).get("away", 0) or 0
-        form_str   = raw_s.get("form", "") or ""
-        played_total = ph + pa or 1
+        ph = int((fx.get("played") or {}).get("home") or 0)
+        pa = int((fx.get("played") or {}).get("away") or 0)
+        scored_h   = int(((goals.get("for")     or {}).get("total") or {}).get("home") or 0)
+        scored_a   = int(((goals.get("for")     or {}).get("total") or {}).get("away") or 0)
+        conceded_h = int(((goals.get("against") or {}).get("total") or {}).get("home") or 0)
+        conceded_a = int(((goals.get("against") or {}).get("total") or {}).get("away") or 0)
+        form_str   = str(raw_s.get("form") or "")
+        played     = ph + pa or 1
         return {
             "played_home":    ph,
             "played_away":    pa,
-            "played_total":   played_total,
+            "played_total":   played,
             "scored_home":    scored_h,
             "scored_away":    scored_a,
             "conceded_home":  conceded_h,
             "conceded_away":  conceded_a,
-            "goals_pg":       round((scored_h + scored_a) / played_total, 2),
-            "conceded_pg":    round((conceded_h + conceded_a) / played_total, 2),
+            "goals_pg":       round((scored_h + scored_a) / played, 2),
+            "conceded_pg":    round((conceded_h + conceded_a) / played, 2),
             "form":           form_str,
-            "form_pts":       sum(3 if c=="W" else 1 if c=="D" else 0 for c in (form_str or "")[-5:]),
+            "form_pts":       sum(3 if c=="W" else 1 if c=="D" else 0 for c in form_str[-5:]),
         }
 
+    # ── Main prediction loop ───────────────────────────────────────────────────
     predictions = []
     for f in raw[:limit]:
-        norm    = _norm_fixture(f)
-        status  = norm.get("status", "NS")
-        # Only include upcoming / not yet started
-        if status not in {"NS", "TBD", "PST", "1H", "2H", "HT", "ET", "BT", "P"}:
+        try:
+            norm    = _norm_fixture(f)
+            status  = norm.get("status", "NS")
+            # Skip completed matches
+            if status in {"FT", "AET", "PEN", "AWD", "WO", "CANC", "ABD"}:
+                continue
+
+            home_id = norm.get("home_team_id")
+            away_id = norm.get("away_team_id")
+            hs  = _norm_stats(stats_by_id.get(home_id, {}))
+            as_ = _norm_stats(stats_by_id.get(away_id, {}))
+
+            # xG: try engine first, fall back to league averages
+            xg_home, xg_away = intl_avg["home"], intl_avg["away"]
+            if _build_xg and home_id and away_id:
+                try:
+                    xg_home, xg_away = _build_xg(
+                        home_team_id=home_id, away_team_id=away_id,
+                        home_stats=hs, away_stats=as_,
+                        league_avg=intl_avg, elo=None,
+                        home_team_name=norm.get("home_team",""),
+                        away_team_name=norm.get("away_team",""),
+                        home_form=hs.get("form",""),
+                        away_form=as_.get("form",""),
+                    )
+                except Exception as exc:
+                    logger.debug("xG error fixture %s: %s", norm.get("fixture_id"), exc)
+
+            xg_home = max(round(float(xg_home), 2), 0.05)
+            xg_away = max(round(float(xg_away), 2), 0.05)
+
+            # 10 000-run Monte Carlo for outcome probabilities
+            p_home, p_draw, p_away, top_scorelines, mc_n = _monte_carlo(xg_home, xg_away)
+
+            # Markets (analytic Poisson)
+            total_xg  = xg_home + xg_away
+            over_1_5  = round((1 - sum(_pp(total_xg, k) for k in range(2))) * 100, 1)
+            over_2_5  = round((1 - sum(_pp(total_xg, k) for k in range(3))) * 100, 1)
+            over_3_5  = round((1 - sum(_pp(total_xg, k) for k in range(4))) * 100, 1)
+            btts      = round((1 - _pp(xg_home, 0)) * (1 - _pp(xg_away, 0)) * 100, 1)
+            cs_home   = round(_pp(xg_away, 0) * 100, 1)
+            cs_away   = round(_pp(xg_home, 0) * 100, 1)
+
+            # Most likely score (analytic, fast)
+            _, _, _, best_score = _analytic_probs(xg_home, xg_away)
+
+            winner_prob = max(p_home, p_draw, p_away)
+            confidence  = min(94, max(30, int((winner_prob - 33) * 1.8 + 45)))
+            model_edge  = round(max(p_home, p_away) - 50, 1) if max(p_home, p_away) > 50 else 0.0
+
+            total_xg_label = "High scoring" if total_xg >= 2.8 else "Average goals" if total_xg >= 2.0 else "Low scoring"
+            venue      = norm.get("venue", "")
+            venue_note = f"{norm.get('home_team','')} hosting at {venue}" if venue else f"{norm.get('home_team','')} at home"
+
+            predictions.append({
+                **norm,
+                "xg_home":          xg_home,
+                "xg_away":          xg_away,
+                "p_home_win":       p_home,
+                "p_draw":           p_draw,
+                "p_away_win":       p_away,
+                "predicted_score":  best_score,
+                "top_scorelines":   top_scorelines,
+                "mc_n":             mc_n,
+                "over_1_5":         over_1_5,
+                "over_2_5":         over_2_5,
+                "over_3_5":         over_3_5,
+                "btts":             btts,
+                "clean_sheet_home": cs_home,
+                "clean_sheet_away": cs_away,
+                "home_form":        hs.get("form",""),
+                "away_form":        as_.get("form",""),
+                "home_form_pts":    hs.get("form_pts",0),
+                "away_form_pts":    as_.get("form_pts",0),
+                "home_goals_pg":    hs.get("goals_pg",0),
+                "away_goals_pg":    as_.get("goals_pg",0),
+                "home_conceded_pg": hs.get("conceded_pg",0),
+                "away_conceded_pg": as_.get("conceded_pg",0),
+                "home_played":      hs.get("played_total",0),
+                "away_played":      as_.get("played_total",0),
+                "confidence":       confidence,
+                "model_edge":       model_edge,
+                "venue_note":       venue_note,
+                "goal_expectation": total_xg_label,
+                "home_advantage":   True,
+                "model":            f"Dixon-Coles Poisson + {mc_n:,}-run Monte Carlo",
+            })
+        except Exception as exc:
+            logger.warning("Skipped fixture in predictions loop: %s", exc)
             continue
-
-        home_id = norm.get("home_team_id")
-        away_id = norm.get("away_team_id")
-
-        hs  = _norm_intl_stats(stats_by_id.get(home_id, {}))
-        as_ = _norm_intl_stats(stats_by_id.get(away_id, {}))
-
-        xg_home, xg_away = intl_avg["home"], intl_avg["away"]
-
-        if _engine_available and home_id and away_id:
-            try:
-                xg_home, xg_away = build_xg_from_team_stats(
-                    home_team_id=home_id,
-                    away_team_id=away_id,
-                    home_stats=hs,
-                    away_stats=as_,
-                    league_avg=intl_avg,
-                    elo=None,
-                    home_team_name=norm.get("home_team", ""),
-                    away_team_name=norm.get("away_team", ""),
-                    home_form=hs.get("form", ""),
-                    away_form=as_.get("form", ""),
-                )
-            except Exception as exc:
-                logger.debug("xG build error %s: %s", norm.get("fixture_id"), exc)
-
-        xg_home = max(round(float(xg_home), 2), 0.05)
-        xg_away = max(round(float(xg_away), 2), 0.05)
-
-        # 10 000-run Monte Carlo (primary source of probabilities)
-        p_home, p_draw, p_away, top_scorelines, mc_n = _monte_carlo(xg_home, xg_away, n=10_000)
-
-        # Markets (all from analytic Poisson for speed)
-        total_xg   = xg_home + xg_away
-        over_1_5   = round((1 - sum(_pp(total_xg, k) for k in range(2))) * 100, 1)
-        over_2_5   = round((1 - sum(_pp(total_xg, k) for k in range(3))) * 100, 1)
-        over_3_5   = round((1 - sum(_pp(total_xg, k) for k in range(4))) * 100, 1)
-        btts       = round((1 - _pp(xg_home, 0)) * (1 - _pp(xg_away, 0)) * 100, 1)
-        cs_home    = round(_pp(xg_away, 0) * 100, 1)  # away scores 0
-        cs_away    = round(_pp(xg_home, 0) * 100, 1)  # home scores 0
-
-        # Most likely score (analytic)
-        best_score, best_prob = "1-0", 0.0
-        for h in range(6):
-            for a in range(6):
-                p = _pp(xg_home, h) * _pp(xg_away, a)
-                if p > best_prob:
-                    best_prob = p; best_score = f"{h}-{a}"
-
-        # Confidence
-        winner_prob = max(p_home, p_draw, p_away)
-        confidence  = min(94, max(30, int((winner_prob - 33) * 1.8 + 45)))
-
-        # Model edge: difference between model win prob and 50%
-        fav_prob = max(p_home, p_away)
-        model_edge = round(fav_prob - 50, 1) if fav_prob > 50 else 0.0
-
-        # Home / away venue labels
-        home_team_name = norm.get("home_team", "")
-        away_team_name = norm.get("away_team", "")
-        venue          = norm.get("venue", "")
-        venue_note     = f"{home_team_name} hosting at {venue}" if venue else f"{home_team_name} at home"
-
-        # Goal expectation label
-        if total_xg >= 2.8:
-            goal_expectation = "High scoring"
-        elif total_xg >= 2.0:
-            goal_expectation = "Average goals"
-        else:
-            goal_expectation = "Low scoring"
-
-        predictions.append({
-            **norm,
-            # ── Core probabilities ──────────────────────────────────
-            "xg_home":    xg_home,
-            "xg_away":    xg_away,
-            "p_home_win": p_home,
-            "p_draw":     p_draw,
-            "p_away_win": p_away,
-            # ── Scoreline ───────────────────────────────────────────
-            "predicted_score":  best_score,
-            "top_scorelines":   top_scorelines,    # top 5 from Monte Carlo
-            "mc_n":             mc_n,              # 10 000
-            # ── Markets ─────────────────────────────────────────────
-            "over_1_5":         over_1_5,
-            "over_2_5":         over_2_5,
-            "over_3_5":         over_3_5,
-            "btts":             btts,
-            "clean_sheet_home": cs_home,
-            "clean_sheet_away": cs_away,
-            # ── Form & team stats ───────────────────────────────────
-            "home_form":       hs.get("form", ""),
-            "away_form":       as_.get("form", ""),
-            "home_form_pts":   hs.get("form_pts", 0),
-            "away_form_pts":   as_.get("form_pts", 0),
-            "home_goals_pg":   hs.get("goals_pg", 0),
-            "away_goals_pg":   as_.get("goals_pg", 0),
-            "home_conceded_pg":hs.get("conceded_pg", 0),
-            "away_conceded_pg":as_.get("conceded_pg", 0),
-            "home_played":     hs.get("played_total", 0),
-            "away_played":     as_.get("played_total", 0),
-            # ── Meta ────────────────────────────────────────────────
-            "confidence":       confidence,
-            "model_edge":       model_edge,
-            "venue_note":       venue_note,
-            "goal_expectation": goal_expectation,
-            "home_advantage":   True,              # always true — named team is home
-            "model":            f"Dixon-Coles Poisson + {mc_n:,}-run Monte Carlo",
-        })
 
     result = {
         "competition":      competition,

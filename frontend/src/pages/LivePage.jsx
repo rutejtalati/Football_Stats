@@ -111,9 +111,10 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, onSelect }) {
               display:"flex", alignItems:"center", gap:7,
               padding:"4px 11px", borderRadius:999, cursor:"pointer",
               fontSize:11, fontWeight:600, letterSpacing:"0.02em",
-              border:`1px solid ${isAct ? comp.bt+"88" : "var(--border)"}`,
-              background: isAct ? comp.bc : "var(--bg-glass)",
-              color: isAct ? comp.bt : "var(--text-muted)",
+              background: "rgba(255,255,255,0.93)",
+              color: "#111111",
+              border: isAct ? "2px solid #60a5fa" : "2px solid transparent",
+              boxShadow: isAct ? "0 0 0 1px #60a5fa44" : "none",
               transition:"all 0.13s",
               whiteSpace:"nowrap",
             }}>
@@ -121,11 +122,7 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, onSelect }) {
                 src={comp.logo}
                 alt=""
                 width={14} height={14}
-                style={{
-                  objectFit:"contain", flexShrink:0,
-                  filter: isAct ? "none" : "brightness(0) invert(1)",
-                  opacity: isAct ? 1 : 0.8,
-                }}
+                style={{ objectFit:"contain", flexShrink:0 }}
                 onError={e => { e.currentTarget.style.display="none"; }}
               />
               {comp.label}

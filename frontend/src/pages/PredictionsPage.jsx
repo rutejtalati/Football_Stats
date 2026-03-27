@@ -192,9 +192,10 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, mode="navlink
               padding:"5px 12px", borderRadius:999, cursor:"pointer",
               fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
               letterSpacing:"0.02em",
-              border:`1px solid ${isActive ? comp.bt+"99" : "rgba(255,255,255,0.18)"}`,
-              background: isActive ? comp.bc : "rgba(255,255,255,0.04)",
-              color: isActive ? comp.bt : "rgba(255,255,255,0.7)",
+              background: "rgba(255,255,255,0.93)",
+              color: "#111111",
+              border: isActive ? "2px solid #60a5fa" : "2px solid transparent",
+              boxShadow: isActive ? "0 0 0 1px #60a5fa44" : "none",
               transition:"all 0.13s",
               whiteSpace:"nowrap",
             }}>
@@ -202,11 +203,7 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, mode="navlink
                 src={comp.logo}
                 alt=""
                 width={15} height={15}
-                style={{
-                  objectFit:"contain", flexShrink:0,
-                  filter: isActive ? "none" : "brightness(0) invert(1)",
-                  opacity: isActive ? 1 : 0.85,
-                }}
+                style={{ objectFit:"contain", flexShrink:0 }}
                 onError={e => { e.currentTarget.style.display="none"; }}
               />
               {comp.label}

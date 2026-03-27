@@ -97,20 +97,20 @@ function CompetitionNav({ activeGroup, setActiveGroup, navigate: nav }) {
             padding:"4px 11px", borderRadius:999, cursor:"pointer",
             fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
             letterSpacing:"0.02em",
-            border:`1px solid rgba(255,255,255,0.14)`,
-            background:"rgba(255,255,255,0.04)",
-            color:"rgba(255,255,255,0.7)",
+            background: "rgba(255,255,255,0.93)",
+            color: "#111111",
+            border: "2px solid transparent",
             transition:"all 0.13s",
             whiteSpace:"nowrap",
           }}
-          onMouseEnter={e=>{e.currentTarget.style.background=comp.bc;e.currentTarget.style.color=comp.bt;e.currentTarget.style.borderColor=comp.bt+"88";e.currentTarget.querySelector("img").style.filter="none";}}
-          onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color="rgba(255,255,255,0.7)";e.currentTarget.style.borderColor="rgba(255,255,255,0.14)";e.currentTarget.querySelector("img").style.filter="brightness(0) invert(1)";}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#60a5fa";e.currentTarget.style.boxShadow="0 0 0 1px #60a5fa44";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="transparent";e.currentTarget.style.boxShadow="none";}}
           >
             <img
               src={comp.logo}
               alt=""
               width={14} height={14}
-              style={{ objectFit:"contain", flexShrink:0, filter:"brightness(0) invert(1)", opacity:0.85 }}
+              style={{ objectFit:"contain", flexShrink:0 }}
               onError={e => { e.currentTarget.style.display="none"; }}
             />
             {comp.label}

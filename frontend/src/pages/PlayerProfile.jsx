@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#080808", r:"rgba(255,255,255,0.65)" };
 const NB_CSS = `
-  @import url("https://fonts.googleapis.com/css2?family=family=family=display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
   @keyframes nbBlink  { 50%{opacity:0} }
   @keyframes nbStripes{ to{background-position:90px 0} }
@@ -523,9 +523,7 @@ document.removeEventListener("mousedown",fn);
 
         </div>
       </div>
+      <PageFooter/>
     </div>
   );
-      <PageFooter/>
-    
-  
 }

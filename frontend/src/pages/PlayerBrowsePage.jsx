@@ -8,7 +8,7 @@ import { getFplBootstrap, getFplPredictorTable } from "../api/api";
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#080808", r:"rgba(255,255,255,0.65)" };
 const NB_CSS = `
-  @import url("https://fonts.googleapis.com/css2?family=family=family=display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap");
   @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
   @keyframes nbBlink  { 50%{opacity:0} }
   @keyframes nbStripes{ to{background-position:90px 0} }
@@ -86,7 +86,6 @@ function Skel({ h=20, w="100%", r=8 }) {
 function PBBg() {
   return (
     <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-      <PBBg/>
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
       <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
       <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
@@ -202,7 +201,8 @@ export default function PlayerBrowsePage() {
     : "1fr 60px 60px 60px 60px";
 
   return (
-    <div style={{ background:"#080808", minHeight:"100vh", padding: isMobile ? "14px 0 80px" : "20px 0 40px" }}>
+    <>
+      <div style={{ background:"#080808", minHeight:"100vh", padding: isMobile ? "14px 0 80px" : "20px 0 40px" }}>
       <style>{NB_CSS}</style>
       {/* NB bg stripes */}
       {/* Grid from index.css body::after */}
@@ -419,7 +419,7 @@ export default function PlayerBrowsePage() {
         )}
       </div>
     </div>
+    <PageFooter/>
+    </>
   );
-      <PageFooter/>
-  
 }

@@ -388,8 +388,8 @@ export default function PlayerProfilePage(){
   const pKey=pCurrent.key+":"+league;
   const tKey=tCurrent.key+":"+league;
 
-  useEffect(()=>{fetchTab(pCurrent.ep,pKey);},[pTab,league]);
-  useEffect(()=>{fetchTab(tCurrent.ep,tKey);},[tTab,league]);
+  useEffect(()=>{fetchTab(pCurrent.ep,pKey);},[pTab,league,fetchTab,pCurrent.ep,pKey]);
+  useEffect(()=>{fetchTab(tCurrent.ep,tKey);},[tTab,league,fetchTab,tCurrent.ep,tKey]);
   // Preload defaults on mount
   useEffect(()=>{
     fetchTab(PLAYER_TABS[0].ep,PLAYER_TABS[0].key+":all");

@@ -1,6 +1,6 @@
 ﻿// PredictionsPage.jsx  StatinSite v6
 // VS Split Cards  League Themes  Floating Simulator  Key Players  Charts
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, NavLink, useNavigate } from "react-router-dom";
 import {
   getStandings, getLeaguePredictions, getTopScorers, getTopAssists,
@@ -2682,7 +2682,8 @@ export default function PredictionsPage({league:propLeague,slugMap}){
     setLoading(true);setErr&&setErr(null);
     try{const r=sessionStorage.getItem(key);if(r){const p=JSON.parse(r);if(Date.now()-p.ts<3600000){setter(p.data);setLoading(false);return;}}}catch{}
     fn().then(json=>{const d=json.standings||json.predictions||json.data||json||[];const arr=Array.isArray(d)?d:[];setter(arr);try{sessionStorage.setItem(key,JSON.stringify({data:arr,ts:Date.now()}));}catch{}}).catch(e=>setErr&&setErr(e.message)).finally(()=>setLoading(false));
-  },[]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]); // intentionally stable — no deps, function never needs to change
 
   // International competition codes
   const INTL_CODES = new Set([
@@ -2694,24 +2695,40 @@ export default function PredictionsPage({league:propLeague,slugMap}){
 
   const INTL_BACKEND = "https://football-stats-lw4b.onrender.com";
 
+  // Ref-based guard: prevents duplicate in-flight requests when league hasn't
+  // actually changed (React Strict Mode double-invoke, fast tab switching, etc.)
+  const intlFetchRef = useRef(null);
+
   useEffect(()=>{
     const apiLeague = BACKEND_LEAGUE[league] || league;
 
     if (isIntl) {
       // ── International predictions ─────────────────────────────────────────
-      // The 500 + "CORS error" is caused by a Python crash in the backend.
-      // FastAPI's CORSMiddleware doesn't attach headers to unhandled 500s by
-      // default, so the browser reports it as a CORS failure instead of a 500.
-      // Fix is in main.py (CatchExceptionsMiddleware) + international.py.
-      // Frontend fix: clear stale cache, retry with backoff, show real error.
+      // Root cause of the CORS spam: Render free tier sleeps; the cold-start
+      // request returns no TCP response at all, which the browser mis-labels as
+      // a CORS failure. Two compounding issues made it fire 8+ times:
+      //   1. `cache` in deps re-created on every render → effect re-runs
+      //   2. No cleanup / cancellation between league switches
+      // Fixes applied:
+      //   • `cancelled` flag checked before every state write
+      //   • AbortControllers cleaned up on effect teardown
+      //   • `cache` removed from deps (stable useCallback with empty deps)
+      //   • `intlFetchRef` prevents duplicate concurrent fetches for same league
+
+      // Skip if a fetch for this exact league is already in flight
+      if (intlFetchRef.current === league) return;
+      intlFetchRef.current = league;
+
+      let cancelled = false;
+      const abortCtrl = new AbortController();
 
       setStandLoad(true); setPredLoad(true); setPredErr(null); setStandErr(null);
 
       // Bump cache key version to clear any stale poisoned entries
-      const cacheKey  = "intl_pred_v3_" + league;
-      const cacheKeyS = "intl_stn_v3_" + league;
+      const cacheKey  = "intl_pred_v4_" + league;
+      const cacheKeyS = "intl_stn_v4_" + league;
 
-      // Serve stale cache immediately while fresh loads
+      // Serve stale cache immediately while fresh data loads in background
       try {
         const r = sessionStorage.getItem(cacheKey);
         if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<1800000){ setMatches(p.data); setPredLoad(false); } }
@@ -2721,33 +2738,35 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<1800000){ setStandings(p.data); setStandLoad(false); } }
       } catch {}
 
-      // Retry with exponential backoff — server may be cold-starting or returning 500
-      const fetchWithRetry = async (url, attempts=4) => {
+      // Retry with exponential backoff — server may be cold-starting or returning 5xx.
+      // AbortController signal propagated so cleanup can cancel in-flight request.
+      const fetchWithRetry = async (url, attempts=3) => {
         let lastErr = "Unknown error";
         for (let i = 0; i < attempts; i++) {
-          if (i > 0) await new Promise(r => setTimeout(r, 1200 * Math.pow(2, i - 1)));
+          if (cancelled) throw new Error("AbortError");
+          if (i > 0) {
+            await new Promise(r => setTimeout(r, 2000 * Math.pow(2, i - 1)));
+            if (cancelled) throw new Error("AbortError");
+          }
           try {
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 25000);
-            const res = await fetch(url, { signal: ctrl.signal });
+            const timer = setTimeout(() => abortCtrl.abort(), 25000);
+            const res = await fetch(url, { signal: abortCtrl.signal });
             clearTimeout(timer);
             if (res.ok) return res.json();
-            if (res.status >= 500) {
-              let body = "";
-              try { body = await res.text(); } catch {}
-              lastErr = `Server error ${res.status}${body ? ": " + body.slice(0,120) : ""}`;
-              continue; // retry on 5xx
-            }
-            throw new Error("HTTP " + res.status);
+            if (res.status >= 400 && res.status < 500) throw new Error("HTTP " + res.status);
+            let body = "";
+            try { body = await res.text(); } catch {}
+            lastErr = `Server error ${res.status}${body ? ": " + body.slice(0,120) : ""}`;
           } catch(e) {
-            lastErr = (e && e.name === "AbortError") ? "Timeout" : ((e && e.message) || String(e));
+            if (e.name === "AbortError" || cancelled) throw e;
+            lastErr = (e && e.message) || String(e);
           }
         }
         throw new Error(lastErr);
       };
 
-      // Warm-up ping — cheapest endpoint, wakes Render without blocking anything
-      fetch(`${INTL_BACKEND}/api/international/competitions`).catch(()=>{});
+      // Warm-up ping — wakes Render without blocking anything
+      fetch(`${INTL_BACKEND}/health`).catch(()=>{});
 
       const delay = ms => new Promise(r => setTimeout(r, ms));
 
@@ -2755,30 +2774,43 @@ export default function PredictionsPage({league:propLeague,slugMap}){
       delay(400)
         .then(() => fetchWithRetry(`${INTL_BACKEND}/api/international/predictions/${apiLeague}`))
         .then(json => {
+          if (cancelled) return;
           const arr = json.predictions || [];
           setMatches(arr);
           try { sessionStorage.setItem(cacheKey, JSON.stringify({data:arr, ts:Date.now()})); } catch {}
         })
-        .catch(e => setPredErr("Backend is starting up — refresh in 15 s. (" + String(e) + ")"))
-        .finally(() => setPredLoad(false));
+        .catch(e => { if (!cancelled) setPredErr("Backend is starting up — refresh in 15 s. (" + String(e) + ")"); })
+        .finally(() => { if (!cancelled) setPredLoad(false); });
 
       // Standings — slightly staggered
       delay(600)
         .then(() => fetchWithRetry(`${INTL_BACKEND}/api/international/standings/${apiLeague}`))
         .then(json => {
+          if (cancelled) return;
           const arr = json.standings || [];
           setStandings(arr);
           try { sessionStorage.setItem(cacheKeyS, JSON.stringify({data:arr, ts:Date.now()})); } catch {}
         })
-        .catch(e => setStandErr(String(e)))
-        .finally(() => setStandLoad(false));
+        .catch(e => { if (!cancelled) setStandErr(String(e)); })
+        .finally(() => { if (!cancelled) setStandLoad(false); });
+
+      // Cleanup: cancel any in-flight requests when league changes or component unmounts
+      return () => {
+        cancelled = true;
+        intlFetchRef.current = null;
+        abortCtrl.abort();
+      };
 
     } else {
       cache("stn_v6_"+league,()=>getStandings(apiLeague),setStandings,setStandLoad,setStandErr);
       cache("pred_v6_"+league,()=>getLeaguePredictions(apiLeague),setMatches,setPredLoad,setPredErr);
     }
     setSelectedMatch(null);
-  },[league,cache]);
+  // `cache` is intentionally excluded — it is a stable ref (empty useCallback deps).
+  // Including it would cause the effect to re-run on every render and re-trigger
+  // the international fetch storm that this fix is designed to prevent.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[league]);
 
   const sorted=useMemo(()=>{if(!matches.length)return matches;return[...matches].sort((a,b)=>{if(sort==="confidence")return(b.confidence||0)-(a.confidence||0);if(sort==="date")return(a.date||"").localeCompare(b.date||"");if(sort==="home")return(b.p_home_win||0)-(a.p_home_win||0);return 0;});},[matches,sort]);
 

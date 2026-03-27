@@ -31,18 +31,41 @@ async function fetchJson(path, errMsg) {
   return res.json();
 }
 
-// ── New: lower-level fetch with params + AbortController support ─────────────
-export async function apiFetch(path, { signal, params } = {}) {
+// ── New: lower-level fetch with params + AbortController + retry support ──────
+// retries: number of additional attempts on network failure or 5xx (default 2).
+// backoff: base ms between retries, doubles each attempt (default 2000ms).
+// On cold-start (Render free tier), the first request often fails with
+// net::ERR_FAILED which the browser misreports as a CORS error.
+// Retrying after a short backoff lets the server wake up and respond normally.
+export async function apiFetch(path, { signal, params, retries = 2, backoff = 2000 } = {}) {
   let url = `${API_BASE}${path}`;
   if (params && Object.keys(params).length) {
     url += "?" + new URLSearchParams(params).toString();
   }
-  const res = await fetch(url, signal ? { signal } : undefined);
-  if (!res.ok) {
-    let body = ""; try { body = await res.text(); } catch {}
-    throw new Error(`[${res.status}] ${path}${body ? ` — ${body.slice(0, 120)}` : ""}`);
+
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    // Exponential backoff between retries (skip delay on first attempt)
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, backoff * Math.pow(2, attempt - 1)));
+    }
+    try {
+      const res = await fetch(url, signal ? { signal } : undefined);
+      if (res.ok) return res.json();
+      // Don't retry on 4xx — those are permanent client/not-found errors
+      if (res.status >= 400 && res.status < 500) {
+        let body = ""; try { body = await res.text(); } catch {}
+        throw new Error(`[${res.status}] ${path}${body ? ` — ${body.slice(0, 120)}` : ""}`);
+      }
+      // 5xx — record and retry
+      let body = ""; try { body = await res.text(); } catch {}
+      lastErr = new Error(`[${res.status}] ${path}${body ? ` — ${body.slice(0, 120)}` : ""}`);
+    } catch (err) {
+      if (err.name === "AbortError") throw err; // never retry an intentional abort
+      lastErr = err;
+    }
   }
-  return res.json();
+  throw lastErr;
 }
 
 // ── New: sessionStorage cache wrapper ────────────────────────────────────────

@@ -35,29 +35,31 @@ const COMP_NAV_GROUPS = [
   { key:"international", label:"International" },
 ];
 
+const AF = "https://media.api-sports.io/football/leagues/";
+
 const COMP_NAV_TABS = [
-  { code:"epl",        label:"Premier League",   short:"PL",    group:"domestic",      badge:"ENG",  bc:"#1a3a6e", bt:"#93c5fd", color:"#60a5fa", glow:"rgba(96,165,250,0.16)"  },
-  { code:"laliga",     label:"La Liga",          short:"LL",    group:"domestic",      badge:"ESP",  bc:"#6e1a1a", bt:"#fca5a5", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
-  { code:"seriea",     label:"Serie A",          short:"SA",    group:"domestic",      badge:"ITA",  bc:"#1a4a1a", bt:"#86efac", color:"#34d399", glow:"rgba(52,211,153,0.16)"  },
-  { code:"bundesliga", label:"Bundesliga",       short:"BL",    group:"domestic",      badge:"GER",  bc:"#4a3a00", bt:"#fde68a", color:"#f59e0b", glow:"rgba(245,158,11,0.16)"  },
-  { code:"ligue1",     label:"Ligue 1",          short:"L1",    group:"domestic",      badge:"FRA",  bc:"#2e1a6e", bt:"#c4b5fd", color:"#a78bfa", glow:"rgba(167,139,250,0.16)" },
-  { code:"ucl",        label:"Champions League", short:"UCL",   group:"european",      badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
-  { code:"uel",        label:"Europa League",    short:"UEL",   group:"european",      badge:"UEFA", bc:"#5c2800", bt:"#fdba74", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
-  { code:"uecl",       label:"Conference Lge",   short:"UECL",  group:"european",      badge:"UEFA", bc:"#0f3d2a", bt:"#6ee7b7", color:"#22c55e", glow:"rgba(34,197,94,0.16)"   },
-  { code:"facup",      label:"FA Cup",           short:"FAC",   group:"cup",           badge:"ENG",  bc:"#4a0f0f", bt:"#fca5a5", color:"#ef4444", glow:"rgba(239,68,68,0.16)"   },
-  { code:"wcq_uefa",           label:"WCQ Europe",     short:"WCQ·E",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"wcq_conmebol",       label:"WCQ S. America", short:"WCQ·S",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"wcq_concacaf",       label:"WCQ C. America", short:"WCQ·C",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"wcq_caf",            label:"WCQ Africa",     short:"WCQ·A",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"wcq_afc",            label:"WCQ Asia",       short:"WCQ·As", group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"nations_league",     label:"Nations League", short:"UNL",    group:"international", badge:"UEFA", bc:"#3a006e", bt:"#d8b4fe", color:"#e879f9", glow:"rgba(232,121,249,0.16)" },
-  { code:"euro",               label:"UEFA Euros",     short:"EURO",   group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
-  { code:"euro_q",             label:"Euro Qualifiers",short:"EQ",     group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
-  { code:"afcon",              label:"Africa Cup",     short:"AFCON",  group:"international", badge:"CAF",  bc:"#0f3d1a", bt:"#86efac", color:"#22c55e", glow:"rgba(34,197,94,0.16)"   },
-  { code:"copa_america",       label:"Copa América",   short:"COPA",   group:"international", badge:"CONM", bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"gold_cup",           label:"Gold Cup",       short:"GC",     group:"international", badge:"CONC", bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"world_cup",          label:"World Cup",      short:"WC",     group:"international", badge:"FIFA", bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
-  { code:"international_friendly",label:"Intl Friendly",short:"FRND",  group:"international", badge:"INTL", bc:"#2a2a2a", bt:"#d1d5db", color:"#94a3b8", glow:"rgba(148,163,184,0.16)"},
+  { code:"epl",        label:"Premier League",   short:"PL",    group:"domestic",      logo:`${AF}39.png`,  bc:"#1a3a6e", bt:"#93c5fd", color:"#60a5fa", glow:"rgba(96,165,250,0.16)"  },
+  { code:"laliga",     label:"La Liga",          short:"LL",    group:"domestic",      logo:`${AF}140.png`, bc:"#6e1a1a", bt:"#fca5a5", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
+  { code:"seriea",     label:"Serie A",          short:"SA",    group:"domestic",      logo:`${AF}135.png`, bc:"#1a4a1a", bt:"#86efac", color:"#34d399", glow:"rgba(52,211,153,0.16)"  },
+  { code:"bundesliga", label:"Bundesliga",       short:"BL",    group:"domestic",      logo:`${AF}78.png`,  bc:"#4a3a00", bt:"#fde68a", color:"#f59e0b", glow:"rgba(245,158,11,0.16)"  },
+  { code:"ligue1",     label:"Ligue 1",          short:"L1",    group:"domestic",      logo:`${AF}61.png`,  bc:"#2e1a6e", bt:"#c4b5fd", color:"#a78bfa", glow:"rgba(167,139,250,0.16)" },
+  { code:"ucl",        label:"Champions League", short:"UCL",   group:"european",      logo:`${AF}2.png`,   bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
+  { code:"uel",        label:"Europa League",    short:"UEL",   group:"european",      logo:`${AF}3.png`,   bc:"#5c2800", bt:"#fdba74", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
+  { code:"uecl",       label:"Conference Lge",   short:"UECL",  group:"european",      logo:`${AF}848.png`, bc:"#0f3d2a", bt:"#6ee7b7", color:"#22c55e", glow:"rgba(34,197,94,0.16)"   },
+  { code:"facup",      label:"FA Cup",           short:"FAC",   group:"cup",           logo:`${AF}45.png`,  bc:"#4a0f0f", bt:"#fca5a5", color:"#ef4444", glow:"rgba(239,68,68,0.16)"   },
+  { code:"wcq_uefa",           label:"WCQ Europe",     short:"WCQ·E",  group:"international", logo:`${AF}32.png`,  bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_conmebol",       label:"WCQ S. America", short:"WCQ·S",  group:"international", logo:`${AF}29.png`,  bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_concacaf",       label:"WCQ C. America", short:"WCQ·C",  group:"international", logo:`${AF}30.png`,  bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_caf",            label:"WCQ Africa",     short:"WCQ·A",  group:"international", logo:`${AF}31.png`,  bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_afc",            label:"WCQ Asia",       short:"WCQ·As", group:"international", logo:`${AF}36.png`,  bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"nations_league",     label:"Nations League", short:"UNL",    group:"international", logo:`${AF}5.png`,   bc:"#3a006e", bt:"#d8b4fe", color:"#e879f9", glow:"rgba(232,121,249,0.16)" },
+  { code:"euro",               label:"UEFA Euros",     short:"EURO",   group:"international", logo:`${AF}4.png`,   bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
+  { code:"euro_q",             label:"Euro Qualifiers",short:"EQ",     group:"international", logo:`${AF}960.png`, bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
+  { code:"afcon",              label:"Africa Cup",     short:"AFCON",  group:"international", logo:`${AF}6.png`,   bc:"#0f3d1a", bt:"#86efac", color:"#22c55e", glow:"rgba(34,197,94,0.16)"   },
+  { code:"copa_america",       label:"Copa América",   short:"COPA",   group:"international", logo:`${AF}9.png`,   bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"gold_cup",           label:"Gold Cup",       short:"GC",     group:"international", logo:`${AF}16.png`,  bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"world_cup",          label:"World Cup",      short:"WC",     group:"international", logo:`${AF}1.png`,   bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"international_friendly",label:"Intl Friendly",short:"FRND",  group:"international", logo:`${AF}10.png`,  bc:"#2a2a2a", bt:"#d1d5db", color:"#94a3b8", glow:"rgba(148,163,184,0.16)"},
 ];
 
 // Back-compat alias used by normaliseLeague and filter logic
@@ -106,7 +108,7 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, onSelect }) {
           const isAct = activeCode === comp.code;
           return (
             <button key={comp.code} onClick={()=>onSelect(isAct?"all":comp.code)} style={{
-              display:"flex", alignItems:"center", gap:6,
+              display:"flex", alignItems:"center", gap:7,
               padding:"4px 11px", borderRadius:999, cursor:"pointer",
               fontSize:11, fontWeight:600, letterSpacing:"0.02em",
               border:`1px solid ${isAct ? comp.bt+"88" : "var(--border)"}`,
@@ -115,13 +117,13 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, onSelect }) {
               transition:"all 0.13s",
               whiteSpace:"nowrap",
             }}>
-              <span style={{
-                display:"inline-flex", alignItems:"center", justifyContent:"center",
-                padding:"1px 4px", borderRadius:3,
-                background:comp.bc, color:comp.bt,
-                border:`1px solid ${comp.bt}44`,
-                fontSize:8, fontWeight:700, letterSpacing:"0.05em", flexShrink:0,
-              }}>{comp.badge}</span>
+              <img
+                src={comp.logo}
+                alt=""
+                width={14} height={14}
+                style={{ objectFit:"contain", flexShrink:0, opacity: isAct ? 1 : 0.65 }}
+                onError={e => { e.currentTarget.style.display="none"; }}
+              />
               {comp.label}
             </button>
           );

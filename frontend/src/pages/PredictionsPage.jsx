@@ -113,43 +113,41 @@ const COMP_NAV_GROUPS = [
   { key:"international", label:"International" },
 ];
 
+const AF = "https://media.api-sports.io/football/leagues/";
+
 const COMP_NAV_TABS = [
   // ── Domestic ────────────────────────────────────────────────────────
-  { code:"epl",        slug:"premier-league",  label:"Premier League",  group:"domestic",      badge:"ENG",  bc:"#1a3a6e", bt:"#93c5fd", hasKnockout:false },
-  { code:"laliga",     slug:"la-liga",         label:"La Liga",         group:"domestic",      badge:"ESP",  bc:"#6e1a1a", bt:"#fca5a5", hasKnockout:false },
-  { code:"bundesliga", slug:"bundesliga",      label:"Bundesliga",      group:"domestic",      badge:"GER",  bc:"#4a3a00", bt:"#fde68a", hasKnockout:false },
-  { code:"seriea",     slug:"serie-a",         label:"Serie A",         group:"domestic",      badge:"ITA",  bc:"#1a4a1a", bt:"#86efac", hasKnockout:false },
-  { code:"ligue1",     slug:"ligue-1",         label:"Ligue 1",         group:"domestic",      badge:"FRA",  bc:"#2e1a6e", bt:"#c4b5fd", hasKnockout:false },
+  { code:"epl",        slug:"premier-league",   label:"Premier League",   group:"domestic",      logo:`${AF}39.png`,  bc:"#1a3a6e", bt:"#93c5fd", hasKnockout:false },
+  { code:"laliga",     slug:"la-liga",          label:"La Liga",          group:"domestic",      logo:`${AF}140.png`, bc:"#6e1a1a", bt:"#fca5a5", hasKnockout:false },
+  { code:"bundesliga", slug:"bundesliga",       label:"Bundesliga",       group:"domestic",      logo:`${AF}78.png`,  bc:"#4a3a00", bt:"#fde68a", hasKnockout:false },
+  { code:"seriea",     slug:"serie-a",          label:"Serie A",          group:"domestic",      logo:`${AF}135.png`, bc:"#1a4a1a", bt:"#86efac", hasKnockout:false },
+  { code:"ligue1",     slug:"ligue-1",          label:"Ligue 1",          group:"domestic",      logo:`${AF}61.png`,  bc:"#2e1a6e", bt:"#c4b5fd", hasKnockout:false },
   // ── European ────────────────────────────────────────────────────────
-  { code:"ucl",        slug:"champions-league",label:"Champions League",group:"european",      badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", hasKnockout:true  },
-  { code:"uel",        slug:"europa-league",   label:"Europa League",   group:"european",      badge:"UEFA", bc:"#5c2800", bt:"#fdba74", hasKnockout:true  },
-  { code:"uecl",       slug:"conference-league",label:"Conference Lge", group:"european",      badge:"UEFA", bc:"#0f3d2a", bt:"#6ee7b7", hasKnockout:true  },
+  { code:"ucl",        slug:"champions-league", label:"Champions League", group:"european",      logo:`${AF}2.png`,   bc:"#0f2d6e", bt:"#93c5fd", hasKnockout:true  },
+  { code:"uel",        slug:"europa-league",    label:"Europa League",    group:"european",      logo:`${AF}3.png`,   bc:"#5c2800", bt:"#fdba74", hasKnockout:true  },
+  { code:"uecl",       slug:"conference-league",label:"Conference Lge",   group:"european",      logo:`${AF}848.png`, bc:"#0f3d2a", bt:"#6ee7b7", hasKnockout:true  },
   // ── Cup ─────────────────────────────────────────────────────────────
-  { code:"facup",      slug:"fa-cup",          label:"FA Cup",          group:"cup",           badge:"ENG",  bc:"#4a0f0f", bt:"#fca5a5", hasKnockout:true  },
+  { code:"facup",      slug:"fa-cup",           label:"FA Cup",           group:"cup",           logo:`${AF}45.png`,  bc:"#4a0f0f", bt:"#fca5a5", hasKnockout:true  },
   // ── International ───────────────────────────────────────────────────
-  { code:"wcq_uefa",            slug:"wcq-uefa",       label:"WCQ Europe",    group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_conmebol",        slug:"wcq-conmebol",   label:"WCQ S. America",group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_concacaf",        slug:"wcq-concacaf",   label:"WCQ C. America",group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_caf",             slug:"wcq-caf",        label:"WCQ Africa",    group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_afc",             slug:"wcq-afc",        label:"WCQ Asia",      group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"nations_league",      slug:"nations-league", label:"Nations League",group:"international", badge:"UEFA", bc:"#3a006e", bt:"#d8b4fe", isIntl:true },
-  { code:"euro",                slug:"euros",          label:"UEFA Euros",    group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", isIntl:true, hasKnockout:true },
-  { code:"euro_q",              slug:"euro-qual",      label:"Euro Qualifiers",group:"international",badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", isIntl:true },
-  { code:"afcon",               slug:"afcon",          label:"Africa Cup",    group:"international", badge:"CAF",  bc:"#0f3d1a", bt:"#86efac", isIntl:true, hasKnockout:true },
-  { code:"copa_america",        slug:"copa-america",   label:"Copa América",  group:"international", badge:"CONM", bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
-  { code:"gold_cup",            slug:"gold-cup",       label:"Gold Cup",      group:"international", badge:"CONC", bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
-  { code:"world_cup",           slug:"world-cup",      label:"World Cup",     group:"international", badge:"FIFA", bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
-  { code:"international_friendly",slug:"intl-friendly",label:"Intl Friendly", group:"international", badge:"INTL", bc:"#2a2a2a", bt:"#d1d5db", isIntl:true },
+  { code:"wcq_uefa",            slug:"wcq-uefa",       label:"WCQ Europe",     group:"international", logo:`${AF}32.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
+  { code:"wcq_conmebol",        slug:"wcq-conmebol",   label:"WCQ S. America", group:"international", logo:`${AF}29.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
+  { code:"wcq_concacaf",        slug:"wcq-concacaf",   label:"WCQ C. America", group:"international", logo:`${AF}30.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
+  { code:"wcq_caf",             slug:"wcq-caf",        label:"WCQ Africa",     group:"international", logo:`${AF}31.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
+  { code:"wcq_afc",             slug:"wcq-afc",        label:"WCQ Asia",       group:"international", logo:`${AF}36.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
+  { code:"nations_league",      slug:"nations-league", label:"Nations League", group:"international", logo:`${AF}5.png`,   bc:"#3a006e", bt:"#d8b4fe", isIntl:true },
+  { code:"euro",                slug:"euros",          label:"UEFA Euros",     group:"international", logo:`${AF}4.png`,   bc:"#0f2d6e", bt:"#93c5fd", isIntl:true, hasKnockout:true },
+  { code:"euro_q",              slug:"euro-qual",      label:"Euro Qualifiers",group:"international", logo:`${AF}960.png`, bc:"#0f2d6e", bt:"#93c5fd", isIntl:true },
+  { code:"afcon",               slug:"afcon",          label:"Africa Cup",     group:"international", logo:`${AF}6.png`,   bc:"#0f3d1a", bt:"#86efac", isIntl:true, hasKnockout:true },
+  { code:"copa_america",        slug:"copa-america",   label:"Copa América",   group:"international", logo:`${AF}9.png`,   bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
+  { code:"gold_cup",            slug:"gold-cup",       label:"Gold Cup",       group:"international", logo:`${AF}16.png`,  bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
+  { code:"world_cup",           slug:"world-cup",      label:"World Cup",      group:"international", logo:`${AF}1.png`,   bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
+  { code:"international_friendly",slug:"intl-friendly",label:"Intl Friendly",  group:"international", logo:`${AF}10.png`,  bc:"#2a2a2a", bt:"#d1d5db", isIntl:true },
 ];
 
 // Keep LEAGUE_TABS as alias so the rest of the file (BRACKET_ROUNDS etc.) still works
 const LEAGUE_TABS = COMP_NAV_TABS;
 
 // ── Two-level Competition Nav (Solution 4) ──────────────────────────────────
-// activeGroup: which group tab is open  setActiveGroup: setter
-// activeCode:  currently selected comp  navigate: react-router navigate fn
-// mode: "navlink" (PredictionsPage) | "filter" (LivePage / LiveMatchPage)
-// onSelect: called with comp code when mode==="filter"
 function CompetitionNav({ activeCode, activeGroup, setActiveGroup, mode="navlink", onSelect, navigateFn }) {
   const groupComps = COMP_NAV_TABS.filter(t => t.group === activeGroup);
   return (
@@ -185,34 +183,31 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, mode="navlink
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", minHeight:34 }}>
         {groupComps.map(comp => {
           const isActive = activeCode === comp.code;
-          const pill = (
+          return (
             <button key={comp.code} onClick={() => {
               if (mode === "filter" && onSelect) onSelect(comp.code);
               if (mode === "navlink" && navigateFn) navigateFn(`/predictions/${comp.slug}`);
             }} style={{
-              display:"flex", alignItems:"center", gap:6,
+              display:"flex", alignItems:"center", gap:7,
               padding:"5px 12px", borderRadius:999, cursor:"pointer",
               fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
               letterSpacing:"0.02em",
-              border:`1px solid ${isActive ? comp.bt : "rgba(255,255,255,0.14)"}`,
+              border:`1px solid ${isActive ? comp.bt+"99" : "rgba(255,255,255,0.14)"}`,
               background: isActive ? comp.bc : "rgba(255,255,255,0.04)",
               color: isActive ? comp.bt : "rgba(255,255,255,0.6)",
               transition:"all 0.13s",
               whiteSpace:"nowrap",
             }}>
-              {/* Badge chip */}
-              <span style={{
-                display:"inline-flex", alignItems:"center", justifyContent:"center",
-                padding:"1px 5px", borderRadius:4,
-                background: comp.bc, color: comp.bt,
-                border:`1px solid ${comp.bt}44`,
-                fontSize:8, fontWeight:700, letterSpacing:"0.06em",
-                flexShrink:0,
-              }}>{comp.badge}</span>
+              <img
+                src={comp.logo}
+                alt=""
+                width={14} height={14}
+                style={{ objectFit:"contain", flexShrink:0, opacity: isActive ? 1 : 0.7 }}
+                onError={e => { e.currentTarget.style.display="none"; }}
+              />
               {comp.label}
             </button>
           );
-          return pill;
         })}
       </div>
     </div>

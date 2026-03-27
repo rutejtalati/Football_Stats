@@ -486,6 +486,105 @@ const CSS = `
   animation: hpPulse 2s ease-in-out infinite;
 }
 
+/* ── Competition Hub ─────────────────────────────────────────────────── */
+.comp-hub { display: flex; flex-direction: column; gap: 32px; }
+
+.comp-group-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.comp-group-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.comp-group-label {
+  font-size: 11px; font-weight: 900; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.comp-group-count {
+  font-size: 9px; font-weight: 800; color: var(--text-dim);
+  background: var(--bg-glass); border: 1px solid var(--border);
+  border-radius: 999px; padding: 1px 7px; font-family: var(--font-mono);
+}
+
+/* auto-fill grid — cards never smaller than 160px, never larger than 1fr */
+.comp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+/* Card */
+.comp-card {
+  padding: 14px;
+  cursor: pointer;
+  height: 100%;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s, border-color .22s;
+}
+.comp-card:hover {
+  border-color: var(--cc, var(--border-strong));
+  transform: translateY(-4px) scale(1.02);
+}
+.comp-card-inner {
+  display: flex; flex-direction: column; height: 100%; position: relative;
+}
+.comp-card-bar {
+  position: absolute; top: -14px; left: -14px; right: -14px; height: 3px;
+  background: var(--cc, var(--blue));
+  border-radius: 20px 20px 0 0;
+  transition: opacity .2s;
+}
+.comp-card-head {
+  display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px;
+}
+.comp-logo-wrap {
+  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--cc, #60a5fa) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cc, #60a5fa) 22%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  transition: box-shadow .2s;
+}
+.comp-title-wrap { flex: 1; min-width: 0; }
+.comp-label {
+  font-size: 12px; font-weight: 800; color: var(--text);
+  letter-spacing: -.01em; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.comp-teams {
+  font-size: 9px; color: var(--text-dim); margin-top: 2px; font-weight: 600;
+}
+.comp-live-badge {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 6px; border-radius: 999px; flex-shrink: 0;
+  background: rgba(255,69,58,.10); border: 1px solid rgba(255,69,58,.22);
+  font-size: 9px; font-weight: 900; color: #ff453a;
+  font-family: var(--font-mono);
+}
+.comp-features {
+  display: flex; flex-wrap: wrap; gap: 4px; flex: 1;
+  margin-bottom: 10px; align-content: flex-start;
+}
+.comp-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; font-weight: 700;
+  padding-top: 8px; border-top: 1px solid var(--border);
+  transition: color .15s;
+}
+
+/* Mobile: min card width shrinks on small screens */
+@media (max-width: 600px) {
+  .comp-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .comp-card { padding: 12px; min-height: 110px; }
+  .comp-logo-wrap { width: 32px; height: 32px; }
+  .comp-label { font-size: 11px; }
+  .comp-hub { gap: 24px; }
+}
+@media (max-width: 380px) {
+  .comp-grid { grid-template-columns: 1fr 1fr; }
+}
+
 /* mobile */
 @media (max-width: 600px) {
   .hp-line-1 { font-size: clamp(52px, 14vw, 78px); }
@@ -1169,109 +1268,160 @@ function CommandGrid({ fixtures, dash, loading }) {
 // SECTION 7 — COMPETITION HUB
 // Links use LEAGUE_CODES for slug normalisation — matches App.jsx routes
 // ════════════════════════════════════════════════════════════════════════
-const COMPS = [
-  { label: "Premier League",    slug: "premier-league",    leagueId: 39,  color: "#60a5fa", logo: "https://media.api-sports.io/football/leagues/39.png",  teams: 20, desc: "England's top flight with full Dixon-Coles coverage.",       features: ["Predictions","Standings","Season Sim","xG"] },
-  { label: "La Liga",           slug: "la-liga",           leagueId: 140, color: "#fb923c", logo: "https://media.api-sports.io/football/leagues/140.png", teams: 20, desc: "Spain's premier division with Elo power rankings.",           features: ["Predictions","Standings","Season Sim"] },
-  { label: "Bundesliga",        slug: "bundesliga",        leagueId: 78,  color: "#ff9f0a", logo: "https://media.api-sports.io/football/leagues/78.png",  teams: 18, desc: "Germany's top tier — form-weighted predictions.",            features: ["Predictions","Standings","Season Sim"] },
-  { label: "Serie A",           slug: "serie-a",           leagueId: 135, color: "#30d158", logo: "https://media.api-sports.io/football/leagues/135.png", teams: 20, desc: "Italian football with defensive analytics.",                  features: ["Predictions","Standings"] },
-  { label: "Ligue 1",           slug: "ligue-1",           leagueId: 61,  color: "#bf5af2", logo: "https://media.api-sports.io/football/leagues/61.png",  teams: 18, desc: "France's top league — full Poisson model.",                  features: ["Predictions","Standings"] },
-  { label: "Champions League",  slug: "champions-league",  leagueId: 2,   color: "#3b82f6", logo: "https://media.api-sports.io/football/leagues/2.png",   teams: 36, desc: "Europe's elite competition — bracket predictions.",           features: ["Predictions","Bracket"] },
-  { label: "Europa League",     slug: "europa-league",     leagueId: 3,   color: "#f97316", logo: "https://media.api-sports.io/football/leagues/3.png",   teams: 36, desc: "UEFA's second-tier European competition.",                   features: ["Predictions","Bracket"] },
-  { label: "Conference League", slug: "conference-league", leagueId: 848, color: "#22c55e", logo: "https://media.api-sports.io/football/leagues/848.png", teams: 36, desc: "UEFA's third-tier tournament predictions.",                  features: ["Predictions","Bracket"] },
-  { label: "FA Cup",            slug: "fa-cup",            leagueId: 45,  color: "#ef4444", logo: "https://media.api-sports.io/football/leagues/45.png",  teams: 736, desc: "The world's oldest domestic cup competition.",              features: ["Predictions","Bracket"] },
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 7 — COMPETITION HUB
+// All competitions from LivePage, PredictionsPage, LiveMatchPage
+// Grouped: Domestic · European · Cup · International
+// ════════════════════════════════════════════════════════════════════════
+
+const COMP_GROUPS = [
+  {
+    key: "domestic",
+    label: "Domestic Leagues",
+    color: "#60a5fa",
+    comps: [
+      { label: "Premier League",   slug: "premier-league",  leagueId: 39,  color: "#60a5fa", logo: "https://media.api-sports.io/football/leagues/39.png",  teams: 20, features: ["Predictions","Standings","Season Sim","xG"] },
+      { label: "La Liga",          slug: "la-liga",         leagueId: 140, color: "#fb923c", logo: "https://media.api-sports.io/football/leagues/140.png", teams: 20, features: ["Predictions","Standings","Season Sim"] },
+      { label: "Bundesliga",       slug: "bundesliga",      leagueId: 78,  color: "#f59e0b", logo: "https://media.api-sports.io/football/leagues/78.png",  teams: 18, features: ["Predictions","Standings","Season Sim"] },
+      { label: "Serie A",          slug: "serie-a",         leagueId: 135, color: "#34d399", logo: "https://media.api-sports.io/football/leagues/135.png", teams: 20, features: ["Predictions","Standings"] },
+      { label: "Ligue 1",          slug: "ligue-1",         leagueId: 61,  color: "#a78bfa", logo: "https://media.api-sports.io/football/leagues/61.png",  teams: 18, features: ["Predictions","Standings"] },
+    ],
+  },
+  {
+    key: "european",
+    label: "European Club",
+    color: "#3b82f6",
+    comps: [
+      { label: "Champions League",  slug: "champions-league",  leagueId: 2,   color: "#3b82f6", logo: "https://media.api-sports.io/football/leagues/2.png",   teams: 36, features: ["Predictions","Bracket"] },
+      { label: "Europa League",     slug: "europa-league",     leagueId: 3,   color: "#f97316", logo: "https://media.api-sports.io/football/leagues/3.png",   teams: 36, features: ["Predictions","Bracket"] },
+      { label: "Conference League", slug: "conference-league", leagueId: 848, color: "#22c55e", logo: "https://media.api-sports.io/football/leagues/848.png", teams: 36, features: ["Predictions","Bracket"] },
+    ],
+  },
+  {
+    key: "cup",
+    label: "Domestic Cup",
+    color: "#ef4444",
+    comps: [
+      { label: "FA Cup", slug: "fa-cup", leagueId: 45, color: "#ef4444", logo: "https://media.api-sports.io/football/leagues/45.png", teams: 736, features: ["Predictions","Bracket"] },
+    ],
+  },
+  {
+    key: "international",
+    label: "International",
+    color: "#fbbf24",
+    comps: [
+      { label: "World Cup",       slug: "world-cup",      leagueId: 1,   color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/1.png",   teams: 32,  features: ["Predictions","Bracket"] },
+      { label: "Euros",           slug: "euros",          leagueId: 4,   color: "#3b82f6", logo: "https://media.api-sports.io/football/leagues/4.png",   teams: 24,  features: ["Predictions","Bracket"] },
+      { label: "Euro Qual",       slug: "euro-qual",      leagueId: 960, color: "#60a5fa", logo: "https://media.api-sports.io/football/leagues/960.png", teams: 55,  features: ["Predictions"] },
+      { label: "Nations League",  slug: "nations-league", leagueId: 5,   color: "#e879f9", logo: "https://media.api-sports.io/football/leagues/5.png",   teams: 54,  features: ["Predictions"] },
+      { label: "Copa América",    slug: "copa-america",   leagueId: 9,   color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/9.png",   teams: 16,  features: ["Predictions","Bracket"] },
+      { label: "AFCON",           slug: "afcon",          leagueId: 6,   color: "#22c55e", logo: "https://media.api-sports.io/football/leagues/6.png",   teams: 24,  features: ["Predictions","Bracket"] },
+      { label: "Gold Cup",        slug: "gold-cup",       leagueId: 16,  color: "#f59e0b", logo: "https://media.api-sports.io/football/leagues/16.png",  teams: 16,  features: ["Predictions","Bracket"] },
+      { label: "WCQ UEFA",        slug: "wcq-uefa",       leagueId: 32,  color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/32.png",  teams: 55,  features: ["Predictions"] },
+      { label: "WCQ CONMEBOL",    slug: "wcq-conmebol",   leagueId: 29,  color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/29.png",  teams: 10,  features: ["Predictions"] },
+      { label: "WCQ CONCACAF",    slug: "wcq-concacaf",   leagueId: 30,  color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/30.png",  teams: 30,  features: ["Predictions"] },
+      { label: "WCQ CAF",         slug: "wcq-caf",        leagueId: 31,  color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/31.png",  teams: 54,  features: ["Predictions"] },
+      { label: "WCQ AFC",         slug: "wcq-afc",        leagueId: 36,  color: "#fbbf24", logo: "https://media.api-sports.io/football/leagues/36.png",  teams: 47,  features: ["Predictions"] },
+      { label: "Intl Friendly",   slug: "intl-friendly",  leagueId: 10,  color: "#94a3b8", logo: "https://media.api-sports.io/football/leagues/10.png",  teams: 0,   features: ["Predictions"] },
+    ],
+  },
 ];
+
+// Flat list still needed for live count lookup
+const COMPS = COMP_GROUPS.flatMap(g => g.comps);
 
 function CompCard({ comp, idx, fixtures }) {
   const [hov, setHov] = useState(false);
-  const [ref, vis]   = useReveal(.05);
-  const liveCount    = fixtures.filter(f => LIVE_SET.has(f.status) && f.league_id === comp.leagueId).length;
-  // Route is /predictions/:slug — slug matches App.jsx SLUG_MAP
+  const [ref, vis]    = useReveal(.05);
+  const liveCount     = fixtures.filter(f => LIVE_SET.has(f.status) && f.league_id === comp.leagueId).length;
   return (
-    <div ref={ref} style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(16px)", transition: `all .45s ease ${idx * 35}ms` }}>
+    <div ref={ref} style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(14px)", transition: `all .4s ease ${idx * 25}ms` }}>
       <Link to={`/predictions/${comp.slug}`} style={{ textDecoration: "none" }}>
-        <div className="g" style={{ padding: 20, height: "100%", display: "flex", flexDirection: "column" }} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
-          <div className="gi" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: comp.color, borderRadius: "20px 20px 0 0", opacity: hov ? 1 : 0, transition: "opacity .2s" }} />
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-              <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: `${comp.color}14`, border: `1px solid ${comp.color}28`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: hov ? `0 0 16px ${comp.color}35` : "none", transition: "box-shadow .2s" }}>
-                <img src={comp.logo} width={28} height={28} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />
+        <div
+          className="g comp-card"
+          onMouseEnter={() => setHov(true)}
+          onMouseLeave={() => setHov(false)}
+          style={{ "--cc": comp.color }}
+        >
+          <div className="gi comp-card-inner">
+            {/* accent top bar */}
+            <div className="comp-card-bar" style={{ opacity: hov ? 1 : 0 }} />
+            {/* header row */}
+            <div className="comp-card-head">
+              <div className="comp-logo-wrap" style={{ boxShadow: hov ? `0 0 18px ${comp.color}40` : "none" }}>
+                <img src={comp.logo} width={26} height={26} style={{ objectFit: "contain" }}
+                  onError={e => e.currentTarget.style.display = "none"} />
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 900, color: "var(--text)", letterSpacing: "-.02em", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{comp.label}</div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{comp.teams} clubs</div>
+              <div className="comp-title-wrap">
+                <div className="comp-label">{comp.label}</div>
+                {comp.teams > 0 && <div className="comp-teams">{comp.teams} clubs</div>}
               </div>
               {liveCount > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, background: "rgba(255,69,58,.10)", border: "1px solid rgba(255,69,58,.20)", flexShrink: 0 }}>
-                  <Dot size={5} /><span style={{ fontSize: 8, fontWeight: 900, color: "#ff453a", fontFamily: "var(--font-mono)" }}>{liveCount}</span>
+                <div className="comp-live-badge">
+                  <Dot size={4} /><span>{liveCount}</span>
                 </div>
               )}
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 12, flex: 1 }}>{comp.desc}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>{comp.features.map(f => <Badge key={f} label={f} color={comp.color} />)}</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: hov ? comp.color : "var(--text-dim)", transition: "color .15s" }}>
-              <span>Explore predictions</span>
-              <span style={{ transition: "transform .15s", transform: hov ? "translateX(4px)" : "translateX(0)" }}>→</span>
+            {/* features */}
+            <div className="comp-features">
+              {comp.features.map(f => <Badge key={f} label={f} color={comp.color} />)}
+            </div>
+            {/* footer */}
+            <div className="comp-footer" style={{ color: hov ? comp.color : "var(--text-dim)" }}>
+              <span>Predictions</span>
+              <span style={{ transform: hov ? "translateX(4px)" : "translateX(0)", transition: "transform .15s" }}>→</span>
             </div>
           </div>
         </div>
       </Link>
+    </div>
+  );
+}
+
+function CompGroup({ group, fixtures, startIdx }) {
+  const [ref, vis] = useReveal(.04);
+  return (
+    <div className="comp-group">
+      <div ref={ref} className="comp-group-header" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(8px)", transition: "all .4s" }}>
+        <div className="comp-group-dot" style={{ background: group.color, boxShadow: `0 0 8px ${group.color}` }} />
+        <span className="comp-group-label">{group.label}</span>
+        <span className="comp-group-count">{group.comps.length}</span>
+      </div>
+      <div className="comp-grid">
+        {group.comps.map((c, i) => (
+          <CompCard key={c.slug} comp={c} idx={startIdx + i} fixtures={fixtures} />
+        ))}
+      </div>
     </div>
   );
 }
 
 function CompetitionHub({ fixtures }) {
   const [ref, vis] = useReveal(.04);
+  const totalComps = COMP_GROUPS.reduce((n, g) => n + g.comps.length, 0);
+  let runningIdx = 0;
   return (
     <section className="s"><div className="w">
       <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
         <div>
           <div className="ey">— Coverage</div>
-          <h2 className="h2">9 Competitions. Full Intelligence.</h2>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, maxWidth: 480 }}>Poisson predictions, standings, season simulation and xG across Europe's top competitions.</p>
+          <h2 className="h2">{totalComps} Competitions. Full Intelligence.</h2>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, maxWidth: 520 }}>
+            Poisson predictions, live scores and xG across domestic, European, cup and international football.
+          </p>
         </div>
       </div>
-      <div className="gc">{COMPS.map((c, i) => <CompCard key={c.slug} comp={c} idx={i} fixtures={fixtures} />)}</div>
+      <div className="comp-hub">
+        {COMP_GROUPS.map(group => {
+          const si = runningIdx;
+          runningIdx += group.comps.length;
+          return <CompGroup key={group.key} group={group} fixtures={fixtures} startIdx={si} />;
+        })}
+      </div>
     </div></section>
   );
 }
 
-// ════════════════════════════════════════════════════════════════════════
-// SECTION 8 — FPL HUB
-// dashboard.differential_captains.captains  +  dashboard.value_players.players
-// ════════════════════════════════════════════════════════════════════════
-const FPL_TOOLS = [
-  { to: "/best-team",          label: "Best XI",           stat: "Optimal 11",   detail: "Model-driven optimal starting 11",      color: "#30d158" },
-  { to: "/squad-builder",      label: "Squad Builder",     stat: "15-man squad", detail: "Build within £100m budget",             color: "#0a84ff" },
-  { to: "/gameweek-insights",  label: "GW Insights",       stat: "This GW",      detail: "Fixture analysis & GW picks",           color: "#ff9f0a" },
-  { to: "/fpl-table",          label: "FPL Table",         stat: "Standings",    detail: "Live leaderboard & rank",               color: "#bf5af2" },
-  { to: "/captaincy",          label: "Captaincy",         stat: "Picks",        detail: "EP analysis & ownership data",          color: "#ff9f0a" },
-  { to: "/fixture-difficulty", label: "FDR Heatmap",       stat: "8 GWs",        detail: "Fixture difficulty ratings",            color: "#64d2ff" },
-  { to: "/transfer-planner",   label: "Transfer Planner",  stat: "Plan moves",   detail: "Model transfer recommendations",        color: "#ff453a" },
-  { to: "/differentials",      label: "Differentials",     stat: "Low-owned",    detail: "High-ceiling, low-ownership picks",     color: "#ff375f" },
-];
-
-function FplRow({ t, i, dash }) {
-  const [hov, setHov] = useState(false);
-  const [ref, vis]   = useReveal(.04);
-  const capt = t.to === "/captaincy" && dash?.differential_captains?.captains?.[0];
-  const realStat = capt ? `${capt.name || capt.web_name} ${capt.ep_next != null ? Number(capt.ep_next).toFixed(1) : "??"}EP` : t.stat;
-  return (
-    <div ref={ref} style={{ opacity: vis ? 1 : 0, transform: vis ? "translateX(0)" : "translateX(14px)", transition: `all .4s ease ${i * 40}ms` }}>
-      <Link to={t.to} style={{ textDecoration: "none" }}>
-        <div className="frow" style={{ "--frc": t.color }} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
-          <div className="find" />
-          <div className="mn" style={{ fontSize: 9, color: "var(--text-dim)", minWidth: 22 }}>{String(i + 1).padStart(2, "0")}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{t.label}</div>
-            {hov && <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{t.detail}</div>}
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: t.color, whiteSpace: "nowrap" }}>{realStat}</span>
-          <span style={{ fontSize: 12, transition: "transform .15s", transform: hov ? "translateX(3px)" : "translateX(0)", color: t.color }}>→</span>
-        </div>
-      </Link>
-    </div>
-  );
-}
 
 function FPLHub({ dash }) {
   const [ref, vis] = useReveal(.04);

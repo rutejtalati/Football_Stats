@@ -26,46 +26,110 @@ import { useNavigate } from "react-router-dom";
 
 import { API_BASE as BACKEND } from "@/api/api";
 
-// ─── League / competition registry ──────────────────────────────────────────
+// ─── Shared competition registry (mirrors PredictionsPage) ──────────────────
 
-const LEAGUES = {
-  // Domestic
-  epl:        { label:"Premier League",   short:"PL",   color:"#60a5fa", glow:"rgba(96,165,250,0.16)",  group:"domestic"       },
-  laliga:     { label:"La Liga",          short:"LL",   color:"#f97316", glow:"rgba(249,115,22,0.16)",  group:"domestic"       },
-  seriea:     { label:"Serie A",          short:"SA",   color:"#34d399", glow:"rgba(52,211,153,0.16)",  group:"domestic"       },
-  bundesliga: { label:"Bundesliga",       short:"BL",   color:"#f59e0b", glow:"rgba(245,158,11,0.16)",  group:"domestic"       },
-  ligue1:     { label:"Ligue 1",          short:"L1",   color:"#a78bfa", glow:"rgba(167,139,250,0.16)", group:"domestic"       },
-  // European
-  ucl:        { label:"Champions League", short:"UCL",  color:"#3b82f6", glow:"rgba(59,130,246,0.16)",  group:"european"       },
-  uel:        { label:"Europa League",    short:"UEL",  color:"#f97316", glow:"rgba(249,115,22,0.16)",  group:"european"       },
-  uecl:       { label:"Conference Lge",   short:"UECL", color:"#22c55e", glow:"rgba(34,197,94,0.16)",   group:"european"       },
-  // Cup
-  facup:      { label:"FA Cup",           short:"FAC",  color:"#ef4444", glow:"rgba(239,68,68,0.16)",   group:"cup"            },
-  // International
-  wcq_uefa:       { label:"WCQ UEFA",     short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  wcq_conmebol:   { label:"WCQ CONMEBOL", short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  wcq_concacaf:   { label:"WCQ CONCACAF", short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  wcq_caf:        { label:"WCQ CAF",      short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  wcq_afc:        { label:"WCQ AFC",      short:"WCQ",  color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  nations_league: { label:"Nations Lge",  short:"UNL",  color:"#e879f9", glow:"rgba(232,121,249,0.16)", group:"international"  },
-  euro:           { label:"Euros",        short:"EURO", color:"#3b82f6", glow:"rgba(59,130,246,0.16)",  group:"international"  },
-  euro_q:         { label:"Euro Qual",    short:"EQ",   color:"#3b82f6", glow:"rgba(59,130,246,0.16)",  group:"international"  },
-  afcon:          { label:"AFCON",        short:"AFCON",color:"#22c55e", glow:"rgba(34,197,94,0.16)",   group:"international"  },
-  copa_america:   { label:"Copa América", short:"CA",   color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  gold_cup:       { label:"Gold Cup",     short:"GC",   color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  world_cup:      { label:"World Cup",    short:"WC",   color:"#fbbf24", glow:"rgba(251,191,36,0.16)",  group:"international"  },
-  international_friendly: { label:"Friendly", short:"FR", color:"#94a3b8", glow:"rgba(148,163,184,0.16)", group:"international" },
-};
-
-// Filter groups shown as pill rows in the UI
-const FILTER_GROUPS = [
-  { key:"domestic",      label:"Domestic",      filters:["epl","laliga","seriea","bundesliga","ligue1"] },
-  { key:"european",      label:"European",      filters:["ucl","uel","uecl"] },
-  { key:"cup",           label:"Cup",           filters:["facup"] },
-  { key:"international", label:"International", filters:["wcq_uefa","wcq_conmebol","wcq_concacaf","wcq_caf","wcq_afc","nations_league","euro","euro_q","afcon","copa_america","gold_cup","world_cup","international_friendly"] },
+const COMP_NAV_GROUPS = [
+  { key:"domestic",      label:"Domestic" },
+  { key:"european",      label:"European" },
+  { key:"cup",           label:"Cup"      },
+  { key:"international", label:"International" },
 ];
 
-const LEAGUE_FILTER = ["all", ...FILTER_GROUPS.flatMap(g => g.filters)];
+const COMP_NAV_TABS = [
+  { code:"epl",        label:"Premier League",   short:"PL",    group:"domestic",      badge:"ENG",  bc:"#1a3a6e", bt:"#93c5fd", color:"#60a5fa", glow:"rgba(96,165,250,0.16)"  },
+  { code:"laliga",     label:"La Liga",          short:"LL",    group:"domestic",      badge:"ESP",  bc:"#6e1a1a", bt:"#fca5a5", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
+  { code:"seriea",     label:"Serie A",          short:"SA",    group:"domestic",      badge:"ITA",  bc:"#1a4a1a", bt:"#86efac", color:"#34d399", glow:"rgba(52,211,153,0.16)"  },
+  { code:"bundesliga", label:"Bundesliga",       short:"BL",    group:"domestic",      badge:"GER",  bc:"#4a3a00", bt:"#fde68a", color:"#f59e0b", glow:"rgba(245,158,11,0.16)"  },
+  { code:"ligue1",     label:"Ligue 1",          short:"L1",    group:"domestic",      badge:"FRA",  bc:"#2e1a6e", bt:"#c4b5fd", color:"#a78bfa", glow:"rgba(167,139,250,0.16)" },
+  { code:"ucl",        label:"Champions League", short:"UCL",   group:"european",      badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
+  { code:"uel",        label:"Europa League",    short:"UEL",   group:"european",      badge:"UEFA", bc:"#5c2800", bt:"#fdba74", color:"#f97316", glow:"rgba(249,115,22,0.16)"  },
+  { code:"uecl",       label:"Conference Lge",   short:"UECL",  group:"european",      badge:"UEFA", bc:"#0f3d2a", bt:"#6ee7b7", color:"#22c55e", glow:"rgba(34,197,94,0.16)"   },
+  { code:"facup",      label:"FA Cup",           short:"FAC",   group:"cup",           badge:"ENG",  bc:"#4a0f0f", bt:"#fca5a5", color:"#ef4444", glow:"rgba(239,68,68,0.16)"   },
+  { code:"wcq_uefa",           label:"WCQ Europe",     short:"WCQ·E",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_conmebol",       label:"WCQ S. America", short:"WCQ·S",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_concacaf",       label:"WCQ C. America", short:"WCQ·C",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_caf",            label:"WCQ Africa",     short:"WCQ·A",  group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"wcq_afc",            label:"WCQ Asia",       short:"WCQ·As", group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"nations_league",     label:"Nations League", short:"UNL",    group:"international", badge:"UEFA", bc:"#3a006e", bt:"#d8b4fe", color:"#e879f9", glow:"rgba(232,121,249,0.16)" },
+  { code:"euro",               label:"UEFA Euros",     short:"EURO",   group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
+  { code:"euro_q",             label:"Euro Qualifiers",short:"EQ",     group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd", color:"#3b82f6", glow:"rgba(59,130,246,0.16)"  },
+  { code:"afcon",              label:"Africa Cup",     short:"AFCON",  group:"international", badge:"CAF",  bc:"#0f3d1a", bt:"#86efac", color:"#22c55e", glow:"rgba(34,197,94,0.16)"   },
+  { code:"copa_america",       label:"Copa América",   short:"COPA",   group:"international", badge:"CONM", bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"gold_cup",           label:"Gold Cup",       short:"GC",     group:"international", badge:"CONC", bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"world_cup",          label:"World Cup",      short:"WC",     group:"international", badge:"FIFA", bc:"#3d2c00", bt:"#fde68a", color:"#fbbf24", glow:"rgba(251,191,36,0.16)"  },
+  { code:"international_friendly",label:"Intl Friendly",short:"FRND",  group:"international", badge:"INTL", bc:"#2a2a2a", bt:"#d1d5db", color:"#94a3b8", glow:"rgba(148,163,184,0.16)"},
+];
+
+// Back-compat alias used by normaliseLeague and filter logic
+const LEAGUES = Object.fromEntries(COMP_NAV_TABS.map(t => [t.code, { label:t.label, short:t.short, color:t.color, glow:t.glow, group:t.group }]));
+const FILTER_GROUPS = COMP_NAV_GROUPS.map(g => ({ ...g, filters: COMP_NAV_TABS.filter(t=>t.group===g.key).map(t=>t.code) }));
+const LEAGUE_FILTER = ["all", ...COMP_NAV_TABS.map(t=>t.code)];
+
+// ── Two-level Competition Nav component ────────────────────────────────────────
+function CompetitionNav({ activeCode, activeGroup, setActiveGroup, onSelect }) {
+  const groupComps = COMP_NAV_TABS.filter(t => t.group === activeGroup);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      {/* Row 1: group selector */}
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+        {COMP_NAV_GROUPS.map(g => {
+          const isAct = g.key === activeGroup;
+          const count = COMP_NAV_TABS.filter(t=>t.group===g.key).length;
+          return (
+            <button key={g.key} onClick={()=>setActiveGroup(g.key)} style={{
+              display:"flex", alignItems:"center", gap:5,
+              padding:"5px 12px", borderRadius:999, cursor:"pointer",
+              fontSize:11, fontWeight:700, letterSpacing:"0.05em",
+              border:`1px solid ${isAct?"rgba(255,255,255,0.45)":"var(--border)"}`,
+              background: isAct ? "rgba(255,255,255,0.1)" : "var(--bg-glass)",
+              color: isAct ? "#fff" : "var(--text-muted)",
+              transition:"all 0.13s",
+            }}>
+              {g.label}
+              <span style={{ fontSize:9, color: isAct?"rgba(255,255,255,0.5)":"var(--text-muted)", background:"rgba(255,255,255,0.08)", borderRadius:999, padding:"1px 5px" }}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+      {/* Row 2: competition pills */}
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap", minHeight:30 }}>
+        <button onClick={()=>onSelect("all")} style={{
+          display:"flex", alignItems:"center", gap:5,
+          padding:"4px 11px", borderRadius:999, cursor:"pointer",
+          fontSize:11, fontWeight:600, letterSpacing:"0.02em",
+          border:`1px solid ${activeCode==="all"?"rgba(255,255,255,0.45)":"var(--border)"}`,
+          background: activeCode==="all" ? "rgba(255,255,255,0.1)" : "var(--bg-glass)",
+          color: activeCode==="all" ? "#fff" : "var(--text-muted)",
+          transition:"all 0.13s",
+        }}>All</button>
+        {groupComps.map(comp => {
+          const isAct = activeCode === comp.code;
+          return (
+            <button key={comp.code} onClick={()=>onSelect(isAct?"all":comp.code)} style={{
+              display:"flex", alignItems:"center", gap:6,
+              padding:"4px 11px", borderRadius:999, cursor:"pointer",
+              fontSize:11, fontWeight:600, letterSpacing:"0.02em",
+              border:`1px solid ${isAct ? comp.bt+"88" : "var(--border)"}`,
+              background: isAct ? comp.bc : "var(--bg-glass)",
+              color: isAct ? comp.bt : "var(--text-muted)",
+              transition:"all 0.13s",
+              whiteSpace:"nowrap",
+            }}>
+              <span style={{
+                display:"inline-flex", alignItems:"center", justifyContent:"center",
+                padding:"1px 4px", borderRadius:3,
+                background:comp.bc, color:comp.bt,
+                border:`1px solid ${comp.bt}44`,
+                fontSize:8, fontWeight:700, letterSpacing:"0.05em", flexShrink:0,
+              }}>{comp.badge}</span>
+              {comp.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 const LIVE_SET      = new Set(["1H","2H","HT","ET","BT","P"]);
 const FT_SET        = new Set(["FT","AET","PEN","AWD","WO"]);
 
@@ -673,9 +737,10 @@ export default function LivePage() {
   const [chips,      setChips]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
-  const [filter,     setFilter]     = useState("all");
-  const [lastUp,     setLastUp]     = useState(null);
-  const [dayOffset,  setDayOffset]  = useState(0);   // -10..0..+10: negative=past, 0=today/live, positive=future
+  const [filter,        setFilter]        = useState("all");
+  const [lastUp,        setLastUp]        = useState(null);
+  const [dayOffset,     setDayOffset]     = useState(0);   // -10..0..+10: negative=past, 0=today/live, positive=future
+  const [activeNavGroup,setActiveNavGroup] = useState("domestic");
 
   const fetchData = (offset = dayOffset) => {
     setLoading(true);
@@ -927,45 +992,13 @@ export default function LivePage() {
               </div>
             </div>
 
-            {/* League / competition filter — grouped by category */}
-            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-              {FILTER_GROUPS.map(group => {
-                const groupActive = group.filters.some(f => f === filter);
-                return (
-                  <div key={group.key} style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                    <span style={{
-                      fontSize:9, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase",
-                      color:"var(--text-muted)", opacity:.55, minWidth:72, flexShrink:0,
-                    }}>{group.label}</span>
-                    {group.key === "domestic" && (
-                      <button onClick={() => setFilter("all")} style={{
-                        padding:"4px 12px", borderRadius:999, cursor:"pointer",
-                        fontSize:11, fontWeight:700, letterSpacing:".03em",
-                        border:`1px solid ${filter==="all"?"rgba(255,255,255,.4)":"var(--border)"}`,
-                        background: filter==="all"?"rgba(255,255,255,.1)":"var(--bg-glass)",
-                        color: filter==="all"?"#fff":"var(--text-muted)",
-                        transition:"all .15s",
-                      }}>All</button>
-                    )}
-                    {group.filters.map(l => {
-                      const c      = LEAGUES[l];
-                      const active = filter === l;
-                      const col    = c?.color || "#60a5fa";
-                      return (
-                        <button key={l} onClick={() => setFilter(active ? "all" : l)} style={{
-                          padding:"4px 12px", borderRadius:999, cursor:"pointer",
-                          fontSize:11, fontWeight:700, letterSpacing:".03em",
-                          border:`1px solid ${active ? col+"55" : "var(--border)"}`,
-                          background: active ? col+"18" : "var(--bg-glass)",
-                          color: active ? col : "var(--text-muted)",
-                          transition:"all .15s",
-                        }}>{c?.short || l.toUpperCase()}</button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
+            {/* League / competition filter — two-level Solution 4 nav */}
+            <CompetitionNav
+              activeCode={filter}
+              activeGroup={activeNavGroup}
+              setActiveGroup={setActiveNavGroup}
+              onSelect={(code) => setFilter(code)}
+            />
           </div>
 
           {/* ══ STATES ══ */}

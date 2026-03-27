@@ -25,6 +25,100 @@ const NB_CSS = `
 
 import { API_BASE as BACKEND } from "@/api/api";
 
+// ═══════════════════════════════════════════════════════════════════════
+// SHARED COMPETITION REGISTRY  (two-level nav — Solution 4)
+// ═══════════════════════════════════════════════════════════════════════
+const COMP_NAV_GROUPS = [
+  { key:"domestic",      label:"Domestic" },
+  { key:"european",      label:"European" },
+  { key:"cup",           label:"Cup"      },
+  { key:"international", label:"International" },
+];
+
+const COMP_NAV_TABS = [
+  { code:"epl",        slug:"premier-league",   label:"Premier League",   group:"domestic",      badge:"ENG",  bc:"#1a3a6e", bt:"#93c5fd" },
+  { code:"laliga",     slug:"la-liga",          label:"La Liga",          group:"domestic",      badge:"ESP",  bc:"#6e1a1a", bt:"#fca5a5" },
+  { code:"bundesliga", slug:"bundesliga",       label:"Bundesliga",       group:"domestic",      badge:"GER",  bc:"#4a3a00", bt:"#fde68a" },
+  { code:"seriea",     slug:"serie-a",          label:"Serie A",          group:"domestic",      badge:"ITA",  bc:"#1a4a1a", bt:"#86efac" },
+  { code:"ligue1",     slug:"ligue-1",          label:"Ligue 1",          group:"domestic",      badge:"FRA",  bc:"#2e1a6e", bt:"#c4b5fd" },
+  { code:"ucl",        slug:"champions-league", label:"Champions League", group:"european",      badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd" },
+  { code:"uel",        slug:"europa-league",    label:"Europa League",    group:"european",      badge:"UEFA", bc:"#5c2800", bt:"#fdba74" },
+  { code:"uecl",       slug:"conference-league",label:"Conference Lge",   group:"european",      badge:"UEFA", bc:"#0f3d2a", bt:"#6ee7b7" },
+  { code:"facup",      slug:"fa-cup",           label:"FA Cup",           group:"cup",           badge:"ENG",  bc:"#4a0f0f", bt:"#fca5a5" },
+  { code:"wcq_uefa",            slug:"wcq-uefa",       label:"WCQ Europe",     group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a" },
+  { code:"wcq_conmebol",        slug:"wcq-conmebol",   label:"WCQ S. America", group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a" },
+  { code:"wcq_concacaf",        slug:"wcq-concacaf",   label:"WCQ C. America", group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a" },
+  { code:"wcq_caf",             slug:"wcq-caf",        label:"WCQ Africa",     group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a" },
+  { code:"wcq_afc",             slug:"wcq-afc",        label:"WCQ Asia",       group:"international", badge:"FIFA", bc:"#3d3000", bt:"#fde68a" },
+  { code:"nations_league",      slug:"nations-league", label:"Nations League", group:"international", badge:"UEFA", bc:"#3a006e", bt:"#d8b4fe" },
+  { code:"euro",                slug:"euros",          label:"UEFA Euros",     group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd" },
+  { code:"euro_q",              slug:"euro-qual",      label:"Euro Qualifiers",group:"international", badge:"UEFA", bc:"#0f2d6e", bt:"#93c5fd" },
+  { code:"afcon",               slug:"afcon",          label:"Africa Cup",     group:"international", badge:"CAF",  bc:"#0f3d1a", bt:"#86efac" },
+  { code:"copa_america",        slug:"copa-america",   label:"Copa América",   group:"international", badge:"CONM", bc:"#3d2c00", bt:"#fde68a" },
+  { code:"gold_cup",            slug:"gold-cup",       label:"Gold Cup",       group:"international", badge:"CONC", bc:"#3d2c00", bt:"#fde68a" },
+  { code:"world_cup",           slug:"world-cup",      label:"World Cup",      group:"international", badge:"FIFA", bc:"#3d2c00", bt:"#fde68a" },
+  { code:"international_friendly",slug:"intl-friendly",label:"Intl Friendly",  group:"international", badge:"INTL", bc:"#2a2a2a", bt:"#d1d5db" },
+];
+
+// Two-level nav: group buttons → competition pills → navigate to /live?league=code
+function CompetitionNav({ activeGroup, setActiveGroup, navigate: nav }) {
+  const groupComps = COMP_NAV_TABS.filter(t => t.group === activeGroup);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"10px 20px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(8,8,8,0.9)" }}>
+      {/* Row 1: group tabs */}
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+        {COMP_NAV_GROUPS.map(g => {
+          const isAct = g.key === activeGroup;
+          const count = COMP_NAV_TABS.filter(t => t.group === g.key).length;
+          return (
+            <button key={g.key} onClick={() => setActiveGroup(g.key)} style={{
+              display:"flex", alignItems:"center", gap:5,
+              padding:"5px 12px", borderRadius:999, cursor:"pointer",
+              fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:700,
+              letterSpacing:"0.05em", textTransform:"uppercase",
+              border:`1px solid ${isAct ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.12)"}`,
+              background: isAct ? "rgba(255,255,255,0.1)" : "transparent",
+              color: isAct ? "#fff" : "rgba(255,255,255,0.4)",
+              transition:"all 0.13s",
+            }}>
+              {g.label}
+              <span style={{ fontSize:9, background:"rgba(255,255,255,0.08)", borderRadius:999, padding:"1px 5px", color: isAct ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)" }}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+      {/* Row 2: competition pills */}
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap", minHeight:30 }}>
+        {groupComps.map(comp => (
+          <button key={comp.code} onClick={() => nav(`/predictions/${comp.slug}`)} style={{
+            display:"flex", alignItems:"center", gap:6,
+            padding:"4px 11px", borderRadius:999, cursor:"pointer",
+            fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
+            letterSpacing:"0.02em",
+            border:`1px solid rgba(255,255,255,0.14)`,
+            background:"rgba(255,255,255,0.04)",
+            color:"rgba(255,255,255,0.6)",
+            transition:"all 0.13s",
+            whiteSpace:"nowrap",
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.background=comp.bc;e.currentTarget.style.color=comp.bt;e.currentTarget.style.borderColor=comp.bt+"88";}}
+          onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.14)";}}
+          >
+            <span style={{
+              display:"inline-flex", alignItems:"center", justifyContent:"center",
+              padding:"1px 4px", borderRadius:3,
+              background:comp.bc, color:comp.bt,
+              border:`1px solid ${comp.bt}44`,
+              fontSize:8, fontWeight:700, letterSpacing:"0.05em", flexShrink:0,
+            }}>{comp.badge}</span>
+            {comp.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Mode derivation ─────────────────────────────────────────────────────────
 
 const LIVE_STATUSES = new Set(["1H","2H","HT","ET","BT","P"]);
@@ -2127,6 +2221,7 @@ export default function LiveMatchPage() {
   const [teamStats,     setTeamStats]    = useState(null);
   const [loading,       setLoading]      = useState(true);
   const [error,         setError]        = useState(null);
+  const [activeNavGroup,setActiveNavGroup] = useState("domestic");
   const pollRef = useRef(null);
 
   // ── Commentary state ──────────────────────────────────────────────────────
@@ -2354,14 +2449,23 @@ export default function LiveMatchPage() {
         .lm-card:hover { border-color:rgba(255,255,255,.16); box-shadow:0 8px 28px rgba(0,0,0,.5); }
       `}</style>
 
-      {/* Back nav */}
-      <div style={{ padding:"14px 20px 0", display:"flex", alignItems:"center", gap:8 }}>
-        <button
-          onClick={() => navigate(-1)}
-          style={{ background:"none", border:"none", color:"rgba(255,255,255,0.28)", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:"0.04em", padding:0, display:"flex", alignItems:"center", gap:5 }}
-        >
-          ← Live Centre
-        </button>
+      {/* Back nav + competition switcher */}
+      <div style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ padding:"12px 20px 10px", display:"flex", alignItems:"center", gap:10 }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ background:"none", border:"none", color:"rgba(255,255,255,0.35)", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:"0.04em", padding:0, display:"flex", alignItems:"center", gap:5 }}
+          >
+            ← Live Centre
+          </button>
+          <span style={{ width:1, height:12, background:"rgba(255,255,255,0.12)", flexShrink:0 }} />
+          <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", letterSpacing:"0.08em", textTransform:"uppercase" }}>Switch Competition</span>
+        </div>
+        <CompetitionNav
+          activeGroup={activeNavGroup}
+          setActiveGroup={setActiveNavGroup}
+          navigate={navigate}
+        />
       </div>
 
       {loading && (

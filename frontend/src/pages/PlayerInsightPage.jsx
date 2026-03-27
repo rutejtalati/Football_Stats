@@ -618,7 +618,31 @@ function PanelHeader({ label, tabs, active, onSwitch }) {
   );
 }
 
-
+// ── Footer ────────────────────────────────────────────────────────────────────
+function PageFooter() {
+  return (
+    <footer style={{ background: "#000", borderTop: `1px solid ${T.line}`, fontFamily: "inherit" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "0 24px", height: 52 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3"  width="14" height="3.5" rx="1.75" fill="#3b82f6"/>
+            <rect x="4" y="9"  width="10" height="3.5" rx="1.75" fill="#3b82f6" opacity="0.6"/>
+            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#3b82f6" opacity="0.35"/>
+            <rect x="4" y="21" width="7"  height="3.5" rx="1.75" fill="#3b82f6" opacity="0.18"/>
+            <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#22c55e"/>
+          </svg>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.55)", letterSpacing: "-.03em" }}>StatinSite</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,.18)" }}>Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 14px", background: "rgba(255,255,255,.04)", border: `1px solid ${T.line}`, borderRadius: 999, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,.2)", textTransform: "uppercase", letterSpacing: ".1em" }}>Built by</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.55)" }}>Rutej Talati</span>
+        </div>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,.14)", flexShrink: 0 }}>© {new Date().getFullYear()} StatinSite</span>
+      </div>
+    </footer>
+  );
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN EXPORT

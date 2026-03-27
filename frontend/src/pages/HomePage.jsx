@@ -1423,6 +1423,149 @@ function CompetitionHub({ fixtures }) {
 }
 
 
+// ════════════════════════════════════════════════════════════════════════
+// FPL TOOL SVG ICONS — geometric, stroke-based, no emoji
+// ════════════════════════════════════════════════════════════════════════
+function IconCaptain({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="9,1.5 11.2,6.8 17,7.3 12.8,11.3 14.2,17 9,14 3.8,17 5.2,11.3 1,7.3 6.8,6.8"
+        stroke={color} strokeWidth="1.35" strokeLinejoin="round" fill={`${color}1a`} />
+      <circle cx="9" cy="9.2" r="2" fill={color} opacity="0.85" />
+    </svg>
+  );
+}
+
+function IconValue({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 1L15.5 5V13L9 17L2.5 13V5L9 1Z" stroke={color} strokeWidth="1.35" strokeLinejoin="round" fill={`${color}12`} />
+      <path d="M9 5.5V12.5" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M6.8 7.8C6.8 6.7 7.7 6 9 6C10.3 6 11.2 6.7 11.2 7.7C11.2 9.9 6.8 9.5 6.8 11.8C6.8 12.9 7.8 13.5 9 13.5C10.2 13.5 11.2 12.9 11.2 12"
+        stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconTransfer({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1.5" y="1.5" width="15" height="15" rx="3.5" stroke={color} strokeWidth="1" opacity="0.22" />
+      <path d="M3.5 6.5H14.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M11.5 3.5L14.5 6.5L11.5 9.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14.5 11.5H3.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M6.5 8.5L3.5 11.5L6.5 14.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconForm({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="1" y1="15.5" x2="17" y2="15.5" stroke={color} strokeWidth="1" opacity="0.28" strokeLinecap="round" />
+      <polyline points="1.5,13 5,7.5 8,10 12,4.5 16.5,7.5"
+        stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <circle cx="5" cy="7.5" r="1.6" fill={color} />
+      <circle cx="8" cy="10" r="1.6" fill={color} />
+      <circle cx="12" cy="4.5" r="1.6" fill={color} />
+      <circle cx="16.5" cy="7.5" r="1.6" fill={color} opacity="0.5" />
+    </svg>
+  );
+}
+
+function IconFixture({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1.5" y="3.5" width="15" height="13" rx="3" stroke={color} strokeWidth="1.35" fill={`${color}10`} />
+      <line x1="1.5" y1="7.5" x2="16.5" y2="7.5" stroke={color} strokeWidth="1" opacity="0.4" />
+      <line x1="6" y1="1.5" x2="6" y2="5.5" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="12" y1="1.5" x2="12" y2="5.5" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="3.5" y="9.5" width="3" height="3" rx="1" fill={color} opacity="0.75" />
+      <rect x="7.5" y="9.5" width="3" height="3" rx="1" fill={color} opacity="0.4" />
+      <rect x="11.5" y="9.5" width="3" height="3" rx="1" fill={color} opacity="0.2" />
+    </svg>
+  );
+}
+
+function IconDiff({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="9" r="7.5" stroke={color} strokeWidth="1.35" fill={`${color}0d`} />
+      <line x1="9" y1="2" x2="9" y2="3.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+      <line x1="9" y1="14.5" x2="9" y2="16" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+      <line x1="2" y1="9" x2="3.5" y2="9" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+      <line x1="14.5" y1="9" x2="16" y2="9" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+      <path d="M9 5.5V9.5L12 11.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="9" r="1.4" fill={color} />
+    </svg>
+  );
+}
+
+function IconPrice({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 15L9 2.5L16 15Z" stroke={color} strokeWidth="1.35" strokeLinejoin="round" fill={`${color}10`} />
+      <line x1="4.5" y1="10.5" x2="13.5" y2="10.5" stroke={color} strokeWidth="1.1" strokeLinecap="round" opacity="0.45" />
+      <circle cx="9" cy="2.5" r="1.5" fill={color} />
+      <line x1="9" y1="12" x2="9" y2="15.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+    </svg>
+  );
+}
+
+function IconLeague({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 1.5L11.2 6.5H16.5L12.5 9.5L14 14.5L9 11.5L4 14.5L5.5 9.5L1.5 6.5H6.8L9 1.5Z"
+        stroke={color} strokeWidth="1.35" strokeLinejoin="round" fill={`${color}14`} />
+      <line x1="9" y1="12" x2="9" y2="16" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="5.5" y1="16" x2="12.5" y2="16" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// FPL_TOOLS — the 8 FPL tool links shown in the hub
+// ════════════════════════════════════════════════════════════════════════
+const FPL_TOOLS = [
+  { SvgIcon: IconCaptain,  label: "Captain Picks",    sub: "Differential captain algorithm",  to: "/fpl/captains",      color: "#ff9f0a" },
+  { SvgIcon: IconValue,    label: "Value Players",    sub: "Points-per-million leaders",       to: "/fpl/value",         color: "#30d158" },
+  { SvgIcon: IconTransfer, label: "Transfer Targets", sub: "Best transfers for your budget",   to: "/fpl/transfers",     color: "#0a84ff" },
+  { SvgIcon: IconForm,     label: "Form Rankings",    sub: "In-form players by xG + points",   to: "/fpl/form",          color: "#bf5af2" },
+  { SvgIcon: IconFixture,  label: "Fixture Ticker",   sub: "Upcoming fixture difficulty",      to: "/fpl/fixtures",      color: "#ff453a" },
+  { SvgIcon: IconDiff,     label: "Differentials",    sub: "Low-ownership high-upside picks",  to: "/fpl/differentials", color: "#ffd60a" },
+  { SvgIcon: IconPrice,    label: "Price Rises",      sub: "Players likely to increase soon",  to: "/fpl/prices",        color: "#64d2ff" },
+  { SvgIcon: IconLeague,   label: "Mini-League Edge", sub: "Beat your rivals this week",       to: "/fpl/minileague",    color: "#ff6b00" },
+];
+
+function FplRow({ t }) {
+  const nav = useNavigate();
+  const { SvgIcon, label, sub, to, color } = t;
+  return (
+    <div
+      className="frow"
+      style={{ "--frc": color }}
+      onClick={() => nav(to)}
+    >
+      <div className="find" />
+      <div style={{
+        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+        background: `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`,
+        border: `1px solid ${color}2e`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <SvgIcon color={color} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", letterSpacing: "-.01em" }}>{label}</div>
+        <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 1 }}>{sub}</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, opacity: 0.32 }}>
+        <path d="M4 7h6M7.5 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
 function FPLHub({ dash }) {
   const [ref, vis] = useReveal(.04);
   const capts   = dash?.differential_captains?.captains?.slice(0, 4) ?? [];

@@ -99,18 +99,18 @@ function CompetitionNav({ activeGroup, setActiveGroup, navigate: nav }) {
             letterSpacing:"0.02em",
             border:`1px solid rgba(255,255,255,0.14)`,
             background:"rgba(255,255,255,0.04)",
-            color:"rgba(255,255,255,0.6)",
+            color:"rgba(255,255,255,0.7)",
             transition:"all 0.13s",
             whiteSpace:"nowrap",
           }}
-          onMouseEnter={e=>{e.currentTarget.style.background=comp.bc;e.currentTarget.style.color=comp.bt;e.currentTarget.style.borderColor=comp.bt+"88";}}
-          onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.14)";}}
+          onMouseEnter={e=>{e.currentTarget.style.background=comp.bc;e.currentTarget.style.color=comp.bt;e.currentTarget.style.borderColor=comp.bt+"88";e.currentTarget.querySelector("img").style.filter="none";}}
+          onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color="rgba(255,255,255,0.7)";e.currentTarget.style.borderColor="rgba(255,255,255,0.14)";e.currentTarget.querySelector("img").style.filter="brightness(0) invert(1)";}}
           >
             <img
               src={comp.logo}
               alt=""
               width={14} height={14}
-              style={{ objectFit:"contain", flexShrink:0, opacity:0.8 }}
+              style={{ objectFit:"contain", flexShrink:0, filter:"brightness(0) invert(1)", opacity:0.85 }}
               onError={e => { e.currentTarget.style.display="none"; }}
             />
             {comp.label}
@@ -2461,7 +2461,19 @@ export default function LiveMatchPage() {
             ← Live Centre
           </button>
           <span style={{ width:1, height:12, background:"rgba(255,255,255,0.12)", flexShrink:0 }} />
-          <span style={{ fontSize:10, color:"rgba(255,255,255,0.2)", letterSpacing:"0.08em", textTransform:"uppercase" }}>Switch Competition</span>
+          {/* Show competition logo + name from the live fixture data if available */}
+          {fixture?.fixture?.league?.logo && (
+            <img
+              src={fixture.fixture.league.logo}
+              alt=""
+              width={16} height={16}
+              style={{ objectFit:"contain", flexShrink:0, filter:"brightness(0) invert(1)", opacity:0.6 }}
+              onError={e => { e.currentTarget.style.display="none"; }}
+            />
+          )}
+          <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", letterSpacing:"0.06em", textTransform:"uppercase", fontWeight:600 }}>
+            {fixture?.fixture?.league?.name || "Switch Competition"}
+          </span>
         </div>
         <CompetitionNav
           activeGroup={activeNavGroup}

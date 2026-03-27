@@ -121,7 +121,11 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, onSelect }) {
                 src={comp.logo}
                 alt=""
                 width={14} height={14}
-                style={{ objectFit:"contain", flexShrink:0, opacity: isAct ? 1 : 0.65 }}
+                style={{
+                  objectFit:"contain", flexShrink:0,
+                  filter: isAct ? "none" : "brightness(0) invert(1)",
+                  opacity: isAct ? 1 : 0.8,
+                }}
                 onError={e => { e.currentTarget.style.display="none"; }}
               />
               {comp.label}
@@ -892,11 +896,35 @@ export default function LivePage() {
           <div style={{ padding:"26px 0 18px", borderBottom:"1px solid var(--border)", marginBottom:22 }}>
             {/* Top row: title + counters */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
-              <div>
-                <h1 style={{ fontSize:28, fontWeight:900, color:"var(--text)", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>Live Centre</h1>
-                <p style={{ color:"var(--text-secondary)", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
-                  {isPastView ? `Results · ${dayLabel(dayOffset)}` : isFutureView ? `Fixtures · ${dayLabel(dayOffset)}` : "Today & live · Domestic · European · International"}
-                </p>
+              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                {/* Competition logo — shown when a specific filter is active */}
+                {(() => {
+                  const comp = filter !== "all" ? COMP_NAV_TABS.find(t => t.code === filter) : null;
+                  return comp ? (
+                    <img
+                      src={comp.logo}
+                      alt={comp.label}
+                      width={44} height={44}
+                      style={{ objectFit:"contain", flexShrink:0 }}
+                      onError={e => { e.currentTarget.style.display="none"; }}
+                    />
+                  ) : null;
+                })()}
+                <div>
+                  {/* Kicker pill — "Live Centre" always, or competition name when filtered */}
+                  <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.14)", borderRadius:6, padding:"2px 10px", marginBottom:5 }}>
+                    <LiveDot/>
+                    <span style={{ fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", color:"rgba(255,255,255,0.7)" }}>Live Centre</span>
+                  </div>
+                  <h1 style={{ fontSize:28, fontWeight:900, color:"var(--text)", margin:0, letterSpacing:"-0.025em", lineHeight:1 }}>
+                    {filter !== "all"
+                      ? (COMP_NAV_TABS.find(t=>t.code===filter)?.label || "Live Centre")
+                      : "Live Centre"}
+                  </h1>
+                  <p style={{ color:"var(--text-secondary)", fontSize:12, margin:"5px 0 0", fontWeight:600 }}>
+                    {isPastView ? `Results · ${dayLabel(dayOffset)}` : isFutureView ? `Fixtures · ${dayLabel(dayOffset)}` : "Today & live · Domestic · European · International"}
+                  </p>
+                </div>
               </div>
               <div style={{ display:"flex", gap:7, alignItems:"center", flexWrap:"wrap", justifyContent:"flex-end" }}>
                 {liveCount>0 && (

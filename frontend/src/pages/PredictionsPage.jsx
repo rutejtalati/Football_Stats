@@ -192,17 +192,21 @@ function CompetitionNav({ activeCode, activeGroup, setActiveGroup, mode="navlink
               padding:"5px 12px", borderRadius:999, cursor:"pointer",
               fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
               letterSpacing:"0.02em",
-              border:`1px solid ${isActive ? comp.bt+"99" : "rgba(255,255,255,0.14)"}`,
+              border:`1px solid ${isActive ? comp.bt+"99" : "rgba(255,255,255,0.18)"}`,
               background: isActive ? comp.bc : "rgba(255,255,255,0.04)",
-              color: isActive ? comp.bt : "rgba(255,255,255,0.6)",
+              color: isActive ? comp.bt : "rgba(255,255,255,0.7)",
               transition:"all 0.13s",
               whiteSpace:"nowrap",
             }}>
               <img
                 src={comp.logo}
                 alt=""
-                width={14} height={14}
-                style={{ objectFit:"contain", flexShrink:0, opacity: isActive ? 1 : 0.7 }}
+                width={15} height={15}
+                style={{
+                  objectFit:"contain", flexShrink:0,
+                  filter: isActive ? "none" : "brightness(0) invert(1)",
+                  opacity: isActive ? 1 : 0.85,
+                }}
                 onError={e => { e.currentTarget.style.display="none"; }}
               />
               {comp.label}
@@ -2778,24 +2782,35 @@ export default function PredictionsPage({league:propLeague,slugMap}){
         {/* -- HEADER ------------------------------------------ */}
         <div style={{padding:isMobile?"16px 0 14px":"28px 0 20px",display:"flex",flexDirection:"column",gap:16,borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
 
-          {/* Title block */}
-          <div style={{display:"flex",alignItems:"center",gap:0}}>
-            {/* Black kicker pill */}
-            <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:6,padding:"4px 14px",marginRight:16,flexShrink:0}}>
-              <span style={{width:6,height:6,background:"#ffffff",borderRadius:"50%",animation:"nbBlink 1.1s step-start infinite",flexShrink:0}}/>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,letterSpacing:".1em",textTransform:"uppercase",color:"#ffffff",fontWeight:600}}>PREDICTIONS</span>
-            </div>
+          {/* Title block — league logo · PREDICTIONS label · competition name */}
+          <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+            {/* League logo from API-Football */}
+            {(() => {
+              const comp = COMP_NAV_TABS.find(t => t.code === league);
+              return comp ? (
+                <img
+                  src={comp.logo}
+                  alt={comp.label}
+                  width={isMobile?40:52} height={isMobile?40:52}
+                  style={{ objectFit:"contain", flexShrink:0 }}
+                  onError={e => { e.currentTarget.style.display="none"; }}
+                />
+              ) : <LeagueFlag code={league} size={isMobile?36:48}/>;
+            })()}
             <div>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-                <LeagueFlag code={league} size={22}/>
-                <h1 style={{
-                  fontSize:isMobile?28:40,fontWeight:900,color:"#ffffff",
-                  margin:0,letterSpacing:"-.02em",
-                  fontFamily:"'Inter',sans-serif",
-                }}>{T.label}</h1>
+              {/* Kicker: PREDICTIONS label */}
+              <div style={{display:"inline-flex",alignItems:"center",gap:7,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:6,padding:"3px 12px",marginBottom:8}}>
+                <span style={{width:5,height:5,background:"#ffffff",borderRadius:"50%",animation:"nbBlink 1.1s step-start infinite",flexShrink:0}}/>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,letterSpacing:".12em",textTransform:"uppercase",color:"rgba(255,255,255,0.8)",fontWeight:700}}>Predictions</span>
               </div>
+              {/* Competition name */}
+              <h1 style={{
+                fontSize:isMobile?26:38,fontWeight:900,color:"#ffffff",
+                margin:0,letterSpacing:"-.025em",lineHeight:1,
+                fontFamily:"'Inter',sans-serif",
+              }}>{T.label}</h1>
               <p style={{
-                fontSize:11,color:"rgba(255,255,255,.55)",margin:0,
+                fontSize:11,color:"rgba(255,255,255,.4)",margin:"5px 0 0",
                 fontFamily:"'Inter',sans-serif",
                 letterSpacing:"0.08em",textTransform:"uppercase",
               }}>ELO · DIXON-COLES · REAL xG · PRO DATA</p>

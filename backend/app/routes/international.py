@@ -172,10 +172,6 @@ _TTL_FIXTURES = 120    # 2 min — live matches need freshness
 _TTL_STANDINGS = 1800  # 30 min
 _TTL_LONG = 3600       # 1 h for predictions
 
-# In-flight deduplication: maps cache_key → asyncio.Event so concurrent requests
-# for the same endpoint wait on the first request instead of all hitting the API.
-_inflight: Dict[str, asyncio.Event] = {}
-
 
 def _get(key: str, ttl: int) -> Optional[Any]:
     if key in _cache and time.time() - _times[key] < ttl:
@@ -534,18 +530,41 @@ async def international_predictions(
     if (hit := _get(cache_key, _TTL_LONG)) is not None:
         return hit
 
-    # ── In-flight dedup: if a request for this key is already running, wait for
-    # it instead of firing a duplicate API call (fixes the 8× request storm when
-    # the frontend retries on a cold-starting Render instance).
-    if cache_key in _inflight:
-        logger.debug("Waiting on in-flight predictions request: %s", cache_key)
-        await _inflight[cache_key].wait()
-        # The first request will have populated the cache — return it if present
-        if (hit := _get(cache_key, _TTL_LONG)) is not None:
-            return hit
-        # If it errored out, fall through and try ourselves
-    _inflight[cache_key] = asyncio.Event()
+    # Wrap the entire prediction pipeline so any crash returns a clean JSON
+    # 200 with empty predictions rather than an unhandled 500 that strips CORS.
+    try:
+        return await _build_predictions(
+            competition=competition,
+            comp=comp,
+            season=season,
+            cache_key=cache_key,
+            limit=limit,
+        )
+    except HTTPException:
+        raise  # propagate 404 / auth errors as-is
+    except Exception as exc:
+        logger.error("international_predictions %s crashed: %s", competition, exc, exc_info=True)
+        # Return empty predictions — CORS header will be present, frontend shows
+        # "no fixtures" rather than a fake CORS error.
+        return {
+            "competition":      competition,
+            "competition_name": comp.get("name", competition),
+            "competition_flag": comp.get("flag", "🌐"),
+            "confederation":    comp.get("confederation", ""),
+            "season":           season,
+            "predictions":      [],
+            "count":            0,
+            "error":            str(exc),
+        }
 
+
+async def _build_predictions(
+    competition: str,
+    comp: dict,
+    season: int,
+    cache_key: str,
+    limit: int,
+) -> dict:
     today  = date.today()
     from_d = (today - timedelta(days=1)).isoformat()
     to_d   = (today + timedelta(days=60)).isoformat()
@@ -788,9 +807,6 @@ async def international_predictions(
         "window":           {"from": from_d, "to": to_d},
     }
     _set(cache_key, result)
-    # Release any waiters so they can pick up the cached result
-    if cache_key in _inflight:
-        _inflight.pop(cache_key).set()
     return result
 
 

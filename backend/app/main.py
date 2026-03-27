@@ -53,30 +53,10 @@ app = FastAPI(title="StatinSite API", version="4.0.0")
 # exceptions skip CORSMiddleware entirely and go straight to Starlette's
 # ServerErrorMiddleware which never adds CORS headers.
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
-from starlette.responses import Response as StarletteResponse
+from starlette.responses import Response as StarletteResponse, JSONResponse
 
-class CatchExceptionsMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: StarletteRequest, call_next):
-        try:
-            return await call_next(request)
-        except Exception as exc:
-            logger.error(
-                "Unhandled exception %s %s: %s",
-                request.method, request.url.path, exc, exc_info=True,
-            )
-            # Plain Response — CORSMiddleware below us will add the CORS header
-            return StarletteResponse(
-                content=f'{{"detail":"Internal server error","error":{str(exc)!r}}}',
-                status_code=500,
-                media_type="application/json",
-            )
-
-# Register catch_exceptions FIRST so it sits outermost in the LIFO stack
-app.add_middleware(CatchExceptionsMiddleware)
-
-# CORS sits inside catch_exceptions so it can process the 500 response
+# CORS first — sits outermost so it processes every response including errors
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -84,6 +64,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Global exception catcher ──────────────────────────────────────────────────
+# IMPORTANT: Use @app.middleware("http") NOT BaseHTTPMiddleware.
+# BaseHTTPMiddleware has a known Starlette bug where unhandled exceptions from
+# async route handlers bypass the middleware's except block entirely, so CORS
+# headers never get attached to the 500 response — the browser then misreports
+# it as a CORS failure.  The @app.middleware("http") decorator wraps the full
+# ASGI call stack correctly and the CORS middleware (registered above) runs
+# *after* this one processes the response, attaching the Allow-Origin header.
+@app.middleware("http")
+async def catch_exceptions_middleware(request: StarletteRequest, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        logger.error(
+            "Unhandled exception %s %s: %s",
+            request.method, request.url.path, exc, exc_info=True,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error", "error": str(exc)},
+        )
 
 # ── 7. Routers (AFTER app is created) ────────────────────────────────────────
 from app.routes.lineups       import router as lineups_router

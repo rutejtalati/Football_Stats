@@ -1,7 +1,7 @@
 // pages/FixtureDifficultyHeatmap.jsx
 import { useEffect, useState, useMemo } from "react";
 
-const API = (import.meta?.env?.VITE_API_URL ?? "");
+import { API_BASE as API } from "@/api/api";
 
 // FDR colour scale — matches official FPL colours
 const FDR_COLORS = {

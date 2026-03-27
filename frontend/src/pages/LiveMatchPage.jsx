@@ -23,7 +23,7 @@ const NB_CSS = `
 
 
 
-const BACKEND = "https://football-stats-lw4b.onrender.com";
+import { API_BASE as BACKEND } from "@/api/api";
 
 // ─── Mode derivation ─────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 // pages/TransferPlannerPage.jsx
 import { useEffect, useState } from "react";
 
-const API = (import.meta?.env?.VITE_API_URL ?? "");
+import { API_BASE as API } from "@/api/api";
 const POS_COL = { GK:"#f2c94c", DEF:"#4f9eff", MID:"#00e09e", FWD:"#ff6b6b" };
 const FDR_CFG = {
   1:{bg:"#1a7a3e",fg:"#e6fff0"},2:{bg:"#2a6e3f",fg:"#e0ffe8"},

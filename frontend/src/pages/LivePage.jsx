@@ -24,7 +24,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND = "https://football-stats-lw4b.onrender.com";
+import { API_BASE as BACKEND } from "@/api/api";
 
 // ─── League / competition registry ──────────────────────────────────────────
 

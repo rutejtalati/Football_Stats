@@ -1,7 +1,7 @@
 // CaptaincyPage.jsx  — /captaincy
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-const API = (import.meta?.env?.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com").replace(/\/$/, "");
+import { API_BASE as API } from "@/api/api";
 const C = { bg:"#060a14",panel:"rgba(12,18,30,0.95)",blue:"#4f9eff",green:"#00e09e",gold:"#f2c94c",red:"#ff4d6d",purple:"#b388ff",orange:"#ff8c42",teal:"#2dd4bf",pink:"#f472b6",line:"rgba(255,255,255,0.07)",text:"#e8f0ff",muted:"#4a6a8a",soft:"#2a3f58" };
 const CSS=`@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}.cap-card{transition:all 200ms cubic-bezier(0.22,1,0.36,1)}.cap-card:hover{transform:translateY(-4px)}.cap-btn{transition:all 150ms ease;cursor:pointer}.cap-btn:hover{filter:brightness(1.2)}.skel{background:linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}`;
 const FDR={1:"#00e09e",2:"#a8e063",3:"#f2c94c",4:"#ff8c42",5:"#ff4d6d"};

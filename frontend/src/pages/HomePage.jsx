@@ -314,6 +314,133 @@ const CSS = `
   .hs{padding-bottom:12px;}
 }
 
+/* ═══════════════════════════════════════════════════════
+   PURE HERO — only "Read The Game."
+═══════════════════════════════════════════════════════ */
+.hero-pure {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bg);
+}
+[data-theme="light"] .hero-pure {
+  background: linear-gradient(160deg, #060d1a 0%, #080e20 50%, #06110a 100%);
+}
+
+/* orbs */
+.hp-orb { position: absolute; border-radius: 50%; filter: blur(88px); pointer-events: none; z-index: 0; }
+.hp-orb-a { width: 900px; height: 600px; background: radial-gradient(ellipse, rgba(10,132,255,.22), transparent 70%); top: -250px; left: -320px; animation: hpOrb 18s ease-in-out infinite alternate; }
+.hp-orb-b { width: 700px; height: 700px; background: radial-gradient(ellipse, rgba(48,209,88,.15), transparent 70%); bottom: -200px; right: -280px; animation: hpOrb 22s 4s ease-in-out infinite alternate; }
+.hp-orb-c { width: 500px; height: 500px; background: radial-gradient(ellipse, rgba(191,90,242,.14), transparent 70%); top: 50%; left: 50%; animation: hpOrbC 26s ease-in-out infinite alternate; }
+.hp-orb-d { width: 350px; height: 350px; background: radial-gradient(ellipse, rgba(255,159,10,.11), transparent 70%); top: 5%; right: 8%; animation: hpOrb 14s 2s ease-in-out infinite alternate; }
+.hp-orb-e { width: 280px; height: 280px; background: radial-gradient(ellipse, rgba(56,189,248,.13), transparent 70%); bottom: 10%; left: 12%; animation: hpOrb 16s 7s ease-in-out infinite alternate; }
+@keyframes hpOrb { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(36px, 48px) scale(1.14); } }
+@keyframes hpOrbC { 0% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(calc(-50% + 30px), calc(-50% - 22px)) scale(1.08); } 100% { transform: translate(calc(-50% - 20px), calc(-50% + 34px)) scale(.92); } }
+
+.hp-scan { position: absolute; inset: 0; pointer-events: none; z-index: 1; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.016) 3px, rgba(0,0,0,.016) 4px); }
+.hp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+/* bottom beam */
+.hp-beam { position: absolute; bottom: 0; left: 0; right: 0; height: 1px; z-index: 3; background: linear-gradient(90deg, transparent 0%, rgba(10,132,255,.8) 25%, rgba(48,209,88,.8) 50%, rgba(191,90,242,.8) 75%, transparent 100%); background-size: 250% 100%; animation: hpBeam 3.5s linear infinite; }
+@keyframes hpBeam { 0% { background-position: 250% 0; } 100% { background-position: -250% 0; } }
+
+/* center content */
+.hp-center { position: relative; z-index: 2; text-align: center; padding: 0 24px; }
+
+/* eyebrow */
+.hp-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 900; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.28); margin-bottom: 36px; animation: hpFadeUp .8s ease both; }
+[data-theme="light"] .hp-eyebrow { color: rgba(255,255,255,.35); }
+.hp-eyebrow-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.3); animation: hpPulse 2s ease-in-out infinite; }
+.hp-eyebrow-dot:last-child { animation-delay: 1s; }
+@keyframes hpPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.7); } }
+
+/* main title */
+.hp-title { margin: 0 0 32px; line-height: .9; letter-spacing: -.055em; display: flex; flex-direction: column; align-items: center; }
+
+.hp-line { display: block; }
+
+.hp-line-1 {
+  font-size: clamp(72px, 12vw, 160px);
+  font-weight: 900;
+  color: #fff;
+  animation: hpFadeUp .8s .1s ease both;
+  text-shadow: 0 0 80px rgba(255,255,255,.06);
+}
+
+.hp-line-2 {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  animation: hpFadeUp .8s .18s ease both;
+}
+
+/* "Game" — animated gradient with glow */
+.hp-game {
+  font-size: clamp(80px, 13.5vw, 178px);
+  font-weight: 900;
+  background: linear-gradient(115deg, #0a84ff 0%, #30d158 32%, #bf5af2 64%, #ff9f0a 88%, #0a84ff 100%);
+  background-size: 280%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hpGradMove 5s linear infinite, hpFadeUp .8s .18s ease both;
+  position: relative;
+  filter: drop-shadow(0 0 40px rgba(10,132,255,.25));
+}
+@keyframes hpGradMove { 0% { background-position: 0% 50%; } 100% { background-position: 280% 50%; } }
+
+/* "." — white, pops with a bounce */
+.hp-period {
+  font-size: clamp(80px, 13.5vw, 178px);
+  font-weight: 900;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  animation: hpDotBounce 3s 1.2s cubic-bezier(.34,1.56,.64,1) both;
+  display: inline-block;
+}
+@keyframes hpDotBounce {
+  0%   { opacity: 0; transform: translateY(24px) scale(.4); }
+  60%  { opacity: 1; transform: translateY(-8px) scale(1.15); }
+  80%  { transform: translateY(4px) scale(.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* tagline */
+.hp-tagline { font-size: clamp(9px, 1.1vw, 11px); font-weight: 800; letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.2); animation: hpFadeUp .8s .5s ease both; }
+[data-theme="light"] .hp-tagline { color: rgba(255,255,255,.25); }
+
+/* scroll cue */
+.hp-scroll-cue { margin-top: 56px; display: flex; flex-direction: column; align-items: center; animation: hpFadeUp .8s .7s ease both; }
+.hp-scroll-line { width: 1px; height: 52px; background: linear-gradient(180deg, rgba(255,255,255,.35) 0%, transparent 100%); animation: hpScrollLine 2s ease-in-out infinite; }
+@keyframes hpScrollLine { 0%,100% { transform: scaleY(1); opacity: .6; } 50% { transform: scaleY(.4); opacity: .2; } }
+
+/* particles */
+@keyframes hpcl-float {
+  0%,100% { transform: translate(0,0); opacity: .8; }
+  40%     { transform: translate(var(--tx,14px), var(--ty,-28px)); opacity: .25; }
+  70%     { transform: translate(calc(var(--tx,-8px) * .5), calc(var(--ty,-14px) * .6)); opacity: .5; }
+}
+
+/* core animations */
+@keyframes hpFadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+/* mobile */
+@media (max-width: 600px) {
+  .hp-line-1 { font-size: clamp(52px, 14vw, 78px); }
+  .hp-game   { font-size: clamp(58px, 16vw, 88px); }
+  .hp-period { font-size: clamp(58px, 16vw, 88px); }
+  .hp-scroll-cue { margin-top: 40px; }
+  .hp-scroll-line { height: 36px; }
+}
+@media (max-width: 380px) {
+  .hp-line-1 { font-size: 46px; }
+  .hp-game   { font-size: 52px; }
+  .hp-period { font-size: 52px; }
+}
+
 `;
 
 // ════════════════════════════════════════════════════════════════════════
@@ -519,173 +646,127 @@ function Particles() {
 // ════════════════════════════════════════════════════════════════════════
 // SECTION 1 — HERO
 // ════════════════════════════════════════════════════════════════════════
-function HeroSection({ fixtures, dash, dl }) {
-  const nav = useNavigate();
-  const liveCount = fixtures.filter(f => LIVE_SET.has(f.status)).length;
-  const live      = fixtures.filter(f => LIVE_SET.has(f.status)).slice(0, 3);
+// ── Hero-only canvas ─────────────────────────────────────────────────────────
+function HeroCanvas() {
+  const c = useRef(null);
+  useEffect(() => {
+    const canvas = c.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let raf, t = 0;
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    resize(); window.addEventListener('resize', resize);
+    const dk = () => document.documentElement.getAttribute('data-theme') !== 'light';
+    const draw = () => {
+      const { width: W, height: H } = canvas; ctx.clearRect(0, 0, W, H);
+      const SZ = 64, cols = Math.ceil(W / SZ) + 2, rows = Math.ceil(H / SZ) + 2;
+      const ox = (t * .28) % SZ, oy = (t * .12) % SZ;
+      const d = dk(), ga = d ? 1 : .22;
+      for (let i = -1; i < cols; i++) {
+        const a = (0.014 + 0.007 * Math.sin(i * .4 + t * .005)) * ga;
+        ctx.strokeStyle = `rgba(56,189,248,${a})`; ctx.lineWidth = .5;
+        ctx.beginPath(); ctx.moveTo(i * SZ - ox, 0); ctx.lineTo(i * SZ - ox, H); ctx.stroke();
+      }
+      for (let j = -1; j < rows; j++) {
+        const a = (0.014 + 0.007 * Math.sin(j * .5 + t * .004)) * ga;
+        ctx.strokeStyle = `rgba(56,189,248,${a})`; ctx.lineWidth = .5;
+        ctx.beginPath(); ctx.moveTo(0, j * SZ - oy); ctx.lineTo(W, j * SZ - oy); ctx.stroke();
+      }
+      for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+        const p = Math.sin(i * .8 + j * .6 + t * .03);
+        if (p > .74) {
+          ctx.fillStyle = `rgba(52,211,153,${(p - .74) * .4 * (d ? 1 : .18)})`;
+          ctx.beginPath(); ctx.arc(i * SZ - ox, j * SZ - oy, 1.3, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      t++; raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+  return <canvas ref={c} className="hp-canvas" />;
+}
 
-  // dashboard keys
-  const hs       = dash?.hero_stats;
-  const avgConf  = dash?.model_confidence?.avg_confidence ?? null;
-  const topEdge  = dash?.model_edges?.edges?.[0] ?? null;
-  const pred     = dash?.top_predictions?.predictions?.[0];
-  const conf     = dash?.model_confidence;
-
+// ── Hero particles ────────────────────────────────────────────────────────────
+function HeroParticles() {
+  const pts = useMemo(() => Array.from({ length: 28 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    sz: .6 + Math.random() * 2.4,
+    dur: 11 + Math.random() * 18,
+    del: -(Math.random() * 24),
+    c: ['10,132,255','48,209,88','191,90,242','255,159,10','56,189,248'][i % 5],
+    tx: (Math.random() - .5) * 40,
+    ty: -(10 + Math.random() * 36),
+  })), []);
+  const dk = document.documentElement.getAttribute('data-theme') !== 'light';
+  const a = dk ? .55 : .12, ga = dk ? .32 : .06;
   return (
-    <section className="hero">
-      <CanvasGrid /><Particles />
-      <div className="orb orb-a" /><div className="orb orb-b" />
-      <div className="orb orb-c" /><div className="orb orb-d" />
-      <div className="scanline" />
-      <div className="hero-beam" />
-      <div className="hi">
-        {/* ── Left panels ── */}
-        <div className="hero-l" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Live */}
-          <div className="g pn">
-            <div className="gi">
-              <div className="pl" style={liveCount > 0 ? { color: "#ff453a", display: "flex", alignItems: "center", gap: 5 } : {}}>
-                {liveCount > 0 && <Dot />}{liveCount > 0 ? `${liveCount} LIVE NOW` : "LIVE CENTRE"}
-              </div>
-              {live.length > 0 ? live.map(f => (
-                <div key={f.fixture_id} className="lr" onClick={() => nav(`/match/${f.fixture_id}`)}>
-                  {f.home_logo && <img src={f.home_logo} width={13} height={13} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />}
-                  <span style={{ flex: 1, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.home_team?.split(" ").slice(-1)[0]}</span>
-                  <span className="mn" style={{ fontWeight: 900, fontSize: 12, flexShrink: 0 }}>{f.home_score ?? 0}–{f.away_score ?? 0}</span>
-                  <span style={{ flex: 1, textAlign: "right", fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.away_team?.split(" ").slice(-1)[0]}</span>
-                  {f.away_logo && <img src={f.away_logo} width={13} height={13} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />}
-                  {f.minute && <span className="mn" style={{ fontSize: 9, color: "#ff453a", flexShrink: 0 }}>{f.minute}'</span>}
-                </div>
-              )) : (
-                <>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>No matches live</div>
-                  <div style={{ fontSize: 11, color: "var(--text-dim)" }}>{fixtures.filter(f => isToday(f.kickoff)).length} fixtures today</div>
-                </>
-              )}
-            </div>
-          </div>
-          {/* Model signals */}
-          <div className="g pn">
-            <div className="gi">
-              <div className="pl">MODEL SIGNALS</div>
-              {!conf
-                ? <><Skel w="60%" h={24} /><div style={{ marginTop: 8 }} /><Skel w="75%" h={9} /></>
-                : <>
-                  <div className="mn" style={{ fontSize: 26, fontWeight: 900, color: "#30d158", lineHeight: 1, marginBottom: 4 }}>{conf.avg_confidence}%</div>
-                  <div style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 10 }}>avg confidence · {conf.total} fixtures</div>
-                  <div style={{ display: "flex", gap: 3, height: 5, borderRadius: 999, overflow: "hidden", marginBottom: 8 }}>
-                    {conf.high > 0 && <div style={{ flex: conf.high, background: "#30d158", opacity: .8 }} />}
-                    {conf.medium > 0 && <div style={{ flex: conf.medium, background: "#ff9f0a", opacity: .7 }} />}
-                    {conf.low > 0 && <div style={{ flex: conf.low, background: "#ff453a", opacity: .6 }} />}
-                  </div>
-                  {topEdge && <div style={{ fontSize: 9, color: "var(--text-muted)" }}>Top edge: <span style={{ color: "#30d158", fontWeight: 800 }}>+{topEdge.edge}% {topEdge.label?.split(" ").slice(0, 2).join(" ")}</span></div>}
-                </>}
-            </div>
-          </div>
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+      {pts.map(p => (
+        <div key={p.id} style={{
+          position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
+          width: p.sz, height: p.sz, borderRadius: '50%',
+          background: `rgba(${p.c},${a})`,
+          boxShadow: `0 0 ${p.sz * 4}px rgba(${p.c},${ga})`,
+          animation: `hpcl-float ${p.dur}s ${p.del}s ease-in-out infinite`,
+          '--tx': `${p.tx}px`, '--ty': `${p.ty}px`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section className="hero-pure">
+      {/* Animated orbs */}
+      <div className="hp-orb hp-orb-a" />
+      <div className="hp-orb hp-orb-b" />
+      <div className="hp-orb hp-orb-c" />
+      <div className="hp-orb hp-orb-d" />
+      <div className="hp-orb hp-orb-e" />
+
+      {/* Scan-line texture */}
+      <div className="hp-scan" />
+
+      {/* Sliding bottom beam */}
+      <div className="hp-beam" />
+
+      {/* Canvas grid */}
+      <HeroCanvas />
+
+      {/* Floating particles */}
+      <HeroParticles />
+
+      {/* The only content: "Read The Game." */}
+      <div className="hp-center">
+        <div className="hp-eyebrow">
+          <span className="hp-eyebrow-dot" />
+          FOOTBALL INTELLIGENCE
+          <span className="hp-eyebrow-dot" />
         </div>
 
-        {/* ── Center ── */}
-        <div className="hc">
-          <div className="hbadge">
-            {liveCount > 0
-              ? <><Dot size={5} /><span>{liveCount} LIVE NOW</span></>
-              : <span>ELO · DIXON-COLES · REAL xG · POISSON</span>}
-          </div>
-          <h1 className="htitle">
-            <span className="htitle-line1">Read The</span>
-            <span className="htitle-game">
-              <span className="tgrad">Game.</span>
-              <span className="tgrad tgrad-glow" aria-hidden="true">Game.</span>
-            </span>
-          </h1>
-          <p className="hsub">Football intelligence rebuilt from the ground up. Live scores, Poisson predictions, xG tracking and the deepest FPL analysis suite.</p>
-          <div className="ctas">
-            <button className={`btn ${liveCount > 0 ? "btn-l" : "btn-p"}`} onClick={() => nav("/live")}>
-              {liveCount > 0 && <Dot color="#ff453a" size={6} />}{liveCount > 0 ? "Watch Live" : "Live Centre"}
-            </button>
-            <button className="btn btn-g" onClick={() => nav("/predictions/premier-league")}>Predictions</button>
-            <button className="btn btn-f" onClick={() => nav("/best-team")}>FPL Suite</button>
-          </div>
-          <div className="strip">
-            {[
-              { l: "Accuracy",  v: hs?.verified_accuracy || avgConf, c: "#30d158", sx: "%" },
-              { l: "Predicted", v: hs?.fixtures_predicted,            c: "#0a84ff" },
-              { l: "Leagues",   v: hs?.competitions_count ?? 9,       c: "#bf5af2" },
-              { l: "Top Edge",  v: topEdge ? `+${topEdge.edge}%` : null, c: "#ff9f0a", raw: true },
-            ].map(({ l, v, c, sx = "", raw }) => (
-              <div key={l} className="stripc" style={{ "--cc": c }}>
-                <div className="stripv">
-                  {dl || v == null
-                    ? <Skel w={32} h={22} />
-                    : raw ? <span className="mn">{v}</span>
-                    : <CountUp to={Number(v) || 0} suffix={sx} />}
-                </div>
-                <div className="stripl">{l}</div>
-              </div>
-            ))}
-          </div>
+        <h1 className="hp-title">
+          <span className="hp-line hp-line-1">Read The</span>
+          <span className="hp-line hp-line-2">
+            <span className="hp-game">Game</span>
+            <span className="hp-period">.</span>
+          </span>
+        </h1>
+
+        <div className="hp-tagline">
+          ELO &middot; DIXON-COLES &middot; REAL xG &middot; POISSON
         </div>
 
-        {/* ── Right panels ── */}
-        <div className="hero-r" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Top prediction */}
-          <div className="g pn" onClick={() => nav("/predictions/premier-league")} style={{ cursor: "pointer" }}>
-            <div className="gi">
-              <div className="pl" style={{ color: "#0a84ff" }}>TOP PREDICTION</div>
-              {!pred
-                ? <><Skel w="80%" h={11} /><div style={{ marginTop: 8 }} /><Skel w="60%" h={9} /></>
-                : (() => {
-                  const hp = pred.homeProb || 0, ap = pred.awayProb || 0, dp = pred.draw || 0;
-                  return <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                      {pred.home_logo && <img src={pred.home_logo} width={18} height={18} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />}
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{pred.home?.split(" ").slice(-1)[0]}</span>
-                      <span style={{ color: "var(--text-dim)", fontSize: 9 }}>vs</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{pred.away?.split(" ").slice(-1)[0]}</span>
-                      {pred.away_logo && <img src={pred.away_logo} width={18} height={18} style={{ objectFit: "contain" }} onError={e => e.currentTarget.style.display = "none"} />}
-                    </div>
-                    <div className="pb">
-                      <div style={{ flex: hp, background: "#0a84ff", opacity: .9 }} />
-                      <div style={{ flex: dp, background: "var(--border-strong)" }} />
-                      <div style={{ flex: ap, background: "#30d158", opacity: .9 }} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 8 }}>
-                      <span className="mn" style={{ color: "#0a84ff", fontWeight: 900 }}>{hp}%</span>
-                      <span style={{ color: "var(--text-dim)" }}>D {dp}%</span>
-                      <span className="mn" style={{ color: "#30d158", fontWeight: 900 }}>{ap}%</span>
-                    </div>
-                    {pred.xg_home != null && (
-                      <div style={{ fontSize: 9, color: "var(--text-muted)" }}>
-                        xG <span className="mn" style={{ color: "var(--text)" }}>{Number(pred.xg_home).toFixed(1)}–{Number(pred.xg_away).toFixed(1)}</span>
-                      </div>
-                    )}
-                  </>;
-                })()}
-            </div>
-          </div>
-          {/* Quick links */}
-          <div className="g pn">
-            <div className="gi">
-              <div className="pl">QUICK ACCESS</div>
-              {[
-                { to: "/predictions/champions-league", l: "UCL Predictions",  c: "#3b82f6" },
-                { to: "/predictions/premier-league",   l: "EPL Predictions",  c: "#60a5fa" },
-                { to: "/captaincy",                    l: "Captain Picks",    c: "#30d158" },
-                { to: "/player",                       l: "Player Browser",   c: "#ff9f0a" },
-              ].map(({ to, l, c }) => (
-                <Link key={to} to={to} className="ql" style={{ "--qc": c }}>{l}<span>→</span></Link>
-              ))}
-            </div>
-          </div>
+        <div className="hp-scroll-cue">
+          <div className="hp-scroll-line" />
         </div>
       </div>
     </section>
   );
 }
 
-// ════════════════════════════════════════════════════════════════════════
-// SECTION 2 — LIVE STRIP
-// ════════════════════════════════════════════════════════════════════════
 function LiveStrip({ fixtures }) {
   const nav  = useNavigate();
   const live = fixtures.filter(f => LIVE_SET.has(f.status));
@@ -1559,7 +1640,7 @@ export default function HomePage() {
   return (
     <div className="hp">
       <style>{CSS}</style>
-      <HeroSection  fixtures={fixtures} dash={dash} dl={dl} />
+      <HeroSection />
       <LiveStrip    fixtures={fixtures} />
       <TopPredictions  dash={dash} loading={dl} error={de} />
       <Div /><TitleRace    dash={dash} loading={dl} error={de} />

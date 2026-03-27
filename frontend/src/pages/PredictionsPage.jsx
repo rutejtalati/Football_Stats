@@ -2863,40 +2863,78 @@ export default function PredictionsPage({league:propLeague,slugMap}){
     const apiLeague = BACKEND_LEAGUE[league] || league;
 
     if (isIntl) {
-      // International: use /api/international/predictions/:comp and /api/international/standings/:comp
-      setStandLoad(true); setPredLoad(true); setPredErr(null); setStandErr(null);
-      const cacheKey = "intl_pred_v1_" + league;
-      const cacheKeyS = "intl_stn_v1_" + league;
+      // ── International predictions ──────────────────────────────────────────
+      // Root cause of the CORS error: Render free tier sleeps after 15 min.
+      // A cold-start returns a blank TCP response with NO headers — the browser
+      // misreports this as a CORS failure even though allow_origins=["*"] is set.
+      // Fix: fire a cheap warm-up ping first, then retry the real requests with
+      // exponential backoff so they succeed once the instance has booted (~10-15 s).
 
-      // Predictions
+      setStandLoad(true); setPredLoad(true); setPredErr(null); setStandErr(null);
+      const cacheKey  = "intl_pred_v2_" + league;
+      const cacheKeyS = "intl_stn_v2_"  + league;
+
+      // Serve stale cache immediately while fresh data loads
       try {
         const r = sessionStorage.getItem(cacheKey);
-        if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<3600000){setMatches(p.data);setPredLoad(false);} }
+        if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<3600000){ setMatches(p.data); setPredLoad(false); } }
       } catch {}
-      fetch(`${INTL_BACKEND}/api/international/predictions/${apiLeague}`)
-        .then(r=>r.ok?r.json():Promise.reject(r.status))
-        .then(json=>{
-          const arr = json.predictions || [];
-          setMatches(arr);
-          try{sessionStorage.setItem(cacheKey,JSON.stringify({data:arr,ts:Date.now()}));}catch{}
-        })
-        .catch(e=>setPredErr(String(e)))
-        .finally(()=>setPredLoad(false));
-
-      // Standings (groups)
       try {
         const r = sessionStorage.getItem(cacheKeyS);
-        if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<3600000){setStandings(p.data);setStandLoad(false);} }
+        if (r) { const p=JSON.parse(r); if(Date.now()-p.ts<3600000){ setStandings(p.data); setStandLoad(false); } }
       } catch {}
-      fetch(`${INTL_BACKEND}/api/international/standings/${apiLeague}`)
-        .then(r=>r.ok?r.json():Promise.reject(r.status))
-        .then(json=>{
+
+      // Retry with exponential backoff — handles cold-start blank responses
+      const fetchWithRetry = async (url, maxAttempts=4) => {
+        let lastErr = "Unknown error";
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          if (attempt > 0) {
+            // 1 s, 2 s, 4 s — Render typically boots within 10-15 s total
+            await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt - 1)));
+          }
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 20000);
+            const r = await fetch(url, { signal: ctrl.signal });
+            clearTimeout(timer);
+            if (r.ok) return r.json();
+            if (r.status >= 500) { lastErr = "Server error " + r.status; continue; }
+            throw new Error("HTTP " + r.status);
+          } catch (e) {
+            lastErr = (e && e.message) || String(e);
+            // TypeError / net::ERR_FAILED = cold-start blank response -> retry
+          }
+        }
+        throw new Error(lastErr);
+      };
+
+      // Warm-up ping: cheapest endpoint, no API key, fires immediately
+      fetch(`${INTL_BACKEND}/api/international/competitions`).catch(() => {});
+
+      const delay = ms => new Promise(res => setTimeout(res, ms));
+
+      // Predictions — small delay so the ping has a head-start
+      delay(300)
+        .then(() => fetchWithRetry(`${INTL_BACKEND}/api/international/predictions/${apiLeague}`))
+        .then(json => {
+          const arr = json.predictions || [];
+          setMatches(arr);
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({data:arr, ts:Date.now()})); } catch {}
+        })
+        .catch(e => setPredErr("Backend is waking up — please wait ~15 s and refresh. (" + String(e) + ")"))
+        .finally(() => setPredLoad(false));
+
+      // Standings — slightly staggered to avoid hammering a booting instance
+      delay(500)
+        .then(() => fetchWithRetry(`${INTL_BACKEND}/api/international/standings/${apiLeague}`))
+        .then(json => {
           const arr = json.standings || [];
           setStandings(arr);
-          try{sessionStorage.setItem(cacheKeyS,JSON.stringify({data:arr,ts:Date.now()}));}catch{}
+          try { sessionStorage.setItem(cacheKeyS, JSON.stringify({data:arr, ts:Date.now()})); } catch {}
         })
-        .catch(e=>setStandErr(String(e)))
-        .finally(()=>setStandLoad(false));
+        .catch(e => setStandErr(String(e)))
+        .finally(() => setStandLoad(false));
+
     } else {
       cache("stn_v6_"+league,()=>getStandings(apiLeague),setStandings,setStandLoad,setStandErr);
       cache("pred_v6_"+league,()=>getLeaguePredictions(apiLeague),setMatches,setPredLoad,setPredErr);

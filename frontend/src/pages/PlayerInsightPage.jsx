@@ -308,7 +308,7 @@ function StatTiles({pRows,tRows,pCurrent,tCurrent}){
 // ── Intricate background ──────────────────────────────────────────────────────
 function PageBg() {
   return (
-    <div aria-hidden="true" className="sn-fixed-bg" style={{position:"fixed",top:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    <div aria-hidden="true" className="sn-fixed-bg" style={{position:"fixed",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,background:"#080808"}}/>
       <div style={{position:"absolute",top:"-15%",left:"25%",width:"60vw",height:"60vw",background:"radial-gradient(ellipse,rgba(255,255,255,.012) 0%,transparent 65%)"}}/>
       <div style={{position:"absolute",bottom:"-5%",right:"10%",width:"45vw",height:"45vw",background:"radial-gradient(ellipse,rgba(255,255,255,.009) 0%,transparent 55%)"}}/>
@@ -388,8 +388,8 @@ export default function PlayerProfilePage(){
   const pKey=pCurrent.key+":"+league;
   const tKey=tCurrent.key+":"+league;
 
-  useEffect(()=>{fetchTab(pCurrent.ep,pKey);},[pTab,league,fetchTab,pCurrent.ep,pKey]);
-  useEffect(()=>{fetchTab(tCurrent.ep,tKey);},[tTab,league,fetchTab,tCurrent.ep,tKey]);
+  useEffect(()=>{fetchTab(pCurrent.ep,pKey);},[pTab,league]);
+  useEffect(()=>{fetchTab(tCurrent.ep,tKey);},[tTab,league]);
   // Preload defaults on mount
   useEffect(()=>{
     fetchTab(PLAYER_TABS[0].ep,PLAYER_TABS[0].key+":all");
@@ -429,6 +429,7 @@ export default function PlayerProfilePage(){
 
   return(
     <div style={{
+      position:"relative",zIndex:1,minHeight:"100vh",background:"transparent",
       backgroundImage:"linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)",
       backgroundSize:"80px 80px",backgroundAttachment:"fixed",fontFamily:"'Inter',sans-serif"}}>
       <PageBg/>

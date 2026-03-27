@@ -33,7 +33,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getDashboard, getUpcoming, LEAGUE_CODES } from "@/api";
+import { getDashboard, getUpcoming, LEAGUE_CODES } from "@/api/api";
 
 const LIVE_SET = new Set(["1H","2H","HT","ET","BT","P"]);
 const isToday  = d => d && new Date(d).toDateString() === new Date().toDateString();

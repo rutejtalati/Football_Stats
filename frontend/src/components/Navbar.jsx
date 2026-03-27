@@ -3,29 +3,8 @@
 // Fantasy: collapsed = icon strip (horizontal pill), expanded = dropdown with spring
 // Theme toggle · Mobile bottom tab bar + drawer · All routes preserved
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-
-// ─── Theme ───────────────────────────────────────────────────────────────────
-export function useTheme() {
-  const [dark, setDark] = useState(() => {
-    const isDark = localStorage.getItem("sn-theme") !== "light";
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-    return isDark;
-  });
-  const toggle = useCallback(() => {
-    setDark(d => {
-      const next = !d;
-      try { localStorage.setItem("sn-theme", next ? "dark" : "light"); } catch {}
-      document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
-      return next;
-    });
-  }, []);
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
-  }, [dark]);
-  return { dark, toggle };
-}
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const Ic = {
@@ -39,8 +18,6 @@ const Ic = {
   Games:       () => <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="6" width="16" height="10" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M7 11H9M8 10v2M12.5 11h.01M14.5 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
   Search:      () => <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M13.5 13.5l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
   Close:       () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>,
-  Sun:         () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.2 3.2l1.4 1.4M13.4 13.4l1.4 1.4M3.2 14.8l1.4-1.4M13.4 4.6l1.4-1.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
-  Moon:        () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M14.5 10.5A6 6 0 017.5 3.5a6 6 0 000 11 6 6 0 007-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
   ChevronDown: () => <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
   Menu:        () => <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 6h14M3 10h10M3 14h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
 };
@@ -111,18 +88,6 @@ function BrandMark({ size = 26 }) {
       <rect x="20" y="15" width="3" height="10"  rx="1.5"  fill="#30d158"/>
       <rect x="20" y="10" width="3" height="3"   rx="1.5"  fill="#30d158" opacity="0.45"/>
     </svg>
-  );
-}
-
-// ─── Theme toggle ─────────────────────────────────────────────────────────────
-function ThemeToggle({ dark, toggle, collapsed }) {
-  return (
-    <button onClick={toggle} className="ce-theme-btn" title={dark ? "Switch to light" : "Switch to dark"}>
-      <span className="ce-theme-track" data-dark={dark}>
-        <span className="ce-theme-thumb">{dark ? <Ic.Moon/> : <Ic.Sun/>}</span>
-      </span>
-      {!collapsed && <span className="ce-theme-label">{dark ? "Dark" : "Light"}</span>}
-    </button>
   );
 }
 
@@ -265,7 +230,7 @@ function MobileTabBar() {
 }
 
 // ─── Mobile top bar ───────────────────────────────────────────────────────────
-function MobileTopBar({ onMenuOpen, dark, toggle, searchOpen, setSearchOpen, searchVal, setSearchVal, inputRef, handleSearch }) {
+function MobileTopBar({ onMenuOpen, searchOpen, setSearchOpen, searchVal, setSearchVal, inputRef, handleSearch }) {
   return (
     <header className="ce-top-bar">
       <button className="ce-icon-btn" onClick={onMenuOpen} aria-label="Open menu"><Ic.Menu/></button>
@@ -280,9 +245,6 @@ function MobileTopBar({ onMenuOpen, dark, toggle, searchOpen, setSearchOpen, sea
               placeholder="Search…" autoFocus/>
           : <button className="ce-icon-btn" onClick={() => setSearchOpen(true)}><Ic.Search/></button>
         }
-        <button className="ce-icon-btn" onClick={toggle} title={dark ? "Light mode" : "Dark mode"}>
-          {dark ? <Ic.Sun/> : <Ic.Moon/>}
-        </button>
       </div>
     </header>
   );
@@ -292,8 +254,6 @@ function MobileTopBar({ onMenuOpen, dark, toggle, searchOpen, setSearchOpen, sea
 export default function Navbar() {
   const location  = useLocation();
   const navigate  = useNavigate();
-  const { dark, toggle } = useTheme();
-
   const [collapsed,    setCollapsed]    = useState(false);
   const [mobileDrawer, setMobileDrawer] = useState(false);
   const [searchOpen,   setSearchOpen]   = useState(false);
@@ -684,40 +644,8 @@ export default function Navbar() {
           margin: 6px 7px;
         }
 
-        /* ── Theme button ── */
-        .ce-theme-btn {
-          display: flex; align-items: center; gap: 10px;
-          padding: 8px 9px; border-radius: 10px;
-          background: transparent; border: none; cursor: pointer;
-          color: var(--ce-muted); font-family: 'Inter', -apple-system, sans-serif;
-          font-size: 13px; font-weight: 500; width: 100%;
-          transition: background 0.13s, color 0.13s;
-        }
-        .ce-theme-btn:hover { background: var(--ce-hover); color: var(--ce-text); }
-        .ce-theme-track {
-          width: 34px; height: 19px; border-radius: 999px;
-          background: rgba(255,255,255,.08); border: 0.5px solid var(--ce-border);
-          display: flex; align-items: center; padding: 2px;
-          transition: background 0.2s; flex-shrink: 0;
-        }
-        [data-theme="light"] .ce-theme-track { background: rgba(0,0,0,.08); }
-        .ce-theme-track[data-dark="true"] .ce-theme-thumb { transform: translateX(15px); }
-        .ce-theme-thumb {
-          width: 15px; height: 15px; border-radius: 50%;
-          background: var(--ce-text);
-          display: flex; align-items: center; justify-content: center;
-          transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
-          flex-shrink: 0;
-        }
-        .ce-theme-thumb svg { width: 9px; height: 9px; color: var(--ce-bg); }
-        .ce-theme-label { font-size: 13px; color: var(--ce-muted); }
-
         /* ── Sidebar footer ── */
-        .ce-sidebar-foot {
-          padding: 6px 7px 14px;
-          border-top: 0.5px solid var(--ce-border);
-          flex-shrink: 0; position: relative; z-index: 2;
-        }
+        .ce-sidebar-foot { display: none; }
 
         /* ── Page offset ── */
         .sn7-page-offset { margin-left: ${SW}px; transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1); }
@@ -886,16 +814,11 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="ce-sidebar-foot">
-          <ThemeToggle dark={dark} toggle={toggle} collapsed={collapsed}/>
-        </div>
       </aside>
 
       {/* ── MOBILE TOP BAR ── */}
       <MobileTopBar
         onMenuOpen={() => setMobileDrawer(true)}
-        dark={dark} toggle={toggle}
         searchOpen={searchOpen} setSearchOpen={setSearchOpen}
         searchVal={searchVal} setSearchVal={setSearchVal}
         inputRef={inputRef} handleSearch={handleSearch}
@@ -920,7 +843,6 @@ export default function Navbar() {
                   onClick={() => setMobileDrawer(false)}/>
               )}
               <div className="ce-divider"/>
-              <ThemeToggle dark={dark} toggle={toggle} collapsed={false}/>
             </div>
           </nav>
         </>

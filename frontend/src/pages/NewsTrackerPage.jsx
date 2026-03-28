@@ -619,6 +619,10 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
     if(pageRef.current)pageRef.current.scrollTop=0;
     return()=>{window.removeEventListener("keydown",esc); document.body.style.overflow="";};
   },[article,onClose]);
+  const [apWidth, setApWidth] = useState(()=>typeof window!=="undefined"?window.innerWidth:1200);
+  useEffect(()=>{const h=()=>setApWidth(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  const apMob = apWidth < 640;
+  const apTablet = apWidth < 900;
   if(!article)return null;
   const league=gl(article); const isPreview=article.type==="match_preview";
   const isExt=article.source_type==="external";
@@ -633,15 +637,15 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
     <div ref={pageRef} style={{position:"fixed",inset:0,zIndex:1101,overflowY:"auto",overflowX:"hidden",background:"linear-gradient(170deg,rgba(5,10,22,0.995),rgba(2,5,12,0.995))",scrollbarWidth:"thin",scrollbarColor:"rgba(255,255,255,0.05) transparent",animation:"apUp .3s cubic-bezier(.22,1,.36,1) both"}}>
       <div style={{height:2,background:"linear-gradient(90deg,"+accent+",transparent)",position:"sticky",top:0,zIndex:10}}/>
       <button onClick={onClose} style={{position:"fixed",top:16,right:20,zIndex:1200,width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,0.14)",color:"rgba(255,255,255,.55)",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.14)";e.currentTarget.style.color="#f0f6ff";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="rgba(255,255,255,.55)";}}>&#x2715;</button>
-      <div style={{maxWidth:1080,margin:"0 auto",padding:"0 24px 80px"}}>
+      <div style={{maxWidth:1080,margin:"0 auto",padding:apMob?"0 14px 80px":"0 24px 80px"}}>
         {isPreview&&ht&&at
-          ?<HeroVSBanner homeTeam={ht} awayTeam={at} homeLogo={article.home_logo||article.meta?.home_logo} awayLogo={article.away_logo||article.meta?.away_logo} height={220}/>
-          :<div style={{width:"100%",height:260,overflow:"hidden",borderRadius:"0 0 20px 20px",position:"relative"}}>
+          ?<HeroVSBanner homeTeam={ht} awayTeam={at} homeLogo={article.home_logo||article.meta?.home_logo} awayLogo={article.away_logo||article.meta?.away_logo} height={apMob?160:220}/>
+          :<div style={{width:"100%",height:apMob?180:260,overflow:"hidden",borderRadius:"0 0 20px 20px",position:"relative"}}>
             <CardImage src={article.image} type={article.type} source={article.source||""} style={{width:"100%",height:"100%"}}/>
             <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(5,10,22,1),rgba(5,10,22,0.35) 55%,transparent)",pointerEvents:"none"}}/>
             <div style={{position:"absolute",bottom:20,left:24}}><CatBadge type={article.type} league={article.league}/></div>
           </div>}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 290px",gap:36,marginTop:32,alignItems:"start"}}>
+        <div style={{display:"grid",gridTemplateColumns:apTablet?"1fr":"1fr 290px",gap:apTablet?0:36,marginTop:apMob?20:32,alignItems:"start"}}>
           <div>
             <div style={{display:"flex",gap:10,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
               {!article.image&&!isPreview&&<CatBadge type={article.type} league={article.league}/>}
@@ -679,7 +683,7 @@ function ArticlePage({article,allArticles,onClose,onNavigate}){
               </div>
             </div>)}
           </div>
-          <div style={{position:"sticky",top:60,display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{position:"sticky",top:60,display:apTablet?"none":"flex",flexDirection:"column",gap:16}}>
             {!isExt&&article.model_verdict&&(
               <div style={{borderRadius:0,padding:"16px 18px",background:accent+"07",border:"1px solid "+accent+"1e"}}>
                 <div style={{fontSize:11,fontWeight:700,color:accent,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:10}}>Model Verdict</div>

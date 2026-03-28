@@ -1,6 +1,7 @@
 // GameweekInsightsPage.jsx — /gameweek-insights
 import { useState, useEffect, useMemo } from "react";
 import { API_BASE as API } from "@/api/api";
+function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
 
 /* ─── Design tokens ─────────────────────────────────────────────── */
 const C = {
@@ -365,6 +366,7 @@ function useCountdown(deadline) {
 
 /* ─── Main page ─────────────────────────────────────────────────── */
 export default function GameweekInsightsPage() {
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState("overview");
   const [bootstrap, setBootstrap] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -432,11 +434,11 @@ export default function GameweekInsightsPage() {
       <div style={{
         background: "rgba(0,0,0,0.92)", backdropFilter: "blur(20px)",
         borderBottom: `1px solid ${C.border}`,
-        padding: "24px 24px 0", position: "sticky", top: 0, zIndex: 10,
+        padding: isMobile ? "16px 14px 0" : "24px 24px 0", position: "sticky", top: 0, zIndex: 10,
       }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           {/* Title row */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap", gap: 8 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: C.blue, letterSpacing: "0.14em" }}>
@@ -485,7 +487,7 @@ export default function GameweekInsightsPage() {
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 24px 80px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "14px 14px 80px" : "20px 24px 80px" }}>
 
         {/* ══ OVERVIEW ══ */}
         {tab === "overview" && (
@@ -500,7 +502,7 @@ export default function GameweekInsightsPage() {
             </div>
 
             {/* Two-col: top picks + best value */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
               <Panel>
                 <SecLabel text="TOP EXPECTED POINTS" accent={C.green} sub="highest EP picks this GW" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -567,7 +569,7 @@ export default function GameweekInsightsPage() {
 
         {/* ══ TOP PICKS ══ */}
         {tab === "picks" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(320px,100%),1fr))", gap: 16 }}>
             {["MID","FWD","DEF","GK"].map(pos => {
               const posPicks = sorted.filter(p => p.position === pos);
               const col = POS_COL[pos] || C.blue;

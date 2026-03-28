@@ -746,7 +746,7 @@ export default function FplTablePage() {
           </div>
 
           {/* Key metrics grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))", gap:10, marginBottom:16 }}>
             {[
               { label:"Next GW",       val:(modal.pts_gw_1||0).toFixed(1),      color:"var(--blue)" },
               { label:"Next 5 GWs",    val:(modal.next5_points||0).toFixed(1),  color:"var(--green)" },

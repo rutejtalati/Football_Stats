@@ -1,5 +1,6 @@
 // HowItWorksPage.jsx — Football crash course & how StatinSite works
 import { useState, useRef, useEffect } from "react";
+function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=JetBrains+Mono:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
@@ -658,7 +659,7 @@ function TacticsBoardCard() {
           </button>
         ))}
       </div>
-      <div className="hiw-info-panel" style={{ display: "grid", gridTemplateColumns: "1fr 220px", background: "var(--bg-tertiary)" }}>
+      <div className="hiw-info-panel" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 220px", background: "var(--bg-tertiary)" }}>
         {/* Pitch SVG */}
         <div style={{ position: "relative", paddingTop: "62%", overflow: "hidden" }}>
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 340 210" preserveAspectRatio="xMidYMid meet">
@@ -781,7 +782,7 @@ function PositionsCard() {
           </button>
         ))}
       </div>
-      <div className="hiw-info-panel" style={{ display: "grid", gridTemplateColumns: "130px 1fr", background: "var(--bg-tertiary)" }}>
+      <div className="hiw-info-panel" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "130px 1fr", background: "var(--bg-tertiary)" }}>
         {/* Mini pitch */}
         <div style={{ borderRight: "1px solid rgba(255,255,255,.07)", padding: 4 }}>
           <svg width="122" height="175" viewBox="0 0 122 175">
@@ -802,7 +803,7 @@ function PositionsCard() {
         <div style={{ padding: "12px 14px" }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: p.col, fontFamily: "'Sora',sans-serif", marginBottom: 2 }}>{p.label}</div>
           <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-dim)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 10 }}>{p.role}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(100px,1fr))", gap: 6 }}>
             {p.stats.map(([l, v]) => (
               <div key={l} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "7px 9px" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: p.col, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{v}</div>
@@ -832,7 +833,7 @@ const STATS_GLOSSARY = [
 function StatGlossarySection() {
   const [hov, setHov] = useState(null);
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 10 }}>
       {STATS_GLOSSARY.map(s => (
         <div key={s.key} className="hiw-card" onMouseEnter={() => setHov(s.key)} onMouseLeave={() => setHov(null)}>
           <div className="hiw-top-border" style={{ background: `linear-gradient(90deg,${s.col},${s.col}55,${s.col})`, backgroundSize: "300% 100%" }} />
@@ -915,7 +916,7 @@ function MatchStructureCard() {
           ))}
         </div>
         {/* Stat tiles */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 7 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))", gap: 7 }}>
           {[["90", "Standard mins", "#28d97a"], ["+5", "Avg stoppage", "#fbbf24"], ["15", "Half time break", "#67b1ff"], ["30", "Extra time mins", "#ef4444"], ["5", "Penalty shootout", "#a78bfa"]].map(([v, l, c]) => (
             <div key={l} style={{ background: c + "09", border: `1px solid ${c}22`, borderRadius: 9, padding: "9px 8px", textAlign: "center" }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{v}</div>
@@ -936,11 +937,12 @@ function MatchStructureCard() {
    MAIN PAGE
 ───────────────────────────────────── */
 export default function HowItWorksPage() {
+  const isMobile = useIsMobile();
   return (
     <div className="hiw-page">
       <style>{CSS}</style>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 20px 80px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: isMobile ? "20px 14px 80px" : "32px 20px 80px" }}>
 
         {/* Hero header */}
         <div style={{ marginBottom: 48, paddingBottom: 24, borderBottom: "1px solid var(--border)" }}>
@@ -966,11 +968,11 @@ export default function HowItWorksPage() {
               <div className="hiw-section-sub">The fundamental laws that govern every match. Hover each card to animate.</div>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <OffsideCard />
             <PenaltyCard />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
             <FreeKickCard />
             <CardsCard />
             <RestartsCard />

@@ -646,6 +646,7 @@ const TACTICS = {
 
 function TacticsBoardCard() {
   const [active, setActive] = useState("press");
+  const isMobile = useIsMobile();
   const t = TACTICS[active];
   return (
     <div className="hiw-card" style={{ borderRadius: 16 }}>
@@ -771,6 +772,7 @@ const POSITIONS = {
 
 function PositionsCard() {
   const [pos, setPos] = useState("gk");
+  const isMobile = useIsMobile();
   const p = POSITIONS[pos];
   return (
     <div className="hiw-card">

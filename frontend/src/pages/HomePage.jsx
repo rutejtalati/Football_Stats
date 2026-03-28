@@ -4,9 +4,9 @@
 //
 // ARCHITECTURE:
 //  • ALL fetches go through api.js — no hardcoded URLs in this file
-//  • getDashboard()  → /api/home/dashboard  (single aggregated call)
-//  • getUpcoming()   → /api/matches/upcoming
-//  • withCache wraps both; sessionStorage TTL in api.js
+//  • useDashboardData() → 17 parallel direct fetches (each cached + retried)
+//  • useUpcomingData()  → /api/matches/upcoming + /api/international/fixtures
+//  • No dependency on /api/home/dashboard aggregated endpoint (cold-start risk)
 //
 // DATA KEY MAP (backend home.py → frontend prop):
 //  dashboard.top_predictions.predictions[]  → PredCard list
@@ -33,7 +33,9 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getDashboard, getUpcoming, LEAGUE_CODES } from "@/api/api";
+import { apiFetch, getMatchesUpcoming, getInternational, LEAGUE_CODES } from "@/api/api";
+
+const BACKEND = import.meta?.env?.VITE_API_BASE || "https://football-stats-lw4b.onrender.com";
 
 const LIVE_SET = new Set(["1H","2H","HT","ET","BT","P"]);
 const isToday  = d => d && new Date(d).toDateString() === new Date().toDateString();
@@ -572,48 +574,196 @@ const CSS = `
 `;
 
 // ════════════════════════════════════════════════════════════════════════
-// DATA HOOKS — all fetches through api.js
+// ════════════════════════════════════════════════════════════════════════
+// DATA HOOKS — direct parallel fetches, same endpoints as LivePage /
+//              PredictionsPage.  NO dependency on /api/home/dashboard.
+//
+// WHY: /api/home/dashboard is an aggregated cold-start endpoint.
+//   If any upstream call inside it fails (cold Render instance, API-Football
+//   rate limit, FPL bootstrap timeout) the whole payload returns empty arrays.
+//   The sub-endpoints are individually cached and independently retried.
+//
+// STRATEGY per section:
+//   fixtures  → same /api/matches/upcoming + /api/international/fixtures
+//                used by LivePage (tested, reliable)
+//   predictions → /api/home/top_predictions?league=epl  (same algo as
+//                PredictionsPage's build_xg_from_team_stats call)
+//   title race  → /api/home/title_race?league=epl
+//   form table  → /api/home/form_table?league=epl
+//   power ranks → /api/home/power_rankings?league=epl
+//   xg leaders  → /api/home/xg_leaders?league=epl
+//   fpl captains → /api/home/differential_captains
+//   fpl values   → /api/home/value_players
+//   transfer brief → /api/home/transfer_brief
+//   analytics term → /api/home/analytics_term
+//   defense table  → /api/home/defense_table?league=epl
+//   model perf     → /api/home/model_metrics
+//   performance    → /api/predictions/performance
+//   accountability → /api/home/recent_results
+//   model conf     → /api/home/model_confidence
+//   model edges    → /api/home/model_edges
+//   high scoring   → /api/home/high_scoring_matches
+//
+// Each section has its own loading + error state — one failure never
+// blanks the rest of the page.
 // ════════════════════════════════════════════════════════════════════════
 
+// ── Retry wrapper — 3 attempts, exponential backoff (handles Render cold-start)
+async function fetchWithRetry(path, opts = {}, retries = 3, backoffMs = 2500) {
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, backoffMs * Math.pow(1.8, i - 1)));
+    try {
+      const res = await fetch(`${BACKEND}${path}`, opts);
+      if (res.ok) return res.json();
+      if (res.status >= 400 && res.status < 500) throw new Error(`HTTP ${res.status}`);
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (e) {
+      if (e.name === "AbortError") throw e;
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
+// ── Session-level cache (keyed by path, TTL in ms)
+const _hpCache = {};
+async function cachedFetch(path, ttlMs = 300_000) {
+  const hit = _hpCache[path];
+  if (hit && Date.now() - hit.ts < ttlMs) return hit.data;
+  const data = await fetchWithRetry(path);
+  _hpCache[path] = { data, ts: Date.now() };
+  return data;
+}
+
+// ── Fixtures hook (same logic as LivePage) ────────────────────────────
 function useUpcomingData() {
   const [fixtures, setFixtures] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
+
   useEffect(() => {
     let dead = false;
-    getUpcoming()
-      .then(d => {
+    const today = new Date().toISOString().split("T")[0];
+
+    Promise.all([
+      cachedFetch("/api/matches/upcoming", 120_000),
+      cachedFetch(
+        `/api/international/fixtures?date=${today}&days_back=0&days_ahead=2`,
+        120_000
+      ).catch(() => ({ fixtures: [] })),
+    ])
+      .then(([club, intl]) => {
         if (dead) return;
-        const raw = d?.matches || d?.chips || [];
-        setFixtures(raw.map(c => ({
-          fixture_id: c.fixture_id,
-          home_team: c.home_team, away_team: c.away_team,
-          home_logo: c.home_logo, away_logo: c.away_logo,
-          home_score: c.home_score ?? null, away_score: c.away_score ?? null,
-          status: c.status, minute: c.minute,
-          kickoff: c.kickoff || c.date,
-          league_id: c.league_id,
-        })));
+        const clubRaw = club?.matches || club?.data || [];
+        const intlRaw = intl?.fixtures || [];
+        // Normalise both shapes into a common fixture object
+        const norm = (c) => ({
+          fixture_id: c.fixture_id ?? c.id,
+          home_team:  c.home_team  ?? c.homeTeam  ?? c.home_name ?? "?",
+          away_team:  c.away_team  ?? c.awayTeam  ?? c.away_name ?? "?",
+          home_logo:  c.home_logo  ?? c.teams?.home?.logo ?? "",
+          away_logo:  c.away_logo  ?? c.teams?.away?.logo ?? "",
+          home_score: c.home_score ?? c.goals?.home ?? null,
+          away_score: c.away_score ?? c.goals?.away ?? null,
+          status:     c.status     ?? c.status_short ?? "",
+          minute:     c.minute     ?? c.elapsed ?? null,
+          kickoff:    c.kickoff    ?? c.date ?? "",
+          league_id:  c.league_id  ?? c.league?.id ?? null,
+          league_name: c.league_name ?? c.league?.name ?? "",
+        });
+        // Merge, deduplicate by fixture_id
+        const seen = new Set();
+        const merged = [...clubRaw, ...intlRaw]
+          .map(norm)
+          .filter(f => {
+            if (seen.has(f.fixture_id)) return false;
+            seen.add(f.fixture_id);
+            return true;
+          });
+        setFixtures(merged);
       })
       .catch(e => { if (!dead) setError(e.message); })
       .finally(() => { if (!dead) setLoading(false); });
+
     return () => { dead = true; };
   }, []);
+
   return { fixtures, loading, error };
 }
 
-function useDashboardData() {
-  const [dash,    setDash]    = useState(null);
+// ── Per-section hooks — each fires independently ──────────────────────
+
+function useSectionFetch(path, ttlMs = 300_000) {
+  const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
   useEffect(() => {
     let dead = false;
-    getDashboard()
-      .then(d => { if (!dead) setDash(d); })
+    cachedFetch(path, ttlMs)
+      .then(d  => { if (!dead) setData(d); })
       .catch(e => { if (!dead) setError(e.message); })
       .finally(() => { if (!dead) setLoading(false); });
     return () => { dead = true; };
-  }, []);
+  }, [path]);
+  return { data, loading, error };
+}
+
+// ── Master hook that assembles the same shape as the old `dash` object
+//    so every existing section component keeps working without changes.
+function useDashboardData() {
+  // Each section fetches independently — Render cold-start can't kill them all
+  const preds      = useSectionFetch("/api/home/top_predictions?league=epl",    180_000);
+  const titleRace  = useSectionFetch("/api/home/title_race?league=epl",          600_000);
+  const formTbl    = useSectionFetch("/api/home/form_table?league=epl&n=6",      600_000);
+  const edges      = useSectionFetch("/api/home/model_edges",                    300_000);
+  const highScore  = useSectionFetch("/api/home/high_scoring_matches?n=5",       300_000);
+  const modelConf  = useSectionFetch("/api/home/model_confidence",               300_000);
+  const powerRanks = useSectionFetch("/api/home/power_rankings?league=epl&n=8", 600_000);
+  const xgLeaders  = useSectionFetch("/api/home/xg_leaders?league=epl&n=8",    3600_000);
+  const diffCaps   = useSectionFetch("/api/home/differential_captains?n=6",    3600_000);
+  const valuePlrs  = useSectionFetch("/api/home/value_players?n=6",            3600_000);
+  const txBrief    = useSectionFetch("/api/home/transfer_brief",                 300_000);
+  const analyTerm  = useSectionFetch("/api/home/analytics_term",               86400_000);
+  const defTbl     = useSectionFetch("/api/home/defense_table?league=epl&n=6",  600_000);
+  const modelMetr  = useSectionFetch("/api/home/model_metrics",                3600_000);
+  const recentRes  = useSectionFetch("/api/home/recent_results?n=6",            300_000);
+  const perfSum    = useSectionFetch("/api/predictions/performance?window=200", 3600_000);
+  const acctSum    = useSectionFetch("/api/home/recent_results?n=10",           300_000);
+  const heroStats  = useSectionFetch("/api/predictions/health",                 600_000);
+
+  // Any critical section still loading = loading
+  const loading = preds.loading || titleRace.loading;
+  // Only surface an error if the two most critical sections both failed
+  const error   = (preds.error && titleRace.error) ? preds.error : null;
+
+  // Assemble the `dash` shape expected by all existing section components
+  const dash = {
+    top_predictions:       preds.data     ?? { predictions: [] },
+    title_race:            titleRace.data ?? { top4: [] },
+    form_table:            formTbl.data   ?? { table: [] },
+    model_edges:           edges.data     ?? { edges: [] },
+    high_scoring_matches:  highScore.data ?? { matches: [] },
+    model_confidence:      modelConf.data ?? { high: 0, medium: 0, low: 0 },
+    power_rankings:        powerRanks.data?? { rankings: [] },
+    xg_leaders:            xgLeaders.data ?? { leaders: [] },
+    differential_captains: diffCaps.data  ?? { captains: [] },
+    value_players:         valuePlrs.data ?? { players: [] },
+    transfer_brief:        txBrief.data   ?? {},
+    analytics_term:        analyTerm.data ?? {},
+    defense_table:         defTbl.data    ?? { table: [] },
+    model_metrics:         modelMetr.data ?? { trend: [], by_market: [] },
+    recent_results:        recentRes.data ?? { results: [] },
+    // performance_summary shape — /api/predictions/performance returns it directly
+    performance_summary:   perfSum.data   ?? { insufficient: true, verified_count: 0 },
+    accountability_summary: acctSum.data  ?? { insufficient: true },
+    hero_stats: {
+      competitions_count: 9,
+      fixtures_predicted: heroStats.data?.logged ?? heroStats.data?.total ?? 0,
+      verified_accuracy:  perfSum.data?.overall_accuracy ?? 0,
+    },
+  };
+
   return { dash, loading, error };
 }
 

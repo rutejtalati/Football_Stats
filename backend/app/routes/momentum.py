@@ -86,19 +86,13 @@ def _build_momentum(events: list, stats: list, home_id: int, away_id: int) -> di
             away_pressure[m] += w
 
     # Add stat-based contributions (shots, corners by 15-min buckets)
+    # NOTE: API /fixtures/statistics returns totals only, not bucketed by minute,
+    # so we cannot distribute them across time slots. The stat_map is retained
+    # for potential future use if a bucketed stats endpoint becomes available.
     BUCKET_KEYS = ["0-15","16-30","31-45","46-60","61-75","76-90","91-105","106-120"]
     BUCKET_START = [0, 16, 31, 46, 61, 76, 91, 106]
 
-    stat_map_h: Dict[str, Any] = {}
-    stat_map_a: Dict[str, Any] = {}
-    for sb in stats:
-        tid = (sb.get("team") or {}).get("id")
-        for s in (sb.get("statistics") or []):
-            t, v = s.get("type",""), s.get("value")
-            if v and tid == home_id: stat_map_h[t] = v
-            elif v and tid == away_id: stat_map_a[t] = v
-
-    # Rolling gaussian smoothing
+    # Rolling box-window smoothing (uniform weights, window ±5 minutes)
     def _smooth(arr, window=5):
         out = []
         for i in range(len(arr)):
@@ -107,8 +101,13 @@ def _build_momentum(events: list, stats: list, home_id: int, away_id: int) -> di
             out.append(round(sum(arr[lo:hi]) / (hi - lo), 3))
         return out
 
-    home_smooth = _smooth(home_pressure)
-    away_smooth = _smooth(away_pressure)
+    # Clamp negative values (red cards) before smoothing so they don't
+    # produce > 100% or negative percentage outputs downstream.
+    home_pressure_clamped = [max(v, 0.0) for v in home_pressure]
+    away_pressure_clamped = [max(v, 0.0) for v in away_pressure]
+
+    home_smooth = _smooth(home_pressure_clamped)
+    away_smooth = _smooth(away_pressure_clamped)
 
     def _peak(arr):
         if not any(arr): return 0
@@ -118,12 +117,13 @@ def _build_momentum(events: list, stats: list, home_id: int, away_id: int) -> di
     home_90 = [round(home_smooth[i], 3) for i in range(90)]
     away_90 = [round(away_smooth[i], 3) for i in range(90)]
 
-    # Dominant periods (which team was in control per 15-min block)
+    # Dominant periods — use the same smoothed arrays as the chart data
+    # so period dominance is consistent with what the chart displays.
     periods = []
     for i, (start, label) in enumerate(zip(BUCKET_START[:6], BUCKET_KEYS[:6])):
         end = BUCKET_START[i+1] if i+1 < len(BUCKET_START) else 90
-        h_sum = sum(home_pressure[start:end])
-        a_sum = sum(away_pressure[start:end])
+        h_sum = sum(home_smooth[start:end])
+        a_sum = sum(away_smooth[start:end])
         total = h_sum + a_sum + 0.001
         periods.append({
             "label":      label,
@@ -132,9 +132,9 @@ def _build_momentum(events: list, stats: list, home_id: int, away_id: int) -> di
             "dominant":   "home" if h_sum > a_sum else "away" if a_sum > h_sum else "even",
         })
 
-    # Overall dominance
-    h_total = sum(home_pressure)
-    a_total = sum(away_pressure)
+    # Overall dominance — use clamped arrays so red cards don't skew totals negative
+    h_total = sum(home_pressure_clamped)
+    a_total = sum(away_pressure_clamped)
     t_total = h_total + a_total + 0.001
 
     return {
@@ -190,5 +190,10 @@ async def match_momentum(fixture_id: int):
         **momentum,
     }
 
-    _set(cache_key, result)
+    # Use a shorter TTL for in-progress matches so live data stays fresh.
+    # Completed/pre-match fixtures can use the full 2-minute window.
+    live_statuses = {"1H", "2H", "HT", "ET", "BT", "P"}
+    effective_ttl = 30 if status in live_statuses else _TTL
+    _cache[cache_key] = result
+    _times[cache_key] = time.time() - (_TTL - effective_ttl)  # backdate so TTL fires at right time
     return result

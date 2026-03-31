@@ -37,6 +37,10 @@ from app.football_engine import EloRatings, TTLCache, predict_match, LEAGUE_AVG_
 # ── 5. THE ONE AND ONLY APP ───────────────────────────────────────────────────
 app = FastAPI(title="StatinSite API", version="4.0.0")
 
+# Logger must be defined BEFORE middleware so catch_exceptions_middleware can use it.
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # ── 6. Middleware ─────────────────────────────────────────────────────────────
 #
 # IMPORTANT ORDER — middleware is applied last-registered-first (LIFO stack):
@@ -158,7 +162,6 @@ except ImportError:
 # ══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ══════════════════════════════════════════════════════════════════════════════
-logging.basicConfig(level=logging.INFO)
 
 API_KEY           = os.getenv("API_FOOTBALL_KEY")
 API_FOOTBALL_BASE = "https://v3.football.api-sports.io"

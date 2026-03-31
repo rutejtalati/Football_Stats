@@ -65,11 +65,14 @@ POS_MAP = {"G": "GK", "D": "DEF", "M": "MID", "F": "FWD"}
 # ══════════════════════════════════════════════════════════════════════
 
 def detect_formation(recent_lineups: List[Dict]) -> str:
-    """Vote on the team's modal formation from their last 5 lineups."""
+    """Vote on the team's modal formation from their last 5 lineups.
+    Only returns formations that exist in FORMATION_SLOTS to prevent
+    a mismatch between the returned formation name and the slots/grid used.
+    """
     tally: Dict[str, int] = {}
     for lu in recent_lineups[:5]:
         f = (lu or {}).get("formation") if isinstance(lu, dict) else None
-        if f:
+        if f and f in FORMATION_SLOTS:  # only count known formations
             tally[f] = tally.get(f, 0) + 1
     if not tally:
         return "4-3-3"
@@ -107,6 +110,7 @@ def score_player(player: Dict, recent_fixtures: List[Dict]) -> Tuple[float, str]
 
     total = 0.0
     n_starts = 0
+    n_appearances = 0  # track whether player appeared at all
     reasons  = []
 
     for i, fx in enumerate(recent_fixtures[:RECENT_LIMIT]):
@@ -115,6 +119,7 @@ def score_player(player: Dict, recent_fixtures: List[Dict]) -> Tuple[float, str]
         if stats is None:
             continue
 
+        n_appearances += 1
         games   = stats.get("games")   or {}
         goals_s = stats.get("goals")   or {}
         mins    = int(games.get("minutes")  or 0)
@@ -133,6 +138,10 @@ def score_player(player: Dict, recent_fixtures: List[Dict]) -> Tuple[float, str]
         total += w * (goals * 8.0 + assists * 5.0)
         if rating > 0:
             total += w * (rating - 6.0) * 5.0
+
+    if n_appearances == 0:
+        reasons.append("no recent data")
+        return round(total, 2), ", ".join(reasons)
 
     if n_starts >= 4:
         reasons.append(f"{n_starts} recent starts")
@@ -154,7 +163,10 @@ def is_available(player: Dict, injuries: List[Dict]) -> Tuple[bool, str]:
     for inj in (injuries or []):
         ip = (inj.get("player") or {})
         if ip.get("id") == pid:
-            return False, ip.get("type") or "Injury"
+            # API-Football uses 'reason' for the specific status text (e.g. "Suspended")
+            # and 'type' for category. Prefer 'reason' for display accuracy.
+            reason = ip.get("reason") or ip.get("type") or "Injury"
+            return False, reason
     return True, ""
 
 
@@ -248,17 +260,13 @@ def predict_lineup(
         p["confidence"] = max(CONF_FLOOR, min(int(round(raw * 0.92)), CONF_CEIL))
 
     # ── Assign grid positions ─────────────────────────────────────────
-    group_order: Dict[str, List] = {"GK": [], "DEF": [], "MID": [], "FWD": []}
-    for p in starters:
-        group_order[p["group"]].append(p)
-
+    # Grids are assigned in the same order starters were built (GK→DEF→MID→FWD
+    # then overflow fill). Re-bucketing by group would mis-assign overflow players
+    # to the wrong pitch row when positional quotas couldn't be fully met.
     xi_out = []
-    g_idx  = 0
-    for group in ("GK", "DEF", "MID", "FWD"):
-        for p in group_order[group]:
-            grid = grids[g_idx] if g_idx < len(grids) else f"{g_idx+1}:1"
-            xi_out.append({**p, "grid": grid})
-            g_idx += 1
+    for g_idx, p in enumerate(starters):
+        grid = grids[g_idx] if g_idx < len(grids) else f"{g_idx+1}:1"
+        xi_out.append({**p, "grid": grid})
 
     # ── Bench (top 9 remainder by score) ─────────────────────────────
     remainder.sort(key=lambda x: -x["score"])

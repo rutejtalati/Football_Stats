@@ -402,8 +402,8 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
 
       {/* Key metrics */}
       <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-        {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop()} xG`} value={xg_home} />}
-        {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop()} xG`} value={xg_away} />}
+        {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop() ?? "Home"} xG`} value={xg_home} />}
+        {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop() ?? "Away"} xG`} value={xg_away} />}
         {markets?.over_2_5 != null && <Edge label="Over 2.5" value={`${Math.round((markets.over_2_5 > 1 ? markets.over_2_5 : markets.over_2_5 * 100))}%`} highlight />}
         {markets?.btts     != null && <Edge label="BTTS"     value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} />}
       </div>
@@ -969,32 +969,7 @@ function PitchLineup({homeLineup,awayLineup,homeTeam,awayTeam,venueName}){
           <path d="M197,5 Q195,5 195,7" fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
           <path d="M3,107 Q5,107 5,105" fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
           <path d="M197,107 Q195,107 195,105" fill="none" stroke="rgba(255,255,255,.64)" strokeWidth=".44"/>
-          {/* Header info inside pitch */}
-          <text x="100" y="13" textAnchor="middle" fontSize="4.5" fontFamily="Inter,sans-serif"
-            fontWeight="700" fill="rgba(255,255,255,.42)" letterSpacing=".25">
-            {venueName ? String(venueName).slice(0,30) : "LINEUP"}
-          </text>
-          {isPredicted&&(
-            <text x="100" y="20" textAnchor="middle" fontSize="3.5" fontFamily="Inter,sans-serif"
-              fontWeight="800" fill="rgba(245,158,11,.7)" letterSpacing=".15">PREDICTED</text>
-          )}
-          {/* Team name + formation labels */}
-          <text x="18" y="13" textAnchor="middle" fontSize="4" fontFamily="Inter,sans-serif"
-            fontWeight="800" fill={`${hc}cc`} letterSpacing=".1">
-            {(homeTeam?.name||"").split(" ").slice(-1)[0].slice(0,8)}
-          </text>
-          {home?.formation&&(
-            <text x="18" y="18.5" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-              fontWeight="700" fill={`${hc}88`}>{home.formation}</text>
-          )}
-          <text x="182" y="13" textAnchor="middle" fontSize="4" fontFamily="Inter,sans-serif"
-            fontWeight="800" fill={`${ac}cc`} letterSpacing=".1">
-            {(awayTeam?.name||"").split(" ").slice(-1)[0].slice(0,8)}
-          </text>
-          {away?.formation&&(
-            <text x="182" y="18.5" textAnchor="middle" fontSize="3.2" fontFamily="Inter,sans-serif"
-              fontWeight="700" fill={`${ac}88`}>{away.formation}</text>
-          )}
+
         </svg>
         {/* Tokens layer — pointer events on */}
         <div style={{position:"absolute",inset:0,zIndex:2}}>
@@ -2022,48 +1997,109 @@ function CommentaryPanel({
     },1000);
   }
 
+  function buildPrompt() {
+    const modeLabel = isLive ? `LIVE (${elapsed}')` : isFT ? "FULL TIME" : "PRE-MATCH";
+    const scoreStr  = (isLive||isFT) ? `${hScore}–${aScore}` : "not started";
+    const hName = homeTeam?.name||"Home";
+    const aName = awayTeam?.name||"Away";
+
+    const recentEvs = (events||[]).slice(-8).map(e=>{
+      const tm = e.team?.name||"";
+      const mn = e.time?.elapsed ? `${e.time.elapsed}'` : "";
+      const pl = e.player?.name||"";
+      const t  = (e.type||"").toLowerCase();
+      if(t==="goal")  return `⚽ ${mn} GOAL — ${pl} (${tm})`;
+      if(t==="card")  return `🟨 ${mn} ${e.detail||"Card"} — ${pl} (${tm})`;
+      if(t==="subst") return `🔄 ${mn} Sub — ${pl} (${tm})`;
+      return null;
+    }).filter(Boolean).join("\n");
+
+    const getStat = (tid,key) =>
+      stats?.find(s=>s.team?.id===tid)?.statistics?.find(s=>s.type===key)?.value ?? null;
+    const hPoss  = getStat(homeTeam?.id,"Ball Possession");
+    const aPoss  = getStat(awayTeam?.id,"Ball Possession");
+    const hShots = getStat(homeTeam?.id,"Total Shots");
+    const aShots = getStat(awayTeam?.id,"Total Shots");
+    const hXG    = getStat(homeTeam?.id,"expected_goals");
+    const aXG    = getStat(awayTeam?.id,"expected_goals");
+    const statsStr = [
+      hPoss  ? `Possession: ${hPoss} vs ${aPoss}` : null,
+      hShots ? `Shots: ${hShots} vs ${aShots}`    : null,
+      hXG    ? `xG: ${hXG} vs ${aXG}`             : null,
+    ].filter(Boolean).join(" | ");
+
+    const pred = winProb?.pre_match;
+    const predStr = pred
+      ? `Model: ${hName} ${pred.p_home_win}% · Draw ${pred.p_draw}% · ${aName} ${pred.p_away_win}%  xG: ${pred.xg_home}–${pred.xg_away}`
+      : null;
+    const momStr = momentumData?.overall
+      ? `Momentum: ${hName} ${momentumData.overall.home_pct}% vs ${aName} ${momentumData.overall.away_pct}%`
+      : null;
+
+    return `You are a sharp football analyst writing live commentary for StatinSite.
+
+Match: ${hName} vs ${aName}
+Status: ${modeLabel}  Score: ${scoreStr}
+${statsStr ? `Stats: ${statsStr}` : ""}
+${momStr||""}
+${predStr ? `Pre-match prediction: ${predStr}` : ""}
+${recentEvs ? `Recent events:\n${recentEvs}` : ""}
+
+Generate 4 punchy commentary entries. Return ONLY a JSON array, no markdown fences:
+[{"type":"insight","minute":"${elapsed||"–"}","text":"..."},{"type":"tactical","minute":"–","text":"..."},{"type":"pressure","minute":"–","text":"..."},{"type":"prediction","minute":"–","text":"..."}]
+
+Types: goal, chance, pressure, tactical, insight, duel, set_piece, substitution, preview, prediction, h2h, form, card
+Each text: 1-2 sharp sentences. Bold key names/stats with **asterisks**. Use actual data, no filler.`;
+  }
+
   async function generate() {
     if (commLoading||commCooldown>0) return;
-    const payload = buildCommentaryPayload({ d:matchIntelRaw, fixture, events, stats, momentumData, lineups, predictedHome, predictedAway, winProb, mode });
-    if (!payload) return;
     setCommLoading(true);
     try {
-      const resp = await fetch(`${BACKEND}/api/commentary/${fixtureId}`,{
-        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),
+      const resp = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          messages:[{role:"user",content:buildPrompt()}],
+        }),
       });
-      if (resp.ok) {
-        const entries = await resp.json();
-        if (Array.isArray(entries)&&entries.length) {
-          setCommentaryFeed(prev=>[...entries.slice().reverse(),...prev].slice(0,40));
+      if(resp.ok){
+        const data = await resp.json();
+        const raw  = (data.content||[]).map(b=>b.text||"").join("");
+        const cleaned = raw.replace(/```json|```/g,"").trim();
+        try {
+          const entries = JSON.parse(cleaned);
+          if(Array.isArray(entries)&&entries.length){
+            setCommentaryFeed(prev=>[...entries.slice().reverse(),...prev].slice(0,40));
+          }
+        } catch(_){
+          setCommentaryFeed(prev=>[{type:"insight",minute:elapsed||"–",text:cleaned},...prev].slice(0,40));
         }
-      } else if (resp.status===429) {
-        const body = await resp.json().catch(()=>({}));
-        startCooldown(parseInt((body.detail||"").match(/\d+/)?.[0]||"20"));
       }
     } catch(e){ console.error("Commentary error",e); }
     finally { setCommLoading(false); }
     startCooldown(20);
   }
 
-  // Auto-generate once when tab mounts and data is ready
+  // Auto-generate once when tab mounts and fixture data is ready
   useEffect(()=>{
     if (commAutoFired.current) return;
-    if (!matchIntelRaw) return;
+    if (!fixture && !matchIntelRaw) return;
     commAutoFired.current = true;
     generate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[matchIntelRaw]);
+  },[fixture, matchIntelRaw]);
 
   const isReady = !commLoading&&commCooldown===0;
-  const st = matchIntelRaw?.statistics||{};
+
+  // Stat pills from normalised stats array
   const pills = [
-    ["Possession", buildStatStr(st,"possession")],
-    ["xG",         buildStatStr(st,"expected_goals")],
-    ["Shots",      buildStatStr(st,"shots_total")],
-    ["On target",  buildStatStr(st,"shots_on_target")],
-    ["Pass acc",   buildStatStr(st,"pass_accuracy")],
-    ["Corners",    buildStatStr(st,"corner_kicks")],
-  ].filter(([,v])=>v&&!v.includes("null")&&v!=="0–0"&&v!=="undefined–undefined");
+    ["Possession", stats?.find(s=>s.team?.id===homeTeam?.id)?.statistics?.find(s=>s.type==="Ball Possession")?.value],
+    ["xG",         stats?.find(s=>s.team?.id===homeTeam?.id)?.statistics?.find(s=>s.type==="expected_goals")?.value],
+    ["Shots",      stats?.find(s=>s.team?.id===homeTeam?.id)?.statistics?.find(s=>s.type==="Total Shots")?.value],
+  ].filter(([,v])=>v!=null&&v!=="");
 
   const insights = (matchIntelRaw?.insights||[]).slice(0,3);
 
@@ -2078,7 +2114,7 @@ function CommentaryPanel({
           </span>
           <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>{homeTeam?.name} {hScore}–{aScore} {awayTeam?.name}</span>
         </div>
-        <span style={{fontSize:9,color:"rgba(255,255,255,.18)",fontFamily:"monospace"}}>OpenRouter · claude-haiku-4-5</span>
+        <span style={{fontSize:9,color:"rgba(255,255,255,.18)",fontFamily:"monospace"}}>AI Commentary · Claude Sonnet</span>
       </div>
 
       {/* Stat pills */}
@@ -2271,22 +2307,16 @@ export default function LiveMatchPage() {
       // fixture from the upcoming matches list so the page still renders.
       if (!d || d.error) {
         try {
-          // Try club upcoming list first, then international fixtures as fallback
-          const [upcoming, intlData] = await Promise.allSettled([
-            fetch(`${BACKEND}/api/matches/upcoming`).then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch(`${BACKEND}/api/international/fixtures`).then(r => r.ok ? r.json() : null).catch(() => null),
-          ]);
-          const clubMatches   = upcoming.status === "fulfilled" ? (upcoming.value?.matches || []) : [];
-          const intlFixtures  = intlData.status === "fulfilled" ? (intlData.value?.fixtures || []) : [];
-          const allMatches    = [...clubMatches, ...intlFixtures];
-          const match = allMatches.find(m => String(m.fixture_id) === String(fixtureId));
+          const upcoming = await fetch(`${BACKEND}/api/matches/upcoming`)
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+          const match = (upcoming?.matches || []).find(m => String(m.fixture_id) === String(fixtureId));
           if (match) {
             setFixture({
               fixture: { id: match.fixture_id, status: { short: match.status || "NS", elapsed: match.minute }, date: match.kickoff },
-              league: { name: match.competition_name || match.league_name, logo: match.competition_logo || null },
+              league: { name: match.league_name },
               teams: {
-                home: { id: match.home_team_id || match.home_id, name: match.home_team, logo: match.home_logo },
-                away: { id: match.away_team_id || match.away_id, name: match.away_team, logo: match.away_logo },
+                home: { id: match.home_id, name: match.home_team, logo: match.home_logo },
+                away: { id: match.away_id, name: match.away_team, logo: match.away_logo },
               },
               score: { fulltime: { home: match.home_score, away: match.away_score }, halftime: { home: null, away: null } },
             });
@@ -2299,58 +2329,33 @@ export default function LiveMatchPage() {
       }
 
       const h = d.header || {};
-
-      // ── Normalise header: support both shapes ──────────────────────────────
-      // match_intelligence.py  → nested:  h.league.name, h.home.id, h.score.home, h.status_short, h.elapsed, h.date
-      // main.py inline endpoint → flat:   h.league_name,  h.home_id, h.home_score, h.status,       h.minute,  h.kickoff
-      const isNested = h.league && typeof h.league === "object";
-
-      const hLeagueName  = isNested ? h.league?.name   : h.league_name;
-      const hLeagueLogo  = isNested ? h.league?.logo   : h.league_logo;
-      const hLeagueRound = isNested ? h.league?.round  : h.round;
-      const hHomeId      = isNested ? h.home?.id       : h.home_id;
-      const hHomeName    = isNested ? h.home?.name     : h.home_team;
-      const hHomeLogo    = isNested ? h.home?.logo     : h.home_logo;
-      const hAwayId      = isNested ? h.away?.id       : h.away_id;
-      const hAwayName    = isNested ? h.away?.name     : h.away_team;
-      const hAwayLogo    = isNested ? h.away?.logo     : h.away_logo;
-      const hStatusShort = isNested ? (h.status_short  ?? h.status ?? "NS") : (h.status ?? "NS");
-      const hElapsed     = isNested ? h.elapsed        : h.minute;
-      const hKickoff     = isNested ? h.date           : h.kickoff;
-      const hHomeScore   = isNested ? h.score?.home    : h.home_score;
-      const hAwayScore   = isNested ? h.score?.away    : h.away_score;
-      const hHtHome      = isNested ? h.score?.ht_home : h.score?.ht_home ?? null;
-      const hHtAway      = isNested ? h.score?.ht_away : h.score?.ht_away ?? null;
-
       // Rebuild fixture shape expected by deriveMode / ScoreHero / PreMatchHero
       const fx = {
         fixture: {
           id: h.fixture_id,
-          status: { short: hStatusShort, elapsed: hElapsed },
-          date: hKickoff,
+          status: { short: h.status || "NS", elapsed: h.minute },
+          date: h.kickoff,
           venue: { name: h.venue_name || h.venue },
           referee: h.referee,
         },
-        league: { name: hLeagueName, logo: hLeagueLogo, round: hLeagueRound },
+        league: { name: h.league_name, logo: h.league_logo, round: h.round },
         teams: {
-          home: { id: hHomeId, name: hHomeName, logo: hHomeLogo },
-          away: { id: hAwayId, name: hAwayName, logo: hAwayLogo },
+          home: { id: h.home_id, name: h.home_team, logo: h.home_logo },
+          away: { id: h.away_id, name: h.away_team, logo: h.away_logo },
         },
         score: {
-          fulltime: { home: hHomeScore, away: hAwayScore },
-          halftime: { home: hHtHome,    away: hHtAway    },
+          fulltime: { home: h.home_score,              away: h.away_score },
+          halftime: { home: h.score?.ht_home ?? null,  away: h.score?.ht_away ?? null },
         },
       };
       setFixture(fx);
 
       // Events
-      // match_intelligence.py returns: { minute, extra, team_id, team_name, player_name, assist_name, type, detail }
-      // main.py inline returns:        { minute, extra_minute, team_id, team, player, assist, type, detail }
       const ev = (d.events || []).map(e => ({
-        time: { elapsed: e.minute, extra: e.extra ?? e.extra_minute },
-        team: { id: e.team_id, name: e.team_name ?? e.team },
-        player: { name: e.player_name ?? e.player },
-        assist: (e.assist_name || e.assist) ? { name: e.assist_name ?? e.assist } : null,
+        time: { elapsed: e.minute, extra: e.extra_minute },
+        team: { id: e.team_id, name: e.team },
+        player: { name: e.player },
+        assist: e.assist ? { name: e.assist } : null,
         type: e.type,
         detail: e.detail,
       }));
@@ -2359,8 +2364,8 @@ export default function LiveMatchPage() {
       // Statistics
       const st = [];
       if (d.statistics?.home?.length) {
-        st.push({ team: { id: hHomeId, name: hHomeName }, statistics: d.statistics.home });
-        st.push({ team: { id: hAwayId, name: hAwayName }, statistics: d.statistics.away || [] });
+        st.push({ team: { id: h.home_id, name: h.home_team }, statistics: d.statistics.home });
+        st.push({ team: { id: h.away_id, name: h.away_team }, statistics: d.statistics.away || [] });
       }
       setStats(st);
       setMatchIntelRaw(d);
@@ -2368,8 +2373,8 @@ export default function LiveMatchPage() {
       // Lineups from match-intelligence
       // d.lineups is an array [{team_id, team_name, start_xi, subs, formation, ...}]
       if (d.lineups?.length) {
-        const hId = hHomeId;
-        const aId = hAwayId;
+        const hId = h.home_id;
+        const aId = h.away_id;
         const isPred = d._meta?.has_official_lineups === false;
         const normLu = (lu) => lu ? {
           ...lu,
@@ -2396,7 +2401,7 @@ export default function LiveMatchPage() {
             xg_home: p.xg_home, xg_away: p.xg_away,
             top_scorelines: p.top_scorelines || [],
           },
-          markets: p.markets || p,  // main.py embeds markets flat on prediction; match_intelligence nests them
+          markets: p.markets || {},
         });
       }
 

@@ -2271,16 +2271,22 @@ export default function LiveMatchPage() {
       // fixture from the upcoming matches list so the page still renders.
       if (!d || d.error) {
         try {
-          const upcoming = await fetch(`${BACKEND}/api/matches/upcoming`)
-            .then(r => r.ok ? r.json() : null).catch(() => null);
-          const match = (upcoming?.matches || []).find(m => String(m.fixture_id) === String(fixtureId));
+          // Try club upcoming list first, then international fixtures as fallback
+          const [upcoming, intlData] = await Promise.allSettled([
+            fetch(`${BACKEND}/api/matches/upcoming`).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch(`${BACKEND}/api/international/fixtures`).then(r => r.ok ? r.json() : null).catch(() => null),
+          ]);
+          const clubMatches   = upcoming.status === "fulfilled" ? (upcoming.value?.matches || []) : [];
+          const intlFixtures  = intlData.status === "fulfilled" ? (intlData.value?.fixtures || []) : [];
+          const allMatches    = [...clubMatches, ...intlFixtures];
+          const match = allMatches.find(m => String(m.fixture_id) === String(fixtureId));
           if (match) {
             setFixture({
               fixture: { id: match.fixture_id, status: { short: match.status || "NS", elapsed: match.minute }, date: match.kickoff },
-              league: { name: match.league_name },
+              league: { name: match.competition_name || match.league_name, logo: match.competition_logo || null },
               teams: {
-                home: { id: match.home_id, name: match.home_team, logo: match.home_logo },
-                away: { id: match.away_id, name: match.away_team, logo: match.away_logo },
+                home: { id: match.home_team_id || match.home_id, name: match.home_team, logo: match.home_logo },
+                away: { id: match.away_team_id || match.away_id, name: match.away_team, logo: match.away_logo },
               },
               score: { fulltime: { home: match.home_score, away: match.away_score }, halftime: { home: null, away: null } },
             });
@@ -2293,33 +2299,58 @@ export default function LiveMatchPage() {
       }
 
       const h = d.header || {};
+
+      // ── Normalise header: support both shapes ──────────────────────────────
+      // match_intelligence.py  → nested:  h.league.name, h.home.id, h.score.home, h.status_short, h.elapsed, h.date
+      // main.py inline endpoint → flat:   h.league_name,  h.home_id, h.home_score, h.status,       h.minute,  h.kickoff
+      const isNested = h.league && typeof h.league === "object";
+
+      const hLeagueName  = isNested ? h.league?.name   : h.league_name;
+      const hLeagueLogo  = isNested ? h.league?.logo   : h.league_logo;
+      const hLeagueRound = isNested ? h.league?.round  : h.round;
+      const hHomeId      = isNested ? h.home?.id       : h.home_id;
+      const hHomeName    = isNested ? h.home?.name     : h.home_team;
+      const hHomeLogo    = isNested ? h.home?.logo     : h.home_logo;
+      const hAwayId      = isNested ? h.away?.id       : h.away_id;
+      const hAwayName    = isNested ? h.away?.name     : h.away_team;
+      const hAwayLogo    = isNested ? h.away?.logo     : h.away_logo;
+      const hStatusShort = isNested ? (h.status_short  ?? h.status ?? "NS") : (h.status ?? "NS");
+      const hElapsed     = isNested ? h.elapsed        : h.minute;
+      const hKickoff     = isNested ? h.date           : h.kickoff;
+      const hHomeScore   = isNested ? h.score?.home    : h.home_score;
+      const hAwayScore   = isNested ? h.score?.away    : h.away_score;
+      const hHtHome      = isNested ? h.score?.ht_home : h.score?.ht_home ?? null;
+      const hHtAway      = isNested ? h.score?.ht_away : h.score?.ht_away ?? null;
+
       // Rebuild fixture shape expected by deriveMode / ScoreHero / PreMatchHero
       const fx = {
         fixture: {
           id: h.fixture_id,
-          status: { short: h.status || "NS", elapsed: h.minute },
-          date: h.kickoff,
+          status: { short: hStatusShort, elapsed: hElapsed },
+          date: hKickoff,
           venue: { name: h.venue_name || h.venue },
           referee: h.referee,
         },
-        league: { name: h.league_name, logo: h.league_logo, round: h.round },
+        league: { name: hLeagueName, logo: hLeagueLogo, round: hLeagueRound },
         teams: {
-          home: { id: h.home_id, name: h.home_team, logo: h.home_logo },
-          away: { id: h.away_id, name: h.away_team, logo: h.away_logo },
+          home: { id: hHomeId, name: hHomeName, logo: hHomeLogo },
+          away: { id: hAwayId, name: hAwayName, logo: hAwayLogo },
         },
         score: {
-          fulltime: { home: h.home_score,              away: h.away_score },
-          halftime: { home: h.score?.ht_home ?? null,  away: h.score?.ht_away ?? null },
+          fulltime: { home: hHomeScore, away: hAwayScore },
+          halftime: { home: hHtHome,    away: hHtAway    },
         },
       };
       setFixture(fx);
 
       // Events
+      // match_intelligence.py returns: { minute, extra, team_id, team_name, player_name, assist_name, type, detail }
+      // main.py inline returns:        { minute, extra_minute, team_id, team, player, assist, type, detail }
       const ev = (d.events || []).map(e => ({
-        time: { elapsed: e.minute, extra: e.extra_minute },
-        team: { id: e.team_id, name: e.team },
-        player: { name: e.player },
-        assist: e.assist ? { name: e.assist } : null,
+        time: { elapsed: e.minute, extra: e.extra ?? e.extra_minute },
+        team: { id: e.team_id, name: e.team_name ?? e.team },
+        player: { name: e.player_name ?? e.player },
+        assist: (e.assist_name || e.assist) ? { name: e.assist_name ?? e.assist } : null,
         type: e.type,
         detail: e.detail,
       }));
@@ -2328,8 +2359,8 @@ export default function LiveMatchPage() {
       // Statistics
       const st = [];
       if (d.statistics?.home?.length) {
-        st.push({ team: { id: h.home_id, name: h.home_team }, statistics: d.statistics.home });
-        st.push({ team: { id: h.away_id, name: h.away_team }, statistics: d.statistics.away || [] });
+        st.push({ team: { id: hHomeId, name: hHomeName }, statistics: d.statistics.home });
+        st.push({ team: { id: hAwayId, name: hAwayName }, statistics: d.statistics.away || [] });
       }
       setStats(st);
       setMatchIntelRaw(d);
@@ -2337,8 +2368,8 @@ export default function LiveMatchPage() {
       // Lineups from match-intelligence
       // d.lineups is an array [{team_id, team_name, start_xi, subs, formation, ...}]
       if (d.lineups?.length) {
-        const hId = h.home_id;
-        const aId = h.away_id;
+        const hId = hHomeId;
+        const aId = hAwayId;
         const isPred = d._meta?.has_official_lineups === false;
         const normLu = (lu) => lu ? {
           ...lu,
@@ -2365,7 +2396,7 @@ export default function LiveMatchPage() {
             xg_home: p.xg_home, xg_away: p.xg_away,
             top_scorelines: p.top_scorelines || [],
           },
-          markets: p.markets || {},
+          markets: p.markets || p,  // main.py embeds markets flat on prediction; match_intelligence nests them
         });
       }
 

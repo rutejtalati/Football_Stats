@@ -156,12 +156,20 @@ ID_TO_NAME = {v["id"]: v["name"] for v in COMPETITIONS.values()}
 # ── Season helper ─────────────────────────────────────────────────────────────
 
 def _season_for(comp: Dict[str, Any], ref_date: Optional[date] = None) -> int:
-    """Return the correct season integer for a competition."""
+    """Return the correct season integer for a competition.
+
+    International competitions are tied to a campaign year that starts
+    before July (e.g. the 2026 WCQ runs under season 2025 on API-Football).
+    We mirror the same club-season logic used in main.py:
+      - month >= 7  → current calendar year is the season
+      - month < 7   → previous calendar year is the season
+    This ensures March 2026 resolves to season 2025, matching the API.
+    A hard-coded season in the registry always wins.
+    """
     if comp.get("season") is not None:
         return comp["season"]
     d = ref_date or date.today()
-    # International competitions generally follow calendar year, not club season
-    return d.year
+    return d.year if d.month >= 7 else d.year - 1
 
 
 # ── TTL cache ─────────────────────────────────────────────────────────────────

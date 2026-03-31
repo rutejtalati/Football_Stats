@@ -402,8 +402,8 @@ function PredictionStrip({ winProb, homeTeam, awayTeam }) {
 
       {/* Key metrics */}
       <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-        {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop() ?? "Home"} xG`} value={xg_home} />}
-        {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop() ?? "Away"} xG`} value={xg_away} />}
+        {xg_home != null && <Edge label={`${homeTeam?.name?.split(" ").pop()} xG`} value={xg_home} />}
+        {xg_away != null && <Edge label={`${awayTeam?.name?.split(" ").pop()} xG`} value={xg_away} />}
         {markets?.over_2_5 != null && <Edge label="Over 2.5" value={`${Math.round((markets.over_2_5 > 1 ? markets.over_2_5 : markets.over_2_5 * 100))}%`} highlight />}
         {markets?.btts     != null && <Edge label="BTTS"     value={`${Math.round((markets.btts > 1 ? markets.btts : markets.btts * 100))}%`} />}
       </div>
@@ -1876,331 +1876,314 @@ function buildStatStr(statsObj, key) {
   return `${String(h??0).replace("%","")}–${String(a??0).replace("%","")}`;
 }
 
-function buildCommentaryPayload({ d, fixture, events, stats, momentumData, lineups, predictedHome, predictedAway, winProb, mode }) {
-  if (!d) return null;
-  const h = d.header || {};
-  const s = d.statistics || {};
-  const elapsed = h.elapsed || fixture?.fixture?.status?.elapsed || 0;
+function AnalysisPanel({ mode, fixture, events, stats, momentumData, winProb, matchIntelRaw, homeTeam, awayTeam }) {
+  const hName = homeTeam?.name || "Home";
+  const aName = awayTeam?.name || "Away";
+  const isLive = mode === "live";
+  const isFT   = mode === "fulltime";
 
-  const evList = (d.events||[]).slice(-10).map(e => ({
-    minute: e.minute, type: e.type||"", detail: e.detail||"",
-    player: e.player_name||e.player||"",
-    team:   e.team_name||e.team||"",
-    assist: e.assist_name||e.assist||null,
-  }));
+  // ── Data helpers ─────────────────────────────────────────────────────────
+  const insights     = (matchIntelRaw?.insights || []);
+  const h2h          = matchIntelRaw?.h2h || {};
+  const h2hMatches   = h2h.matches || h2h.results || [];
+  const homeForm     = matchIntelRaw?.home_recent_form || [];
+  const awayForm     = matchIntelRaw?.away_recent_form || [];
+  const homeSeasonSt = matchIntelRaw?.home_season_stats || {};
+  const awaySeasonSt = matchIntelRaw?.away_season_stats || {};
+  const injuries     = matchIntelRaw?.injuries || {};
+  const pred         = winProb?.pre_match || matchIntelRaw?.prediction || {};
 
-  const statsP = {
-    possession:        buildStatStr(s,"possession"),
-    shots_total:       buildStatStr(s,"shots_total"),
-    shots_on_target:   buildStatStr(s,"shots_on_target"),
-    shots_inside_box:  buildStatStr(s,"shots_inside_box"),
-    xg:                buildStatStr(s,"expected_goals"),
-    corners:           buildStatStr(s,"corner_kicks"),
-    pass_accuracy:     buildStatStr(s,"pass_accuracy"),
-    total_passes:      buildStatStr(s,"total_passes"),
-    fouls:             buildStatStr(s,"fouls"),
-    yellow_cards:      buildStatStr(s,"yellow_cards"),
-    goalkeeper_saves:  buildStatStr(s,"goalkeeper_saves"),
+  const getStat = (tid, key) =>
+    stats?.find(s => s.team?.id === tid)?.statistics?.find(s => s.type === key)?.value ?? null;
+
+  // ── Severity colour ───────────────────────────────────────────────────────
+  const sevColour = (sev) => {
+    if (sev === "positive") return { bg:"rgba(52,211,153,.1)", border:"rgba(52,211,153,.22)", dot:"#34d399" };
+    if (sev === "warning")  return { bg:"rgba(251,191,36,.09)", border:"rgba(251,191,36,.22)", dot:"#fbbf24" };
+    return                          { bg:"rgba(167,139,250,.08)", border:"rgba(167,139,250,.18)", dot:"#a78bfa" };
   };
 
-  const mom = momentumData
-    ? { home_pct: momentumData.home_pct, away_pct: momentumData.away_pct, dominant_period: momentumData.dominant_period||null }
-    : null;
-
-  const h2h = d.h2h||{};
-  const h2hP = h2h.count ? {
-    count: h2h.count, home_wins: h2h.home_wins, draws: h2h.draws, away_wins: h2h.away_wins,
-    avg_goals: h2h.results?.length ? parseFloat((h2h.results.reduce((a,r)=>a+(r.home_goals||0)+(r.away_goals||0),0)/h2h.results.length).toFixed(2)) : null,
-    results: (h2h.results||[]).slice(0,4).map(r=>({ date:r.date, home_team:r.home_team, away_team:r.away_team, home_goals:r.home_goals, away_goals:r.away_goals })),
-  } : null;
-
-  const fmtForm = l => (l||[]).slice(0,5).map(f=>({ date:f.date, opponent:f.opponent, result:f.result, goals_for:f.goals_for, goals_against:f.goals_against, home_away:f.home_away }));
-  const fmtSeason = ss => ss?.played ? { played:ss.played, wins:ss.wins, draws:ss.draws, losses:ss.losses, goals_for_avg:ss.goals_for_avg?String(ss.goals_for_avg):null, goals_against_avg:ss.goals_against_avg?String(ss.goals_against_avg):null, clean_sheets:ss.clean_sheets, form:ss.form } : null;
-  const fmtInj = l => (l||[]).map(p=>({ player_name:p.player_name||p.name||"", type:p.type||p.reason||"Injury" }));
-
-  const inj = d.injuries||{}; const ven = d.venue||{}; const pred = d.prediction||{}; const ins = d.insights||[];
-  const homeLu = (lineups||[]).find(l=>l.team?.id===h.home_id)||null;
-  const awayLu = (lineups||[]).find(l=>l.team?.id===h.away_id)||null;
-  const predP  = (pred.p_home_win!=null||winProb?.pre_match) ? {
-    p_home_win: pred.p_home_win!=null ? pred.p_home_win*100 : winProb?.pre_match?.p_home_win,
-    p_draw:     pred.p_draw!=null     ? pred.p_draw*100     : winProb?.pre_match?.p_draw,
-    p_away_win: pred.p_away_win!=null ? pred.p_away_win*100 : winProb?.pre_match?.p_away_win,
-    xg_home: pred.xg_home??winProb?.pre_match?.xg_home??null,
-    xg_away: pred.xg_away??winProb?.pre_match?.xg_away??null,
-    btts: pred.btts??null, over_2_5: pred.over_2_5??null,
-  } : null;
-
-  return {
-    home_team: h.home_team||"", away_team: h.away_team||"",
-    home_score: h.home_score??0, away_score: h.away_score??0,
-    elapsed, mode, events: evList, stats: statsP, momentum: mom,
-    h2h: h2hP,
-    home_form: fmtForm(d.home_recent_form), away_form: fmtForm(d.away_recent_form),
-    home_season_stats: fmtSeason(d.home_season_stats),
-    away_season_stats: fmtSeason(d.away_season_stats),
-    injuries: { home: fmtInj(inj.home||[]), away: fmtInj(inj.away||[]) },
-    venue: ven.name ? { name:ven.name, city:ven.city, capacity:ven.capacity, surface:ven.surface } : null,
-    referee: h.referee||null, league_round: h.round||null,
-    home_lineup_formation: homeLu?.formation||predictedHome?.formation||null,
-    away_lineup_formation: awayLu?.formation||predictedAway?.formation||null,
-    player_ratings: [], prediction: predP,
-    insights: ins.slice(0,4).map(i=>({ type:i.type||"", title:i.title||"", body:i.body||"" })),
+  // ── Type label colour ─────────────────────────────────────────────────────
+  const typeColour = (t) => {
+    const m = { form:"#34d399", h2h:"#fbbf24", injury:"#f87171", model:"#a78bfa",
+                market:"#60a5fa", goals:"#34d399", defence:"#94a3b8" };
+    return m[(t||"").toLowerCase()] || "#a78bfa";
   };
-}
 
-const COMM_TYPE_STYLE = {
-  goal:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.25)",  label:"GOAL"       },
-  chance:       { color:"#f87171", bg:"rgba(248,113,113,.12)", border:"rgba(248,113,113,.25)", label:"CHANCE"     },
-  pressure:     { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"PRESSURE"   },
-  tactical:     { color:"#ffffff", bg:"rgba(255,255,255,.12)",  border:"rgba(255,255,255,.22)",  label:"TACTICAL"   },
-  insight:      { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"INSIGHT"    },
-  duel:         { color:"#fb923c", bg:"rgba(251,146,60,.12)",  border:"rgba(251,146,60,.22)",  label:"DUEL"       },
-  set_piece:    { color:"#e879f9", bg:"rgba(232,121,249,.12)", border:"rgba(232,121,249,.22)", label:"SET PIECE"  },
-  substitution: { color:"#4ade80", bg:"rgba(74,222,128,.12)",  border:"rgba(74,222,128,.22)",  label:"SUB"        },
-  preview:      { color:"#ffffff", bg:"rgba(255,255,255,.12)",  border:"rgba(255,255,255,.22)",  label:"PREVIEW"    },
-  prediction:   { color:"#a78bfa", bg:"rgba(167,139,250,.12)", border:"rgba(167,139,250,.22)", label:"PREDICTION" },
-  h2h:          { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"H2H"        },
-  form:         { color:"#34d399", bg:"rgba(52,211,153,.12)",  border:"rgba(52,211,153,.22)",  label:"FORM"       },
-  card:         { color:"#fbbf24", bg:"rgba(251,191,36,.12)",  border:"rgba(251,191,36,.25)",  label:"CARD"       },
-};
-function commStyle(t){ return COMM_TYPE_STYLE[(t||"").toLowerCase()]||COMM_TYPE_STYLE.insight; }
+  // ── Result badge ──────────────────────────────────────────────────────────
+  const ResBadge = ({ r }) => {
+    const c = r==="W"?"#34d399":r==="L"?"#f87171":"#94a3b8";
+    return (
+      <span style={{ width:20,height:20,borderRadius:4,background:`${c}18`,border:`1px solid ${c}44`,
+        display:"inline-flex",alignItems:"center",justifyContent:"center",
+        fontSize:9,fontWeight:900,color:c,flexShrink:0 }}>{r}</span>
+    );
+  };
 
-function CommText({ text }) {
-  return (
-    <span>
-      {(text||"").split(/\*\*(.+?)\*\*/g).map((p,i)=>
-        i%2===1 ? <strong key={i} style={{color:"#ffffff",fontWeight:800}}>{p}</strong> : p
-      )}
-    </span>
+  // ── Section header ────────────────────────────────────────────────────────
+  const SH = ({ label, accent="#a78bfa" }) => (
+    <div style={{ display:"flex",alignItems:"center",gap:7,marginBottom:12 }}>
+      <span style={{ width:3,height:14,borderRadius:2,background:accent,flexShrink:0,display:"inline-block" }}/>
+      <span style={{ fontSize:9,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.35)" }}>{label}</span>
+    </div>
   );
-}
 
-function CommentaryPanel({
-  fixtureId, mode, fixture, events, stats, momentumData,
-  lineups, predictedHome, predictedAway, winProb, matchIntelRaw,
-  commentaryFeed, setCommentaryFeed,
-  commLoading, setCommLoading,
-  commCooldown, setCommCooldown, commCoolRef, commAutoFired,
-  homeTeam, awayTeam,
-}) {
-  const elapsed = fixture?.fixture?.status?.elapsed||0;
-  const hScore  = fixture?.score?.fulltime?.home??0;
-  const aScore  = fixture?.score?.fulltime?.away??0;
-  const isLive  = mode==="live";
-  const isFT    = mode==="fulltime";
-
-  function startCooldown(secs) {
-    setCommCooldown(secs);
-    if (commCoolRef.current) clearInterval(commCoolRef.current);
-    commCoolRef.current = setInterval(()=>{
-      setCommCooldown(prev=>{ if(prev<=1){clearInterval(commCoolRef.current);return 0;} return prev-1; });
-    },1000);
-  }
-
-  function buildPrompt() {
-    const modeLabel = isLive ? `LIVE (${elapsed}')` : isFT ? "FULL TIME" : "PRE-MATCH";
-    const scoreStr  = (isLive||isFT) ? `${hScore}–${aScore}` : "not started";
-    const hName = homeTeam?.name||"Home";
-    const aName = awayTeam?.name||"Away";
-
-    const recentEvs = (events||[]).slice(-8).map(e=>{
-      const tm = e.team?.name||"";
-      const mn = e.time?.elapsed ? `${e.time.elapsed}'` : "";
-      const pl = e.player?.name||"";
-      const t  = (e.type||"").toLowerCase();
-      if(t==="goal")  return `⚽ ${mn} GOAL — ${pl} (${tm})`;
-      if(t==="card")  return `🟨 ${mn} ${e.detail||"Card"} — ${pl} (${tm})`;
-      if(t==="subst") return `🔄 ${mn} Sub — ${pl} (${tm})`;
-      return null;
-    }).filter(Boolean).join("\n");
-
-    const getStat = (tid,key) =>
-      stats?.find(s=>s.team?.id===tid)?.statistics?.find(s=>s.type===key)?.value ?? null;
-    const hPoss  = getStat(homeTeam?.id,"Ball Possession");
-    const aPoss  = getStat(awayTeam?.id,"Ball Possession");
-    const hShots = getStat(homeTeam?.id,"Total Shots");
-    const aShots = getStat(awayTeam?.id,"Total Shots");
-    const hXG    = getStat(homeTeam?.id,"expected_goals");
-    const aXG    = getStat(awayTeam?.id,"expected_goals");
-    const statsStr = [
-      hPoss  ? `Possession: ${hPoss} vs ${aPoss}` : null,
-      hShots ? `Shots: ${hShots} vs ${aShots}`    : null,
-      hXG    ? `xG: ${hXG} vs ${aXG}`             : null,
-    ].filter(Boolean).join(" | ");
-
-    const pred = winProb?.pre_match;
-    const predStr = pred
-      ? `Model: ${hName} ${pred.p_home_win}% · Draw ${pred.p_draw}% · ${aName} ${pred.p_away_win}%  xG: ${pred.xg_home}–${pred.xg_away}`
-      : null;
-    const momStr = momentumData?.overall
-      ? `Momentum: ${hName} ${momentumData.overall.home_pct}% vs ${aName} ${momentumData.overall.away_pct}%`
-      : null;
-
-    return `You are a sharp football analyst writing live commentary for StatinSite.
-
-Match: ${hName} vs ${aName}
-Status: ${modeLabel}  Score: ${scoreStr}
-${statsStr ? `Stats: ${statsStr}` : ""}
-${momStr||""}
-${predStr ? `Pre-match prediction: ${predStr}` : ""}
-${recentEvs ? `Recent events:\n${recentEvs}` : ""}
-
-Generate 4 punchy commentary entries. Return ONLY a JSON array, no markdown fences:
-[{"type":"insight","minute":"${elapsed||"–"}","text":"..."},{"type":"tactical","minute":"–","text":"..."},{"type":"pressure","minute":"–","text":"..."},{"type":"prediction","minute":"–","text":"..."}]
-
-Types: goal, chance, pressure, tactical, insight, duel, set_piece, substitution, preview, prediction, h2h, form, card
-Each text: 1-2 sharp sentences. Bold key names/stats with **asterisks**. Use actual data, no filler.`;
-  }
-
-  async function generate() {
-    if (commLoading||commCooldown>0) return;
-    setCommLoading(true);
-    try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:1000,
-          messages:[{role:"user",content:buildPrompt()}],
-        }),
-      });
-      if(resp.ok){
-        const data = await resp.json();
-        const raw  = (data.content||[]).map(b=>b.text||"").join("");
-        const cleaned = raw.replace(/```json|```/g,"").trim();
-        try {
-          const entries = JSON.parse(cleaned);
-          if(Array.isArray(entries)&&entries.length){
-            setCommentaryFeed(prev=>[...entries.slice().reverse(),...prev].slice(0,40));
-          }
-        } catch(_){
-          setCommentaryFeed(prev=>[{type:"insight",minute:elapsed||"–",text:cleaned},...prev].slice(0,40));
-        }
-      }
-    } catch(e){ console.error("Commentary error",e); }
-    finally { setCommLoading(false); }
-    startCooldown(20);
-  }
-
-  // Auto-generate once when tab mounts and fixture data is ready
-  useEffect(()=>{
-    if (commAutoFired.current) return;
-    if (!fixture && !matchIntelRaw) return;
-    commAutoFired.current = true;
-    generate();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[fixture, matchIntelRaw]);
-
-  const isReady = !commLoading&&commCooldown===0;
-
-  // Stat pills from normalised stats array
-  const pills = [
-    ["Possession", stats?.find(s=>s.team?.id===homeTeam?.id)?.statistics?.find(s=>s.type==="Ball Possession")?.value],
-    ["xG",         stats?.find(s=>s.team?.id===homeTeam?.id)?.statistics?.find(s=>s.type==="expected_goals")?.value],
-    ["Shots",      stats?.find(s=>s.team?.id===homeTeam?.id)?.statistics?.find(s=>s.type==="Total Shots")?.value],
-  ].filter(([,v])=>v!=null&&v!=="");
-
-  const insights = (matchIntelRaw?.insights||[]).slice(0,3);
+  const hasAnything = insights.length || h2hMatches.length || homeForm.length || awayForm.length || pred.p_home_win != null;
+  if (!hasAnything) return (
+    <div style={{ padding:"48px 24px",textAlign:"center",color:"rgba(255,255,255,.25)",fontSize:13 }}>
+      Match data is loading…
+    </div>
+  );
 
   return (
-    <div style={{padding:"0 0 48px"}}>
-      {/* Status bar */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px 6px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {isLive&&<span style={{width:7,height:7,borderRadius:"50%",background:"#ef4444",display:"inline-block",flexShrink:0,animation:"livePulse 1.4s ease-in-out infinite"}}/>}
-          <span style={{fontSize:11,fontWeight:800,color:isLive?"#ef4444":isFT?"#a78bfa":"#ffffff",letterSpacing:".07em"}}>
-            {isLive?`LIVE · ${elapsed}'`:isFT?"FULL TIME":"PRE-MATCH"}
-          </span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>{homeTeam?.name} {hScore}–{aScore} {awayTeam?.name}</span>
-        </div>
-        <span style={{fontSize:9,color:"rgba(255,255,255,.18)",fontFamily:"monospace"}}>AI Commentary · Claude Sonnet</span>
-      </div>
+    <div style={{ padding:"0 0 60px",display:"flex",flexDirection:"column",gap:0 }}>
 
-      {/* Stat pills */}
-      {pills.length>0&&(
-        <div style={{padding:"8px 20px 2px",display:"flex",flexWrap:"wrap",gap:4}}>
-          {pills.map(([label,val])=>(
-            <span key={label} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 8px",borderRadius:5,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",fontSize:10,fontWeight:700}}>
-              <span style={{color:"rgba(255,255,255,.35)"}}>{label}</span>
-              <span style={{color:"#e2e8f0",fontFamily:"'Inter',sans-serif"}}>{val}</span>
-            </span>
-          ))}
-        </div>
-      )}
+      {/* ── LIVE STATS SNAPSHOT (live/FT only) ─────────────────────────────── */}
+      {(isLive||isFT) && stats?.length > 0 && (() => {
+        const rows = [
+          { key:"Ball Possession", label:"Possession" },
+          { key:"expected_goals",  label:"xG"         },
+          { key:"Total Shots",     label:"Shots"       },
+          { key:"Shots on Goal",   label:"On Target"   },
+          { key:"Corner Kicks",    label:"Corners"     },
+        ].map(r=>({ ...r,
+          h: getStat(homeTeam?.id, r.key),
+          a: getStat(awayTeam?.id, r.key),
+        })).filter(r=>r.h!=null||r.a!=null);
+        if(!rows.length) return null;
+        return (
+          <div style={{ padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+            <SH label="Match Stats Snapshot" accent="#60a5fa"/>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
+              {rows.map(r=>{
+                const hN = parseFloat(String(r.h??"0").replace("%",""))||0;
+                const aN = parseFloat(String(r.a??"0").replace("%",""))||0;
+                const tot= hN+aN||1;
+                const hW = hN>aN;
+                return (
+                  <div key={r.key} style={{ padding:"9px 11px",borderRadius:8,
+                    background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)" }}>
+                    <div style={{ fontSize:8,fontWeight:700,color:"rgba(255,255,255,.3)",
+                      textTransform:"uppercase",letterSpacing:".06em",marginBottom:6,textAlign:"center" }}>{r.label}</div>
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"baseline" }}>
+                      <span style={{ fontSize:15,fontWeight:900,color:hW?"#fff":"rgba(255,255,255,.4)" }}>{r.h??"–"}</span>
+                      <span style={{ fontSize:8,color:"rgba(255,255,255,.18)",fontWeight:700 }}>vs</span>
+                      <span style={{ fontSize:15,fontWeight:900,color:!hW&&hN!==aN?"#fff":"rgba(255,255,255,.4)" }}>{r.a??"–"}</span>
+                    </div>
+                    <div style={{ display:"flex",height:3,borderRadius:2,overflow:"hidden",background:"rgba(255,255,255,.06)",marginTop:7 }}>
+                      <div style={{ width:`${(hN/tot)*100}%`,background:"#60a5fa",borderRadius:"2px 0 0 2px",transition:"width .6s" }}/>
+                      <div style={{ flex:1,background:"#f87171",borderRadius:"0 2px 2px 0" }}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
-      {/* Refresh button */}
-      <div style={{padding:"8px 20px 2px"}}>
-        <button onClick={generate} disabled={!isReady} style={{
-          display:"flex",alignItems:"center",gap:8,padding:"8px 16px",width:"100%",justifyContent:"center",
-          background:isReady?"rgba(167,139,250,.1)":"rgba(255,255,255,.03)",
-          border:`1px solid ${isReady?"rgba(167,139,250,.28)":"rgba(255,255,255,.07)"}`,
-          borderRadius:0,cursor:isReady?"pointer":"not-allowed",fontSize:11,fontWeight:900,
-          letterSpacing:".06em",textTransform:"uppercase",color:isReady?"#a78bfa":"rgba(255,255,255,.22)",transition:"all .15s",
-        }}>
-          {commLoading?(
-            <><span style={{width:12,height:12,borderRadius:"50%",border:"1.5px solid rgba(167,139,250,.3)",borderTopColor:"#a78bfa",display:"inline-block",flexShrink:0,animation:"livePulse .7s linear infinite"}}/>Generating…</>
-          ):commCooldown>0?(
-            <span style={{fontFamily:"monospace",letterSpacing:".04em"}}>Refresh in {commCooldown}s</span>
-          ):(
-            <><svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{flexShrink:0}}><path d="M6.5 1v3M6.5 9v3M1 6.5h3M9 6.5h3M2.9 2.9l2.1 2.1M7.9 7.9l2.1 2.1M2.9 10.1l2.1-2.1M7.9 5.1l2.1-2.1" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round"/></svg>Refresh commentary</>
+      {/* ── MODEL PREDICTION ────────────────────────────────────────────────── */}
+      {pred.p_home_win != null && (
+        <div style={{ padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+          <SH label="Model Prediction" accent="#a78bfa"/>
+          {/* Probability bar */}
+          <div style={{ marginBottom:14 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:11,fontWeight:800 }}>
+              <span style={{ color:"#93c5fd" }}>{hName.split(" ").pop()} {pred.p_home_win}%</span>
+              <span style={{ color:"rgba(255,255,255,.3)" }}>Draw {pred.p_draw}%</span>
+              <span style={{ color:"#f87171" }}>{aName.split(" ").pop()} {pred.p_away_win}%</span>
+            </div>
+            <div style={{ display:"flex",height:8,borderRadius:999,overflow:"hidden",gap:2 }}>
+              <div style={{ width:`${pred.p_home_win}%`,background:"linear-gradient(90deg,#3b82f688,#3b82f6)",borderRadius:"999px 0 0 999px",transition:"width .8s" }}/>
+              <div style={{ width:`${pred.p_draw}%`,background:"rgba(255,255,255,.15)" }}/>
+              <div style={{ width:`${pred.p_away_win}%`,background:"linear-gradient(90deg,#ef444488,#ef4444)",borderRadius:"0 999px 999px 0",transition:"width .8s" }}/>
+            </div>
+          </div>
+          {/* xG + markets */}
+          <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+            {pred.xg_home!=null&&<div style={{ flex:1,minWidth:80,padding:"9px 12px",background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,textAlign:"center" }}>
+              <div style={{ fontSize:16,fontWeight:900,color:"#fff" }}>{pred.xg_home}</div>
+              <div style={{ fontSize:9,color:"rgba(255,255,255,.3)",marginTop:2,textTransform:"uppercase",letterSpacing:".06em" }}>xG {hName.split(" ").pop()}</div>
+            </div>}
+            {pred.xg_away!=null&&<div style={{ flex:1,minWidth:80,padding:"9px 12px",background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,textAlign:"center" }}>
+              <div style={{ fontSize:16,fontWeight:900,color:"#fff" }}>{pred.xg_away}</div>
+              <div style={{ fontSize:9,color:"rgba(255,255,255,.3)",marginTop:2,textTransform:"uppercase",letterSpacing:".06em" }}>xG {aName.split(" ").pop()}</div>
+            </div>}
+            {(pred.markets?.over_2_5??pred.over_2_5)!=null&&<div style={{ flex:1,minWidth:80,padding:"9px 12px",background:"rgba(52,211,153,.08)",border:"1px solid rgba(52,211,153,.2)",borderRadius:8,textAlign:"center" }}>
+              <div style={{ fontSize:16,fontWeight:900,color:"#34d399" }}>{Math.round(pred.markets?.over_2_5??pred.over_2_5)}%</div>
+              <div style={{ fontSize:9,color:"rgba(52,211,153,.6)",marginTop:2,textTransform:"uppercase",letterSpacing:".06em" }}>Over 2.5</div>
+            </div>}
+            {(pred.markets?.btts??pred.btts)!=null&&<div style={{ flex:1,minWidth:80,padding:"9px 12px",background:"rgba(251,191,36,.07)",border:"1px solid rgba(251,191,36,.18)",borderRadius:8,textAlign:"center" }}>
+              <div style={{ fontSize:16,fontWeight:900,color:"#fbbf24" }}>{Math.round(pred.markets?.btts??pred.btts)}%</div>
+              <div style={{ fontSize:9,color:"rgba(251,191,36,.6)",marginTop:2,textTransform:"uppercase",letterSpacing:".06em" }}>BTTS</div>
+            </div>}
+          </div>
+          {/* Top scorelines */}
+          {pred.top_scorelines?.length>0&&(
+            <div style={{ marginTop:12 }}>
+              <div style={{ fontSize:8,fontWeight:800,color:"rgba(255,255,255,.2)",letterSpacing:".08em",textTransform:"uppercase",marginBottom:7 }}>Likely Scorelines</div>
+              <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                {pred.top_scorelines.slice(0,5).map(s=>(
+                  <div key={s.score} style={{ padding:"5px 11px",borderRadius:6,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.12)",fontSize:11,fontWeight:800,color:"#e2e8f0" }}>
+                    {s.score} <span style={{ color:"rgba(255,255,255,.3)",fontSize:9 }}>{s.probability}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-        </button>
-      </div>
-
-      {/* Loading skeleton */}
-      {commLoading&&commentaryFeed.length===0&&(
-        <div style={{padding:"14px 20px",display:"flex",flexDirection:"column",gap:14}}>
-          {[1,2,3].map(i=>(
-            <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-              <div style={{width:28,height:10,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,marginTop:3}}/>
-              <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{width:60,height:8,borderRadius:4,background:"rgba(167,139,250,.15)"}}/>
-                <div style={{width:"92%",height:8,borderRadius:4,background:"rgba(255,255,255,.05)"}}/>
-                <div style={{width:"78%",height:8,borderRadius:4,background:"rgba(255,255,255,.04)"}}/>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
-      {/* Feed */}
-      {commentaryFeed.length>0&&(
-        <div style={{margin:"8px 0 0"}}>
-          <div style={{fontSize:8,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.2)",padding:"0 20px 6px",display:"flex",alignItems:"center",gap:6}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:"#a78bfa",display:"inline-block"}}/>
-            AI Commentary
-          </div>
-          {commentaryFeed.map((entry,i)=>{
-            const cs=commStyle(entry.type);
-            return(
-              <div key={i} style={{display:"flex",gap:12,padding:"11px 20px",borderBottom:"1px solid rgba(255,255,255,.04)",alignItems:"flex-start",animation:"fadeUp .3s ease both",animationDelay:`${Math.min(i*.05,.25)}s`}}>
-                <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,.28)",width:30,flexShrink:0,fontFamily:"'Inter',sans-serif",paddingTop:2}}>{entry.minute||"–"}</div>
-                <div style={{flex:1}}>
-                  <span style={{display:"inline-block",fontSize:7,fontWeight:900,letterSpacing:".1em",textTransform:"uppercase",background:cs.bg,color:cs.color,border:`1px solid ${cs.border}`,borderRadius:4,padding:"2px 6px",marginBottom:6}}>{cs.label}</span>
-                  <div style={{fontSize:12.5,lineHeight:1.7,color:"rgba(255,255,255,.78)",fontFamily:"'Inter','Inter',sans-serif"}}><CommText text={entry.text}/></div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Match intelligence insights */}
+      {/* ── INSIGHTS ─────────────────────────────────────────────────────────── */}
       {insights.length>0&&(
-        <div style={{margin:"12px 16px 0"}}>
-          <div style={{fontSize:8,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.2)",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:"#34d399",display:"inline-block"}}/>
-            Match Intelligence
+        <div style={{ padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+          <SH label="Match Intelligence" accent="#34d399"/>
+          <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+            {insights.map((ins,i)=>{
+              const sc = sevColour(ins.severity);
+              const tc = typeColour(ins.type);
+              return(
+                <div key={i} style={{ padding:"11px 14px",borderRadius:10,background:sc.bg,border:`1px solid ${sc.border}`,display:"flex",gap:10,alignItems:"flex-start" }}>
+                  <span style={{ fontSize:16,flexShrink:0,lineHeight:1.3 }}>{ins.icon||"📊"}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:7,marginBottom:4 }}>
+                      <span style={{ fontSize:9,fontWeight:900,letterSpacing:".08em",textTransform:"uppercase",color:tc }}>{ins.type||"insight"}</span>
+                      <span style={{ fontSize:11,fontWeight:800,color:"#fff" }}>{ins.title}</span>
+                    </div>
+                    <div style={{ fontSize:12,color:"rgba(255,255,255,.65)",lineHeight:1.6 }}>{ins.body}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {insights.map((ins,i)=>(
-            <div key={i} style={{padding:"9px 13px",borderRadius:9,marginBottom:6,background:"rgba(255,255,255,.009)",border:"1px solid rgba(52,211,153,.12)"}}>
-              <div style={{fontSize:9,fontWeight:800,color:"#34d399",letterSpacing:".06em",marginBottom:4}}>{(ins.title||"").toUpperCase()}</div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,.6)",lineHeight:1.6}}>{ins.body}</div>
+        </div>
+      )}
+
+      {/* ── H2H ──────────────────────────────────────────────────────────────── */}
+      {h2hMatches.length>0&&(
+        <div style={{ padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+          <SH label={`Head to Head · Last ${Math.min(h2hMatches.length,5)}`} accent="#fbbf24"/>
+          {h2h.home_wins!=null&&(
+            <div style={{ display:"flex",gap:8,marginBottom:12 }}>
+              {[
+                { label:`${hName.split(" ").pop()} wins`, val:h2h.home_wins??0, color:"#93c5fd" },
+                { label:"Draws",                          val:h2h.draws??0,      color:"rgba(255,255,255,.4)" },
+                { label:`${aName.split(" ").pop()} wins`, val:h2h.away_wins??0,  color:"#f87171" },
+              ].map(({label,val,color})=>(
+                <div key={label} style={{ flex:1,padding:"9px 8px",background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,textAlign:"center" }}>
+                  <div style={{ fontSize:20,fontWeight:900,color }}>{val}</div>
+                  <div style={{ fontSize:9,color:"rgba(255,255,255,.3)",marginTop:2,textTransform:"uppercase",letterSpacing:".05em" }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display:"flex",flexDirection:"column",gap:5 }}>
+            {h2hMatches.slice(0,5).map((m,i)=>{
+              const hw=m.home_goals>m.away_goals, aw=m.away_goals>m.home_goals;
+              return(
+                <div key={i} style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center",padding:"7px 10px",background:"rgba(255,255,255,.025)",borderRadius:7,border:"1px solid rgba(255,255,255,.05)" }}>
+                  <span style={{ fontSize:11,fontWeight:hw?800:500,color:hw?"#fff":"rgba(255,255,255,.5)",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.home_team}</span>
+                  <span style={{ fontSize:12,fontWeight:900,color:"rgba(255,255,255,.6)",fontFamily:"monospace",whiteSpace:"nowrap",padding:"2px 8px",background:"rgba(255,255,255,.05)",borderRadius:5 }}>{m.home_goals??m.home_score??0}–{m.away_goals??m.away_score??0}</span>
+                  <span style={{ fontSize:11,fontWeight:aw?800:500,color:aw?"#fff":"rgba(255,255,255,.5)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{m.away_team}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── FORM ─────────────────────────────────────────────────────────────── */}
+      {(homeForm.length>0||awayForm.length>0)&&(
+        <div style={{ padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+          <SH label="Recent Form" accent="#34d399"/>
+          {[
+            { name:hName, form:homeForm,  color:"#93c5fd" },
+            { name:aName, form:awayForm,  color:"#f87171" },
+          ].map(({name,form,color})=>form.length>0&&(
+            <div key={name} style={{ marginBottom:14 }}>
+              <div style={{ fontSize:10,fontWeight:800,color:"rgba(255,255,255,.5)",marginBottom:7 }}>{name}</div>
+              <div style={{ display:"flex",flexDirection:"column",gap:4 }}>
+                {form.slice(0,5).map((r,i)=>{
+                  const res = typeof r==="string" ? r : r.result;
+                  const opp = r.opponent ? (typeof r.opponent==="string"?r.opponent:r.opponent?.name||"") : "";
+                  const gf  = r.goals_for??r.goals_scored??null;
+                  const ga  = r.goals_against??r.goals_conceded??null;
+                  const ha  = r.home_away||"";
+                  return(
+                    <div key={i} style={{ display:"flex",alignItems:"center",gap:8,padding:"5px 9px",background:"rgba(255,255,255,.025)",borderRadius:6,border:"1px solid rgba(255,255,255,.04)" }}>
+                      <ResBadge r={res}/>
+                      {opp&&<span style={{ fontSize:11,fontWeight:600,color:"rgba(255,255,255,.55)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{ha==="H"?"vs":"@"} {opp}</span>}
+                      {gf!=null&&<span style={{ fontSize:11,fontWeight:800,color:"rgba(255,255,255,.4)",fontFamily:"monospace",flexShrink:0 }}>{gf}–{ga}</span>}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* ── SEASON STATS ─────────────────────────────────────────────────────── */}
+      {(homeSeasonSt.played||awaySeasonSt.played)&&(
+        <div style={{ padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+          <SH label="Season Stats" accent="#60a5fa"/>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10 }}>
+            {[
+              { team:hName, ss:homeSeasonSt, color:"#93c5fd" },
+              { team:aName, ss:awaySeasonSt, color:"#f87171"  },
+            ].map(({team,ss,color})=>ss.played&&(
+              <div key={team} style={{ padding:"12px 13px",borderRadius:9,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)" }}>
+                <div style={{ fontSize:10,fontWeight:800,color,marginBottom:9,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{team}</div>
+                {[
+                  ["Played",   ss.played],
+                  ["W/D/L",    `${ss.wins??"-"}/${ss.draws??"-"}/${ss.losses??"-"}`],
+                  ["Goals/G",  ss.goals_for_avg],
+                  ["Conceded", ss.goals_against_avg],
+                  ["Clean Sh",ss.clean_sheets],
+                ].filter(([,v])=>v!=null).map(([label,val])=>(
+                  <div key={label} style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
+                    <span style={{ fontSize:10,color:"rgba(255,255,255,.35)",fontWeight:600 }}>{label}</span>
+                    <span style={{ fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:800,fontFamily:"monospace" }}>{val}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── INJURIES ─────────────────────────────────────────────────────────── */}
+      {((injuries.home?.length||0)+(injuries.away?.length||0))>0&&(
+        <div style={{ padding:"18px 20px" }}>
+          <SH label="Availability" accent="#f87171"/>
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14 }}>
+            {[{label:hName,list:injuries.home||[]},{label:aName,list:injuries.away||[]}].map(({label,list})=>(
+              <div key={label}>
+                <div style={{ fontSize:10,fontWeight:800,color:"rgba(255,255,255,.4)",marginBottom:7 }}>
+                  {label}
+                  {list.length>0&&<span style={{ marginLeft:6,color:"#f87171",fontSize:9 }}>{list.length} out</span>}
+                </div>
+                {list.length===0
+                  ? <span style={{ fontSize:11,color:"rgba(255,255,255,.2)" }}>No known issues</span>
+                  : list.slice(0,6).map((p,i)=>{
+                    const name = p.player_name||p.name||"Unknown";
+                    const type = p.type||p.reason||"Injury";
+                    const isS  = type.toLowerCase().includes("suspend");
+                    return(
+                      <div key={i} style={{ display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.03)" }}>
+                        <span style={{ width:6,height:6,borderRadius:"50%",background:isS?"#fbbf24":"#f87171",flexShrink:0 }}/>
+                        <span style={{ fontSize:11,fontWeight:600,color:"rgba(255,255,255,.7)",flex:1 }}>{name}</span>
+                        <span style={{ fontSize:9,color:"rgba(255,255,255,.3)",fontWeight:700 }}>{type}</span>
+                      </div>
+                    );
+                  })
+                }
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -2208,9 +2191,9 @@ Each text: 1-2 sharp sentences. Bold key names/stats with **asterisks**. Use act
 // ─── Tab configs by mode ──────────────────────────────────────────────────────
 
 const TABS_BY_MODE = {
-  prematch: ["Preview","Lineups","Odds","Commentary"],
-  live:     ["Overview","Events","Stats","Lineups","Players","Commentary"],
-  fulltime: ["Overview","Events","Stats","Lineups","Commentary"],
+  prematch: ["Preview","Lineups","Odds","Analysis"],
+  live:     ["Overview","Events","Stats","Lineups","Players","Analysis"],
+  fulltime: ["Overview","Events","Stats","Lineups","Analysis"],
 };
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -2264,13 +2247,8 @@ export default function LiveMatchPage() {
   const [activeNavGroup,setActiveNavGroup] = useState("domestic");
   const pollRef = useRef(null);
 
-  // ── Commentary state ──────────────────────────────────────────────────────
-  const [matchIntelRaw,  setMatchIntelRaw]  = useState(null);
-  const [commentaryFeed, setCommentaryFeed] = useState([]);
-  const [commLoading,    setCommLoading]    = useState(false);
-  const [commCooldown,   setCommCooldown]   = useState(0);
-  const commCoolRef   = useRef(null);
-  const commAutoFired = useRef(false);
+  // ── Match intelligence raw (used by AnalysisPanel) ──────────────────────
+  const [matchIntelRaw, setMatchIntelRaw] = useState(null);
 
   const mode = deriveMode(fixture?.fixture?.status?.short);
 
@@ -2589,16 +2567,11 @@ export default function LiveMatchPage() {
             {mode === "prematch" && tab === "Odds" && (
               <PredictionStrip winProb={winProb} homeTeam={homeTeam} awayTeam={awayTeam} />
             )}
-            {mode === "prematch" && tab === "Commentary" && (
-              <CommentaryPanel
-                fixtureId={fixtureId} mode={mode} fixture={fixture}
+            {mode === "prematch" && tab === "Analysis" && (
+              <AnalysisPanel
+                mode={mode} fixture={fixture}
                 events={events} stats={stats} momentumData={momentumData}
-                lineups={lineups} predictedHome={predictedHome} predictedAway={predictedAway}
                 winProb={winProb} matchIntelRaw={matchIntelRaw}
-                commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
-                commLoading={commLoading} setCommLoading={setCommLoading}
-                commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}
@@ -2614,16 +2587,11 @@ export default function LiveMatchPage() {
             {mode === "live" && tab === "Stats"    && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "live" && tab === "Lineups"  && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
             {mode === "live" && tab === "Players"  && <PlayerTable players={players} homeTeam={homeTeam} awayTeam={awayTeam} />}
-            {mode === "live" && tab === "Commentary" && (
-              <CommentaryPanel
-                fixtureId={fixtureId} mode={mode} fixture={fixture}
+            {mode === "live" && tab === "Analysis" && (
+              <AnalysisPanel
+                mode={mode} fixture={fixture}
                 events={events} stats={stats} momentumData={momentumData}
-                lineups={lineups} predictedHome={predictedHome} predictedAway={predictedAway}
                 winProb={winProb} matchIntelRaw={matchIntelRaw}
-                commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
-                commLoading={commLoading} setCommLoading={setCommLoading}
-                commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}
@@ -2639,16 +2607,11 @@ export default function LiveMatchPage() {
             {mode === "fulltime" && tab === "Events"  && <Timeline events={events} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Stats"   && <StatsPanel stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />}
             {mode === "fulltime" && tab === "Lineups" && <LineupsPanel lineups={lineups} homeTeam={homeTeam} awayTeam={awayTeam} venueName={fixtureInfo?.venue?.name} />}
-            {mode === "fulltime" && tab === "Commentary" && (
-              <CommentaryPanel
-                fixtureId={fixtureId} mode={mode} fixture={fixture}
+            {mode === "fulltime" && tab === "Analysis" && (
+              <AnalysisPanel
+                mode={mode} fixture={fixture}
                 events={events} stats={stats} momentumData={momentumData}
-                lineups={lineups} predictedHome={predictedHome} predictedAway={predictedAway}
                 winProb={winProb} matchIntelRaw={matchIntelRaw}
-                commentaryFeed={commentaryFeed} setCommentaryFeed={setCommentaryFeed}
-                commLoading={commLoading} setCommLoading={setCommLoading}
-                commCooldown={commCooldown} setCommCooldown={setCommCooldown}
-                commCoolRef={commCoolRef} commAutoFired={commAutoFired}
                 homeTeam={homeTeam} awayTeam={awayTeam}
               />
             )}

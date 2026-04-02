@@ -282,7 +282,7 @@ def _calibration_curve(predictions: List[dict], n_buckets: int = 10) -> List[dic
     for p in predictions:
         if p.get("correct") is None:
             continue
-        outcome = p.get("predicted_outcome") or p.get("predicted_outcome")
+        outcome = p.get("predicted_outcome") or p.get("actual_outcome")
         if   outcome == "home": prob = float(p.get("predicted_home_win") or 0)
         elif outcome == "draw": prob = float(p.get("predicted_draw")     or 0)
         else:                   prob = float(p.get("predicted_away_win") or 0)

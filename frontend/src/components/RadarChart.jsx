@@ -1,6 +1,19 @@
 import { Radar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from "chart.js";
 
-export default function RadarChart({data}){
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+
+export default function RadarChart({ data }){
+
+  if (!data) return null;
 
   const chartData={
     labels:["xG","xA","Shots","Pass","Dribble"],

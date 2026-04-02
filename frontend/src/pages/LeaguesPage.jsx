@@ -6,7 +6,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const BACKEND = "https://football-stats-lw4b.onrender.com";
-const Y = "#00fff0";
+const CYAN = "#00fff0";  // teal/cyan accent — used for titles and points
+const Y    = CYAN;       // alias kept for backwards compat with inline usages below
 const K = "#000";
 const R = "#ff2744";
 
@@ -22,17 +23,41 @@ function useLeagueData(leagueId) {
   const [standings, setStandings] = useState([]);
   const [scorers,   setScorers]   = useState([]);
   const [loading,   setLoading]   = useState(true);
+
   useEffect(() => {
+    const cacheKey = `leagues_card_${leagueId}`;
+    const TTL = 3_600_000; // 1 hour
+
+    // Check sessionStorage cache first
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) {
+        const { data, ts } = JSON.parse(raw);
+        if (Date.now() - ts < TTL) {
+          setStandings(data.standings);
+          setScorers(data.scorers);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (_) {}
+
     setLoading(true);
     Promise.all([
       fetch(`${BACKEND}/api/standings/${leagueId}`).then(r=>r.json()).catch(()=>[]),
       fetch(`${BACKEND}/api/topscorers/${leagueId}`).then(r=>r.json()).catch(()=>[]),
     ]).then(([s, sc]) => {
-      setStandings(Array.isArray(s) ? s.slice(0, 5) : []);
-      setScorers(Array.isArray(sc)  ? sc.slice(0, 3) : []);
+      const standings = Array.isArray(s)  ? s.slice(0, 5)  : [];
+      const scorers   = Array.isArray(sc) ? sc.slice(0, 3) : [];
+      setStandings(standings);
+      setScorers(scorers);
       setLoading(false);
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ data: { standings, scorers }, ts: Date.now() }));
+      } catch (_) {}
     });
   }, [leagueId]);
+
   return { standings, scorers, loading };
 }
 

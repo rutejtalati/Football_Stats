@@ -242,7 +242,7 @@ async def win_probability(fixture_id: int):
             p_hw = max(1,  p_hw * (1 - factor * 0.5))
             p_d  = max(1,  100 - p_hw - p_aw)
 
-        current_probs = {"p_home_win": round(p_hw, 1), "p_draw": round(p_d, 1), "p_away_win": round(p_aw, 1)}
+        current_probs = {"p_home_win": round(p_hw, 1), "p_draw": round(p_d, 1), "p_away_win": round(p_aw, 1), "top_scorelines": full_time_probs.get("top_scorelines", [])}
     else:
         current_probs = full_time_probs
 

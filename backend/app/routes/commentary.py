@@ -211,7 +211,7 @@ async def generate_commentary(fixture_id: int, req: CommentaryRequest):
         _last_gen[str(fixture_id)] = time.time()
         return entries[:4]
 
-    except __import__("json").JSONDecodeError as e:
+    except _json.JSONDecodeError as e:
         logger.warning("Commentary JSON parse error: %s | raw: %.200s", e, raw)
         raise HTTPException(502, "Model returned malformed JSON")
     except httpx.TimeoutException:

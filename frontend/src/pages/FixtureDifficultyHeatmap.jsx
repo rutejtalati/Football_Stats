@@ -260,7 +260,8 @@ export default function FixtureDifficultyHeatmap() {
                       const fxsByGw = team.fixtures || {};
                       return (
                         <tr key={team.team_id}
-                          style={{ "&:hover td": { background:"rgba(255,255,255,0.02)" } }}>
+                          onMouseEnter={e => { Array.from(e.currentTarget.cells).forEach(td => { td.style.background = "rgba(255,255,255,0.02)"; }); }}
+                          onMouseLeave={e => { Array.from(e.currentTarget.cells).forEach(td => { td.style.background = ""; }); }}>
                           {/* Sticky team name */}
                           <td style={{
                             position:"sticky", left:0, zIndex:1,

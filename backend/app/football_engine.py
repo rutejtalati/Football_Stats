@@ -781,7 +781,7 @@ def predict_match(
     hf = _form_factor(home_form)
     af = _form_factor(away_form)
     _FORM_NEUTRAL  = 0.40   # P(win) at form_factor == 1.0
-    _FORM_SCALE    = 0.50   # (0.55 - 0.25) / (1.15 - 0.85) = 1.0 → full range
+    _FORM_SCALE    = 1.00   # (0.55 - 0.25) / (1.15 - 0.85) = 1.0 → full range
     _DRAW_SHARE    = 0.265  # empirical top-5-league draw rate
     form_p_home_raw = _FORM_NEUTRAL + (hf - 1.0) * _FORM_SCALE
     form_p_away_raw = _FORM_NEUTRAL + (af - 1.0) * _FORM_SCALE

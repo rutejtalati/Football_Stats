@@ -85,13 +85,13 @@ function buildChips(rawMatches) {
 }
 
 // ── fetch with timeout helper ─────────────────────────────────────────
-async function fetchWithTimeout(url, signal, timeoutMs) {
+async function fetchWithTimeout(url, ctrl, timeoutMs) {
   const timeoutId = setTimeout(() => {
-    try { signal.controller?.abort(); } catch (_) {}
+    try { ctrl.abort(); } catch (_) {}
   }, timeoutMs);
 
   try {
-    const res = await fetch(url, { signal });
+    const res = await fetch(url, { signal: ctrl.signal });
     clearTimeout(timeoutId);
     return res;
   } catch (e) {
@@ -124,7 +124,7 @@ export function useLiveTicker(intervalMs = DEFAULT_INTERVAL) {
     try {
       const res = await fetchWithTimeout(
         `${BACKEND}/api/matches/upcoming`,
-        ctrl.signal,
+        ctrl,
         FETCH_TIMEOUT,
       );
 

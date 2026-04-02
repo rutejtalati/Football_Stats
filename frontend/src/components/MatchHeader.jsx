@@ -1,4 +1,8 @@
 export default function MatchHeader({ match }) {
+  const homeGoals = match?.goals?.home;
+  const awayGoals = match?.goals?.away;
+  const isPreMatch = homeGoals == null && awayGoals == null;
+
   return (
     <div className="match-header">
       <h1 className="page-title">
@@ -6,7 +10,10 @@ export default function MatchHeader({ match }) {
       </h1>
 
       <div className="score-line">
-        {match.goals.home} - {match.goals.away}
+        {isPreMatch
+          ? "vs"
+          : `${homeGoals ?? 0} - ${awayGoals ?? 0}`
+        }
       </div>
 
       <div className="match-meta">

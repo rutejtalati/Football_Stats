@@ -12,14 +12,20 @@ function sortByPoints(players){
 
 export function calculateBestXI(players){
 
-  const gk = sortByPoints(players.filter(p=>p.position==="GK"));
+  const gk  = sortByPoints(players.filter(p=>p.position==="GK"));
   const def = sortByPoints(players.filter(p=>p.position==="DEF"));
   const mid = sortByPoints(players.filter(p=>p.position==="MID"));
   const fwd = sortByPoints(players.filter(p=>p.position==="FWD"));
 
+  // Cannot build a valid XI without at least one player in every position group
+  if (!gk.length || !def.length || !mid.length || !fwd.length) return null;
+
   let best = null;
 
   FORMATIONS.forEach(f => {
+
+    // Skip this formation if we don't have enough players in any group
+    if (def.length < f.def || mid.length < f.mid || fwd.length < f.fwd) return;
 
     const lineup = {
       gk: gk[0],
@@ -71,8 +77,8 @@ export function suggestTwoTransfers(currentSquad, allPlayers){
   const worst1 = sorted[sorted.length-1];
   const worst2 = sorted[sorted.length-2];
 
-  const best1 = sortByPoints(allPlayers).find(p=>p.position===worst1.position);
-  const best2 = sortByPoints(allPlayers).find(p=>p.position===worst2.position);
+  const best1 = sortByPoints(allPlayers).find(p=>p.position===worst1.position && p.player_id!==worst1.player_id);
+  const best2 = sortByPoints(allPlayers).find(p=>p.position===worst2.position && p.player_id!==worst2.player_id && p.player_id!==best1?.player_id);
 
   return {
     transfers:[

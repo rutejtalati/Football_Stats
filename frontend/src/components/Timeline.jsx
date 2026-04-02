@@ -1,17 +1,21 @@
-import { useEffect,useState } from "react"
+import { useEffect, useState } from "react"
+import { API_BASE as API } from "../api/api"
 
-export default function Timeline({fixtureId}){
+export default function Timeline({ fixtureId }){
 
-  const [events,setEvents]=useState([])
-  const API="http://127.0.0.1:8001"
+  const [events, setEvents] = useState([])
+  const [error,  setError]  = useState(null)
 
   useEffect(()=>{
 
     fetch(`${API}/api/events/${fixtureId}`)
-      .then(r=>r.json())
-      .then(data=>setEvents(data.response))
+      .then(r => r.json())
+      .then(data => setEvents(data?.response || []))
+      .catch(() => setError("Failed to load events"))
 
-  },[])
+  },[fixtureId])
+
+  if (error) return <div className="timeline" style={{ color: "#ff4d6d", padding: 12 }}>{error}</div>
 
   return(
 

@@ -1,4 +1,6 @@
-export default function ShotMap({shots}){
+export default function ShotMap({ shots = [] }){
+
+  if (!shots.length) return null;
 
   return(
 
@@ -10,7 +12,7 @@ export default function ShotMap({shots}){
           cx={s.x}
           cy={s.y}
           r={5}
-          fill={s.goal ? "red" : "white"}
+          fill={s.is_goal ? "red" : "white"}
         />
       ))}
 

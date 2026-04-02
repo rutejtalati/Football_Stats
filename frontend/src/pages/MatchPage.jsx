@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import Pitch from "../components/Pitch";
 import Timeline from "../components/Timeline";
 import StatsBar from "../components/StatsBar";
+import { API_BASE as API } from "../api/api";
 
 export default function MatchPage({ fixtureId }) {
 
   const [match,setMatch]=useState(null)
-  const API="http://127.0.0.1:8001"
 
   useEffect(()=>{
 
     fetch(`${API}/api/live/fixture/${fixtureId}`)
       .then(r=>r.json())
-      .then(data=>setMatch(data.response[0]))
+      .then(data=>setMatch(data.response?.[0] ?? null))
+      .catch(()=>setMatch(null))
 
-  },[])
+  },[fixtureId])
 
   if(!match) return <div>Loading match...</div>
 

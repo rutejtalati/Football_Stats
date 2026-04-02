@@ -26,7 +26,7 @@ export function useMatchIntelligence(fixtureId) {
 
     // Return cache unless it's expired, a live match, or forced
     if (!force && cached) {
-      const isLive = LIVE_STATUSES.includes(cached.data?._meta?.status_short);
+      const isLive = LIVE_STATUSES.includes(cached.data?.header?.status_short);
       if (!isLive && Date.now() - cached.ts < CACHE_TTL) {
         setData(cached.data);
         return;

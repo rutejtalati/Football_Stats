@@ -3,6 +3,11 @@ import { useEffect } from "react";
 export default function StandingsWidget() {
 
   useEffect(() => {
+    // Avoid injecting the script more than once
+    const existing = document.querySelector(
+      'script[src="https://widgets.api-sports.io/football/1.1.8/widget.js"]'
+    );
+    if (existing) return;
 
     const script = document.createElement("script");
     script.src = "https://widgets.api-sports.io/football/1.1.8/widget.js";
@@ -10,6 +15,9 @@ export default function StandingsWidget() {
 
     document.body.appendChild(script);
 
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   return (
@@ -19,7 +27,7 @@ export default function StandingsWidget() {
 
       <api-sports-widget
         data-type="config"
-        data-key="YOUR_API_KEY"
+        data-key={import.meta.env.VITE_API_SPORTS_KEY || ""}
         data-sport="football"
         data-lang="en"
         data-theme="dark"

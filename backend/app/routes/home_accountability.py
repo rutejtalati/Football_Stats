@@ -66,7 +66,7 @@ async def performance_summary() -> dict:
         # Trigger verification of recent results
         try:
             await asyncio.wait_for(_verify_recent_results(), timeout=6.0)
-        except asyncio.TimeoutError:
+        except (asyncio.TimeoutError, Exception):
             pass
 
         # Get health stats for counts

@@ -14,7 +14,7 @@ export default function PredictionTable({ predictions = [] }) {
     <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"4px 0" }}>
       {predictions.map((match, i) => (
         <PredictionCard
-          key={(match.home_team||"")+"-"+(match.away_team||"")+"-"+i}
+          key={match.fixture_id ?? match.id ?? (match.home_team || "") + "-" + (match.away_team || "") + "-" + i}
           match={match}
         />
       ))}

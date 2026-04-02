@@ -14,7 +14,7 @@ import PlayerInsightPage from "./pages/PlayerInsightPage";
 import TeamPage from "./pages/TeamPage";
 import MiniGamesPage from "./pages/MiniGamesPage";
 import NewsTrackerPage from "./pages/NewsTrackerPage";
-import MatchIntelligencePage from "./pages/MatchIntelligencePage";
+import LeaguePage from "./pages/LeaguePage";
 import LiveMatchPage from "./pages/LiveMatchPage";
 import TransferPlannerPage from "./pages/TransferPlannerPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
@@ -74,10 +74,10 @@ export default function App() {
             <Route path="/facup"                    element={<Navigate to="/predictions/fa-cup" replace />} />
             <Route path="/predictions/:league"      element={<PredictionsPage slugMap={SLUG_MAP} />} />
             <Route path="/leagues"                  element={<LeaguesPage />} />
-            <Route path="/league/epl"               element={<ComingSoon name="Premier League" />} />
-            <Route path="/league/laliga"            element={<ComingSoon name="La Liga" />} />
-            <Route path="/league/seriea"            element={<ComingSoon name="Serie A" />} />
-            <Route path="/league/ligue1"            element={<ComingSoon name="Ligue 1" />} />
+            <Route path="/league/epl"               element={<LeaguePage league="epl" />} />
+            <Route path="/league/laliga"            element={<LeaguePage league="laliga" />} />
+            <Route path="/league/seriea"            element={<LeaguePage league="seriea" />} />
+            <Route path="/league/ligue1"            element={<LeaguePage league="ligue1" />} />
             <Route path="/simulation/:league"       element={<SeasonSimulator />} />
             <Route path="/squad-builder"            element={<SquadBuilderPage />} />
             <Route path="/best-team"                element={<BestTeamPage />} />

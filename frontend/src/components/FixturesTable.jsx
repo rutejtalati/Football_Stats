@@ -11,12 +11,12 @@ export default function FixturesTable({ fixtures = [] }) {
         </thead>
         <tbody>
           {fixtures.map((match) => (
-            <tr key={match.fixture.id}>
+            <tr key={match?.fixture?.id ?? Math.random()}>
               <td>
-                {match.teams.home.name} vs {match.teams.away.name}
+                {match?.teams?.home?.name ?? "?"} vs {match?.teams?.away?.name ?? "?"}
               </td>
-              <td>{new Date(match.fixture.date).toLocaleDateString()}</td>
-              <td>{match.fixture.venue?.name || "TBC"}</td>
+              <td>{match?.fixture?.date ? new Date(match.fixture.date).toLocaleDateString() : "TBC"}</td>
+              <td>{match?.fixture?.venue?.name || "TBC"}</td>
             </tr>
           ))}
         </tbody>

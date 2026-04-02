@@ -679,6 +679,32 @@ export default function BestTeamPage() {
                 ))}
               </div>
 
+              <div className="bt-stat-card" style={{ cursor:"pointer", border:"1px solid rgba(255,214,10,0.25)", background:"rgba(255,214,10,0.04)" }}
+                onClick={() => navigate("/fpl-intelligence")}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                  <div className="bt-stat-label" style={{ marginBottom:0, color:"#ffd60a" }}>GW{gw} Intelligence</div>
+                  <span style={{ fontSize:10, color:"#ffd60a", fontWeight:700, letterSpacing:"0.06em" }}>VIEW ALL →</span>
+                </div>
+                <div style={{ fontSize:12, color:"#4a6a8a", lineHeight:1.55, marginBottom:10 }}>
+                  Transfer targets, chip strategy and captain analysis — powered by the StatinSite Poisson and xG models.
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {[
+                    { label:"1 Transfer pick", desc:"Tarkowski → TAA · +3.4 EP", color:"#30d158" },
+                    { label:"Triple captain", desc:"B.Fernandes · 9.8 pts · MUN (H)", color:"#ffd60a" },
+                    { label:"Bench boost", desc:"18.1 bench EP · 82nd percentile", color:"#0a84ff" },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:"rgba(255,255,255,0.04)", borderRadius:8, borderLeft:`2px solid ${item.color}` }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.8)" }}>{item.label}</div>
+                        <div style={{ fontSize:10, color:"#4a6a8a", marginTop:1 }}>{item.desc}</div>
+                      </div>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke={item.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="bt-stat-card bt-leaderboard-card">
                 <div className="bt-stat-label" style={{ marginBottom:10 }}>
                   {activeTab==="captaincy" && "Captaincy Model"}

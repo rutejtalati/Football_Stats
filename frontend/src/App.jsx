@@ -25,6 +25,7 @@ import GameweekInsightsPage from "./pages/GameweekInsightsPage";
 import DifferentialFinderPage from "./pages/DifferentialFinderPage";
 import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 import LeaguesPage from "./pages/LeaguesPage";
+import FplIntelligencePage from "./pages/FplIntelligencePage";
 
 /* ── Stub for pages not yet built ── */
 const ComingSoon = ({ name }) => (
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/simulation/:league"       element={<SeasonSimulator />} />
             <Route path="/squad-builder"            element={<SquadBuilderPage />} />
             <Route path="/best-team"                element={<BestTeamPage />} />
+            <Route path="/fpl-intelligence"         element={<FplIntelligencePage />} />
             <Route path="/gameweek-insights"        element={<GameweekInsightsPage />} />
             <Route path="/fpl-table"                element={<FplTablePage />} />
             <Route path="/captaincy"                element={<CaptaincyPage />} />

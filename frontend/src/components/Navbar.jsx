@@ -40,6 +40,7 @@ const SECONDARY_NAV = [
 
 const FPL_ITEMS = [
   { to: "/best-team",          label: "Best XI",       short: "XI",  desc: "Optimal FPL starting 11",    color: "#30d158" },
+  { to: "/fpl-intelligence",   label: "GW Intel",      short: "GWI", desc: "Gameweek FPL analysis",      color: "#ffd60a" },
   { to: "/squad-builder",      label: "Squad Builder", short: "SQ",  desc: "Build your 15-man squad",    color: "#34d1a0" },
   { to: "/gameweek-insights",  label: "GW Insights",   short: "GW",  desc: "Gameweek stats & analysis",  color: "#0a84ff" },
   { to: "/fpl-table",          label: "FPL Table",     short: "TB",  desc: "Live FPL leaderboard",       color: "#64d2ff" },

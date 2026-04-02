@@ -12,7 +12,11 @@ from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter()
 
-API_KEY        = os.getenv("API_FOOTBALL_KEY", "")
+def _api_key() -> str:
+    """Lazy read so the key is always fetched from the environment at call time,
+    not at module import — important when env vars are injected after startup."""
+    return os.getenv("API_FOOTBALL_KEY", "")
+
 API_BASE       = "https://v3.football.api-sports.io"
 CURRENT_SEASON = int(os.getenv("CURRENT_SEASON", "2025"))
 
@@ -36,11 +40,12 @@ def _set(k, v):
 
 
 async def _api(ep: str, params: dict) -> Any:
-    if not API_KEY:
+    key = _api_key()
+    if not key:
         return []
     try:
         async with httpx.AsyncClient(timeout=14) as c:
-            r = await c.get(f"{API_BASE}/{ep}", headers={"x-apisports-key": API_KEY}, params=params)
+            r = await c.get(f"{API_BASE}/{ep}", headers={"x-apisports-key": key}, params=params)
             if r.status_code == 200:
                 body = r.json()
                 return body.get("response", [])

@@ -26,28 +26,28 @@ const Ic = {
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
 const PRIMARY_NAV = [
-  { to: "/",                           label: "Home",        Icon: Ic.Home,    color: "#ffffff", end: true },
-  { to: "/live",                       label: "Live",        Icon: Ic.Live,    color: "#ff453a", isLive: true },
-  { to: "/predictions/premier-league", label: "Predictions", Icon: Ic.Predict, color: "#0a84ff" },
-  { to: "/best-team",                  label: "Fantasy",     Icon: Ic.Fantasy, color: "#30d158", fplGroup: true },
-  { to: "/player",                     label: "Players",     Icon: Ic.Players, color: "#bf5af2" },
-  { to: "/news",                       label: "News",        Icon: Ic.News,    color: "#ff9f0a" },
+  { to: "/",                           label: "Home",              Icon: Ic.Home,    color: "#ffffff", end: true },
+  { to: "/live",                       label: "Live Scores",       Icon: Ic.Live,    color: "#ff453a", isLive: true },
+  { to: "/predictions/premier-league", label: "Match Predictions", Icon: Ic.Predict, color: "#0a84ff" },
+  { to: "/best-team",                  label: "Fantasy Football",  Icon: Ic.Fantasy, color: "#30d158", fplGroup: true },
+  { to: "/player",                     label: "Player Stats",      Icon: Ic.Players, color: "#bf5af2" },
+  { to: "/news",                       label: "News Tracker",      Icon: Ic.News,    color: "#ff9f0a" },
 ];
 const SECONDARY_NAV = [
-  { to: "/learn", label: "Ground Zero", Icon: Ic.Learn, color: "#64d2ff" },
-  { to: "/games", label: "Games",       Icon: Ic.Games, color: "#ff6961" },
+  { to: "/learn", label: "How It Works", Icon: Ic.Learn, color: "#64d2ff" },
+  { to: "/games", label: "Mini Games",   Icon: Ic.Games, color: "#ff6961" },
 ];
 
 const FPL_ITEMS = [
-  { to: "/best-team",          label: "Best XI",       short: "XI",  desc: "Optimal FPL starting 11",    color: "#30d158" },
-  { to: "/fpl-intelligence",   label: "GW Intel",      short: "GWI", desc: "Gameweek FPL analysis",      color: "#ffd60a" },
-  { to: "/squad-builder",      label: "Squad Builder", short: "SQ",  desc: "Build your 15-man squad",    color: "#34d1a0" },
-  { to: "/gameweek-insights",  label: "GW Insights",   short: "GW",  desc: "Gameweek stats & analysis",  color: "#0a84ff" },
-  { to: "/fpl-table",          label: "FPL Table",     short: "TB",  desc: "Live FPL leaderboard",       color: "#64d2ff" },
-  { to: "/captaincy",          label: "Captaincy",     short: "©",   desc: "Captain picks & ownership",  color: "#ff9f0a" },
-  { to: "/fixture-difficulty", label: "FDR Heatmap",   short: "FDR", desc: "Fixture difficulty ratings", color: "#ff453a" },
-  { to: "/transfer-planner",   label: "Transfers",     short: "TR",  desc: "Plan transfers & free hits", color: "#bf5af2" },
-  { to: "/differentials",      label: "Differentials", short: "DIF", desc: "Low-owned picks",            color: "#ff6961" },
+  { to: "/best-team",          label: "Best Starting 11",     short: "XI",  desc: "AI-picked optimal team for this week",    color: "#30d158" },
+  { to: "/fpl-intelligence",   label: "Gameweek Guide",       short: "GWI", desc: "Transfers, captain and chip advice",      color: "#ffd60a" },
+  { to: "/captaincy",          label: "Who to Captain",       short: "C",   desc: "Model-backed captain picks",             color: "#ff9f0a" },
+  { to: "/transfer-planner",   label: "Transfer Planner",     short: "TR",  desc: "Plan your moves, free and paid",         color: "#bf5af2" },
+  { to: "/squad-builder",      label: "Build Your Squad",     short: "SQ",  desc: "Assemble your 15-man roster",           color: "#34d1a0" },
+  { to: "/differentials",      label: "Hidden Gems",          short: "GEM", desc: "Low-owned players worth picking",        color: "#ff6961" },
+  { to: "/fixture-difficulty", label: "Fixture Difficulty Map",short: "FDR", desc: "Upcoming fixture ratings by team",      color: "#ff453a" },
+  { to: "/gameweek-insights",  label: "Gameweek Stats",       short: "GW",  desc: "Points breakdown and analytics",        color: "#0a84ff" },
+  { to: "/fpl-table",          label: "Mini League Table",    short: "TB",  desc: "Live FPL rankings and standings",       color: "#64d2ff" },
 ];
 
 const FPL_PATHS = FPL_ITEMS.map(i => i.to);
@@ -115,91 +115,59 @@ function SideNavItem({ item, active, iconOnly, onClick }) {
   );
 }
 
-// ─── Fantasy dropdown — two modes ─────────────────────────────────────────────
-// EXPANDED: inline accordion below the trigger
-// ICON-ONLY: floating panel that flies out to the right
-function FplDropdown({ iconOnly, fplActive: isFplActive }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+// ─── Fantasy Football (FPL) — always-expanded section ────────────────────────
+function FplSection({ iconOnly }) {
   const location = useLocation();
-  useClickOutside(ref, () => setOpen(false));
-  useEffect(() => setOpen(false), [location.pathname]);
-
   return (
-    <div ref={ref} style={{ position: "relative" }}>
-
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen(v => !v)}
-        className={"nb-item nb-item-btn" + (isFplActive ? " nb-item--active" : "")}
-        style={{ "--ic": "#30d158", width: "100%" }}
-        title={iconOnly ? "Fantasy" : undefined}
-      >
-        <span className="nb-icon"><Ic.Fantasy/></span>
-        {!iconOnly && (
-          <>
-            <span className="nb-label">Fantasy</span>
-            <span className="nb-fpl-tag">FPL</span>
-            <span className="nb-chevron" style={{ transform: open ? "rotate(180deg)" : "none" }}>
-              <Ic.Chevron/>
-            </span>
-          </>
-        )}
-      </button>
-
-      {/* EXPANDED — inline accordion */}
-      {open && !iconOnly && (
-        <div className="nb-fpl-accordion">
-          {FPL_ITEMS.map(sub => {
-            const isActive = location.pathname.startsWith(sub.to);
-            return (
-              <NavLink
-                key={sub.to}
-                to={sub.to}
-                className={"nb-fpl-row" + (isActive ? " nb-fpl-row--active" : "")}
-                style={{ "--sub": sub.color }}
-              >
-                <span className="nb-fpl-dot" style={{ background: sub.color }}/>
-                <span className="nb-fpl-row-text">
-                  <span className="nb-fpl-row-label">{sub.label}</span>
-                  <span className="nb-fpl-row-desc">{sub.desc}</span>
-                </span>
-              </NavLink>
-            );
-          })}
+    <div style={{ position: "relative" }}>
+      {/* Section header — visible only when expanded */}
+      {!iconOnly && (
+        <div className="nb-fpl-section-head">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
+            <path d="M10 1.5l2 4.5 4.5.6-3.3 3.2.8 4.7L10 12l-4 2.5.8-4.7L3.5 6.6 8 6l2-4.5z"
+              stroke="rgba(48,209,88,.65)" strokeWidth="1.4" strokeLinejoin="round"/>
+          </svg>
+          <span>Fantasy Football (FPL)</span>
         </div>
       )}
-
-      {/* ICON-ONLY — floating panel */}
-      {open && iconOnly && (
-        <div className="nb-fpl-panel">
-          <div className="nb-fpl-panel-head">
-            <span style={{ color: "#30d158", display: "flex" }}><Ic.Fantasy/></span>
-            <span>Fantasy</span>
-            <span className="nb-fpl-tag" style={{ marginLeft: "auto" }}>FPL</span>
-          </div>
-          {FPL_ITEMS.map(sub => {
-            const isActive = location.pathname.startsWith(sub.to);
-            return (
-              <NavLink
-                key={sub.to}
-                to={sub.to}
-                className={"nb-fpl-row" + (isActive ? " nb-fpl-row--active" : "")}
-                style={{ "--sub": sub.color }}
-              >
-                <span className="nb-fpl-dot" style={{ background: sub.color }}/>
-                <span className="nb-fpl-row-text">
-                  <span className="nb-fpl-row-label">{sub.label}</span>
-                  <span className="nb-fpl-row-desc">{sub.desc}</span>
-                </span>
-              </NavLink>
-            );
-          })}
-        </div>
-      )}
+      {/* Items block */}
+      <div className={iconOnly ? "" : "nb-fpl-always-block"}>
+        {FPL_ITEMS.map((sub, i) => {
+          const isActive = location.pathname.startsWith(sub.to);
+          const isNew    = sub.to === "/fpl-intelligence";
+          return (
+            <NavLink
+              key={sub.to}
+              to={sub.to}
+              className={"nb-fpl-row" + (isActive ? " nb-fpl-row--active" : "")}
+              style={{ "--sub": sub.color, animationDelay: `${i * 28}ms` }}
+              title={iconOnly ? sub.label : undefined}
+            >
+              {iconOnly ? (
+                <div className="nb-icon" style={{ margin: "0 auto" }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, color: sub.color,
+                    fontFamily: "'Inter',-apple-system,sans-serif", letterSpacing: "-.01em",
+                  }}>{sub.short}</span>
+                </div>
+              ) : (
+                <>
+                  <span className="nb-fpl-dot" style={{ background: sub.color }}/>
+                  <span className="nb-fpl-row-text">
+                    <span className="nb-fpl-row-label">{sub.label}</span>
+                    <span className="nb-fpl-row-desc">{sub.desc}</span>
+                  </span>
+                  {isNew && <span className="nb-fpl-new-badge">NEW</span>}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
 
 // ─── Mobile bottom tab bar ────────────────────────────────────────────────────
 function MobileTabBar() {
@@ -288,6 +256,7 @@ export default function Navbar() {
     document.documentElement.style.setProperty("--sidebar-w", `${SW}px`);
   }, [SW]);
 
+
   return (
     <>
       <style>{`
@@ -295,83 +264,74 @@ export default function Navbar() {
         *, *::before, *::after { box-sizing: border-box; }
 
         /* ── Tokens ── */
-        :root, [data-theme="dark"] {
+        :root {
           --nb-bg:      #0d0d0d;
           --nb-border:  rgba(255,255,255,0.07);
           --nb-text:    rgba(255,255,255,0.88);
           --nb-muted:   rgba(255,255,255,0.34);
           --nb-hover:   rgba(255,255,255,0.055);
           --nb-active:  rgba(255,255,255,0.08);
-          --nb-bar:     rgba(10,10,10,0.94);
-          --nb-shadow:  rgba(0,0,0,0.65);
+          --nb-bar:     rgba(10,10,10,0.96);
+          --nb-shadow:  rgba(0,0,0,0.70);
           --nb-glow-b:  rgba(10,132,255,0.55);
-          --nb-glow-g:  rgba(48,209,88,0.4);
-          --sn-bg:      #111111;
-          --sn-surface: rgba(255,255,255,0.04);
-          --sn-border:  rgba(255,255,255,0.08);
-          --sn-text:    rgba(255,255,255,0.88);
-          --sn-muted:   rgba(255,255,255,0.38);
-          --sn-hover:   rgba(255,255,255,0.06);
-          --sn-active:  rgba(255,255,255,0.09);
-          --sn-bar-bg:  rgba(17,17,17,0.92);
-          --sn-shadow:  rgba(0,0,0,0.45);
-        }
-        [data-theme="light"] {
-          --nb-bg:      #f8f8fa;
-          --nb-border:  rgba(0,0,0,0.08);
-          --nb-text:    rgba(0,0,0,0.85);
-          --nb-muted:   rgba(0,0,0,0.36);
-          --nb-hover:   rgba(0,0,0,0.045);
-          --nb-active:  rgba(0,0,0,0.07);
-          --nb-bar:     rgba(248,248,250,0.94);
-          --nb-shadow:  rgba(0,0,0,0.12);
-          --nb-glow-b:  rgba(10,132,255,0.2);
-          --nb-glow-g:  rgba(48,209,88,0.2);
-          --sn-bg:      #f5f5f7;
-          --sn-surface: rgba(0,0,0,0.03);
-          --sn-border:  rgba(0,0,0,0.09);
-          --sn-text:    rgba(0,0,0,0.85);
-          --sn-muted:   rgba(0,0,0,0.38);
-          --sn-hover:   rgba(0,0,0,0.05);
-          --sn-active:  rgba(0,0,0,0.07);
-          --sn-bar-bg:  rgba(245,245,247,0.92);
-          --sn-shadow:  rgba(0,0,0,0.12);
+          --nb-glow-g:  rgba(48,209,88,0.45);
         }
 
         /* ── Keyframes ── */
         @keyframes nb-pulse   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.55)} }
         @keyframes nb-ring    { 0%{transform:scale(1);opacity:.6} 80%{transform:scale(2.8);opacity:0} 100%{opacity:0} }
-        @keyframes nb-down    { from{opacity:0;transform:translateY(-6px) scaleY(.95)} to{opacity:1;transform:none} }
-        @keyframes nb-right   { from{opacity:0;transform:translateX(-10px) scale(.97)} to{opacity:1;transform:none} }
-        @keyframes nb-slidein { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:none} }
+        @keyframes nb-slidein { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:none} }
         @keyframes nb-shimmer { 0%{background-position:200% 50%} 100%{background-position:-200% 50%} }
+        @keyframes nb-fpl-in  { from{opacity:0;transform:translateY(6px) scaleY(.97)} to{opacity:1;transform:none} }
+        @keyframes nb-item-in { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+        @keyframes nb-drawer-in { from{opacity:0;transform:translateX(-100%)} to{opacity:1;transform:translateX(0)} }
+        @keyframes nb-backdrop-in { from{opacity:0} to{opacity:1} }
+        @keyframes nb-mob-tab-bounce { 0%{transform:translateY(0)} 40%{transform:translateY(-5px) scale(1.15)} 70%{transform:translateY(1px) scale(0.97)} 100%{transform:translateY(0) scale(1)} }
+        @keyframes nb-icon-pop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(0.94)} 100%{transform:scale(1)} }
+        @keyframes nb-active-rail { from{opacity:0;transform:scaleY(0)} to{opacity:1;transform:scaleY(1)} }
+        @keyframes nb-glow-pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+        @keyframes nb-new-badge { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+        @keyframes nb-collapse { from{width:220px} to{width:64px} }
+        @keyframes nb-expand   { from{width:64px}  to{width:220px} }
 
         /* ── Sidebar shell ── */
         .nb-sidebar {
           position: fixed; top: 0; left: 0; bottom: 0;
           width: ${SW}px; z-index: 200;
           background: var(--nb-bg);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          backdrop-filter: blur(48px) saturate(200%);
+          -webkit-backdrop-filter: blur(48px) saturate(200%);
           border-right: 0.5px solid var(--nb-border);
           display: flex; flex-direction: column;
-          transition: width 0.26s cubic-bezier(0.4,0,0.2,1);
+          transition: width 0.32s cubic-bezier(0.4,0,0.2,1);
           overflow: hidden;
+          will-change: width;
         }
-        /* Animated shimmer edge rail */
+        /* Animated colour-shift shimmer rail on the left edge */
         .nb-sidebar::before {
-          content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 1px;
-          background: linear-gradient(180deg,transparent 0%,var(--nb-glow-b) 30%,var(--nb-glow-g) 70%,transparent 100%);
-          background-size: 100% 200%;
-          animation: nb-shimmer 5s linear infinite;
+          content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 1.5px;
+          background: linear-gradient(180deg,
+            transparent 0%,
+            var(--nb-glow-b) 25%,
+            var(--nb-glow-g) 55%,
+            rgba(255,214,10,0.35) 75%,
+            transparent 100%);
+          background-size: 100% 300%;
+          animation: nb-shimmer 6s linear infinite;
           z-index: 10; pointer-events: none;
         }
-        /* Scanline texture */
+        /* Subtle scanline texture overlay */
         .nb-sidebar::after {
           content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-          background: repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.011) 39px,rgba(255,255,255,.011) 40px);
+          background: repeating-linear-gradient(
+            0deg,transparent,transparent 39px,
+            rgba(255,255,255,.009) 39px,rgba(255,255,255,.009) 40px
+          );
         }
-        [data-theme="light"] .nb-sidebar::after { display: none; }
+
+        /* ── Sidebar expand/collapse animation classes ── */
+        .nb-sidebar.nb-collapsing { animation: nb-collapse 0.32s cubic-bezier(0.4,0,0.2,1) both; }
+        .nb-sidebar.nb-expanding  { animation: nb-expand   0.32s cubic-bezier(0.4,0,0.2,1) both; }
 
         /* ── Header ── */
         .nb-head {
@@ -383,12 +343,16 @@ export default function Navbar() {
         .nb-brand {
           display: flex; align-items: center; gap: 9px;
           text-decoration: none; flex: 1; min-width: 0; overflow: hidden;
+          transition: opacity 0.2s ease;
         }
+        .nb-brand:hover { opacity: 0.85; }
         .nb-brand-name {
           font-size: 14.5px; font-weight: 700;
           color: var(--nb-text); letter-spacing: -0.035em;
-          font-family: 'Inter', -apple-system, sans-serif;
+          font-family: 'Inter',-apple-system,sans-serif;
           white-space: nowrap;
+          transition: opacity 0.2s ease;
+          animation: nb-item-in 0.3s cubic-bezier(0.22,1,0.36,1) both;
         }
         .nb-toggle {
           width: 26px; height: 26px; border-radius: 7px;
@@ -396,30 +360,37 @@ export default function Navbar() {
           color: var(--nb-muted); cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0; margin-left: auto;
-          transition: background 0.13s, color 0.13s; position: relative; z-index: 2;
+          transition: background 0.15s, color 0.15s, transform 0.18s cubic-bezier(.34,1.56,.64,1);
+          position: relative; z-index: 2;
         }
-        .nb-toggle:hover { background: var(--nb-active); color: var(--nb-text); }
+        .nb-toggle:hover { background: var(--nb-active); color: var(--nb-text); transform: scale(1.08); }
+        .nb-toggle:active { transform: scale(0.92); }
 
         /* ── Search ── */
         .nb-search-wrap {
           padding: 8px 10px; flex-shrink: 0;
           border-bottom: 0.5px solid var(--nb-border);
           position: relative; z-index: 2;
+          animation: nb-item-in 0.25s 0.05s cubic-bezier(0.22,1,0.36,1) both;
         }
         .nb-search-inner {
           display: flex; align-items: center; gap: 7px;
           background: rgba(255,255,255,.04);
           border: 0.5px solid var(--nb-border);
           border-radius: 9px; padding: 6px 10px;
-          transition: border-color .15s, background .15s;
+          transition: border-color .18s, background .18s, box-shadow .18s;
         }
-        [data-theme="light"] .nb-search-inner { background: rgba(0,0,0,.04); }
-        .nb-search-inner:focus-within { border-color: rgba(10,132,255,.5); background: rgba(10,132,255,.04); }
-        .nb-search-inner svg { color: var(--nb-muted); flex-shrink: 0; }
+        .nb-search-inner:focus-within {
+          border-color: rgba(10,132,255,.55);
+          background: rgba(10,132,255,.05);
+          box-shadow: 0 0 0 3px rgba(10,132,255,.12);
+        }
+        .nb-search-inner svg { color: var(--nb-muted); flex-shrink: 0; transition: color .15s; }
+        .nb-search-inner:focus-within svg { color: rgba(10,132,255,.8); }
         .nb-search-input {
           border: none; background: transparent; outline: none;
           font-size: 12.5px; color: var(--nb-text);
-          font-family: 'Inter', -apple-system, sans-serif;
+          font-family: 'Inter',-apple-system,sans-serif;
           width: 100%; min-width: 0;
         }
         .nb-search-input::placeholder { color: var(--nb-muted); }
@@ -433,37 +404,44 @@ export default function Navbar() {
         .nb-scroll::-webkit-scrollbar { display: none; }
         .nb-section {
           font-size: 9.5px; font-weight: 700; color: var(--nb-muted);
-          letter-spacing: 0.1em; text-transform: uppercase;
+          letter-spacing: 0.12em; text-transform: uppercase;
           padding: 10px 7px 4px;
+          animation: nb-item-in 0.25s 0.06s cubic-bezier(0.22,1,0.36,1) both;
         }
         .nb-divider { height: 0.5px; background: var(--nb-border); margin: 6px 7px; }
 
-        /* ── Nav item ── */
+        /* ── Nav items ── */
         .nb-item, .nb-item-btn {
           display: flex; align-items: center; gap: 10px;
           padding: 8px 9px; border-radius: 10px;
-          font-size: 13.5px; font-weight: 500;
+          font-size: 13px; font-weight: 500;
           color: var(--nb-muted);
           text-decoration: none; white-space: nowrap;
           background: transparent; border: none; cursor: pointer;
-          font-family: 'Inter', -apple-system, sans-serif;
-          transition: color 0.13s, background 0.13s;
+          font-family: 'Inter',-apple-system,sans-serif;
+          transition: color 0.15s, background 0.15s, transform 0.15s;
           width: 100%; margin-bottom: 1px;
           letter-spacing: -0.012em; position: relative;
+          animation: nb-item-in 0.28s cubic-bezier(0.22,1,0.36,1) both;
         }
-        .nb-item:hover, .nb-item-btn:hover { background: var(--nb-hover); color: var(--nb-text); }
+        .nb-item:hover, .nb-item-btn:hover {
+          background: var(--nb-hover); color: var(--nb-text);
+          transform: translateX(2px);
+        }
+        .nb-item:active { transform: translateX(1px) scale(0.99); }
         .nb-item--active {
           background: var(--nb-active);
           color: var(--ic, var(--nb-text)) !important;
         }
-        /* Glowing left rail accent on active items */
+        /* Animated glowing left-rail accent */
         .nb-item--active::after {
-          content: ''; position: absolute; left: 0; top: 22%; bottom: 22%;
-          width: 2.5px; border-radius: 0 2px 2px 0;
+          content: ''; position: absolute; left: 0; top: 18%; bottom: 18%;
+          width: 3px; border-radius: 0 3px 3px 0;
           background: var(--ic, #fff);
-          box-shadow: 0 0 8px var(--ic, #fff);
+          box-shadow: 0 0 10px 1px var(--ic, #fff);
+          animation: nb-active-rail 0.22s cubic-bezier(0.22,1,0.36,1) both;
         }
-        .nb-item--live { color: rgba(255,69,58,0.5) !important; }
+        .nb-item--live { color: rgba(255,69,58,0.55) !important; }
         .nb-item--live:hover { color: #ff453a !important; background: rgba(255,69,58,.06); }
         .nb-item--live.nb-item--active { color: #ff453a !important; background: rgba(255,69,58,.09); }
         .nb-label { flex: 1; }
@@ -474,14 +452,15 @@ export default function Navbar() {
           background: rgba(255,255,255,.05);
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0; position: relative;
-          transition: background 0.13s, transform 0.2s cubic-bezier(.34,1.56,.64,1);
+          transition: background 0.15s, transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s;
           color: var(--nb-muted);
         }
-        [data-theme="light"] .nb-icon { background: rgba(0,0,0,.05); }
-        .nb-item:hover .nb-icon, .nb-item-btn:hover .nb-icon { transform: scale(1.07); }
+        .nb-item:hover .nb-icon { transform: scale(1.1) rotate(-2deg); }
         .nb-item--active .nb-icon {
-          background: color-mix(in srgb, var(--ic, white) 14%, transparent);
+          background: color-mix(in srgb, var(--ic, white) 16%, transparent);
           color: var(--ic, var(--nb-text));
+          box-shadow: 0 0 12px 2px color-mix(in srgb, var(--ic, white) 25%, transparent);
+          animation: nb-icon-pop 0.35s cubic-bezier(0.22,1,0.36,1) both;
         }
 
         /* ── Live dot ── */
@@ -494,193 +473,227 @@ export default function Navbar() {
         }
         .nb-item--active .nb-live-dot::after {
           content: ""; position: absolute; inset: 0; border-radius: 50%;
-          background: rgba(255,69,58,.4); animation: nb-ring 1.8s ease-out infinite;
+          background: rgba(255,69,58,.45); animation: nb-ring 1.8s ease-out infinite;
         }
         .nb-live-dot--sm { top: 2px; right: 2px; width: 5px; height: 5px; }
         .nb-live-badge {
           font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
           background: rgba(255,69,58,.14); color: #ff453a;
           border-radius: 999px; padding: 2px 7px; margin-left: auto;
+          animation: nb-glow-pulse 2s ease-in-out infinite;
         }
 
-        /* ── FPL tag ── */
-        .nb-fpl-tag {
-          font-size: 9px; font-weight: 700; letter-spacing: 0.07em;
-          background: rgba(48,209,88,.13); color: #30d158;
-          border-radius: 999px; padding: 2px 7px; flex-shrink: 0;
+        /* ── FPL always-expanded section ── */
+        .nb-fpl-section-head {
+          display: flex; align-items: center; gap: 6px;
+          padding: 10px 8px 5px;
+          font-size: 9px; font-weight: 700; color: rgba(48,209,88,0.55);
+          text-transform: uppercase; letter-spacing: 0.13em;
+          font-family: 'Inter',-apple-system,sans-serif;
+          animation: nb-item-in 0.25s 0.08s cubic-bezier(0.22,1,0.36,1) both;
         }
-        .nb-chevron {
-          margin-left: auto; opacity: 0.4; display: flex;
-          transition: transform .22s cubic-bezier(.34,1.56,.64,1);
+        .nb-fpl-always-block {
+          margin: 2px 0 4px 3px;
+          padding: 5px;
+          background: rgba(48,209,88,0.04);
+          border: 0.5px solid rgba(48,209,88,0.13);
+          border-radius: 13px;
+          animation: nb-fpl-in 0.3s cubic-bezier(0.22,1,0.36,1) both;
         }
-
-        /* ═══════════════════════════════════════════
-           FPL ROWS — shared by both dropdown modes
-        ═══════════════════════════════════════════ */
         .nb-fpl-row {
           display: flex; align-items: center; gap: 10px;
-          padding: 7px 10px; border-radius: 8px;
+          padding: 7px 9px; border-radius: 9px;
           text-decoration: none;
-          transition: background .12s;
+          transition: background .15s, transform .15s;
+          animation: nb-item-in 0.3s cubic-bezier(0.22,1,0.36,1) both;
         }
-        .nb-fpl-row:hover { background: var(--nb-hover); }
+        .nb-fpl-row:hover {
+          background: rgba(255,255,255,0.06);
+          transform: translateX(2px);
+        }
+        .nb-fpl-row:active { transform: translateX(1px) scale(0.99); }
         .nb-fpl-row--active {
-          background: color-mix(in srgb, var(--sub, #30d158) 9%, transparent);
+          background: color-mix(in srgb, var(--sub, #30d158) 11%, transparent);
         }
         .nb-fpl-dot {
           width: 6px; height: 6px; border-radius: 50%;
           flex-shrink: 0; margin-top: 1px;
+          transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s;
         }
-        .nb-fpl-row-text { display: flex; flex-direction: column; }
-        .nb-fpl-row-label { font-size: 12.5px; font-weight: 500; color: var(--nb-text); }
-        .nb-fpl-row-desc  { font-size: 10.5px; color: var(--nb-muted); margin-top: 1px; }
-
-        /* ── Expanded: inline accordion ── */
-        .nb-fpl-accordion {
-          margin: 3px 0 4px 6px; padding: 4px;
-          background: rgba(255,255,255,.03);
-          border: 0.5px solid var(--nb-border);
-          border-radius: 12px;
-          animation: nb-down 0.18s cubic-bezier(0.22,1,0.36,1) both;
+        .nb-fpl-row--active .nb-fpl-dot {
+          transform: scale(1.4);
+          box-shadow: 0 0 6px 1px var(--sub, #30d158);
         }
-        [data-theme="light"] .nb-fpl-accordion { background: rgba(0,0,0,.03); }
-
-        /* ── Icon-only: floating panel to the right ── */
-        .nb-fpl-panel {
-          position: absolute; left: calc(100% + 10px); top: 0;
-          width: 232px; z-index: 300;
-          background: var(--nb-bg);
-          border: 0.5px solid var(--nb-border);
-          border-radius: 14px;
-          padding: 4px 4px 6px;
-          box-shadow: 0 8px 36px var(--nb-shadow);
-          animation: nb-right 0.18s cubic-bezier(0.22,1,0.36,1) both;
+        .nb-fpl-row-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+        .nb-fpl-row-label {
+          font-size: 12px; font-weight: 500; color: var(--nb-text);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .nb-fpl-panel-head {
-          display: flex; align-items: center; gap: 8px;
-          padding: 8px 10px;
-          border-bottom: 0.5px solid var(--nb-border);
-          margin-bottom: 4px;
-          font-size: 12px; font-weight: 700; color: var(--nb-muted);
-          font-family: 'Inter', -apple-system, sans-serif;
+        .nb-fpl-row-desc {
+          font-size: 10px; color: var(--nb-muted); margin-top: 1px;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nb-fpl-new-badge {
+          font-size: 7.5px; font-weight: 800; letter-spacing: 0.08em;
+          background: rgba(255,214,10,0.16); color: #ffd60a;
+          border-radius: 4px; padding: 2px 5px; flex-shrink: 0;
+          animation: nb-new-badge 2.5s ease-in-out infinite;
         }
 
         /* ── Page layout offsets ── */
-        .sn7-page-offset { margin-left: ${SW}px; transition: margin-left 0.26s cubic-bezier(0.4,0,0.2,1); }
+        .sn7-page-offset { margin-left: ${SW}px; transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1); }
         .sn-page-wrap, .sn-site-footer {
           margin-left: ${SW}px !important;
           width: calc(100vw - ${SW}px) !important;
-          transition: margin-left 0.26s cubic-bezier(0.4,0,0.2,1), width 0.26s cubic-bezier(0.4,0,0.2,1);
+          transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1);
         }
         @media (max-width: 820px) {
           .sn-page-wrap, .sn-site-footer { margin-left: 0 !important; width: 100% !important; }
         }
-        .sn-fixed-bg { left: ${SW}px !important; transition: left 0.26s cubic-bezier(0.4,0,0.2,1); }
+        .sn-fixed-bg { left: ${SW}px !important; transition: left 0.32s cubic-bezier(0.4,0,0.2,1); }
         @media (max-width: 820px) { .sn-fixed-bg { left: 0 !important; } }
 
         /* ── Mobile top bar ── */
         .nb-top-bar {
           display: none; position: fixed; top: 0; left: 0; right: 0;
-          height: 52px; z-index: 200;
-          background: var(--nb-bar);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          height: 56px; z-index: 200;
+          background: rgba(10,10,10,0.92);
+          backdrop-filter: blur(48px) saturate(200%);
+          -webkit-backdrop-filter: blur(48px) saturate(200%);
           border-bottom: 0.5px solid var(--nb-border);
           align-items: center; justify-content: space-between;
           padding: 0 16px; gap: 12px;
         }
         .nb-mob-brand { display: flex; align-items: center; gap: 7px; text-decoration: none; }
-        .nb-mob-brand-name { font-size: 16px; font-weight: 700; color: var(--nb-text); letter-spacing: -0.04em; }
-        .nb-mob-search-input {
-          height: 34px; background: rgba(255,255,255,.06);
-          border: 0.5px solid rgba(10,132,255,.4);
-          border-radius: 10px; padding: 0 12px;
-          font-size: 13px; color: var(--nb-text);
-          font-family: 'Inter', -apple-system, sans-serif;
-          outline: none; width: 160px;
+        .nb-mob-brand-name {
+          font-size: 17px; font-weight: 700; color: var(--nb-text); letter-spacing: -0.04em;
+          font-family: 'Inter',-apple-system,sans-serif;
         }
-        [data-theme="light"] .nb-mob-search-input { background: rgba(0,0,0,.06); }
+        .nb-mob-search-input {
+          height: 34px; background: rgba(255,255,255,.07);
+          border: 0.5px solid rgba(10,132,255,.45);
+          border-radius: 10px; padding: 0 12px;
+          font-size: 14px; color: var(--nb-text);
+          font-family: 'Inter',-apple-system,sans-serif;
+          outline: none; width: 180px;
+          transition: width 0.22s ease, box-shadow 0.18s;
+        }
+        .nb-mob-search-input:focus {
+          width: 210px;
+          box-shadow: 0 0 0 3px rgba(10,132,255,.18);
+        }
 
         /* ── Mobile drawer ── */
         .nb-mob-drawer {
           display: none; position: fixed; top: 0; left: 0; bottom: 0;
-          width: min(280px, 82vw); z-index: 300;
-          background: var(--nb-bar);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          width: min(300px, 86vw); z-index: 300;
+          background: rgba(10,10,10,0.97);
+          backdrop-filter: blur(48px) saturate(200%);
+          -webkit-backdrop-filter: blur(48px) saturate(200%);
           border-right: 0.5px solid var(--nb-border);
           flex-direction: column; overflow-y: auto;
-          animation: nb-slidein 0.2s cubic-bezier(0.22,1,0.36,1) both;
+          animation: nb-drawer-in 0.28s cubic-bezier(0.22,1,0.36,1) both;
           scrollbar-width: none;
+          will-change: transform;
         }
         .nb-mob-drawer::-webkit-scrollbar { display: none; }
         .nb-backdrop {
           display: none; position: fixed; inset: 0; z-index: 299;
-          background: rgba(0,0,0,.5); backdrop-filter: blur(2px);
+          background: rgba(0,0,0,.6);
+          backdrop-filter: blur(3px);
+          animation: nb-backdrop-in 0.22s ease both;
         }
 
         /* ── Mobile bottom bar ── */
         .nb-mob-bar {
           display: none; position: fixed; bottom: 0; left: 0; right: 0;
-          height: 64px; z-index: 200;
-          background: var(--nb-bar);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          height: 68px; z-index: 200;
+          background: rgba(10,10,10,0.94);
+          backdrop-filter: blur(48px) saturate(200%);
+          -webkit-backdrop-filter: blur(48px) saturate(200%);
           border-top: 0.5px solid var(--nb-border);
           justify-content: space-around; align-items: flex-start;
-          padding: 6px 0 max(8px, env(safe-area-inset-bottom));
+          padding: 8px 0 max(10px, env(safe-area-inset-bottom));
+          gap: 0;
         }
         .nb-mob-tab {
           display: flex; flex-direction: column; align-items: center;
-          gap: 3px; flex: 1; text-decoration: none;
-          color: var(--nb-muted); transition: color 0.13s; padding: 2px 4px;
+          gap: 4px; flex: 1; text-decoration: none;
+          color: var(--nb-muted);
+          transition: color 0.15s;
+          padding: 2px 6px;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
         .nb-mob-tab--active { color: var(--tc, white); }
-        .nb-mob-icon {
-          width: 30px; height: 30px; border-radius: 9px;
-          display: flex; align-items: center; justify-content: center;
-          position: relative; transition: background 0.13s;
-        }
         .nb-mob-tab--active .nb-mob-icon {
-          background: color-mix(in srgb, var(--tc, white) 12%, transparent);
+          background: color-mix(in srgb, var(--tc, white) 13%, transparent);
+          animation: nb-mob-tab-bounce 0.38s cubic-bezier(0.22,1,0.36,1) both;
         }
-        .nb-mob-icon--live .nb-live-dot--sm { position: absolute; top: 3px; right: 3px; }
-        .nb-mob-label { font-size: 10px; font-weight: 500; letter-spacing: 0.01em; }
+        .nb-mob-tab--active .nb-mob-icon svg {
+          animation: nb-icon-pop 0.35s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        .nb-mob-icon {
+          width: 34px; height: 34px; border-radius: 10px;
+          display: flex; align-items: center; justify-content: center;
+          position: relative;
+          transition: background 0.15s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .nb-mob-tab:active .nb-mob-icon { transform: scale(0.88); }
+        .nb-mob-icon--live .nb-live-dot--sm { position: absolute; top: 4px; right: 4px; }
+        .nb-mob-label {
+          font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em;
+          font-family: 'Inter',-apple-system,sans-serif;
+          transition: opacity 0.15s;
+        }
+        .nb-mob-tab:not(.nb-mob-tab--active) .nb-mob-label { opacity: 0.55; }
 
-        /* ── Icon button ── */
+        /* ── Icon button (hamburger, search, close) ── */
         .nb-icon-btn {
-          width: 34px; height: 34px; border-radius: 9px;
+          width: 38px; height: 38px; border-radius: 10px;
           border: none; background: transparent;
           color: var(--nb-muted); cursor: pointer;
           display: flex; align-items: center; justify-content: center;
-          transition: background 0.13s, color 0.13s; flex-shrink: 0;
+          transition: background 0.15s, color 0.15s, transform 0.18s cubic-bezier(.34,1.56,.64,1);
+          flex-shrink: 0;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
         .nb-icon-btn:hover { background: var(--nb-hover); color: var(--nb-text); }
+        .nb-icon-btn:active { transform: scale(0.88); background: var(--nb-active); }
 
-        /* ── Breakpoint: below 820px the sidebar disappears, mobile UI takes over ── */
+        /* ── Breakpoint: below 820px the sidebar disappears ── */
         @media (max-width: 820px) {
           .nb-sidebar      { display: none; }
-          .sn7-page-offset { margin-left: 0 !important; padding-top: 52px; padding-bottom: 72px; }
-          .sn-page-wrap, .sn-site-footer { margin-left: 0 !important; width: 100% !important; padding-top: 52px; padding-bottom: 72px; }
-          .nb-top-bar      { display: flex; }
-          .nb-mob-bar      { display: flex; }
-          .nb-mob-drawer   { display: flex; }
-          .nb-backdrop     { display: block; }
+          .sn7-page-offset { margin-left: 0 !important; padding-top: 56px; padding-bottom: 76px; }
+          .sn-page-wrap, .sn-site-footer { margin-left: 0 !important; width: 100% !important; padding-top: 56px; padding-bottom: 76px; }
+          .nb-top-bar  { display: flex; }
+          .nb-mob-bar  { display: flex; }
+          .nb-mob-drawer { display: flex; }
+          .nb-backdrop   { display: block; }
+        }
+
+        /* ── Reduced motion ── */
+        @media (prefers-reduced-motion: reduce) {
+          .nb-sidebar, .nb-item, .nb-fpl-row, .nb-icon,
+          .nb-mob-tab, .nb-mob-icon, .nb-icon-btn,
+          .nb-brand, .nb-toggle { transition: none !important; animation: none !important; }
         }
       `}</style>
 
       {/* ══ DESKTOP SIDEBAR ══════════════════════════════════════════ */}
-      <aside className="nb-sidebar" style={{ width: SW }}>
+      <aside className="nb-sidebar" style={{ width: SW }} aria-label="Main navigation">
 
         {/* Header */}
         <div className="nb-head">
-          <NavLink to="/" className="nb-brand">
+          <NavLink to="/" className="nb-brand" aria-label="StatinSite home">
             <BrandMark size={26}/>
             {!iconOnly && <span className="nb-brand-name">StatinSite</span>}
           </NavLink>
           <button
             className="nb-toggle"
             onClick={() => setIconOnly(v => !v)}
+            aria-label={iconOnly ? "Expand sidebar" : "Collapse to icons"}
             title={iconOnly ? "Expand sidebar" : "Collapse to icons"}
           >
             {iconOnly ? <Ic.Expand/> : <Ic.Collapse/>}
@@ -699,10 +712,12 @@ export default function Navbar() {
                 onChange={e => setSearchVal(e.target.value)}
                 onKeyDown={handleSearch}
                 placeholder="Search players, teams…"
+                aria-label="Search players and teams"
               />
               {searchVal && (
                 <button onClick={() => setSearchVal("")}
-                  style={{ background:"none",border:"none",cursor:"pointer",color:"var(--nb-muted)",display:"flex",padding:0 }}>
+                  style={{ background:"none",border:"none",cursor:"pointer",color:"var(--nb-muted)",display:"flex",padding:0 }}
+                  aria-label="Clear search">
                   <Ic.Close/>
                 </button>
               )}
@@ -711,19 +726,21 @@ export default function Navbar() {
         )}
 
         {/* Nav */}
-        <div className="nb-scroll">
-          {!iconOnly && <div className="nb-section">Navigation</div>}
+        <div className="nb-scroll" role="navigation">
+          {!iconOnly && <div className="nb-section" aria-hidden="true">Navigation</div>}
 
-          {PRIMARY_NAV.map(item => item.fplGroup
-            ? <FplDropdown key={item.to} iconOnly={iconOnly} fplActive={fplActive}/>
-            : <SideNavItem key={item.to} item={item} active={isActive(item)} iconOnly={iconOnly}/>
+          {PRIMARY_NAV.map((item, i) => item.fplGroup
+            ? <FplSection key={item.to} iconOnly={iconOnly}/>
+            : <SideNavItem key={item.to} item={item} active={isActive(item)} iconOnly={iconOnly}
+                style={{ animationDelay: `${i * 30}ms` }}/>
           )}
 
           <div className="nb-divider"/>
-          {!iconOnly && <div className="nb-section">More</div>}
+          {!iconOnly && <div className="nb-section" aria-hidden="true">More</div>}
 
-          {SECONDARY_NAV.map(item =>
-            <SideNavItem key={item.to} item={item} active={isActive(item)} iconOnly={iconOnly}/>
+          {SECONDARY_NAV.map((item, i) =>
+            <SideNavItem key={item.to} item={item} active={isActive(item)} iconOnly={iconOnly}
+              style={{ animationDelay: `${(PRIMARY_NAV.length + i) * 30}ms` }}/>
           )}
         </div>
       </aside>
@@ -739,24 +756,26 @@ export default function Navbar() {
       {/* ══ MOBILE DRAWER ═══════════════════════════════════════════ */}
       {mobileDrawer && (
         <>
-          <div className="nb-backdrop" onClick={() => setMobileDrawer(false)}/>
-          <nav ref={drawerRef} className="nb-mob-drawer">
+          <div className="nb-backdrop" onClick={() => setMobileDrawer(false)} aria-hidden="true"/>
+          <nav ref={drawerRef} className="nb-mob-drawer" aria-label="Mobile navigation">
             <div className="nb-head">
-              <NavLink to="/" className="nb-brand" onClick={() => setMobileDrawer(false)}>
+              <NavLink to="/" className="nb-brand" onClick={() => setMobileDrawer(false)} aria-label="StatinSite home">
                 <BrandMark size={24}/>
                 <span className="nb-brand-name">StatinSite</span>
               </NavLink>
-              <button className="nb-icon-btn" onClick={() => setMobileDrawer(false)}><Ic.Close/></button>
+              <button className="nb-icon-btn" onClick={() => setMobileDrawer(false)} aria-label="Close menu">
+                <Ic.Close/>
+              </button>
             </div>
-            <div className="nb-scroll" style={{ padding: "6px 8px 0" }}>
-              <div className="nb-section">Navigation</div>
+            <div className="nb-scroll" style={{ padding: "6px 8px 20px" }}>
+              <div className="nb-section" aria-hidden="true">Navigation</div>
               {PRIMARY_NAV.map(item => item.fplGroup
-                ? <FplDropdown key={item.to} iconOnly={false} fplActive={fplActive}/>
+                ? <FplSection key={item.to} iconOnly={false}/>
                 : <SideNavItem key={item.to} item={item} active={isActive(item)} iconOnly={false}
                     onClick={() => setMobileDrawer(false)}/>
               )}
               <div className="nb-divider"/>
-              <div className="nb-section">More</div>
+              <div className="nb-section" aria-hidden="true">More</div>
               {SECONDARY_NAV.map(item =>
                 <SideNavItem key={item.to} item={item} active={isActive(item)} iconOnly={false}
                   onClick={() => setMobileDrawer(false)}/>

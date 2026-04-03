@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- ── Core ── -->
+  <url>
+    <loc>https://www.statinsite.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/live</loc>
+    <changefreq>always</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/news</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- ── Predictions ── -->
+  <url>
+    <loc>https://www.statinsite.com/predictions/premier-league</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/la-liga</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/serie-a</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/bundesliga</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/ligue-1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/champions-league</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/europa-league</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/conference-league</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/predictions/fa-cup</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- ── Leagues ── -->
+  <url>
+    <loc>https://www.statinsite.com/leagues</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/league/epl</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/league/laliga</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/league/seriea</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/league/ligue1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ── FPL Tools ── -->
+  <url>
+    <loc>https://www.statinsite.com/fpl-intelligence</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/gameweek-insights</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/squad-builder</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/best-team</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/captaincy</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/transfer-planner</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/differentials</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/fixture-difficulty</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/fpl-table</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Players & Teams ── -->
+  <url>
+    <loc>https://www.statinsite.com/players</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Other ── -->
+  <url>
+    <loc>https://www.statinsite.com/games</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://www.statinsite.com/learn</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>

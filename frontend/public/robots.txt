@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block any internal/API paths from being indexed
+Disallow: /api/
+Disallow: /src/
+
+Sitemap: https://www.statinsite.com/sitemap.xml

@@ -2920,46 +2920,12 @@ const POS_COLOR = { GK: "#ff9f0a", DEF: "#4fa8ff", MID: "#00d68f", FWD: "#ff4757
 
 function FplNewsSection({ dash }) {
   const [ref, vis] = useReveal(.04);
-  // Injury/doubt list from FPL bootstrap via differential_captains endpoint
-  // bootstrap elements with status != 'a' (available) have news + chance_of_playing
-  const { data: bsData, loading: bsLoading } = useSectionFetch("/api/fpl/bootstrap-static", 3600_000);
-  const injuryPlayers = useMemo(() => {
-    const elements = bsData?.elements ?? [];
-    const teams = Object.fromEntries((bsData?.teams ?? []).map(t => [t.id, t.short_name]));
-    return elements
-      .filter(p => p.status !== "a" || (p.news && p.news.length > 2))
-      .sort((a, b) => (b.selected_by_percent ? parseFloat(b.selected_by_percent) : 0) - (a.selected_by_percent ? parseFloat(a.selected_by_percent) : 0))
-      .slice(0, 6)
-      .map(p => ({
-        id:       p.id,
-        name:     p.web_name,
-        team:     teams[p.team] ?? "",
-        cost:     (p.now_cost / 10).toFixed(1),
-        pos:      ["", "GK", "DEF", "MID", "FWD"][p.element_type] ?? "MID",
-        news:     p.news ?? "",
-        chance:   p.chance_of_playing_this_round,
-        status:   p.status,
-      }));
-  }, [bsData]);
+  // Fetch from the dedicated /api/home/fpl_player_news endpoint
+  // which reads FPL bootstrap server-side and returns pre-shaped doubts + price_risers
+  const { data: fplNews, loading: fplLoading } = useSectionFetch("/api/home/fpl_player_news", 1800_000);
 
-  // Price rise alerts from value_players + transfer_brief
-  const priceRisers = useMemo(() => {
-    const elements = bsData?.elements ?? [];
-    const teams = Object.fromEntries((bsData?.teams ?? []).map(t => [t.id, t.short_name]));
-    return elements
-      .filter(p => p.status === "a" && p.transfers_in_event > 5000)
-      .sort((a, b) => b.transfers_in_event - a.transfers_in_event)
-      .slice(0, 4)
-      .map(p => ({
-        id:   p.id,
-        name: p.web_name,
-        team: teams[p.team] ?? "",
-        cost: (p.now_cost / 10).toFixed(1),
-        pos:  ["", "GK", "DEF", "MID", "FWD"][p.element_type] ?? "MID",
-        net:  (p.transfers_in_event - p.transfers_out_event),
-        ownership: p.selected_by_percent,
-      }));
-  }, [bsData]);
+  const injuryPlayers = fplNews?.doubts       ?? [];
+  const priceRisers   = fplNews?.price_risers ?? [];
 
   const brief    = dash?.transfer_brief;
   const bullets  = brief?.key_transfers ?? [];
@@ -2988,7 +2954,7 @@ function FplNewsSection({ dash }) {
           <div className="sp-bar" style={{ "--sp-bar": "rgba(255,71,87,0.5)" }} />
           <div style={{ padding: 18 }}><div className="gi">
             <div className="sp-sub">Doubts &amp; Injuries</div>
-            {bsLoading
+            {fplLoading
               ? Array.from({ length: 4 }).map((_, i) => <div key={i} style={{ height: 62, borderRadius: 11, marginBottom: 6 }} className="sk" />)
               : injuryPlayers.length > 0
                 ? injuryPlayers.map((p, i) => {
@@ -3022,7 +2988,7 @@ function FplNewsSection({ dash }) {
           <div className="sp-bar" style={{ "--sp-bar": "rgba(255,159,10,0.5)" }} />
           <div style={{ padding: 18 }}><div className="gi">
             <div className="sp-sub">Price Rise Alerts</div>
-            {bsLoading
+            {fplLoading
               ? Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: 58, borderRadius: 11, marginBottom: 6 }} className="sk" />)
               : priceRisers.length > 0
                 ? priceRisers.map((p, i) => {

@@ -1386,6 +1386,82 @@ async def recent_results(n: int = Query(5)):
 # Frontend fetches this once; every section reads from the response.
 # ══════════════════════════════════════════════════════════════════════════════
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FPL PLAYER NEWS  —  injury / doubt / price rise data for homepage FPL feed
+# GET /api/home/fpl_player_news
+# Pulls from FPL bootstrap-static and returns:
+#   - doubts:      players with status != 'a' or non-empty news string
+#   - price_risers: top 4 players by transfers_in_event this week
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/fpl_player_news")
+async def fpl_player_news():
+    """
+    FPL injury/doubt list and price-rise candidates for the homepage FPL News section.
+    Cached 30 minutes (injuries don't change mid-gameweek).
+    """
+    cache_key = "home:fpl_player_news"
+    hit = _cget(cache_key, TTL_MEDIUM)
+    if hit is not None:
+        return hit
+
+    bootstrap = await _fpl()
+    players   = bootstrap.get("elements", [])
+    teams     = {t["id"]: t["short_name"] for t in bootstrap.get("teams", [])}
+    pos_map   = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
+
+    # ── Doubts / injuries: status != 'a' or has meaningful news ──
+    doubts = []
+    for p in players:
+        status = p.get("status", "a")
+        news   = (p.get("news") or "").strip()
+        if status != "a" or len(news) > 3:
+            doubts.append({
+                "player_id":   p.get("id"),
+                "name":        p.get("web_name", ""),
+                "team":        teams.get(p.get("team", 0), ""),
+                "cost":        round((p.get("now_cost") or 50) / 10.0, 1),
+                "position":    pos_map.get(p.get("element_type", 3), "MID"),
+                "status":      status,
+                "news":        news,
+                "chance":      p.get("chance_of_playing_this_round"),
+                "ownership":   p.get("selected_by_percent", "0"),
+            })
+
+    # Sort by ownership descending so the most-owned injured players appear first
+    doubts.sort(key=lambda x: -float(x["ownership"] or 0))
+    doubts = doubts[:8]
+
+    # ── Price risers: highest net transfer balance this week ──
+    price_risers = []
+    for p in players:
+        if p.get("status") != "a":
+            continue
+        net = (p.get("transfers_in_event") or 0) - (p.get("transfers_out_event") or 0)
+        if net > 3000:
+            price_risers.append({
+                "player_id":   p.get("id"),
+                "name":        p.get("web_name", ""),
+                "team":        teams.get(p.get("team", 0), ""),
+                "cost":        round((p.get("now_cost") or 50) / 10.0, 1),
+                "position":    pos_map.get(p.get("element_type", 3), "MID"),
+                "net":         net,
+                "ownership":   p.get("selected_by_percent", "0"),
+            })
+
+    price_risers.sort(key=lambda x: -x["net"])
+    price_risers = price_risers[:4]
+
+    result = {
+        "doubts":        doubts,
+        "price_risers":  price_risers,
+        "generated_at":  datetime.now(timezone.utc).isoformat(),
+    }
+    _cset(cache_key, result)
+    return result
+
+
 @router.get("/dashboard")
 async def dashboard():
     """

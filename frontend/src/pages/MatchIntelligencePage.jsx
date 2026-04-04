@@ -5,8 +5,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MatchLineups from "../components/MatchLineups.jsx";
-const BACKEND = "https://football-stats-lw4b.onrender.com";
-
+const BACKEND = "https://footballstats-production-ecd9.up.railway.app";
 const TABS = [
   { id: "facts",      label: "Facts"      },
   { id: "commentary", label: "Commentary" },

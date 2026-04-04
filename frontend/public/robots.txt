@@ -1,8 +1,28 @@
 User-agent: *
 Allow: /
 
-# Block any internal/API paths from being indexed
+# Block backend API routes from indexing
 Disallow: /api/
-Disallow: /src/
+Disallow: /api/home/
+Disallow: /api/fpl/
+Disallow: /api/intelligence/
+Disallow: /api/predictions/
+Disallow: /api/match-momentum/
+Disallow: /api/shot-map/
+Disallow: /api/win-probability/
+Disallow: /api/squad-builder/
+Disallow: /api/commentary/
+Disallow: /api/league/
+Disallow: /api/simulate/
+
+# Block dynamic player/team/match routes (infinite crawl risk)
+Disallow: /match/
+Disallow: /match-preview/
+Disallow: /team/
+Disallow: /player/
+
+# Allow player browse index but not individual profiles
+Allow: /player$
+Allow: /players
 
 Sitemap: https://www.statinsite.com/sitemap.xml

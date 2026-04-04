@@ -570,7 +570,562 @@ const CSS = `
   .hp-period { font-size: 52px; }
 }
 
+
+/* ════════════════════════════════════════════════════════════════════
+   SPORTS PREMIUM THEME — Section header redesign
+   All existing .g .gi .s .w .hd .h2 etc. kept intact below.
+   These additions sit on top; specificity wins where needed.
+════════════════════════════════════════════════════════════════════ */
+
+/* ── Barlow Condensed display font ── */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+/* ── Page background — slightly bluer black for sports feel ── */
+.hp { background: #05060c; }
+
+/* ── Card backgrounds — as black as possible ── */
+.g {
+  background: #09090f !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+/* ── BRANDED SECTION HEADER ── */
+.sp-sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.sp-sec-left { display: flex; flex-direction: column; gap: 4px; }
+.sp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.sp-eyebrow::before {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+.sp-h2 {
+  font-family: 'Barlow Condensed', sans-serif !important;
+  font-size: clamp(22px, 3vw, 32px) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  color: #fff !important;
+  text-transform: uppercase;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+.sp-h2 span { color: var(--sp-accent, #00d68f); }
+.sp-sec-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: .04em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .15s;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.sp-sec-link:hover { color: rgba(255,255,255,0.7); }
+
+/* ── Sub-label inside cards ── */
+.sp-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sp-sub::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── Card top accent bar ── */
+.sp-bar {
+  height: 3px;
+  width: 100%;
+  background: var(--sp-bar, rgba(59,130,246,0.4));
+  border-radius: 14px 14px 0 0;
+}
+
+/* ── Player rows with left position strip ── */
+.sp-player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.sp-player-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--pos-col, rgba(255,255,255,0.1));
+}
+.sp-player-row:hover { border-color: rgba(255,255,255,0.12); }
+.sp-rank {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.18);
+  min-width: 22px;
+  text-align: right;
+}
+.sp-ep {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: right;
+  flex-shrink: 0;
+  color: #00d68f;
+}
+.sp-ep-lbl {
+  font-size: 7px;
+  color: rgba(255,255,255,0.22);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .1em;
+  text-align: right;
+}
+
+/* ── Tool rows with left accent bar ── */
+.sp-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.015);
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+}
+.sp-tool-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--tc, rgba(255,255,255,0.1));
+}
+.sp-tool-row:hover {
+  background: rgba(255,255,255,0.035);
+  border-color: var(--tc, rgba(255,255,255,0.12));
+}
+.sp-tool-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sp-tool-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+.sp-tool-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ── GW stat strip ── */
+.sp-gw-strip {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.sp-gw-strip::-webkit-scrollbar { display: none; }
+.sp-stat-chip {
+  flex-shrink: 0;
+  background: #09090f;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 88px;
+}
+.sp-stat-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.26);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.sp-stat-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+
+/* ── Live dot pulse ── */
+.sp-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ff4757;
+  animation: spPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes spPulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.75); }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ACCOUNTABILITY SECTION
+════════════════════════════════════════════════════════════════════ */
+.sp-acc-ring-row {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+@media(max-width:600px) { .sp-acc-ring-row { grid-template-columns: 1fr 1fr; } }
+.sp-acc-ring-card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+}
+.sp-acc-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.sp-acc-val-unit {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.35);
+}
+.sp-acc-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.sp-acc-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.38);
+  margin-top: 3px;
+  font-weight: 600;
+}
+.sp-conf-band {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 5px;
+}
+.sp-band-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 90px;
+}
+.sp-band-bar-wrap {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sp-band-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--bc, #00d68f);
+}
+.sp-band-pct {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  min-width: 40px;
+  text-align: right;
+  color: var(--bc, #00d68f);
+}
+.sp-band-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.22);
+  min-width: 50px;
+  text-align: right;
+}
+.sp-roll-chips {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.sp-roll-chip {
+  flex: 1;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+.sp-roll-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.sp-roll-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: .08em;
+}
+.sp-verified-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 5px;
+}
+.sp-v-icon {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 900;
+}
+.sp-v-match {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sp-v-meta {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.sp-conf-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   NEWS TRACKER SECTION
+════════════════════════════════════════════════════════════════════ */
+.sp-news-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media(max-width:720px) { .sp-news-grid { grid-template-columns: 1fr; } }
+.sp-news-card {
+  background: #09090f;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px;
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color .15s;
+  position: relative;
+  overflow: hidden;
+}
+.sp-news-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--nb, rgba(59,130,246,0.5));
+}
+.sp-news-card:hover { border-color: rgba(255,255,255,0.14); }
+.sp-news-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.26);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.sp-news-type {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: var(--tp-bg, rgba(59,130,246,0.1));
+  color: var(--tp-c, #4fa8ff);
+  margin-left: 5px;
+}
+.sp-news-headline {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 5px;
+}
+.sp-news-excerpt {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sp-news-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.18);
+  margin-top: 7px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FPL NEWS / INJURY SECTION
+════════════════════════════════════════════════════════════════════ */
+.sp-fpl-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 11px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.sp-fpl-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--fpr, rgba(255,255,255,0.1));
+}
+.sp-fpl-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 10px;
+  color: rgba(255,255,255,0.38);
+}
+.sp-fpl-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+.sp-fpl-team {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.sp-fpl-news-txt {
+  font-size: 10px;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.sp-chance-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.sp-chance-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: rgba(255,255,255,0.22);
+  text-align: right;
+  margin-top: 3px;
+}
+
+/* ── Brief bullet ── */
+.sp-brief-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 8px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.sp-brief-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #4fa8ff;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
 `;
+
 
 // ════════════════════════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════════════════════════
@@ -1183,9 +1738,12 @@ function TopPredictions({ dash, loading, error }) {
   const preds = dash?.top_predictions?.predictions ?? [];
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Model Output</div><h2 className="h2">Today's Top Predictions</h2></div>
-        <Link to="/predictions/premier-league" className="sa">All predictions →</Link>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Model Output</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#4fa8ff" }}>Today's Top <span>Predictions</span></h2>
+        </div>
+        <Link to="/predictions/premier-league" className="sp-sec-link">All predictions →</Link>
       </div>
       {error
         ? <ErrBox msg={error} />
@@ -1214,9 +1772,12 @@ function TitleRace({ dash, loading, error }) {
   const formTable = dash?.form_table?.table ?? [];
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Standings</div><h2 className="h2">Title Race · {league}</h2></div>
-        <Link to="/league/epl" className="sa">Full table →</Link>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Standings</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#3b82f6" }}>Title <span>Race</span> · {league}</h2>
+        </div>
+        <Link to="/league/epl" className="sp-sec-link">Full table →</Link>
       </div>
       {error ? <ErrBox msg={error} /> : (
         <div className="g2">
@@ -1281,8 +1842,11 @@ function EdgeBoard({ dash, loading, error }) {
   const highXg = dash?.high_scoring_matches?.matches ?? [];
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Value Signals</div><h2 className="h2">Model Edge Board</h2></div>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Value Signals</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#00d68f" }}>Model <span>Edge Board</span></h2>
+        </div>
       </div>
       {error ? <ErrBox msg={error} /> : (
         <div className="g2">
@@ -1377,7 +1941,7 @@ function ToolDataBit({ dk, fixtures, dash, loading }) {
     if (loading || !dash) return <Skel w="60%" h={9} />;
     return capt ? <div>
       <div className="mn" style={{ fontSize: 12, fontWeight: 900, color: "#30d158" }}>{capt.name || capt.web_name}</div>
-      <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{capt.ep_next != null ? Number(capt.ep_next).toFixed(1) : "??"} EP</div>
+      <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{capt.ep_next != null ? Number(capt.ep_next).toFixed(1) : capt.form != null ? (Number(capt.form) / 2).toFixed(1) : "—"} EP</div>
     </div> : null;
   }
   return null;
@@ -1414,9 +1978,12 @@ function CommandGrid({ fixtures, dash, loading }) {
   const [ref, vis] = useReveal(.04);
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Platform</div><h2 className="h2">Intelligence Command Grid</h2></div>
-        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>8 tools</span>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Platform</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#4fa8ff" }}>Intelligence <span>Command Grid</span></h2>
+        </div>
+        <span style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 4 }}>8 tools</span>
       </div>
       <div className="gb">{TOOLS.map((t, i) => <ToolCard key={t.to} tool={t} idx={i} fixtures={fixtures} dash={dash} loading={loading} />)}</div>
     </div></section>
@@ -1561,10 +2128,10 @@ function CompetitionHub({ fixtures }) {
   let runningIdx = 0;
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div>
-          <div className="ey">— Coverage</div>
-          <h2 className="h2">{totalComps} Competitions. Full Intelligence.</h2>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Coverage</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#bf5af2" }}>{totalComps} Competitions. <span>Full Intelligence.</span></h2>
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, maxWidth: 520 }}>
             Poisson predictions, live scores and xG across domestic, European, cup and international football.
           </p>
@@ -1701,24 +2268,18 @@ function FplRow({ t }) {
   const { SvgIcon, label, sub, to, color } = t;
   return (
     <div
-      className="frow"
-      style={{ "--frc": color }}
+      className="sp-tool-row"
+      style={{ "--tc": color }}
       onClick={() => nav(to)}
     >
-      <div className="find" />
-      <div style={{
-        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-        background: `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`,
-        border: `1px solid ${color}2e`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+      <div className="sp-tool-icon" style={{ background: `${color}14`, border: `1px solid ${color}28` }}>
         <SvgIcon color={color} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", letterSpacing: "-.01em" }}>{label}</div>
-        <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 1 }}>{sub}</div>
+        <div className="sp-tool-label">{label}</div>
+        <div className="sp-tool-sub">{sub}</div>
       </div>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, opacity: 0.32 }}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, opacity: 0.22, marginLeft: "auto" }}>
         <path d="M4 7h6M7.5 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </div>
@@ -1731,49 +2292,60 @@ function FPLHub({ dash }) {
   const valuePls = dash?.value_players?.players?.slice(0, 3) ?? [];
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Fantasy Premier League</div><h2 className="h2">FPL Intelligence Hub</h2></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 14px", borderRadius: 999, background: "var(--green-soft)", border: "1px solid rgba(48,209,88,.2)" }}>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Fantasy Premier League</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#00d68f" }}>FPL <span>Intelligence Hub</span></h2>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 14px", borderRadius: 999, background: "rgba(48,209,88,0.08)", border: "1px solid rgba(48,209,88,.2)", flexShrink: 0 }}>
           <Dot color="#30d158" size={6} />
           <span style={{ fontSize: 9, fontWeight: 900, color: "#30d158", letterSpacing: ".1em", fontFamily: "var(--font-mono)" }}>8 TOOLS ACTIVE</span>
         </div>
       </div>
       <div className="g2">
         <div className="g" style={{ padding: 20 }}><div className="gi">
-          <div className="sl">Captain Picks · Differentials</div>
+          <div className="sp-sub">Captain Picks · Differentials</div>
           {capts.length > 0
-            ? capts.map((c, i) => (
-              <div key={i} className="crow">
-                <div className="mn" style={{ fontSize: 9, color: "var(--text-dim)", minWidth: 22 }}>{String(i + 1).padStart(2, "0")}</div>
-                {c.photo && <img src={c.photo} width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{c.name || c.web_name}</div>
-                  <div style={{ fontSize: 9, color: "var(--text-muted)" }}>{c.team_short || c.team || ""} · {c.ownership != null ? Number(c.ownership).toFixed(1) : "?"}% owned</div>
-                </div>
-                <Badge label={`${Number(c.form || 0).toFixed(1)} form`} color="#ff9f0a" />
-                <div className="mn" style={{ fontSize: 14, fontWeight: 900, color: "#30d158" }}>{c.ep_next != null ? Number(c.ep_next).toFixed(1) : "??"}</div>
-                <div style={{ fontSize: 8, color: "var(--text-dim)" }}>EP</div>
-              </div>
-            ))
-            : Array.from({ length: 3 }).map((_, i) => <div key={i} className="crow"><Skel w="70%" h={11} /></div>)}
+            ? capts.map((c, i) => {
+                const posC = { GK: "#ff9f0a", DEF: "#4fa8ff", MID: "#00d68f", FWD: "#ff4757" }[c.position] || "#00d68f";
+                const ep   = c.ep_next != null ? Number(c.ep_next).toFixed(1) : c.form != null ? (Number(c.form) / 2).toFixed(1) : "—";
+                return (
+                  <div key={i} className="sp-player-row" style={{ "--pos-col": posC }}>
+                    <div className="sp-rank">{String(i + 1).padStart(2, "0")}</div>
+                    {c.photo && <img src={c.photo} width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{c.name || c.web_name}</div>
+                      <div style={{ fontSize: 9, color: "var(--text-muted)" }}>{c.team_short || c.team || ""} · {c.ownership != null ? Number(c.ownership).toFixed(1) : "?"}% owned</div>
+                    </div>
+                    <Badge label={`${Number(c.form || 0).toFixed(1)} form`} color="#ff9f0a" />
+                    <div style={{ textAlign: "right" }}>
+                      <div className="sp-ep">{ep}</div>
+                      <div className="sp-ep-lbl">EP</div>
+                    </div>
+                  </div>
+                );
+              })
+            : Array.from({ length: 3 }).map((_, i) => <div key={i} className="sp-player-row"><Skel w="70%" h={11} /></div>)}
           {valuePls.length > 0 && <>
-            <div className="sl" style={{ marginTop: 16 }}>Value Picks (pts/£m)</div>
+            <div className="sp-sub" style={{ marginTop: 16 }}>Value Picks (pts/£m)</div>
             {valuePls.map((p, i) => (
-              <div key={i} className="crow">
-                <div className="mn" style={{ fontSize: 9, color: "var(--text-dim)", minWidth: 16 }}>{i + 1}</div>
+              <div key={i} className="sp-player-row" style={{ "--pos-col": "#4fa8ff" }}>
+                <div className="sp-rank">{i + 1}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text)" }}>{p.name}</div>
                   <div style={{ fontSize: 9, color: "var(--text-muted)" }}>{p.team_short} · £{p.cost}m · {p.position}</div>
                 </div>
                 <Badge label={`${p.value_score}v`} color="#0a84ff" />
-                <div className="mn" style={{ fontSize: 12, fontWeight: 900, color: "#30d158" }}>{p.total_points}</div>
-                <div style={{ fontSize: 8, color: "var(--text-dim)" }}>pts</div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="sp-ep" style={{ fontSize: 16, color: "#00d68f" }}>{p.total_points}</div>
+                  <div className="sp-ep-lbl">pts</div>
+                </div>
               </div>
             ))}
           </>}
         </div></div>
         <div className="g" style={{ padding: 20 }}><div className="gi">
-          <div className="sl">All FPL Tools</div>
+          <div className="sp-sub">All FPL Tools</div>
           {FPL_TOOLS.map((t, i) => <FplRow key={t.to} t={t} i={i} dash={dash} />)}
         </div></div>
       </div>
@@ -1823,9 +2395,12 @@ function TrendingPlayers({ dash, loading, error }) {
   const showable   = xgLeaders.length > 0 ? xgLeaders : items;
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Players</div><h2 className="h2">xG Leaders &amp; Form</h2></div>
-        <Link to="/player" className="sa">Browse all →</Link>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Players</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#ff9f0a" }}>xG Leaders <span>&amp; Form</span></h2>
+        </div>
+        <Link to="/player" className="sp-sec-link">Browse all →</Link>
       </div>
       {error ? <ErrBox msg={error} /> : (
         <div className="gp">
@@ -1851,9 +2426,12 @@ function TransferBrief({ dash, loading, error }) {
   const defTable = dash?.defense_table?.table ?? [];
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Intelligence</div><h2 className="h2">Transfer Brief &amp; Analytics</h2></div>
-        <Link to="/news" className="sa">All news →</Link>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Intelligence</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#4fa8ff" }}>Transfer Brief <span>&amp; Analytics</span></h2>
+        </div>
+        <Link to="/news" className="sp-sec-link">All news →</Link>
       </div>
       {error ? <ErrBox msg={error} /> : (
         <div className="g3">
@@ -1924,9 +2502,12 @@ function PowerRankings({ dash, loading, error }) {
   const league   = dash?.power_rankings?.league ?? "Premier League";
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Composite Model</div><h2 className="h2">Power Rankings · {league}</h2></div>
-        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Elo · Form · Goal Diff · PPG</span>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Composite Model</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#3b82f6" }}>Power <span>Rankings</span> · {league}</h2>
+        </div>
+        <span style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "var(--font-mono)", letterSpacing: ".06em", marginBottom: 4 }}>Elo · Form · Goal Diff · PPG</span>
       </div>
       {error ? <ErrBox msg={error} /> : (
         <div className="gr">
@@ -1998,9 +2579,12 @@ function ModelPerformance({ dash, loading, error }) {
   const isInsufficient = perf?.insufficient && acct?.insufficient;
   return (
     <section className="s"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Verified Results Only</div><h2 className="h2">Model Performance &amp; Accountability</h2></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 14px", borderRadius: 999, background: "var(--green-soft)", border: "1px solid rgba(48,209,88,.2)" }}>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Verified Results Only</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#4fa8ff" }}>Model <span>Performance</span></h2>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 14px", borderRadius: 999, background: "rgba(48,209,88,0.08)", border: "1px solid rgba(48,209,88,.2)", flexShrink: 0 }}>
           <Dot color="#30d158" size={6} />
           <span className="mn" style={{ fontSize: 9, fontWeight: 900, color: "#30d158", letterSpacing: ".1em" }}>{verifiedCount} VERIFIED · {pendingCount} PENDING</span>
         </div>
@@ -2111,12 +2695,380 @@ const FACTS = [
   { val: "8K",   label: "Sims / Run"   },
 ];
 
+
+// ════════════════════════════════════════════════════════════════════════
+// NEW SECTION — ACCOUNTABILITY
+// dash.performance_summary + dash.accountability_summary
+// ════════════════════════════════════════════════════════════════════════
+function AccountabilitySection({ dash, loading, error }) {
+  const [ref, vis] = useReveal(.04);
+  const perf  = dash?.performance_summary;
+  const acct  = dash?.accountability_summary;
+  const overallAcc  = perf?.overall_accuracy  ?? acct?.hit_rate         ?? null;
+  const last30Acc   = perf?.last_30_accuracy                             ?? null;
+  const highConfAcc = perf?.confidence_bands?.find(b => b.bracket?.startsWith("High"))?.accuracy
+                      ?? acct?.high_confidence_hit_rate                  ?? null;
+  const verifiedCount = perf?.verified_count ?? acct?.verified_count ?? 0;
+  const pendingCount  = perf?.pending_count  ?? acct?.pending_count  ?? 0;
+  const recentPreds   = acct?.recent_verified ?? [];
+  const rollingAcc    = perf?.rolling_accuracy ?? [];
+  const confBands     = perf?.confidence_bands ?? [];
+  const avgConf       = perf?.average_confidence ?? null;
+  const isInsufficient = perf?.insufficient && acct?.insufficient;
+
+  return (
+    <section className="s"><div className="w">
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Verified Results Only</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#00d68f" }}>Prediction <span>Track Record</span></h2>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 14px", borderRadius: 999, background: "rgba(48,209,88,0.08)", border: "1px solid rgba(48,209,88,0.2)", flexShrink: 0 }}>
+          <div className="sp-live-dot" style={{ background: "#30d158" }} />
+          <span className="mn" style={{ fontSize: 9, fontWeight: 900, color: "#30d158", letterSpacing: ".1em" }}>{verifiedCount} VERIFIED · {pendingCount} PENDING</span>
+        </div>
+      </div>
+
+      {error ? <ErrBox msg={error} /> : loading
+        ? <div className="g2">{[0,1].map(i => <div key={i} style={{ height: 200, borderRadius: 20 }} className="sk" />)}</div>
+        : isInsufficient
+          ? <div className="g" style={{ padding: "36px 24px", textAlign: "center" }}><div className="gi">
+              <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 6 }}>No verified predictions yet.</div>
+              <div style={{ fontSize: 10, color: "var(--text-dim)" }}>Results are automatically checked after matches finish.</div>
+            </div></div>
+          : <>
+              {/* Stat chips row */}
+              <div className="sp-acc-ring-row">
+                {[
+                  { label: "Overall Accuracy", val: overallAcc, color: "#00d68f", sub: `${verifiedCount} verified` },
+                  { label: "Last 30 Accuracy", val: last30Acc,  color: "#4fa8ff", sub: "Improving trend" },
+                  { label: "High Conf ≥70%",   val: highConfAcc, color: "#ffd60a", sub: `${acct?.high_confidence_count ?? "—"} predictions` },
+                ].map(({ label, val, color, sub }) => (
+                  <div key={label} className="sp-acc-ring-card">
+                    <div className="sp-acc-val" style={{ color }}>
+                      {val != null ? Math.round(val) : "—"}
+                      {val != null && <span className="sp-acc-val-unit">%</span>}
+                    </div>
+                    <div className="sp-acc-lbl">{label}</div>
+                    <div className="sp-acc-sub">{sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="g2">
+                {/* Left: confidence bands + rolling */}
+                <div className="g" style={{ padding: 20 }}><div className="gi">
+                  <div className="sp-sub">Accuracy by Confidence Band</div>
+                  {confBands.length > 0
+                    ? confBands.map((b, i) => {
+                        const bc = b.bracket?.startsWith("High") ? "#00d68f" : b.bracket?.startsWith("Med") ? "#ff9f0a" : "#ff4757";
+                        return (
+                          <div key={i} className="sp-conf-band">
+                            <span className="sp-band-lbl">{b.bracket}</span>
+                            <div className="sp-band-bar-wrap"><div className="sp-band-bar" style={{ width: `${b.accuracy || 0}%`, "--bc": bc }} /></div>
+                            <span className="sp-band-pct" style={{ "--bc": bc }}>{b.accuracy != null ? `${b.accuracy}%` : "—"}</span>
+                            <span className="sp-band-count">{b.correct}/{b.count}</span>
+                          </div>
+                        );
+                      })
+                    : <Empty msg="Confidence breakdown loading…" />}
+
+                  {rollingAcc.length > 0 && (
+                    <>
+                      <div className="sp-sub" style={{ marginTop: 16 }}>Rolling Windows</div>
+                      <div className="sp-roll-chips">
+                        {rollingAcc.map((r, i) => {
+                          const rc = i === 0 ? "#00d68f" : i === 1 ? "#4fa8ff" : "rgba(255,255,255,0.45)";
+                          return (
+                            <div key={i} className="sp-roll-chip">
+                              <div className="sp-roll-val" style={{ color: rc }}>{r.accuracy}%</div>
+                              <div className="sp-roll-lbl">{r.window}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {avgConf != null && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 10, color: "var(--text-muted)" }}>
+                      Avg confidence: <span className="mn" style={{ fontWeight: 900, color: "var(--text)" }}>{avgConf}%</span>
+                    </div>
+                  )}
+                </div></div>
+
+                {/* Right: recent verified predictions */}
+                <div className="g" style={{ padding: 20 }}><div className="gi">
+                  <div className="sp-sub">Recent Verified Predictions</div>
+                  {recentPreds.length > 0
+                    ? recentPreds.slice(0, 8).map((p, i) => {
+                        const ic = p.correct;
+                        const cc = p.confidence >= 70 ? "#00d68f" : p.confidence >= 55 ? "#ff9f0a" : "#ff4757";
+                        return (
+                          <div key={i} className="sp-verified-row">
+                            <div className="sp-v-icon" style={{ background: ic ? "rgba(0,214,143,0.1)" : "rgba(255,71,87,0.1)", border: `1px solid ${ic ? "rgba(0,214,143,0.25)" : "rgba(255,71,87,0.25)"}`, color: ic ? "#00d68f" : "#ff4757" }}>
+                              {ic ? "✓" : "✗"}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="sp-v-match">{p.home} {p.score !== "—" ? p.score : ""} {p.away}</div>
+                              <div className="sp-v-meta">
+                                Predicted: <span style={{ color: ic ? "#00d68f" : "#ff4757", fontWeight: 700 }}>{p.predicted_outcome}</span>
+                                {p.actual_outcome && <> · Actual: <span style={{ fontWeight: 700, color: "var(--text-secondary)" }}>{p.actual_outcome}</span></>}
+                              </div>
+                            </div>
+                            <div className="sp-conf-badge" style={{ background: `${cc}18`, color: cc, border: `1px solid ${cc}28` }}>{p.confidence}%</div>
+                          </div>
+                        );
+                      })
+                    : <Empty msg="No verified results yet." />}
+                </div></div>
+              </div>
+            </>
+      }
+    </div></section>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// NEW SECTION — NEWS TRACKER
+// Fetches from /api/intelligence/feed (RSS + StatinSite articles)
+// ════════════════════════════════════════════════════════════════════════
+const TYPE_COLOR = {
+  transfer:     { nb: "#ff9f0a80", bg: "rgba(255,159,10,0.1)", c: "#ff9f0a" },
+  news:         { nb: "#4fa8ff80", bg: "rgba(79,168,255,0.1)", c: "#4fa8ff" },
+  analysis:     { nb: "#bf5af280", bg: "rgba(191,90,242,0.1)", c: "#bf5af2" },
+  match_preview:{ nb: "#00d68f80", bg: "rgba(0,214,143,0.1)",  c: "#00d68f" },
+  title_race:   { nb: "#ffd60a80", bg: "rgba(255,214,10,0.1)", c: "#ffd60a" },
+  model_insight:{ nb: "#4fa8ff80", bg: "rgba(79,168,255,0.1)", c: "#4fa8ff" },
+  headline:     { nb: "#4fa8ff80", bg: "rgba(79,168,255,0.1)", c: "#4fa8ff" },
+};
+function newsTypeStyle(type) { return TYPE_COLOR[type] || TYPE_COLOR.news; }
+
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 60000;
+    if (diff < 60)  return `${Math.round(diff)}m ago`;
+    if (diff < 1440) return `${Math.round(diff / 60)}h ago`;
+    return `${Math.round(diff / 1440)}d ago`;
+  } catch { return ""; }
+}
+
+function NewsTrackerSection() {
+  const [ref, vis] = useReveal(.04);
+  const { data, loading, error } = useSectionFetch("/api/intelligence/feed?limit=12", 300_000);
+  const items = useMemo(() => {
+    const raw = data?.items ?? (Array.isArray(data) ? data : []);
+    return raw.filter(a => a.title || a.headline).slice(0, 6);
+  }, [data]);
+
+  return (
+    <section className="s"><div className="w">
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Football Intelligence</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#4fa8ff" }}>News <span>Tracker</span></h2>
+        </div>
+        <Link to="/news" className="sp-sec-link">Full newsroom →</Link>
+      </div>
+
+      {error ? <ErrBox msg={error} /> : (
+        <div className="sp-news-grid">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="sp-news-card" style={{ minHeight: 120 }}><Skel w="40%" h={9} /><div style={{ marginTop: 8 }} /><Skel w="90%" h={11} /><div style={{ marginTop: 6 }} /><Skel w="80%" h={9} /></div>
+              ))
+            : items.length > 0
+              ? items.map((a, i) => {
+                  const ts = newsTypeStyle(a.type);
+                  const title  = a.title || a.headline || "";
+                  const excerpt = a.excerpt || a.summary || a.body?.slice(0, 120) || "";
+                  const source  = a.source || a.league || "";
+                  const typeLabel = (a.type || "news").replace(/_/g, " ");
+                  return (
+                    <div key={i} className="sp-news-card" style={{ "--nb": ts.nb }}
+                      onClick={() => a.url && window.open(a.url, "_blank", "noopener")}>
+                      <div className="sp-news-source">
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span>{source}</span>
+                          <span className="sp-news-type" style={{ "--tp-bg": ts.bg, "--tp-c": ts.c }}>{typeLabel}</span>
+                        </div>
+                        <span>{timeAgo(a.published_at)}</span>
+                      </div>
+                      <div className="sp-news-headline">{title}</div>
+                      {excerpt && <div className="sp-news-excerpt">{excerpt}</div>}
+                      <div className="sp-news-time">{source} · {a.published_at ? new Date(a.published_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                    </div>
+                  );
+                })
+              : <div className="sp-news-card" style={{ gridColumn: "span 2", textAlign: "center", padding: 32 }}>
+                  <Empty msg="News loading — server may be starting up." />
+                </div>
+          }
+        </div>
+      )}
+    </div></section>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// NEW SECTION — FPL NEWS & INJURY FEED
+// Left: doubts/injuries from FPL bootstrap elements (status !== 'a')
+// Right: price rise alerts + transfer brief
+// ════════════════════════════════════════════════════════════════════════
+const POS_COLOR = { GK: "#ff9f0a", DEF: "#4fa8ff", MID: "#00d68f", FWD: "#ff4757" };
+
+function FplNewsSection({ dash }) {
+  const [ref, vis] = useReveal(.04);
+  // Injury/doubt list from FPL bootstrap via differential_captains endpoint
+  // bootstrap elements with status != 'a' (available) have news + chance_of_playing
+  const { data: bsData, loading: bsLoading } = useSectionFetch("/api/fpl/bootstrap-static", 3600_000);
+  const injuryPlayers = useMemo(() => {
+    const elements = bsData?.elements ?? [];
+    const teams = Object.fromEntries((bsData?.teams ?? []).map(t => [t.id, t.short_name]));
+    return elements
+      .filter(p => p.status !== "a" || (p.news && p.news.length > 2))
+      .sort((a, b) => (b.selected_by_percent ? parseFloat(b.selected_by_percent) : 0) - (a.selected_by_percent ? parseFloat(a.selected_by_percent) : 0))
+      .slice(0, 6)
+      .map(p => ({
+        id:       p.id,
+        name:     p.web_name,
+        team:     teams[p.team] ?? "",
+        cost:     (p.now_cost / 10).toFixed(1),
+        pos:      ["", "GK", "DEF", "MID", "FWD"][p.element_type] ?? "MID",
+        news:     p.news ?? "",
+        chance:   p.chance_of_playing_this_round,
+        status:   p.status,
+      }));
+  }, [bsData]);
+
+  // Price rise alerts from value_players + transfer_brief
+  const priceRisers = useMemo(() => {
+    const elements = bsData?.elements ?? [];
+    const teams = Object.fromEntries((bsData?.teams ?? []).map(t => [t.id, t.short_name]));
+    return elements
+      .filter(p => p.status === "a" && p.transfers_in_event > 5000)
+      .sort((a, b) => b.transfers_in_event - a.transfers_in_event)
+      .slice(0, 4)
+      .map(p => ({
+        id:   p.id,
+        name: p.web_name,
+        team: teams[p.team] ?? "",
+        cost: (p.now_cost / 10).toFixed(1),
+        pos:  ["", "GK", "DEF", "MID", "FWD"][p.element_type] ?? "MID",
+        net:  (p.transfers_in_event - p.transfers_out_event),
+        ownership: p.selected_by_percent,
+      }));
+  }, [bsData]);
+
+  const brief    = dash?.transfer_brief;
+  const bullets  = brief?.key_transfers ?? [];
+  const summary  = brief?.summary ?? "";
+
+  function chanceColor(chance) {
+    if (chance == null)  return { bg: "rgba(255,71,87,0.12)",  c: "#ff4757" };
+    if (chance >= 75)    return { bg: "rgba(255,159,10,0.12)", c: "#ff9f0a" };
+    if (chance >= 50)    return { bg: "rgba(255,159,10,0.12)", c: "#ff9f0a" };
+    return                      { bg: "rgba(255,71,87,0.12)",  c: "#ff4757" };
+  }
+
+  return (
+    <section className="s"><div className="w">
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Fantasy Premier League</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#ff9f0a" }}>FPL <span>Injury &amp; News</span> Feed</h2>
+        </div>
+        <Link to="/fpl-intelligence" className="sp-sec-link">FPL Intelligence →</Link>
+      </div>
+
+      <div className="g2">
+        {/* Injury / doubt list */}
+        <div className="g" style={{ overflow: "hidden" }}>
+          <div className="sp-bar" style={{ "--sp-bar": "rgba(255,71,87,0.5)" }} />
+          <div style={{ padding: 18 }}><div className="gi">
+            <div className="sp-sub">Doubts &amp; Injuries</div>
+            {bsLoading
+              ? Array.from({ length: 4 }).map((_, i) => <div key={i} style={{ height: 62, borderRadius: 11, marginBottom: 6 }} className="sk" />)
+              : injuryPlayers.length > 0
+                ? injuryPlayers.map((p, i) => {
+                    const posC = POS_COLOR[p.pos] || "#4fa8ff";
+                    const ch   = chanceColor(p.chance);
+                    return (
+                      <div key={i} className="sp-fpl-row" style={{ "--fpr": p.status === "i" || p.status === "s" ? "#ff4757" : "#ff9f0a" }}>
+                        <div className="sp-fpl-avatar">{p.name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="sp-fpl-name">{p.name}</div>
+                          <div className="sp-fpl-team" style={{ color: posC }}>{p.team} · £{p.cost}m · {p.pos}</div>
+                          {p.news && <div className="sp-fpl-news-txt">{p.news.slice(0, 100)}{p.news.length > 100 ? "…" : ""}</div>}
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          {p.status === "u" || p.chance === 0
+                            ? <div className="sp-chance-pill" style={{ background: "rgba(255,71,87,0.12)", color: "#ff4757" }}>OUT</div>
+                            : p.chance != null
+                              ? <div className="sp-chance-pill" style={{ background: ch.bg, color: ch.c }}>{p.chance}%</div>
+                              : <div className="sp-chance-pill" style={{ background: "rgba(255,71,87,0.12)", color: "#ff4757" }}>Doubt</div>}
+                          <div className="sp-chance-lbl">{p.status === "s" ? "susp." : p.status === "i" ? "injury" : "chance"}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                : <Empty msg="No injury news — all players available." />}
+          </div></div>
+        </div>
+
+        {/* Price rises + transfer brief */}
+        <div className="g" style={{ overflow: "hidden" }}>
+          <div className="sp-bar" style={{ "--sp-bar": "rgba(255,159,10,0.5)" }} />
+          <div style={{ padding: 18 }}><div className="gi">
+            <div className="sp-sub">Price Rise Alerts</div>
+            {bsLoading
+              ? Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: 58, borderRadius: 11, marginBottom: 6 }} className="sk" />)
+              : priceRisers.length > 0
+                ? priceRisers.map((p, i) => {
+                    const posC = POS_COLOR[p.pos] || "#4fa8ff";
+                    return (
+                      <div key={i} className="sp-fpl-row" style={{ "--fpr": "#00d68f" }}>
+                        <div className="sp-fpl-avatar">{p.name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="sp-fpl-name">{p.name}</div>
+                          <div className="sp-fpl-team" style={{ color: posC }}>{p.team} · £{p.cost}m · {p.pos}</div>
+                          <div className="sp-fpl-news-txt">Transfer net +{p.net?.toLocaleString() ?? "?"} this week · {p.ownership}% owned</div>
+                        </div>
+                        <div className="sp-chance-pill" style={{ background: "rgba(0,214,143,0.12)", color: "#00d68f" }}>▲ Rise</div>
+                      </div>
+                    );
+                  })
+                : <Empty msg="Transfer data loading…" />}
+
+            {summary && (
+              <>
+                <div className="sp-sub" style={{ marginTop: 18 }}>Transfer Brief</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 12 }}>{summary}</div>
+                {bullets.slice(0, 3).map((t, i) => (
+                  <div key={i} className="sp-brief-bullet">
+                    <div className="sp-brief-dot" />
+                    <span>{typeof t === "string" ? t : t.text || t.headline || ""}</span>
+                  </div>
+                ))}
+              </>
+            )}
+          </div></div>
+        </div>
+      </div>
+    </div></section>
+  );
+}
+
 function IntelligenceStack() {
   const [ref, vis] = useReveal(.04);
   return (
     <section className="s s--last"><div className="w">
-      <div ref={ref} className="hd" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
-        <div><div className="ey">— Platform</div><h2 className="h2">The Intelligence Stack</h2></div>
+      <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
+        <div className="sp-sec-left">
+          <div className="sp-eyebrow">Platform</div>
+          <h2 className="sp-h2" style={{ "--sp-accent": "#ffd60a" }}>The Intelligence <span>Stack</span></h2>
+        </div>
       </div>
       <div className="g2">
         <div>
@@ -2157,6 +3109,12 @@ function Div() { return <div className="dv" />; }
 // ════════════════════════════════════════════════════════════════════════
 // ROOT — wires everything together
 // ════════════════════════════════════════════════════════════════════════
+
+function Div() { return <div className="dv" />; }
+
+// ════════════════════════════════════════════════════════════════════════
+// ROOT — wires everything together
+// ════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
   const { fixtures, loading: ul, error: ue } = useUpcomingData();
   const { dash,     loading: dl, error: de } = useDashboardData();
@@ -2164,11 +3122,14 @@ export default function HomePage() {
     <div className="hp">
       <style>{CSS}</style>
       <HeroSection />
-      <LiveStrip    fixtures={fixtures} />
-      <TitleRace    dash={dash} loading={dl} error={de} />
-      <Div /><CommandGrid  fixtures={fixtures} dash={dash} loading={dl || ul} />
-      <Div /><CompetitionHub fixtures={fixtures} />
-      <Div /><FPLHub       dash={dash} />
+      <LiveStrip      fixtures={fixtures} />
+      <TitleRace      dash={dash} loading={dl} error={de} />
+      <Div /><CommandGrid     fixtures={fixtures} dash={dash} loading={dl || ul} />
+      <Div /><CompetitionHub  fixtures={fixtures} />
+      <Div /><FPLHub          dash={dash} />
+      <Div /><AccountabilitySection dash={dash} loading={dl} error={de} />
+      <Div /><NewsTrackerSection />
+      <Div /><FplNewsSection  dash={dash} />
       <Div /><TransferBrief   dash={dash} loading={dl} error={de} />
       <Div /><PowerRankings   dash={dash} loading={dl} error={de} />
       <Div /><IntelligenceStack />

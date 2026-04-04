@@ -153,42 +153,53 @@ const ROUTE_META = {
   },
 
   // ── FPL tools ──
-  "/best-team": {
-    title: "Best FPL Team This Week — Optimal Starting XI — StatinSite",
-    description: "StatinSite's optimal FPL starting XI built from xG data, ELO ratings, form and fixture difficulty. Best 11 players for this gameweek.",
+  "/fpl/best-xi": {
+    title: "Best XI for Fantasy Premier League This Gameweek — StatinSite",
+    description: "StatinSite's optimal Fantasy Premier League starting XI built from xG data, ELO ratings, form and fixture difficulty. Best 11 players for this gameweek.",
   },
-  "/fpl-intelligence": {
-    title: "FPL Intelligence Hub — Gameweek Tips & Analysis — StatinSite",
-    description: "Complete FPL gameweek guide: best XI, transfer recommendations, captain picks, chip strategy and differential analysis powered by xG and ELO.",
+  "/fpl/gw-guide": {
+    title: "Fantasy Premier League GW Guide — Tips & Analysis — StatinSite",
+    description: "Complete Fantasy Premier League gameweek guide: best XI, transfer recommendations, captain picks, chip strategy and differential analysis powered by xG and ELO.",
   },
-  "/captaincy": {
-    title: "FPL Captain Picks This Gameweek — StatinSite Algorithm",
-    description: "Data-driven FPL captaincy picks based on xG, form, fixture difficulty and ownership. Differential and safe captain options for this gameweek.",
+  "/fpl/captain-picks": {
+    title: "FPL Captain Picks This Gameweek — StatinSite xG Algorithm",
+    description: "Data-driven Fantasy Premier League captain picks based on xG, ELO, form and fixture difficulty. Differential and safe options for this gameweek.",
   },
-  "/fpl/fixtures": {
-    title: "FPL Fixture Difficulty Heatmap 2025/26 — StatinSite",
-    description: "Colour-coded FPL fixture difficulty rating (FDR) heatmap for all 20 Premier League teams across the next 10 gameweeks. Green = easy, red = hard.",
+  "/fpl/fixture-ticker": {
+    title: "FPL Fixture Ticker & Difficulty Heatmap 2025/26 — StatinSite",
+    description: "Colour-coded Fantasy Premier League fixture difficulty rating heatmap for all 20 Premier League teams across the next 10 gameweeks. Plan your transfers ahead.",
   },
-  "/differentials": {
+  "/fpl/differential-picks": {
     title: "FPL Differential Picks This Gameweek — Low Ownership — StatinSite",
-    description: "Best FPL differential picks under 10% ownership for this gameweek. xG and ELO-backed selections to gain rank on your rivals.",
+    description: "Best Fantasy Premier League differential picks under 10% ownership for this gameweek. xG and ELO-backed selections to gain rank on your rivals.",
   },
-  "/transfer-planner": {
-    title: "FPL Transfer Planner — Best Transfers This Gameweek — StatinSite",
-    description: "Plan your FPL transfers using StatinSite's xG model. Best transfer targets by position, value and upcoming fixture difficulty.",
+  "/fpl/transfers": {
+    title: "FPL Transfer Targets This Gameweek — StatinSite",
+    description: "Best Fantasy Premier League transfer targets by position, value and upcoming fixture difficulty. Plan your transfers using StatinSite's xG model.",
   },
-  "/gameweek-insights": {
-    title: "FPL Gameweek Insights & Stats — StatinSite",
-    description: "Deep FPL gameweek analysis: top scorers, value players, form rankings and xG leaders for this week.",
+  "/fpl/stats": {
+    title: "Fantasy Premier League GW Stats — StatinSite",
+    description: "Deep Fantasy Premier League gameweek stats: top scorers, value players, form rankings and xG leaders for this week.",
   },
-  "/fpl-table": {
-    title: "FPL Points Table & Live Rankings — StatinSite",
-    description: "Live FPL points table and gameweek rankings powered by StatinSite.",
+  "/fpl/standings": {
+    title: "Fantasy Premier League Points Table & Standings — StatinSite",
+    description: "Live Fantasy Premier League points table and gameweek standings powered by StatinSite.",
   },
-  "/squad-builder": {
-    title: "FPL Squad Builder — Build Your 15-Man Team — StatinSite",
-    description: "Build and optimise your FPL squad under budget using StatinSite's player data and form scores.",
+  "/fpl/squad-builder": {
+    title: "Fantasy Premier League Squad Builder — Build Your 15-Man Team — StatinSite",
+    description: "Build and optimise your Fantasy Premier League squad under budget using StatinSite's player data, form scores and fixture ratings.",
   },
+
+  // ── Old paths kept as fallback (redirected in React but server still sees them briefly) ──
+  "/best-team":        { title: "Best XI for Fantasy Premier League — StatinSite", description: "Optimal Fantasy Premier League starting XI powered by xG and ELO." },
+  "/fpl-intelligence": { title: "Fantasy Premier League GW Guide — StatinSite",   description: "Complete Fantasy Premier League gameweek guide and tips." },
+  "/captaincy":        { title: "FPL Captain Picks — StatinSite",                 description: "Data-driven Fantasy Premier League captain picks." },
+  "/fpl/fixtures":     { title: "FPL Fixture Ticker — StatinSite",                description: "Fantasy Premier League fixture difficulty heatmap." },
+  "/differentials":    { title: "FPL Differential Picks — StatinSite",            description: "Low-ownership Fantasy Premier League picks." },
+  "/transfer-planner": { title: "FPL Transfer Targets — StatinSite",              description: "Best Fantasy Premier League transfers this gameweek." },
+  "/gameweek-insights":{ title: "FPL GW Stats — StatinSite",                      description: "Fantasy Premier League gameweek stats and analysis." },
+  "/fpl-table":        { title: "FPL Standings — StatinSite",                     description: "Fantasy Premier League points table." },
+  "/squad-builder":    { title: "FPL Squad Builder — StatinSite",                 description: "Build your Fantasy Premier League squad." },
 };
 
 const DEFAULT_META = {

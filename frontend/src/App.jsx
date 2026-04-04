@@ -80,15 +80,30 @@ export default function App() {
               <Route path="/league/seriea"            element={<LeaguePage league="seriea" />} />
               <Route path="/league/ligue1"            element={<LeaguePage league="ligue1" />} />
               <Route path="/simulation/:league"       element={<SeasonSimulator />} />
-              <Route path="/squad-builder"            element={<SquadBuilderPage />} />
-              <Route path="/best-team"                element={<BestTeamPage />} />
-              <Route path="/fpl-intelligence"         element={<FplIntelligencePage />} />
-              <Route path="/gameweek-insights"        element={<GameweekInsightsPage />} />
-              <Route path="/fpl-table"                element={<FplTablePage />} />
-              <Route path="/captaincy"                element={<CaptaincyPage />} />
-              <Route path="/fpl/fixtures"             element={<FixtureDifficultyHeatmap />} />
-              <Route path="/transfer-planner"         element={<TransferPlannerPage />} />
-              <Route path="/differentials"            element={<DifferentialFinderPage />} />
+              {/* ── FPL Tools — new canonical URLs ── */}
+              <Route path="/fpl/captain-picks"        element={<CaptaincyPage />} />
+              <Route path="/fpl/captain-picks/gw:gw" element={<CaptaincyPage />} />
+              <Route path="/fpl/differential-picks"   element={<DifferentialFinderPage />} />
+              <Route path="/fpl/differential-picks/gw:gw" element={<DifferentialFinderPage />} />
+              <Route path="/fpl/fixture-ticker"       element={<FixtureDifficultyHeatmap />} />
+              <Route path="/fpl/fixture-ticker/gw:gw" element={<FixtureDifficultyHeatmap />} />
+              <Route path="/fpl/best-xi"              element={<BestTeamPage />} />
+              <Route path="/fpl/gw-guide"             element={<FplIntelligencePage />} />
+              <Route path="/fpl/stats"                element={<GameweekInsightsPage />} />
+              <Route path="/fpl/transfers"            element={<TransferPlannerPage />} />
+              <Route path="/fpl/standings"            element={<FplTablePage />} />
+              <Route path="/fpl/squad-builder"        element={<SquadBuilderPage />} />
+
+              {/* ── Old URLs → permanent redirects (keeps any existing links working) ── */}
+              <Route path="/captaincy"                element={<Navigate to="/fpl/captain-picks" replace />} />
+              <Route path="/differentials"            element={<Navigate to="/fpl/differential-picks" replace />} />
+              <Route path="/fpl/fixtures"             element={<Navigate to="/fpl/fixture-ticker" replace />} />
+              <Route path="/best-team"                element={<Navigate to="/fpl/best-xi" replace />} />
+              <Route path="/fpl-intelligence"         element={<Navigate to="/fpl/gw-guide" replace />} />
+              <Route path="/gameweek-insights"        element={<Navigate to="/fpl/stats" replace />} />
+              <Route path="/transfer-planner"         element={<Navigate to="/fpl/transfers" replace />} />
+              <Route path="/fpl-table"                element={<Navigate to="/fpl/standings" replace />} />
+              <Route path="/squad-builder"            element={<Navigate to="/fpl/squad-builder" replace />} />
               <Route path="/player"                   element={<PlayerInsightPage />} />
               <Route path="/player/:id"               element={<PlayerInsightPage />} />
               <Route path="/players"                  element={<ComingSoon name="Player Profiles" />} />

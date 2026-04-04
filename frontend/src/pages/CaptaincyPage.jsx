@@ -317,7 +317,7 @@ export default function CaptaincyPage() {
         padding: "24px 24px 0", position: "sticky", top: 0, zIndex: 10,
       }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <Link to="/gameweek-insights" style={{ color: C.muted, textDecoration: "none", fontSize: 12, display: "inline-block", marginBottom: 10 }}>
+          <Link to="/fpl/stats" style={{ color: C.muted, textDecoration: "none", fontSize: 12, display: "inline-block", marginBottom: 10 }}>
             ← Gameweek Hub
           </Link>
           <div style={{ fontSize: 10, fontWeight: 800, color: C.gold, letterSpacing: "0.14em", marginBottom: 6 }}>

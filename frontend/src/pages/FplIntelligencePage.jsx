@@ -848,7 +848,7 @@ export default function FplIntelligencePage() {
         position:"sticky", top:0, zIndex:100,
       }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
-          <button onClick={() => navigate("/best-team")} style={{
+          <button onClick={() => navigate("/fpl/best-xi")} style={{
             background:"none", border:"none", cursor:"pointer",
             color:T.blue, fontSize:13, fontWeight:600, padding:0, display:"flex", alignItems:"center", gap:4,
           }}>

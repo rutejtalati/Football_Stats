@@ -201,47 +201,47 @@
 
   <!-- ── FPL Tools ── -->
   <url>
-    <loc>https://www.statinsite.com/best-team</loc>
+    <loc>https://www.statinsite.com/fpl/best-xi</loc>
     <changefreq>daily</changefreq>
     <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/fpl-intelligence</loc>
+    <loc>https://www.statinsite.com/fpl/gw-guide</loc>
     <changefreq>daily</changefreq>
     <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/captaincy</loc>
+    <loc>https://www.statinsite.com/fpl/captain-picks</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/fpl/fixtures</loc>
+    <loc>https://www.statinsite.com/fpl/fixture-ticker</loc>
     <changefreq>daily</changefreq>
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/differentials</loc>
+    <loc>https://www.statinsite.com/fpl/differential-picks</loc>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/transfer-planner</loc>
+    <loc>https://www.statinsite.com/fpl/transfers</loc>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/gameweek-insights</loc>
+    <loc>https://www.statinsite.com/fpl/stats</loc>
     <changefreq>daily</changefreq>
     <priority>0.78</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/fpl-table</loc>
+    <loc>https://www.statinsite.com/fpl/standings</loc>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.statinsite.com/squad-builder</loc>
+    <loc>https://www.statinsite.com/fpl/squad-builder</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>

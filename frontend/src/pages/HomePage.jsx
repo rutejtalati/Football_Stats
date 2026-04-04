@@ -1916,8 +1916,8 @@ const TOOLS = [
   { to: "/live",                       label: "Live Centre",    color: "#ff453a", span: 2, tall: true,  sub: "Real-time scores, events and minute-by-minute tracking",    tag: "LIVE DATA",    dk: "live"  },
   { to: "/predictions/premier-league", label: "Predictions",   color: "#0a84ff", span: 1, tall: false, sub: "Dixon-Coles Poisson model with ELO ratings",                 tag: "MODEL",        dk: "preds" },
   { to: "/match/0",                    label: "Match Hub",      color: "#bf5af2", span: 1, tall: false, sub: "Lineups, H2H, injuries, xG and live tactics",               tag: "INTELLIGENCE", dk: null    },
-  { to: "/best-team",                  label: "FPL Best XI",    color: "#30d158", span: 1, tall: true,  sub: "Optimal FPL starting XI with captain signal",               tag: "FPL",          dk: "fpl"   },
-  { to: "/squad-builder",              label: "Squad Builder",  color: "#30d158", span: 1, tall: false, sub: "Build your 15-man FPL squad under budget",                   tag: "FPL",          dk: null    },
+  { to: "/fpl/best-xi",                 label: "FPL Best XI",    color: "#30d158", span: 1, tall: true,  sub: "Optimal FPL starting XI with captain signal",               tag: "FPL",          dk: "fpl"   },
+  { to: "/fpl/squad-builder",          label: "Squad Builder",  color: "#30d158", span: 1, tall: false, sub: "Build your 15-man FPL squad under budget",                   tag: "FPL",          dk: null    },
   { to: "/player",                     label: "Players",        color: "#ff9f0a", span: 1, tall: false, sub: "500+ player profiles with xG and form",                     tag: "DATA",         dk: null    },
   { to: "/news",                       label: "News",           color: "#ff375f", span: 1, tall: false, sub: "Transfers, injuries and intelligence updates",               tag: "NEWS",         dk: null    },
   { to: "/games",                      label: "Mini Games",     color: "#ff9f0a", span: 1, tall: false, sub: "Score predictor, quizzes and challenges",                   tag: "GAMES",        dk: null    },
@@ -2256,14 +2256,14 @@ function IconLeague({ color }) {
 // FPL_TOOLS — the 8 FPL tool links shown in the hub
 // ════════════════════════════════════════════════════════════════════════
 const FPL_TOOLS = [
-  { SvgIcon: IconCaptain,  label: "Captain Picks",    sub: "Differential captain algorithm",  to: "/fpl/captains",      color: "#ff9f0a" },
-  { SvgIcon: IconValue,    label: "Value Players",    sub: "Points-per-million leaders",       to: "/fpl/value",         color: "#30d158" },
-  { SvgIcon: IconTransfer, label: "Transfer Targets", sub: "Best transfers for your budget",   to: "/fpl/transfers",     color: "#0a84ff" },
-  { SvgIcon: IconForm,     label: "Form Rankings",    sub: "In-form players by xG + points",   to: "/fpl/form",          color: "#bf5af2" },
-  { SvgIcon: IconFixture,  label: "Fixture Ticker",   sub: "Upcoming fixture difficulty",      to: "/fpl/fixtures",      color: "#ff453a" },
-  { SvgIcon: IconDiff,     label: "Differentials",    sub: "Low-ownership high-upside picks",  to: "/fpl/differentials", color: "#ffd60a" },
-  { SvgIcon: IconPrice,    label: "Price Rises",      sub: "Players likely to increase soon",  to: "/fpl/prices",        color: "#64d2ff" },
-  { SvgIcon: IconLeague,   label: "Mini-League Edge", sub: "Beat your rivals this week",       to: "/fpl/minileague",    color: "#ff6b00" },
+  { SvgIcon: IconCaptain,  label: "Captain Picks",       sub: "xG + ELO captain algorithm",         to: "/fpl/captain-picks",       color: "#ff9f0a" },
+  { SvgIcon: IconValue,    label: "Best XI",             sub: "Optimal starting 11 this gameweek",  to: "/fpl/best-xi",             color: "#30d158" },
+  { SvgIcon: IconTransfer, label: "Transfer Targets",    sub: "Best transfers for your budget",     to: "/fpl/transfers",           color: "#0a84ff" },
+  { SvgIcon: IconForm,     label: "Fixture Ticker",      sub: "Fixture difficulty heatmap",         to: "/fpl/fixture-ticker",      color: "#ff453a" },
+  { SvgIcon: IconFixture,  label: "Differential Picks",  sub: "Low-ownership high-upside picks",    to: "/fpl/differential-picks",  color: "#ffd60a" },
+  { SvgIcon: IconDiff,     label: "GW Guide",            sub: "Full gameweek tips & analysis",      to: "/fpl/gw-guide",            color: "#bf5af2" },
+  { SvgIcon: IconPrice,    label: "Price Changes",       sub: "Players likely to rise or fall",     to: "/fpl/standings",           color: "#64d2ff" },
+  { SvgIcon: IconLeague,   label: "Mini-League Edge",    sub: "Beat your rivals this week",         to: "/fpl/squad-builder",       color: "#ff6b00" },
 ];
 
 function FplRow({ t }) {
@@ -2291,8 +2291,28 @@ function FplRow({ t }) {
 
 function FPLHub({ dash }) {
   const [ref, vis] = useReveal(.04);
-  const capts   = dash?.differential_captains?.captains?.slice(0, 4) ?? [];
+  const capts    = dash?.differential_captains?.captains?.slice(0, 4) ?? [];
   const valuePls = dash?.value_players?.players?.slice(0, 3) ?? [];
+
+  // GW stat strip — pull live GW/deadline from bootstrap
+  const { data: bsRaw } = useSectionFetch("/api/fpl/bootstrap", 3600_000);
+  const gwStrip = useMemo(() => {
+    const events  = bsRaw?.events ?? [];
+    const nextEv  = events.find(e => !e.finished && e.is_next) || events.find(e => !e.finished && e.is_current) || events.find(e => !e.finished);
+    const captTop = capts[0];
+    const valTop  = valuePls[0];
+    if (!nextEv) return null;
+    const dl = nextEv.deadline_time ? new Date(nextEv.deadline_time) : null;
+    const dlStr = dl ? dl.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) + " " + dl.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null;
+    const hrsLeft = dl ? Math.max(0, Math.round((dl - Date.now()) / 3600000)) : null;
+    return {
+      gw:       nextEv.id,
+      deadline: dlStr,
+      hrsLeft,
+      captEp:   captTop?.ep_next != null ? Number(captTop.ep_next).toFixed(1) : captTop?.form != null ? (Number(captTop.form) / 2).toFixed(1) : null,
+      bestVal:  valTop?.value_score != null ? Number(valTop.value_score).toFixed(1) : null,
+    };
+  }, [bsRaw, capts, valuePls]);
   return (
     <section className="s"><div className="w">
       <div ref={ref} className="sp-sec-head" style={{ opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(12px)", transition: "all .5s" }}>
@@ -2305,6 +2325,38 @@ function FPLHub({ dash }) {
           <span style={{ fontSize: 9, fontWeight: 900, color: "#30d158", letterSpacing: ".1em", fontFamily: "var(--font-mono)" }}>8 TOOLS ACTIVE</span>
         </div>
       </div>
+
+      {/* ── GW Stat Strip — live data from FPL bootstrap ── */}
+      {gwStrip && (
+        <div className="sp-gw-strip">
+          <div className="sp-stat-chip">
+            <div className="sp-stat-lbl">Gameweek</div>
+            <div className="sp-stat-val">GW{gwStrip.gw}</div>
+          </div>
+          {gwStrip.captEp != null && (
+            <div className="sp-stat-chip">
+              <div className="sp-stat-lbl">Top Captain EP</div>
+              <div className="sp-stat-val" style={{ color: "#ffd60a" }}>{gwStrip.captEp}</div>
+            </div>
+          )}
+          {gwStrip.bestVal != null && (
+            <div className="sp-stat-chip">
+              <div className="sp-stat-lbl">Best Value</div>
+              <div className="sp-stat-val" style={{ color: "#4fa8ff" }}>{gwStrip.bestVal}v</div>
+            </div>
+          )}
+          {gwStrip.deadline && (
+            <div className="sp-stat-chip">
+              <div className="sp-stat-lbl">Deadline</div>
+              <div className="sp-stat-val" style={{ color: "#ff4757", fontSize: 14, lineHeight: 1.2 }}>{gwStrip.deadline}</div>
+              {gwStrip.hrsLeft != null && (
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", fontFamily: "var(--font-mono)", marginTop: 2 }}>{gwStrip.hrsLeft}h left</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="g2">
         <div className="g" style={{ padding: 20 }}><div className="gi">
           <div className="sp-sub">Captain Picks · Differentials</div>
@@ -2948,7 +3000,7 @@ function FplNewsSection({ dash }) {
           <div className="sp-eyebrow">Fantasy Premier League</div>
           <h2 className="sp-h2" style={{ "--sp-accent": "#ff9f0a" }}>FPL <span>Injury &amp; News</span> Feed</h2>
         </div>
-        <Link to="/fpl-intelligence" className="sp-sec-link">FPL Intelligence →</Link>
+        <Link to="/fpl/gw-guide" className="sp-sec-link">GW Guide →</Link>
       </div>
 
       <div className="g2">

@@ -1388,6 +1388,72 @@ async def recent_results(n: int = Query(5)):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ACCOUNTABILITY  —  hit rate, confidence bands, recent verified predictions
+# GET /api/home/accountability
+# Wraps home_accountability.accountability_summary() as a standalone endpoint
+# so the frontend can fetch it independently of the dashboard bundle.
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/accountability")
+async def accountability_endpoint():
+    """
+    Standalone accountability summary.
+    Returns hit_rate, high_confidence_hit_rate, recent_verified[], verified_count,
+    pending_count, insufficient.  Cached 5 minutes.
+    """
+    cache_key = "home:accountability_standalone"
+    hit = _cget(cache_key, TTL_MEDIUM)
+    if hit is not None:
+        return hit
+
+    try:
+        from app.routes.home_accountability import accountability_summary
+        result = await accountability_summary()
+    except Exception as exc:
+        result = {
+            "verified_count": 0, "pending_count": 0,
+            "hit_rate": None, "recent_verified": [],
+            "insufficient": True, "error": str(exc),
+        }
+
+    _cset(cache_key, result)
+    return result
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PERFORMANCE  —  overall accuracy, rolling windows, confidence bands
+# GET /api/home/performance
+# Wraps home_accountability.performance_summary() as a standalone endpoint.
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/performance")
+async def performance_endpoint():
+    """
+    Standalone model performance summary.
+    Returns overall_accuracy, last_30_accuracy, rolling_accuracy[],
+    confidence_bands[], verified_count, pending_count, insufficient.
+    Cached 30 minutes.
+    """
+    cache_key = "home:performance_standalone"
+    hit = _cget(cache_key, TTL_LONG)
+    if hit is not None:
+        return hit
+
+    try:
+        from app.routes.home_accountability import performance_summary
+        result = await performance_summary()
+    except Exception as exc:
+        result = {
+            "verified_count": 0, "pending_count": 0,
+            "overall_accuracy": None, "rolling_accuracy": [],
+            "confidence_bands": [], "insufficient": True, "error": str(exc),
+        }
+
+    _cset(cache_key, result)
+    return result
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # FPL PLAYER NEWS  —  injury / doubt / price rise data for homepage FPL feed
 # GET /api/home/fpl_player_news
 # Pulls from FPL bootstrap-static and returns:

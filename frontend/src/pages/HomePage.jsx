@@ -1282,7 +1282,8 @@ function useDashboardData() {
   const defTbl     = useSectionFetch("/api/home/defense_table?league=epl&n=6",  600_000);
   const modelMetr  = useSectionFetch("/api/home/model_metrics",                3600_000);
   const recentRes  = useSectionFetch("/api/home/recent_results?n=6",            300_000);
-  const acctSum    = useSectionFetch("/api/home/recent_results?n=10",           300_000);
+  const perfSum    = useSectionFetch("/api/home/performance",                  1800_000);  // real perf data
+  const acctSum    = useSectionFetch("/api/home/accountability",               1800_000);  // real accountability
   const heroStats  = useSectionFetch("/api/predictions/health",                 600_000);
 
   // Any critical section still loading = loading
@@ -1307,14 +1308,16 @@ function useDashboardData() {
     defense_table:         defTbl.data    ?? { table: [] },
     model_metrics:         modelMetr.data ?? { trend: [], by_market: [] },
     recent_results:        recentRes.data ?? { results: [] },
-    // performance_summary reuses model_metrics data — /api/home/model_metrics is the
-    // correct public endpoint (wraps model_performance() internally, no 422)
-    performance_summary:   modelMetr.data ?? { insufficient: true, verified_count: 0 },
+    // performance_summary from dedicated /api/home/performance endpoint
+    // (returns verified_count, rolling_accuracy, confidence_bands, overall_accuracy)
+    performance_summary:   perfSum.data   ?? { insufficient: true, verified_count: 0 },
+    // accountability_summary from dedicated /api/home/accountability endpoint
+    // (returns hit_rate, recent_verified[], high_confidence_hit_rate, pending_count)
     accountability_summary: acctSum.data  ?? { insufficient: true },
     hero_stats: {
       competitions_count: 9,
       fixtures_predicted: heroStats.data?.logged ?? heroStats.data?.total ?? 0,
-      verified_accuracy:  modelMetr.data?.overall_accuracy ?? 0,
+      verified_accuracy:  perfSum.data?.overall_accuracy ?? modelMetr.data?.overall_accuracy ?? 0,
     },
   };
 

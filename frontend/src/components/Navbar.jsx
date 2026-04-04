@@ -288,7 +288,12 @@ function MobileTabBar() {
   return (
     <nav className="nb-mob-bar">
       {MOBILE_TABS.map(item => {
-        const active = item.end ? location.pathname === item.to : location.pathname.startsWith(item.to);
+        const isFplTab = item.to === "/best-team";
+        const active = isFplTab
+          ? FPL_PATHS.some(p => location.pathname.startsWith(p))
+          : item.end
+            ? location.pathname === item.to
+            : location.pathname.startsWith(item.to);
         return (
           <NavLink key={item.to} to={item.to} end={item.end}
             className={"nb-mob-tab" + (active ? " nb-mob-tab--active" : "")}

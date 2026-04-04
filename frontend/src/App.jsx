@@ -86,7 +86,7 @@ export default function App() {
               <Route path="/gameweek-insights"        element={<GameweekInsightsPage />} />
               <Route path="/fpl-table"                element={<FplTablePage />} />
               <Route path="/captaincy"                element={<CaptaincyPage />} />
-              <Route path="/fixture-difficulty"       element={<FixtureDifficultyHeatmap />} />
+              <Route path="/fpl/fixtures"             element={<FixtureDifficultyHeatmap />} />
               <Route path="/transfer-planner"         element={<TransferPlannerPage />} />
               <Route path="/differentials"            element={<DifferentialFinderPage />} />
               <Route path="/player"                   element={<PlayerInsightPage />} />

@@ -2693,8 +2693,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   ]);
   const isIntl = INTL_CODES.has(league);
 
-  const INTL_BACKEND = "https://football-stats-lw4b.onrender.com";
-
+const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
   // Ref-based guard: prevents duplicate in-flight requests when league hasn't
   // actually changed (React Strict Mode double-invoke, fast tab switching, etc.)
   const intlFetchRef = useRef(null);

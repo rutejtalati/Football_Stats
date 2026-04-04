@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://football-stats-lw4b.onrender.com/api/$1"
+      "destination": ""
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

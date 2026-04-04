@@ -9,8 +9,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-const BACKEND          = "https://football-stats-lw4b.onrender.com";
-const DEFAULT_INTERVAL = 75_000;   // 75 s polling
+const BACKEND = "https://footballstats-production-ecd9.up.railway.app";const DEFAULT_INTERVAL = 75_000;   // 75 s polling
 const FETCH_TIMEOUT    = 12_000;   // 12 s per attempt (covers cold-start lag)
 const MAX_RETRIES      = 3;        // retry up to 3× on first load
 const RETRY_DELAY_MS   = 4_000;    // 4 s between retries

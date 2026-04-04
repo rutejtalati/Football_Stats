@@ -15,8 +15,7 @@
 import { useEffect, useState } from "react";
 import Pitch from "./Pitch";
 
-const API = import.meta.env.VITE_API_URL || "https://football-stats-lw4b.onrender.com";
-
+const API = import.meta.env.VITE_API_URL || "https://footballstats-production-ecd9.up.railway.app";
 // ── Helpers ──────────────────────────────────────────────
 
 function avg(arr, key) {

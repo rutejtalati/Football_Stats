@@ -5,8 +5,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-const BACKEND = "https://football-stats-lw4b.onrender.com";
-const CYAN = "#00fff0";  // teal/cyan accent — used for titles and points
+const BACKEND = "https://footballstats-production-ecd9.up.railway.app";const CYAN = "#00fff0";  // teal/cyan accent — used for titles and points
 const Y    = CYAN;       // alias kept for backwards compat with inline usages below
 const K = "#000";
 const R = "#ff2744";

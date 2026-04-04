@@ -35,8 +35,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiFetch, getMatchesUpcoming, getInternational, LEAGUE_CODES } from "@/api/api";
 
-const BACKEND = import.meta?.env?.VITE_API_BASE || "https://football-stats-lw4b.onrender.com";
-
+const BACKEND = import.meta?.env?.VITE_API_BASE || "https://footballstats-production-ecd9.up.railway.app";
 const LIVE_SET = new Set(["1H","2H","HT","ET","BT","P"]);
 const isToday  = d => d && new Date(d).toDateString() === new Date().toDateString();
 

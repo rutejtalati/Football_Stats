@@ -19,8 +19,7 @@ const NB_CSS = `
 
 
 
-const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
-
+const B = import.meta.env.VITE_BACKEND_URL || "https://footballstats-production-ecd9.up.railway.app";
 const C = {
   bg:"#080808",card:"#080808",border:"rgba(255,255,255,.15)",
   text:"#ffffff",muted:"rgba(255,255,255,.5)",dim:"rgba(255,255,255,.2)",soft:"rgba(255,255,255,.7)",

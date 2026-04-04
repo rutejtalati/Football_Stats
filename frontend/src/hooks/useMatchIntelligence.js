@@ -4,8 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://football-stats-lw4b.onrender.com";
-const CACHE_TTL = 5 * 60 * 1000; // 5 min
+const API_BASE = import.meta.env.VITE_API_BASE || "https://footballstats-production-ecd9.up.railway.app";const CACHE_TTL = 5 * 60 * 1000; // 5 min
 const LIVE_STATUSES = ["1H", "2H", "HT", "ET", "BT", "P", "INT", "LIVE"];
 
 const _cache = {};

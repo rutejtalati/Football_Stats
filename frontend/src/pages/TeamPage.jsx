@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
-const BACKEND = "https://football-stats-lw4b.onrender.com";
+const BACKEND = "https://footballstats-production-ecd9.up.railway.app";
 
 const LEAGUE_SLUGS = {
   epl: "premier-league", laliga: "la-liga", seriea: "serie-a",

@@ -17,8 +17,7 @@ const NB_CSS = `
 `;
 
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
-
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://footballstats-production-ecd9.up.railway.app";
 function normalise(a) {
   return { ...a,
     home_team: a.meta?.home_team, away_team: a.meta?.away_team,

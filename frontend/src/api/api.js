@@ -1,7 +1,5 @@
 // api.js — StatinSite
-// Backend: https://football-stats-lw4b.onrender.com
-// Local dev: http://127.0.0.1:8003
-//
+// Backend: https://footballstats-production-ecd9.up.railway.app// Local dev: http://127.0.0.1:8003
 // API_BASE priority (first defined wins):
 //   VITE_API_BASE    — set this in .env.local and Vercel (preferred)
 //   VITE_BACKEND_URL — legacy alias used by some pages
@@ -18,7 +16,7 @@ export const API_BASE = (
   _env.VITE_API_BASE ||
   _env.VITE_BACKEND_URL ||
   _env.VITE_API_URL ||
-  "https://football-stats-lw4b.onrender.com"
+"https://footballstats-production-ecd9.up.railway.app"
 ).replace(/\/$/, "");
 
 // ── Original fetchJson (kept exactly — all existing pages use this) ──────────

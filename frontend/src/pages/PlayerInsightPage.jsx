@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
 
-const B = import.meta.env.VITE_BACKEND_URL || "https://football-stats-lw4b.onrender.com";
-
+const B = import.meta.env.VITE_BACKEND_URL || "https://footballstats-production-ecd9.up.railway.app";
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const T = {
   red:    "#e83a3a",

@@ -3109,12 +3109,6 @@ function Div() { return <div className="dv" />; }
 // ════════════════════════════════════════════════════════════════════════
 // ROOT — wires everything together
 // ════════════════════════════════════════════════════════════════════════
-
-function Div() { return <div className="dv" />; }
-
-// ════════════════════════════════════════════════════════════════════════
-// ROOT — wires everything together
-// ════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
   const { fixtures, loading: ul, error: ue } = useUpcomingData();
   const { dash,     loading: dl, error: de } = useDashboardData();

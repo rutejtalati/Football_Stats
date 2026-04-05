@@ -1,0 +1,641 @@
+/*
+ * StatinSite — Carbon Black Theme v3
+ * Pure black surfaces · Full white text · JetBrains Mono numerics
+ * Drop into: frontend/src/theme.css
+ * Import in index.css AFTER existing variables (it overrides card/surface vars)
+ *
+ * SURFACE STACK (darkest → lightest, all true black — no grey):
+ *   Page base:   #000000
+ *   Strip/tray:  #080808
+ *   Card:        #0c0c0c   ← primary card surface
+ *   Inner/nest:  #111111   ← sub-cards, inner rows
+ *   Hover:       #151515
+ *
+ * TEXT RULES:
+ *   Content text:        #ffffff (always)
+ *   Section labels:      rgba(255,255,255,0.28)  (UPPERCASE 9px — hierarchy only)
+ *   Subtext (team/meta): rgba(255,255,255,0.45)
+ *   No grey text in content. Only labels/meta use opacity.
+ *
+ * NUMBERS:
+ *   Font: 'JetBrains Mono', monospace
+ *   Large stat:  22–28px / 900 weight / accent colour
+ *   Inline val:  14–16px / 900 weight / accent colour
+ *
+ * BORDERS:
+ *   Default:  1px solid rgba(255,255,255,0.09)
+ *   Hover:    1px solid rgba(255,255,255,0.16)
+ *   Accent:   1px solid rgba(ACCENT,0.35)
+ *
+ * ACCENT COLOURS BY PAGE:
+ *   Live Scores:     #ff453a  (red)
+ *   Predictions:     #0a84ff  (blue)
+ *   Best XI:         #30d158  (green)
+ *   Captaincy:       #ffd60a  (gold)
+ *   GW Guide:        #ff9f0a  (orange)
+ *   FDR Heatmap:     #ff453a  (red)
+ *   GW Stats:        #5ac8fa  (teal)
+ *   Differentials:   #ff6961  (coral)
+ *   Transfer Planner:#bf5af2  (purple)
+ *   Squad Builder:   #30d158  (green)
+ *   FPL Table:       #5ac8fa  (teal)
+ *   Player Stats:    #bf5af2  (purple)
+ *   News:            #ff9f0a  (orange)
+ *   How It Works:    #5ac8fa  (teal)
+ *   Match/Live:      #ff453a  (red)
+ *   Team Page:       #0a84ff  (blue)
+ *   Leagues:         #0a84ff  (blue)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800;900&display=swap');
+
+/* ── Override card surface vars used in existing pages ── */
+:root, [data-theme="dark"] {
+  --bg:              #000000;
+  --bg-secondary:    #080808;
+  --bg-tertiary:     #0c0c0c;
+  --bg-card:         #0c0c0c;
+  --bg-glass:        #0c0c0c;
+  --bg-glass-strong: #111111;
+  --bg-hover:        #151515;
+  --bg-active:       #151515;
+
+  --text:            #ffffff;
+  --text-secondary:  rgba(255,255,255,0.65);
+  --text-muted:      rgba(255,255,255,0.45);
+  --text-dim:        rgba(255,255,255,0.28);
+
+  --border:          rgba(255,255,255,0.09);
+  --border-soft:     rgba(255,255,255,0.06);
+  --border-strong:   rgba(255,255,255,0.16);
+
+  --font-mono:       'JetBrains Mono', monospace;
+
+  --table-bg:        #0c0c0c;
+  --table-header-bg: #080808;
+  --table-header-color: rgba(255,255,255,0.28);
+  --table-border:    rgba(255,255,255,0.07);
+  --table-row-hover: #111111;
+  --table-sticky-bg: #0c0c0c;
+
+  --pill-bg:            #0c0c0c;
+  --pill-border:        rgba(255,255,255,0.09);
+  --pill-color:         rgba(255,255,255,0.55);
+  --pill-active-bg:     rgba(10,132,255,0.15);
+  --pill-active-border: rgba(10,132,255,0.45);
+  --pill-active-color:  #0a84ff;
+}
+
+/* ══════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════ */
+.sn-page-theme {
+  background: #000;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #fff;
+}
+
+/* ══════════════════════════════════════
+   PAGE HEADER  (shared anatomy)
+   Usage: <div class="sn-ph sn-ph--{accent}">
+══════════════════════════════════════ */
+.sn-ph {
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sn-ph-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.sn-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sn-eyebrow-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sn-eyebrow-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sn-page-title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  color: #fff;
+  line-height: 1.1;
+  margin: 0;
+}
+.sn-page-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  margin-top: 5px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+.sn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ══════════════════════════════════════
+   STAT STRIP
+   Usage: <div class="sn-strip">
+══════════════════════════════════════ */
+.sn-strip {
+  display: flex;
+  gap: 8px;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: #080808;
+  flex-wrap: wrap;
+}
+.sn-chip {
+  flex: 1;
+  min-width: 80px;
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  padding: 13px 14px;
+}
+.sn-chip-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sn-chip-icon-box {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sn-chip-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+  margin-bottom: 5px;
+}
+.sn-chip-value {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  line-height: 1;
+}
+.sn-chip-sub {
+  font-size: 9px;
+  color: rgba(255,255,255,0.38);
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   BODY AREA
+══════════════════════════════════════ */
+.sn-body {
+  padding: 20px 24px;
+}
+.sn-section-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 11px;
+}
+
+/* ══════════════════════════════════════
+   CARD  — primary surface
+   Usage: <div class="sn-card">
+══════════════════════════════════════ */
+.sn-card {
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.18s, background 0.18s;
+}
+.sn-card:hover {
+  background: #111;
+  border-color: rgba(255,255,255,0.16);
+}
+.sn-card-header {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Accent variant — coloured top border */
+.sn-card--accent {
+  border-top: 2px solid var(--card-accent, #0a84ff);
+}
+
+/* ══════════════════════════════════════
+   INNER SURFACE (nested)
+   Usage: <div class="sn-inner">
+══════════════════════════════════════ */
+.sn-inner {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 9px;
+  padding: 11px 13px;
+}
+.sn-inner + .sn-inner {
+  margin-top: 6px;
+}
+
+/* ══════════════════════════════════════
+   PLAYER ROW
+══════════════════════════════════════ */
+.sn-player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.sn-player-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.sn-rank {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900;
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+.sn-pos-tag {
+  font-size: 8px;
+  font-weight: 900;
+  padding: 3px 6px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+.sn-player-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+.sn-player-meta {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  margin-top: 2px;
+  font-weight: 600;
+}
+.sn-player-val {
+  font-size: 15px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  text-align: right;
+}
+.sn-player-val-sub {
+  font-size: 9px;
+  color: rgba(255,255,255,0.35);
+  font-weight: 700;
+  text-align: right;
+  margin-top: 1px;
+}
+
+/* ══════════════════════════════════════
+   STAT BLOCK (icon-style number)
+   Usage: <div class="sn-statblk">
+══════════════════════════════════════ */
+.sn-statblk {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 9px;
+  padding: 10px 12px;
+  flex: 1;
+  text-align: center;
+}
+.sn-statblk-value {
+  font-size: 20px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  line-height: 1;
+}
+.sn-statblk-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.38);
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════
+   ACCENT LEFT BAR
+   Usage: <div class="sn-abar" style="--ab:#30d158">
+══════════════════════════════════════ */
+.sn-abar {
+  border-left: 2.5px solid var(--ab, #0a84ff);
+  border-radius: 0 8px 8px 0;
+  padding: 9px 12px;
+  margin-bottom: 7px;
+  background: color-mix(in srgb, var(--ab, #0a84ff) 6%, transparent);
+}
+.sn-abar:last-child { margin-bottom: 0; }
+.sn-abar-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ab, #0a84ff);
+  margin-bottom: 3px;
+}
+.sn-abar-body {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════
+   PILL FILTERS
+══════════════════════════════════════ */
+.sn-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.sn-pill {
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: #0c0c0c;
+  color: rgba(255,255,255,0.5);
+  transition: all 0.15s;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.sn-pill:hover {
+  border-color: rgba(255,255,255,0.18);
+  color: #fff;
+}
+.sn-pill.active {
+  border-color: rgba(10,132,255,0.5);
+  background: rgba(10,132,255,0.14);
+  color: #4f9eff;
+}
+
+/* ══════════════════════════════════════
+   DATA TABLE
+══════════════════════════════════════ */
+.sn-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.sn-table th {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  padding: 9px 11px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: #080808;
+  white-space: nowrap;
+}
+.sn-table td {
+  padding: 10px 11px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sn-table tr:last-child td { border-bottom: none; }
+.sn-table tr:hover td { background: rgba(255,255,255,0.025); }
+.sn-table .sn-table-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+}
+
+/* ══════════════════════════════════════
+   MATCH CARD
+══════════════════════════════════════ */
+.sn-match-card {
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 9px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.sn-match-card:hover {
+  background: #111;
+  border-color: rgba(255,255,255,0.16);
+}
+.sn-match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sn-match-team {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  flex: 1;
+}
+.sn-match-team.away { text-align: right; }
+.sn-match-score {
+  font-size: 24px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  min-width: 56px;
+  color: #fff;
+}
+.sn-match-meta {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  margin-top: 7px;
+  font-weight: 700;
+}
+
+/* ══════════════════════════════════════
+   LIVE DOT
+══════════════════════════════════════ */
+.sn-live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #ff453a;
+  display: inline-block;
+  margin-right: 5px;
+  animation: sn-pulse 1.4s infinite;
+}
+@keyframes sn-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* ══════════════════════════════════════
+   FDR CELL
+══════════════════════════════════════ */
+.sn-fdr {
+  height: 22px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0 7px;
+  white-space: nowrap;
+}
+.sn-fdr--1, .sn-fdr--2 { background: #1a6e35; color: #7fffa7; }
+.sn-fdr--3             { background: #1e1e1e; color: rgba(255,255,255,0.55); }
+.sn-fdr--4             { background: #7a1a1a; color: #ffaaaa; }
+.sn-fdr--5             { background: #3d0808; color: #ff8080; }
+
+/* ══════════════════════════════════════
+   PROGRESS BAR
+══════════════════════════════════════ */
+.sn-prog-track {
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+  overflow: hidden;
+  flex: 1;
+}
+.sn-prog-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ══════════════════════════════════════
+   MINI PITCH (used in Best XI)
+   Does NOT override the FplPitch component —
+   this is only for the header region.
+══════════════════════════════════════ */
+.sn-pitch-bg {
+  background: #071a0e;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 14px 10px;
+}
+
+/* ══════════════════════════════════════
+   SKELETON
+══════════════════════════════════════ */
+.sn-skel {
+  border-radius: 7px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 200%;
+  animation: sn-shim 1.6s infinite;
+}
+@keyframes sn-shim {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ══════════════════════════════════════
+   GRID HELPERS
+══════════════════════════════════════ */
+.sn-two   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sn-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+.sn-four  { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+
+@media (max-width: 640px) {
+  .sn-three { grid-template-columns: 1fr 1fr; }
+  .sn-four  { grid-template-columns: 1fr 1fr; }
+  .sn-two   { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════
+   FOOTER  (identical every page)
+══════════════════════════════════════ */
+.sn-footer-v3 {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 0 24px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #000;
+  margin-top: 24px;
+}
+.sn-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: -0.02em;
+}
+.sn-footer-tagline {
+  font-size: 10px;
+  color: rgba(255,255,255,0.22);
+  font-weight: 500;
+}
+.sn-footer-built {
+  font-size: 10px;
+  color: rgba(255,255,255,0.42);
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-weight: 800;
+}
+.sn-footer-copy {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════ */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.24); }

@@ -14,6 +14,8 @@ const Ic = {
   Live:     () => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3.5" fill="currentColor"/><circle cx="10" cy="10" r="6.5" stroke="currentColor" strokeWidth="1.4" opacity="0.4"/><circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.1" opacity="0.18"/></svg>,
   // Football pitch top-down: rectangle, centre circle, halfway line
   Predict:  () => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><line x1="10" y1="4" x2="10" y2="16" stroke="currentColor" strokeWidth="1.2" opacity="0.45"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.3"/><line x1="2" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="0.8" opacity="0.3"/></svg>,
+  // Match Centre — three columns with a live dot on the centre column
+  Centre:   () => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="3.5" width="4.5" height="13" rx="1" stroke="currentColor" strokeWidth="1.6" opacity="0.5"/><rect x="7.75" y="2" width="4.5" height="16" rx="1" stroke="currentColor" strokeWidth="1.8"/><rect x="14" y="3.5" width="4.5" height="13" rx="1" stroke="currentColor" strokeWidth="1.6" opacity="0.5"/><circle cx="10" cy="6.5" r="1.8" fill="currentColor"/><line x1="7.75" y1="9.5" x2="12.25" y2="9.5" stroke="currentColor" strokeWidth="1.3" opacity="0.5" strokeLinecap="round"/><line x1="7.75" y1="12.5" x2="12.25" y2="12.5" stroke="currentColor" strokeWidth="1.3" opacity="0.3" strokeLinecap="round"/></svg>,
   // Star for FPL section header — kept as section marker not primary nav
   Fantasy:  () => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 1.5l2.2 5 5 .65-3.6 3.5.85 5.1L10 13.2l-4.45 2.55.85-5.1L2.8 7.15l5-.65L10 1.5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg>,
   // Player silhouette — person with bold circle head
@@ -142,6 +144,7 @@ const FplIc = {
 const PRIMARY_NAV = [
   { to: "/",                           label: "Home",              Icon: Ic.Home,    color: "#ffffff", end: true },
   { to: "/live",                       label: "Live Scores",       Icon: Ic.Live,    color: "#ff453a", isLive: true },
+  { to: "/match-centre",               label: "Match Centre",      Icon: Ic.Centre,  color: "#00c2ff", isNew: true },
   { to: "/predictions/premier-league", label: "Match Predictions", Icon: Ic.Predict, color: "#0a84ff" },
   { to: "/best-team",                  label: "Fantasy Football",  Icon: Ic.Fantasy, color: "#30d158", fplGroup: true },
   { to: "/player",                     label: "Player Stats",      Icon: Ic.Players, color: "#bf5af2" },
@@ -169,9 +172,9 @@ const FPL_PATHS = FPL_ITEMS.map(i => i.to);
 const MOBILE_TABS = [
   { to: "/",                           label: "Home",    Icon: Ic.Home,    color: "#ffffff", end: true },
   { to: "/live",                       label: "Live",    Icon: Ic.Live,    color: "#ff453a", isLive: true },
+  { to: "/match-centre",               label: "Centre",  Icon: Ic.Centre,  color: "#00c2ff" },
   { to: "/predictions/premier-league", label: "Predict", Icon: Ic.Predict, color: "#0a84ff" },
   { to: "/best-team",                  label: "Fantasy", Icon: Ic.Fantasy, color: "#30d158" },
-  { to: "/player",                     label: "Players", Icon: Ic.Players, color: "#bf5af2" },
 ];
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -210,6 +213,7 @@ function BrandMark({ size = 26 }) {
 // ─── Regular nav item ─────────────────────────────────────────────────────────
 function SideNavItem({ item, active, iconOnly, onClick }) {
   const isLive = item.isLive;
+  const isNew  = item.isNew;
   return (
     <NavLink
       to={item.to}
@@ -225,6 +229,7 @@ function SideNavItem({ item, active, iconOnly, onClick }) {
       </span>
       {!iconOnly && <span className="nb-label">{item.label}</span>}
       {!iconOnly && isLive && <span className="nb-live-badge">LIVE</span>}
+      {!iconOnly && isNew  && <span className="nb-fpl-new-badge" style={{marginLeft:"auto"}}>NEW</span>}
     </NavLink>
   );
 }

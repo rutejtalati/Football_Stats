@@ -4,9 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getStandings, getLeaguePredictions,
-} from "../api/api";
+import { getLeaguePredictions } from "../api/api";
 
 /* ─────────────────────────────────────────────────────────────
    CONSTANTS
@@ -82,7 +80,6 @@ function timeAgo(ts){
   if(m<1440)return Math.floor(m/60)+"h ago";
   return Math.floor(m/1440)+"d ago";
 }
-function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
 
 /* ─────────────────────────────────────────────────────────────
    SMALL COMPONENTS
@@ -280,10 +277,11 @@ function UpcomingCard({match,selected,onClick,accentColor}){
 /* ─────────────────────────────────────────────────────────────
    CENTRE PANEL — match detail (shows when a match is selected)
 ───────────────────────────────────────────────────────────── */
-function CentreDetail({match,isLive,accentColor,navigate}){
+function CentreDetail({match,isLive,accentColor,navigate,onCompChange}){
   const [tab,setTab]=useState("overview");
-  const navigate_=useNavigate();
-  const nav=navigate||navigate_;
+
+  // Fix 4: Reset tab to overview whenever the selected match changes
+  useEffect(()=>{ setTab("overview"); },[match]);
 
   const hp=match.p_home_win||0,dp=match.p_draw||0,ap=match.p_away_win||0;
   const tot=hp+dp+ap||1;
@@ -410,12 +408,12 @@ function CentreDetail({match,isLive,accentColor,navigate}){
         {/* CTA buttons */}
         <div style={{display:"flex",gap:6}}>
           {match.fixture_id&&(
-            <button onClick={()=>nav(`/match/${match.fixture_id}`)}
+            <button onClick={()=>navigate(`/match/${match.fixture_id}`)}
               style={{flex:1,padding:"8px 12px",background:acc+"22",border:`0.5px solid ${acc}55`,borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:700,color:acc,fontFamily:"'Inter',sans-serif"}}>
               Full Match Page →
             </button>
           )}
-          <button onClick={()=>nav(`/predictions/premier-league`)}
+          <button onClick={()=>navigate && onCompChange ? onCompChange() : navigate("/predictions/premier-league")}
             style={{flex:1,padding:"8px 12px",background:"rgba(255,255,255,.04)",border:"0.5px solid rgba(255,255,255,.12)",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.5)",fontFamily:"'Inter',sans-serif"}}>
             All Predictions ↗
           </button>
@@ -795,8 +793,14 @@ export default function MatchCentrePage(){
 
   const groupComps=COMPS.filter(c=>c.group===activeGroup);
 
+  const SLUG_MAP = {
+    epl:"premier-league", laliga:"la-liga", bundesliga:"bundesliga",
+    seriea:"serie-a", ligue1:"ligue-1", ucl:"champions-league",
+    uel:"europa-league", uecl:"conference-league", facup:"fa-cup",
+  };
+
   return(
-    <div style={{minHeight:"100vh",background:"#000",color:"#fff",fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}}>
+    <div style={{height:"100vh",background:"#000",color:"#fff",fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       <style>{`
         @keyframes mcPulse  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.6)} }
@@ -806,11 +810,13 @@ export default function MatchCentrePage(){
         ::-webkit-scrollbar { width:3px; height:3px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:2px; }
+        @media (max-width:900px) { .mc-three-col { grid-template-columns: 1fr !important; } .mc-centre,.mc-right { display:none !important; } }
+        @media (max-width:600px) { .mc-header-btns { display:none !important; } }
       `}</style>
 
       {/* ── Page header ── */}
-      <div style={{padding:"16px 20px 0",flexShrink:0,borderBottom:"0.5px solid rgba(255,255,255,.08)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
+      <div style={{padding:"14px 20px 0",flexShrink:0,borderBottom:"0.5px solid rgba(255,255,255,.08)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:10}}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
               {hasLive&&(
@@ -822,14 +828,14 @@ export default function MatchCentrePage(){
             </div>
             <h1 style={{fontSize:22,fontWeight:800,color:"#fff",letterSpacing:"-.03em",margin:0,lineHeight:1}}>Match Centre</h1>
           </div>
-          <div style={{display:"flex",gap:6}}>
+          <div className="mc-header-btns" style={{display:"flex",gap:6}}>
             <button onClick={()=>navigate("/live")} style={{padding:"7px 13px",background:"rgba(239,68,68,.1)",border:"0.5px solid rgba(239,68,68,.25)",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:700,color:"#ef4444",fontFamily:"'Inter',sans-serif"}}>Live Page ↗</button>
-            <button onClick={()=>navigate("/predictions/premier-league")} style={{padding:"7px 13px",background:"rgba(255,255,255,.05)",border:"0.5px solid rgba(255,255,255,.12)",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.5)",fontFamily:"'Inter',sans-serif"}}>Predictions ↗</button>
+            <button onClick={()=>navigate(`/predictions/${SLUG_MAP[activeComp]||"premier-league"}`)} style={{padding:"7px 13px",background:"rgba(255,255,255,.05)",border:"0.5px solid rgba(255,255,255,.12)",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.5)",fontFamily:"'Inter',sans-serif"}}>Predictions ↗</button>
           </div>
         </div>
 
         {/* ── Competition nav ── */}
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
           {/* Group tabs */}
           <div style={{display:"flex",gap:4}}>
             {GROUPS.map(g=>{
@@ -871,76 +877,79 @@ export default function MatchCentrePage(){
       {/* ── Intelligence ticker ── */}
       <IntelTicker/>
 
-      {/* ── Three column layout ── */}
-      <div style={{flex:1,display:"grid",gridTemplateColumns:"280px 1fr 240px",minHeight:0,overflow:"hidden"}}>
+      {/* ── Three column layout — takes ALL remaining height ── */}
+      <div className="mc-three-col" style={{flex:1,display:"grid",gridTemplateColumns:"280px 1fr 240px",minHeight:0,overflow:"hidden"}}>
 
         {/* ═══ LEFT: match list ═══ */}
-        <div style={{borderRight:"0.5px solid rgba(255,255,255,.08)",display:"flex",flexDirection:"column",overflowY:"auto",scrollbarWidth:"none"}}>
+        <div style={{borderRight:"0.5px solid rgba(255,255,255,.08)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{flex:1,overflowY:"auto",scrollbarWidth:"none"}}>
 
-          {/* Live matches section */}
-          {(liveLoad||hasLive)&&(
-            <div style={{padding:"12px 12px 0",flexShrink:0}}>
-              <SectionLabel accent="#ef4444">
-                {liveLoad?"Checking live…":`Live${compLive.length>0?` · ${compLive.length}`:""}`}
+            {/* Live matches section */}
+            {(liveLoad||hasLive)&&(
+              <div style={{padding:"12px 12px 0",flexShrink:0}}>
+                <SectionLabel accent="#ef4444">
+                  {liveLoad?"Checking live…":`Live${compLive.length>0?` · ${compLive.length}`:""}`}
+                </SectionLabel>
+                {liveLoad
+                  ?<><Skel h={80} r={10}/>&nbsp;</>
+                  :compLive.length>0
+                    ?compLive.map((m,i)=>(
+                      <LiveMatchCard
+                        key={i} match={m}
+                        selected={selectedMatch===m&&selectedIsLive}
+                        onClick={()=>{setSelectedMatch(m);setSelectedIsLive(true);}}
+                      />
+                    ))
+                    :<div style={{fontSize:10,color:"rgba(255,255,255,.2)",padding:"4px 0 8px",fontStyle:"italic"}}>No live matches right now</div>
+                }
+              </div>
+            )}
+
+            {/* Divider between live and upcoming */}
+            {hasLive&&compMatches.length>0&&(
+              <div style={{height:"0.5px",background:"rgba(255,255,255,.07)",margin:"4px 12px"}}/>
+            )}
+
+            {/* Upcoming / predictions */}
+            <div style={{padding:"12px 12px 20px"}}>
+              <SectionLabel accent={accentColor}>
+                {predLoad?"Loading…":`${compLabel} · ${compMatches.length} fixtures`}
               </SectionLabel>
-              {liveLoad
-                ?<><Skel h={80} r={10}/>&nbsp;</>
-                :compLive.length>0
-                  ?compLive.map((m,i)=>(
-                    <LiveMatchCard
-                      key={i} match={m}
-                      selected={selectedMatch===m&&selectedIsLive}
-                      onClick={()=>{setSelectedMatch(m);setSelectedIsLive(true);}}
+              {predLoad
+                ?(Array.from({length:6}).map((_,i)=><div key={i} style={{marginBottom:5}}><Skel h={74} r={10}/></div>))
+                :compMatches.length===0
+                  ?<div style={{fontSize:11,color:"rgba(255,255,255,.2)",padding:"20px 0",textAlign:"center"}}>No fixtures for {compLabel}</div>
+                  :compMatches.map((m,i)=>(
+                    <UpcomingCard
+                      key={(m.home_team||"")+(m.away_team||"")+i}
+                      match={m}
+                      selected={selectedMatch===m&&!selectedIsLive}
+                      accentColor={accentColor}
+                      onClick={()=>{setSelectedMatch(m);setSelectedIsLive(false);}}
                     />
                   ))
-                  :<div style={{fontSize:10,color:"rgba(255,255,255,.2)",padding:"4px 0 8px",fontStyle:"italic"}}>No live matches right now</div>
               }
             </div>
-          )}
-
-          {/* Divider between live and upcoming */}
-          {hasLive&&compMatches.length>0&&(
-            <div style={{height:"0.5px",background:"rgba(255,255,255,.07)",margin:"4px 12px"}}/>
-          )}
-
-          {/* Upcoming / predictions */}
-          <div style={{padding:"12px 12px 20px",flex:1}}>
-            <SectionLabel accent={accentColor}>
-              {predLoad?"Loading…":`${compLabel} · ${compMatches.length} fixtures`}
-            </SectionLabel>
-            {predLoad
-              ?(Array.from({length:6}).map((_,i)=><div key={i} style={{marginBottom:5}}><Skel h={74} r={10}/></div>))
-              :compMatches.length===0
-                ?<div style={{fontSize:11,color:"rgba(255,255,255,.2)",padding:"20px 0",textAlign:"center"}}>No fixtures for {compLabel}</div>
-                :compMatches.map((m,i)=>(
-                  <UpcomingCard
-                    key={(m.home_team||"")+(m.away_team||"")+i}
-                    match={m}
-                    selected={selectedMatch===m&&!selectedIsLive}
-                    accentColor={accentColor}
-                    onClick={()=>{setSelectedMatch(m);setSelectedIsLive(false);}}
-                  />
-                ))
-            }
           </div>
         </div>
 
         {/* ═══ CENTRE: selected match deep-dive ═══ */}
-        <div style={{borderRight:"0.5px solid rgba(255,255,255,.08)",display:"flex",flexDirection:"column",overflowY:"hidden"}}>
+        <div className="mc-centre" style={{borderRight:"0.5px solid rgba(255,255,255,.08)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
           {selectedMatch
             ?<CentreDetail
                 match={selectedMatch}
                 isLive={selectedIsLive}
                 accentColor={selectedIsLive?"#ef4444":accentColor}
                 navigate={navigate}
+                onCompChange={()=>navigate(`/predictions/${SLUG_MAP[activeComp]||"premier-league"}`)}
               />
             :<CentreEmpty/>
           }
         </div>
 
-        {/* ═══ RIGHT: intel rail ═══ */}
-        <div style={{overflowY:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{padding:"12px 14px 0",flexShrink:0}}>
+        {/* ═══ RIGHT: intel rail — fully scrollable ═══ */}
+        <div className="mc-right" style={{display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{padding:"12px 14px 8px",flexShrink:0,borderBottom:"0.5px solid rgba(255,255,255,.06)"}}>
             <SectionLabel accent={accentColor}>Intelligence</SectionLabel>
           </div>
           <div style={{flex:1,overflowY:"auto",scrollbarWidth:"none"}}>
@@ -956,7 +965,7 @@ export default function MatchCentrePage(){
       </div>
 
       {/* ── Footer ── */}
-      <footer style={{borderTop:"0.5px solid rgba(255,255,255,.07)",padding:"0 20px",height:44,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,background:"#000"}}>
+      <footer style={{borderTop:"0.5px solid rgba(255,255,255,.07)",padding:"0 20px",height:40,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,background:"#000"}}>
         <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:700,color:"rgba(255,255,255,.4)",letterSpacing:"-.02em"}}>
           <svg width="14" height="14" viewBox="0 0 28 28" fill="none"><rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/><rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity=".65"/><rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity=".4"/><rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity=".22"/><rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/></svg>
           StatinSite

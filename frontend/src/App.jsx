@@ -27,6 +27,7 @@ import DifferentialFinderPage from "./pages/DifferentialFinderPage";
 import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
 import LeaguesPage from "./pages/LeaguesPage";
 import FplIntelligencePage from "./pages/FplIntelligencePage";
+import MatchCentrePage from "./pages/MatchCentrePage";
 
 /* ── Stub for pages not yet built ── */
 const ComingSoon = ({ name }) => (
@@ -68,6 +69,7 @@ export default function App() {
             <Routes>
               <Route path="/"                         element={<HomePage />} />
               <Route path="/live"                     element={<LivePage />} />
+              <Route path="/match-centre"             element={<MatchCentrePage />} />
               <Route path="/predictions"              element={<Navigate to="/predictions/premier-league" replace />} />
               <Route path="/ucl"                      element={<Navigate to="/predictions/champions-league" replace />} />
               <Route path="/uel"                      element={<Navigate to="/predictions/europa-league" replace />} />

@@ -773,19 +773,16 @@ function KPITile({label, value, delta, color, icon, sublabel, spark}) {
   return (
     <div style={{
       padding:"16px 18px",
-      background:"rgba(10,10,10,0.92)",
-      border:"1px solid rgba(255,255,255,0.15)",
-      borderRight:"none",
-      borderBottom:"none",
-      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.04)",
-      backdropFilter:"blur(12px)",
+      background:"#0c0c0c",
+      border:"1px solid rgba(255,255,255,0.09)",
+      borderRadius:13,
       display:"flex",flexDirection:"column",gap:8,
       position:"relative",overflow:"hidden",
-      transition:"transform 0.1s, box-shadow 0.1s",
+      transition:"border-color 0.18s, background 0.18s",
       cursor:"default",
     }}
-      onMouseEnter={e=>{e.currentTarget.style.transform="translate(-2px,-2px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(255,255,255,.06)";}}
-      onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 4px 12px rgba(255,255,255,.03)";}}
+      onMouseEnter={e=>{e.currentTarget.style.background="#111";e.currentTarget.style.borderColor="rgba(255,255,255,0.16)";}}
+      onMouseLeave={e=>{e.currentTarget.style.background="#0c0c0c";e.currentTarget.style.borderColor="rgba(255,255,255,0.09)";}}
     >
       {/* Corner deco number */}
       <div style={{position:"absolute",top:-8,right:6,fontFamily:"'Inter',sans-serif",fontSize:64,fontWeight:900,color:"rgba(255,255,255,.03)",lineHeight:1,pointerEvents:"none",userSelect:"none"}}>{value}</div>
@@ -1338,37 +1335,36 @@ function SidebarMatchRow({match,T,navigate,showEdge,showXg}){
       onMouseEnter={()=>setHov(true)}
       onMouseLeave={()=>setHov(false)}
       style={{
-        padding:"8px 10px",cursor:"pointer",
-        background:hov?NB.y:NB.k,
-        border:`2px solid ${hov?NB.y:"rgba(255,255,255,.2)"}`,
-        borderLeft:`4px solid ${hov?NB.k:NB.y}`,
+        padding:"9px 11px", cursor:"pointer", borderRadius:9,
+        background: hov ? "#151515" : "#0c0c0c",
+        border:`1px solid ${hov?"rgba(255,255,255,0.16)":"rgba(255,255,255,0.09)"}`,
+        borderLeft:`3px solid ${T.color||"#0a84ff"}`,
         transition:"all 0.12s",
-        transform:hov?"translate(-2px,-2px)":"none",
-        boxShadow:hov?`3px 3px 0 rgba(255,255,255,.3)`:"none",
+        transform: hov ? "translateX(2px)" : "none",
       }}
     >
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-        <span style={{fontSize:11,fontWeight:700,color:hov?NB.k:NB.y,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:"'Inter',sans-serif",transition:"color 0.12s"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,fontFamily:"'Inter',sans-serif"}}>
           {match.home_team?.split(" ").pop()} vs {match.away_team?.split(" ").pop()}
         </span>
         {showEdge&&match.model_edge!=null&&(
-          <span style={{fontSize:11,fontWeight:900,color:match.model_edge>0?NB.y:NB.r,marginLeft:6,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>
+          <span style={{fontSize:11,fontWeight:900,color:match.model_edge>0?"#30d158":"#ff453a",marginLeft:6,flexShrink:0,fontFamily:"'JetBrains Mono',monospace"}}>
             {match.model_edge>0?"+":""}{match.model_edge}%
           </span>
         )}
         {showXg&&(
-          <span style={{fontSize:11,fontWeight:700,color:"#cccccc",marginLeft:6,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>
+          <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.65)",marginLeft:6,flexShrink:0,fontFamily:"'JetBrains Mono',monospace"}}>
             xG {(parseFloat(match.xg_home)||0).toFixed(1)}+{(parseFloat(match.xg_away)||0).toFixed(1)}
           </span>
         )}
         {!showEdge&&!showXg&&(
-          <span style={{fontSize:11,fontWeight:900,color:hov?NB.k:confC,marginLeft:6,flexShrink:0,fontFamily:"'Inter',sans-serif",transition:"color 0.12s"}}>{conf}%</span>
+          <span style={{fontSize:11,fontWeight:900,color:confC,marginLeft:6,flexShrink:0,fontFamily:"'JetBrains Mono',monospace"}}>{conf}%</span>
         )}
       </div>
-      <div style={{display:"flex",height:3,overflow:"hidden",background:`rgba(255,255,255,.08)`}}>
-        <div style={{flex:Math.round(hp*100),background:hov?NB.k:NB.y}}/>
-        <div style={{flex:Math.round((match.p_draw||0)*100),background:"rgba(255,255,255,.2)"}}/>
-        <div style={{flex:Math.round(ap*100),background:NB.r}}/>
+      <div style={{display:"flex",height:3,overflow:"hidden",background:"rgba(255,255,255,0.07)",borderRadius:2}}>
+        <div style={{flex:Math.round(hp*100),background:T.color||"#0a84ff",borderRadius:"2px 0 0 2px"}}/>
+        <div style={{flex:Math.round((match.p_draw||0)*100),background:"rgba(255,255,255,0.2)"}}/>
+        <div style={{flex:Math.round(ap*100),background:"#ff453a",borderRadius:"0 2px 2px 0"}}/>
       </div>
     </div>
   );
@@ -1424,9 +1420,9 @@ const ScenarioSimulator=({match,T})=>{
   const isModified=JSON.stringify(mods)!==JSON.stringify(PRESETS[0].mods);
 
   const cardStyle={
-    background:"rgba(10,10,10,0.95)",
-    border:`3px solid ${NB.y}`,
-    boxShadow:`4px 4px 0 rgba(255,255,255,.2)`,
+    background:"#0c0c0c",
+    border:"1px solid rgba(255,255,255,0.09)",
+    borderRadius:14,
     overflow:"hidden",
   };
 
@@ -1541,10 +1537,10 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
   const toggle=col=>{if(sortCol===col)setDir(d=>-d);else{setSortCol(col);setDir(col==="rank"?1:-1);}};
 
   const colStyle=(col,align)=>({
-    padding:"11px 12px",fontSize:10,fontWeight:700,letterSpacing:"0.06em",
-    color:sortCol===col?"#ffffff":"rgba(255,255,255,.45)",
-    borderBottom:`3px solid rgba(255,255,255,.2)`,
-    background:"rgba(10,10,10,0.95)",
+    padding:"10px 12px",fontSize:9,fontWeight:800,letterSpacing:"0.09em",
+    color:sortCol===col?"#fff":"rgba(255,255,255,0.28)",
+    borderBottom:"1px solid rgba(255,255,255,0.07)",
+    background:"#080808",
     textAlign:align||"center",cursor:"pointer",userSelect:"none",
     transition:"color 0.12s",fontFamily:"'Inter',sans-serif",
     whiteSpace:"nowrap",textTransform:"uppercase",
@@ -1556,7 +1552,7 @@ const StandingsTable=({rows,loading,T})=>{ // iOS REDESIGN
   );
 
   return(
-    <div style={{background:"rgba(10,10,10,0.95)",border:`3px solid ${NB.y}`,boxShadow:`5px 5px 0 rgba(255,255,255,.15)`,overflow:"hidden"}}>
+    <div style={{background:"#0c0c0c",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,overflow:"hidden"}}>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'Inter',sans-serif"}}>
           <thead>
@@ -2849,91 +2845,106 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
       <div style={{position:"relative",zIndex:1,maxWidth:1440,margin:"0 auto",padding:isMobile?"0 12px 80px":"0 24px 64px"}}>
 
         {/* -- HEADER ------------------------------------------ */}
-        <div style={{padding:isMobile?"16px 0 14px":"28px 0 20px",display:"flex",flexDirection:"column",gap:16,borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
-
-          {/* Title block — league logo · PREDICTIONS label · competition name */}
-          <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-            {/* League logo from API-Football */}
-            {(() => {
-              const comp = COMP_NAV_TABS.find(t => t.code === league);
-              return comp ? (
-                <img
-                  src={comp.logo}
-                  alt={comp.label}
-                  width={isMobile?40:52} height={isMobile?40:52}
-                  style={{ objectFit:"contain", flexShrink:0 }}
-                  onError={e => { e.currentTarget.style.display="none"; }}
-                />
-              ) : <LeagueFlag code={league} size={isMobile?36:48}/>;
-            })()}
-            <div>
-              {/* Kicker: PREDICTIONS label */}
-              <div style={{display:"inline-flex",alignItems:"center",gap:7,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:6,padding:"3px 12px",marginBottom:8}}>
-                <span style={{width:5,height:5,background:"#ffffff",borderRadius:"50%",animation:"nbBlink 1.1s step-start infinite",flexShrink:0}}/>
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,letterSpacing:".12em",textTransform:"uppercase",color:"rgba(255,255,255,0.8)",fontWeight:700}}>Predictions</span>
+        <div className="sn-ph" style={{background:`linear-gradient(175deg,${T.color||"rgba(10,132,255,0.05)"} 0%,transparent 55%)`, padding:"22px 0 18px"}}>
+          <div className="sn-ph-row">
+            <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+              {/* League logo */}
+              {(() => {
+                const comp = COMP_NAV_TABS.find(t => t.code === league);
+                return comp ? (
+                  <img src={comp.logo} alt={comp.label} width={44} height={44}
+                    style={{ objectFit:"contain", flexShrink:0 }}
+                    onError={e => { e.currentTarget.style.display="none"; }}/>
+                ) : <LeagueFlag code={league} size={40}/>;
+              })()}
+              <div>
+                <div className="sn-eyebrow">
+                  <div className="sn-eyebrow-dot" style={{background:T.color||"#0a84ff"}}/>
+                  <span className="sn-eyebrow-label" style={{color:T.color||"#0a84ff"}}>{T.label} · Predictions</span>
+                </div>
+                <h1 className="sn-page-title">{T.label}</h1>
+                <p className="sn-page-sub">ELO · Dixon-Coles · Poisson · xG — calibrated on 10 seasons of data</p>
               </div>
-              {/* Competition name */}
-              <h1 style={{
-                fontSize:isMobile?26:38,fontWeight:900,color:"#ffffff",
-                margin:0,letterSpacing:"-.025em",lineHeight:1,
-                fontFamily:"'Inter',sans-serif",
-              }}>{T.label}</h1>
-              <p style={{
-                fontSize:11,color:"rgba(255,255,255,.4)",margin:"5px 0 0",
-                fontFamily:"'Inter',sans-serif",
-                letterSpacing:"0.08em",textTransform:"uppercase",
-              }}>ELO · DIXON-COLES · REAL xG · PRO DATA</p>
+            </div>
+            {!predLoad && matches.length > 0 && (
+              <div className="sn-badge" style={{color:T.color||"#0a84ff", borderColor:`${T.color||"#0a84ff"}45`, background:`${T.color||"#0a84ff"}0e`}}>
+                {matches.length} Fixtures
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* -- STAT STRIP ---------------------------------------- */}
+        {!predLoad && matches.length > 0 && (
+          <div className="sn-strip">
+            <div className="sn-chip">
+              <div className="sn-chip-label">Avg confidence</div>
+              <div className="sn-chip-value" style={{color:T.color||"#0a84ff"}}>{avgConf}%</div>
+            </div>
+            <div className="sn-chip">
+              <div className="sn-chip-label">Home wins</div>
+              <div className="sn-chip-value" style={{color:"#30d158"}}>{homeWins}</div>
+              <div className="sn-chip-sub">Predicted</div>
+            </div>
+            <div className="sn-chip">
+              <div className="sn-chip-label">Draws</div>
+              <div className="sn-chip-value" style={{color:"#ffd60a"}}>{draws}</div>
+              <div className="sn-chip-sub">Predicted</div>
+            </div>
+            <div className="sn-chip">
+              <div className="sn-chip-label">BTTS picks</div>
+              <div className="sn-chip-value" style={{color:"#ff9f0a"}}>{bttsCount}</div>
             </div>
           </div>
+        )}
 
-          {/* Two-level competition nav (Solution 4) */}
-          <div style={{flex:1,minWidth:0}}>
-            <CompetitionNav
-              activeCode={league}
-              activeGroup={activeNavGroup}
-              setActiveGroup={setActiveNavGroup}
-              mode="navlink"
-              navigateFn={navigate}
-            />
-          </div>
+        {/* -- COMPETITION NAV ----------------------------------- */}
+        <div style={{padding:"14px 0 0", borderBottom:"1px solid rgba(255,255,255,0.07)", marginBottom:0}}>
+          <CompetitionNav
+            activeCode={league}
+            activeGroup={activeNavGroup}
+            setActiveGroup={setActiveNavGroup}
+            mode="navlink"
+            navigateFn={navigate}
+          />
         </div>
 
 
 
         {/* -- TAB BAR ---------------------------------------- */}
         <div style={{
-          display:"flex",marginBottom:0,overflowX:"auto",
-          WebkitOverflowScrolling:"touch",scrollbarWidth:"none",
-          background:"rgba(10,10,10,0.95)",
-          borderBottom:`3px solid ${NB.y}`,
+          display:"flex", marginBottom:0, overflowX:"auto",
+          WebkitOverflowScrolling:"touch", scrollbarWidth:"none",
+          background:"#080808",
+          borderBottom:"1px solid rgba(255,255,255,0.09)",
           gap:0,
         }}>
           {[
-            {key:"predictions",label:"Predictions",badge:!predLoad?matches.length:null},
-            {key:"standings",label:"Table",badge:!standLoad?standings.length:null},
-            {key:"scorers",label:"Scorers"},
-            {key:"simulator",label:"Season Sim"},
-            {key:"knockout",label:"Bracket",badge:null},
+            {key:"predictions", label:"Predictions", badge:!predLoad?matches.length:null},
+            {key:"standings",   label:"Table",       badge:!standLoad?standings.length:null},
+            {key:"scorers",     label:"Scorers"},
+            {key:"simulator",   label:"Season Sim"},
+            {key:"knockout",    label:"Bracket",     badge:null},
           ].map(({key,label,badge})=>(
             <button key={key} onClick={()=>setTab(key)} style={{
-              display:"flex",alignItems:"center",gap:6,
-              padding:"12px 22px",fontSize:12,fontWeight:600,
-              cursor:"pointer",border:"none",whiteSpace:"nowrap",
-              fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase",
-              color:tab===key?"#0d0d0d":"rgba(255,255,255,0.7)",
-              background:tab===key?"#ffffff":"transparent",
-              borderRight:`1px solid rgba(255,255,255,.1)`,
+              display:"flex", alignItems:"center", gap:6,
+              padding:"12px 20px", fontSize:11, fontWeight:800,
+              cursor:"pointer", border:"none", whiteSpace:"nowrap",
+              fontFamily:"'Inter',sans-serif", letterSpacing:"0.07em", textTransform:"uppercase",
+              color: tab===key ? "#fff" : "rgba(255,255,255,0.38)",
+              background: "transparent",
+              borderBottom: tab===key ? `2px solid ${T.color||"#0a84ff"}` : "2px solid transparent",
               transition:"all 0.12s",
               position:"relative",
             }}>
               {label}
               {badge!=null&&(
                 <span style={{
-                  background:tab===key?"rgba(6,13,26,0.8)":"rgba(255,255,255,0.15)",
-                  color:tab===key?"#ffffff":"rgba(255,255,255,0.8)",
+                  background: tab===key ? `${T.color||"#0a84ff"}20` : "rgba(255,255,255,0.08)",
+                  color: tab===key ? (T.color||"#0a84ff") : "rgba(255,255,255,0.45)",
                   borderRadius:999,
-                  padding:"1px 7px",fontSize:11,
-                  fontFamily:"'Inter',sans-serif",fontWeight:700,
+                  padding:"1px 7px", fontSize:10,
+                  fontFamily:"'JetBrains Mono',monospace", fontWeight:800,
                   marginLeft:4,
                 }}>{badge}</span>
               )}
@@ -2957,42 +2968,44 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
                 {!predLoad&&matches.length>0&&(
                   <div style={{
                     padding:"10px 14px",
-                    background:"rgba(10,10,10,0.95)",border:`3px solid ${NB.y}`,
-                    display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",
+                    background:"#080808", border:"1px solid rgba(255,255,255,0.09)", borderRadius:12,
+                    display:"flex", alignItems:"center", gap:8, flexWrap:"wrap",
                     marginTop:16,
                   }}>
-                    <span style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.6)",letterSpacing:"0.06em",textTransform:"uppercase",flexShrink:0,fontFamily:"'Inter',sans-serif"}}>Filter</span>
+                    <span style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.32)",letterSpacing:"0.1em",textTransform:"uppercase",flexShrink:0}}>Filter</span>
                     <div style={{display:"flex",gap:4,flexWrap:"wrap",flex:1}}>
                       {[
                         {key:"all",   label:"All"},
                         {key:"high",  label:"High Conf"},
                         {key:"edge",  label:"Model Edge"},
-                        {key:"over25",label:"O2.5"},
+                        {key:"over25",label:"Over 2.5"},
                         {key:"btts",  label:"BTTS"},
                         {key:"upsets",label:"Upsets"},
                       ].map(({key,label})=>(
                         <button key={key} onClick={()=>setPredFilter(key)} style={{
-                          padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer",
-                          letterSpacing:"0.04em",textTransform:"uppercase",
-                          border:`2px solid ${predFilter===key?NB.y:"rgba(255,255,255,.2)"}`,
-                          background:predFilter===key?NB.y:"transparent",
-                          color:predFilter===key?NB.k:NB.y,
-                          transition:"all 0.1s",fontFamily:"'Inter',sans-serif",
+                          padding:"5px 12px", fontSize:10, fontWeight:800, cursor:"pointer",
+                          letterSpacing:"0.05em", textTransform:"uppercase",
+                          borderRadius:999,
+                          border:`1px solid ${predFilter===key?"rgba(10,132,255,0.45)":"rgba(255,255,255,0.09)"}`,
+                          background: predFilter===key?"rgba(10,132,255,0.14)":"#0c0c0c",
+                          color: predFilter===key?"#4f9eff":"rgba(255,255,255,0.5)",
+                          transition:"all 0.1s", fontFamily:"'Inter',sans-serif",
                         }}>{label}</button>
                       ))}
                     </div>
-                    <div style={{display:"flex",gap:4,borderLeft:`2px solid rgba(255,255,255,.15)`,paddingLeft:8}}>
+                    <div style={{display:"flex",gap:4,borderLeft:"1px solid rgba(255,255,255,0.09)",paddingLeft:8}}>
                       {[["confidence","Conf"],["date","Date"],["home","Home%"]].map(([s,l])=>(
                         <button key={s} onClick={()=>setSort(s)} style={{
-                          padding:"5px 10px",fontSize:11,fontWeight:600,cursor:"pointer",
-                          background:sort===s?NB.y:"transparent",
-                          border:`1px solid ${sort===s?NB.y:"rgba(255,255,255,.2)"}`,
-                          color:sort===s?NB.k:NB.y,
-                          transition:"all 0.1s",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",
+                          padding:"5px 10px", fontSize:10, fontWeight:800, cursor:"pointer",
+                          borderRadius:999,
+                          background: sort===s?"rgba(255,255,255,0.1)":"transparent",
+                          border:`1px solid ${sort===s?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.09)"}`,
+                          color: sort===s?"#fff":"rgba(255,255,255,0.4)",
+                          transition:"all 0.1s", fontFamily:"'Inter',sans-serif", letterSpacing:"0.06em",
                         }}>{l}</button>
                       ))}
                     </div>
-                    <span style={{fontSize:11,color:"rgba(255,255,255,.5)",fontFamily:"'Inter',sans-serif",flexShrink:0}}>{filtered.length}</span>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,0.32)",fontFamily:"'JetBrains Mono',monospace",flexShrink:0,fontWeight:800}}>{filtered.length}</span>
                   </div>
                 )}
 
@@ -3056,8 +3069,8 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
                 {!predLoad&&matches.length>0&&(
                   <>
                     {/* Top confidence */}
-                    <div style={{background:"rgba(10,10,10,0.95)",border:`3px solid ${NB.y}`,padding:"14px 15px",overflow:"hidden"}}>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",color:"rgba(255,255,255,.65)",textTransform:"uppercase",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>
+                    <div style={{background:"#0c0c0c",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,padding:"14px 15px",overflow:"hidden"}}>
+                      <div style={{fontSize:9,fontWeight:800,letterSpacing:"0.1em",color:"rgba(255,255,255,0.32)",textTransform:"uppercase",marginBottom:12}}>
                         Top Confidence
                       </div>
                       <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -3069,8 +3082,8 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
 
                     {/* Model edges */}
                     {matches.some(m=>m.model_edge!=null)&&(
-                      <div style={{background:"rgba(10,10,10,0.95)",border:`3px solid ${NB.y}`,padding:"14px 15px"}}>
-                        <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",color:"rgba(255,255,255,.65)",textTransform:"uppercase",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>Best Edges</div>
+                      <div style={{background:"#0c0c0c",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,padding:"14px 15px"}}>
+                        <div style={{fontSize:9,fontWeight:800,letterSpacing:"0.1em",color:"rgba(255,255,255,0.32)",textTransform:"uppercase",marginBottom:12}}>Best Edges</div>
                         <div style={{display:"flex",flexDirection:"column",gap:6}}>
                           {[...matches].filter(m=>m.model_edge!=null).sort((a,b)=>Math.abs(b.model_edge)-Math.abs(a.model_edge)).slice(0,3).map((m,i)=>(
                             <SidebarMatchRow key={i} match={m} T={T} navigate={navigate} showEdge/>
@@ -3080,8 +3093,8 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
                     )}
 
                     {/* Goal heavy */}
-                    <div style={{background:"rgba(10,10,10,0.95)",border:`3px solid ${NB.y}`,padding:"14px 15px"}}>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",color:"rgba(255,255,255,.65)",textTransform:"uppercase",marginBottom:12,fontFamily:"'Inter',sans-serif"}}>Goal Heavy</div>
+                    <div style={{background:"#0c0c0c",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,padding:"14px 15px"}}>
+                      <div style={{fontSize:9,fontWeight:800,letterSpacing:"0.1em",color:"rgba(255,255,255,0.32)",textTransform:"uppercase",marginBottom:12}}>Goal Heavy</div>
                       <div style={{display:"flex",flexDirection:"column",gap:6}}>
                         {[...matches].sort((a,b)=>((parseFloat(b.xg_home)||0)+(parseFloat(b.xg_away)||0))-((parseFloat(a.xg_home)||0)+(parseFloat(a.xg_away)||0))).slice(0,3).map((m,i)=>(
                           <SidebarMatchRow key={i} match={m} T={T} navigate={navigate} showXg/>
@@ -3136,7 +3149,6 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
 
       {/* -- Page-specific CSS --------------------------------------- */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
         @keyframes nbPulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
         @keyframes nbBlink  { 50%{opacity:0} }
         @keyframes nbStripes{ to{background-position:90px 0} } @keyframes hp6FadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
@@ -3145,9 +3157,25 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
         input[type=range]   { height:4px; border-radius:0; outline:none; accent-color:#ffffff; }
         ::selection         { background:#ffffff; color:#0a0a0a; }
         ::-webkit-scrollbar { width:4px; height:4px; }
-        ::-webkit-scrollbar-track { background:rgba(10,10,10,0.8); }
-        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.3); }
+        ::-webkit-scrollbar-track { background:#000; }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.14); }
       `}</style>
+
+      <footer className="sn-footer-v3">
+        <div className="sn-footer-brand">
+          <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+            <rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+            <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+            <rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+            <rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/>
+          </svg>
+          StatinSite
+          <span className="sn-footer-tagline">Football Intelligence · ELO · Dixon-Coles · xG</span>
+        </div>
+        <div className="sn-footer-built">Built by Rutej Talati</div>
+        <span className="sn-footer-copy">© {new Date().getFullYear()} StatinSite</span>
+      </footer>
     </div>
   );
 }

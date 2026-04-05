@@ -604,7 +604,7 @@ function RelatedCard({article,onClick}){
         <span style={{fontSize:7,fontWeight:900,letterSpacing:"0.1em",textTransform:"uppercase",color:tm.color,background:tm.color+"10",borderRadius:4,padding:"1px 5px"}}>{tm.label}</span>
         {article.league&&article.league!=="general"&&<span style={{fontSize:7,fontWeight:900,letterSpacing:"0.08em",textTransform:"uppercase",color:league.color,background:league.bg,borderRadius:4,padding:"1px 5px"}}>{league.abbr}</span>}
       </div>
-      <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:hov?"#e8f0ff":"#7a9ab8",lineHeight:1.35,margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.title}</p>
+      <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:hov?"#fff":"rgba(255,255,255,0.85)",lineHeight:1.35,margin:0,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{article.title}</p>
     </div>
   </div>);
 }
@@ -803,7 +803,7 @@ function TransferHub({items}){
             ?<img src={t.image} alt="" style={{width:44,height:36,objectFit:"cover",borderRadius:6,flexShrink:0}} onError={e=>e.currentTarget.style.display="none"}/>
             :<div style={{width:44,height:36,borderRadius:6,flexShrink:0,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="2"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg></div>}
           <div style={{flex:1,minWidth:0}}>
-            <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#8aabb8",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.35}}>{t.headline||t.title}</p>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#fff",margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.35}}>{t.headline||t.title}</p>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
               <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,.35)",fontWeight:700}}>{t.source}</span>
               <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,.25)",fontWeight:700}}>{timeAgo(t.published_at)}</span>
@@ -1153,52 +1153,43 @@ export default function NewsTrackerPage(){
     {/* ── Main Content ─────────────────────────────────────── */}
     <div style={{maxWidth:1360,margin:"0 auto",padding:isMob?"0 14px 100px":"0 28px 80px",position:"relative",zIndex:1}}>
 
-      {/* ── PAGE HEADER ──────────────────────────────────────── */}
-      <div style={{
-        padding:isMob?"20px 0 16px":"36px 0 22px",
-        borderBottom:"1px solid var(--border)",
-        marginBottom:0,
-      }}>
-        <div style={{display:"flex",alignItems:isMob?"flex-start":"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-          {/* Title */}
-          <div style={{display:"flex",alignItems:"center",gap:14}}>
-            <div style={{
-              display:"flex",flexDirection:"column",justifyContent:"center",gap:3,
-              width:3,height:isMob?36:50,flexShrink:0,
-              background:"linear-gradient(180deg,var(--blue) 0%,transparent 100%)",
-              borderRadius:2,
-            }}/>
-            <div>
-              <h1 style={{
-                fontFamily:"'Inter',sans-serif",
-                fontSize:isMob?24:32,
-                fontWeight:900,color:"var(--text)",
-                margin:0,letterSpacing:"-0.04em",lineHeight:1.05,
-              }}>Football Intelligence</h1>
-              <p style={{
-                fontFamily:"'Inter',sans-serif",fontSize:isMob?11:12,
-                color:"var(--text-muted)",margin:"5px 0 0",fontWeight:500,
-                letterSpacing:".01em",
-              }}>
-                Model previews · Transfers · Tactical insights · Live signals
-                {lastUpdated&&<span style={{marginLeft:8,fontSize:10,color:"rgba(255,255,255,.25)"}}>· {timeAgo(lastUpdated)}</span>}
-              </p>
+      {/* ── PAGE HEADER ── */}
+      <div className="sn-ph" style={{ background:"linear-gradient(175deg,rgba(255,159,10,0.05) 0%,transparent 55%)" }}>
+        <div className="sn-ph-row">
+          <div>
+            <div className="sn-eyebrow">
+              <div className="sn-eyebrow-dot" style={{ background:"#ff9f0a" }}/>
+              <span className="sn-eyebrow-label" style={{ color:"#ff9f0a" }}>
+                News Tracker{lastUpdated ? ` · ${timeAgo(lastUpdated)}` : ""}
+              </span>
             </div>
+            <h1 className="sn-page-title">Football Intelligence</h1>
+            <p className="sn-page-sub">Model previews · Transfers · Tactical insights · Live signals</p>
           </div>
-          {/* Live badge */}
-          <div style={{
-            display:"flex",alignItems:"center",gap:7,
-            padding:"7px 16px",borderRadius:999,
-            background:"var(--bg-glass)",
-            border:"1px solid var(--border-strong)",
-            flexShrink:0,
-          }}>
-            <span style={{width:7,height:7,borderRadius:"50%",background:"var(--text)",
-              boxShadow:"0 0 10px var(--blue-glow)",
-              animation:"nbPulse 2.2s ease-in-out infinite",display:"inline-block",flexShrink:0}}/>
-            <span style={{fontSize:11,fontWeight:700,color:"var(--text-secondary)",
-              letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>Live feed</span>
+          <div className="sn-badge" style={{ color:"#ff9f0a", borderColor:"rgba(255,159,10,0.3)", background:"rgba(255,159,10,0.08)", flexShrink:0 }}>
+            <span style={{ width:6, height:6, borderRadius:"50%", background:"#ff9f0a", display:"inline-block", animation:"sn-pulse 2s infinite" }}/>
+            Live feed
           </div>
+        </div>
+      </div>
+
+      {/* ── STAT STRIP ── */}
+      <div className="sn-strip">
+        <div className="sn-chip">
+          <div className="sn-chip-label">Articles today</div>
+          <div className="sn-chip-value" style={{ color:"#ff9f0a" }}>{counts.all}</div>
+        </div>
+        <div className="sn-chip">
+          <div className="sn-chip-label">Previews</div>
+          <div className="sn-chip-value" style={{ color:"#0a84ff" }}>{counts.preview}</div>
+        </div>
+        <div className="sn-chip">
+          <div className="sn-chip-label">Insights</div>
+          <div className="sn-chip-value" style={{ color:"#30d158" }}>{counts.insight}</div>
+        </div>
+        <div className="sn-chip">
+          <div className="sn-chip-label">News</div>
+          <div className="sn-chip-value" style={{ color:"#fff" }}>{counts.news}</div>
         </div>
       </div>
 
@@ -1344,50 +1335,21 @@ export default function NewsTrackerPage(){
             )}
           </div>
 
-          {/* ── FOOTER ───────────────────────────────────────── */}
-          <footer style={{
-            borderTop:"1px solid rgba(255,255,255,0.08)",
-            paddingTop:32,
-            paddingBottom:40,
-          }}>
-            <div style={{
-              display:"flex",
-              flexDirection:isMob?"column":"row",
-              alignItems:isMob?"flex-start":"center",
-              justifyContent:"space-between",
-              gap:isMob?20:24,
-            }}>
-              {/* Branding */}
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:3,height:22,background:"rgba(255,255,255,.7)",borderRadius:2}}/>
-                  <span style={{fontSize:20,fontWeight:900,color:"#ffffff",letterSpacing:"-.04em"}}>StatinSite</span>
-                </div>
-                <span style={{fontSize:11,color:"rgba(255,255,255,.35)",letterSpacing:".03em",paddingLeft:13}}>
-                  Football Intelligence · Model Predictions
-                </span>
-              </div>
-
-              {/* Built by — centre */}
-              <div style={{
-                display:"flex",flexDirection:"column",
-                alignItems:isMob?"flex-start":"center",
-                gap:4,
-                padding:"16px 28px",
-                border:"1px solid rgba(255,255,255,0.1)",
-                borderRadius:12,
-                background:"rgba(255,255,255,0.03)",
-              }}>
-                <div style={{fontSize:10,color:"rgba(255,255,255,.3)",letterSpacing:".14em",textTransform:"uppercase"}}>Built by</div>
-                <div style={{fontSize:18,fontWeight:800,color:"#ffffff",letterSpacing:"-.02em"}}>Rutej Talati</div>
-              </div>
-
-              {/* Right info */}
-              <div style={{display:"flex",flexDirection:"column",alignItems:isMob?"flex-start":"flex-end",gap:5}}>
-                <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.6)",letterSpacing:".04em"}}>statinsite.com</span>
-                <span style={{fontSize:10,color:"rgba(255,255,255,.2)"}}>© {new Date().getFullYear()} StatinSite. All rights reserved.</span>
-              </div>
+          {/* ── FOOTER ── */}
+          <footer className="sn-footer-v3">
+            <div className="sn-footer-brand">
+              <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+                <rect x="4" y="3" width="14" height="3.5" rx="1.75" fill="#0a84ff"/>
+                <rect x="4" y="9" width="10" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.65"/>
+                <rect x="4" y="15" width="14" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.4"/>
+                <rect x="4" y="21" width="7" height="3.5" rx="1.75" fill="#0a84ff" opacity="0.22"/>
+                <rect x="20" y="15" width="3" height="10" rx="1.5" fill="#30d158"/>
+              </svg>
+              StatinSite
+              <span className="sn-footer-tagline">Football Intelligence · ELO · Dixon-Coles · xG</span>
             </div>
+            <div className="sn-footer-built">Built by Rutej Talati</div>
+            <span className="sn-footer-copy">© {new Date().getFullYear()} StatinSite</span>
           </footer>
 
         </div>

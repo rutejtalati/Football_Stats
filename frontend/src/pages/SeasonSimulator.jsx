@@ -11,7 +11,7 @@ export default function SeasonSimulator() {
   }, []);
 
   return (
-    <div className="page-shell">
+    <div className="page-shell" style={{ minHeight: "100vh", background: "#000000" }}>
       <h1 className="page-title">Season Simulation</h1>
 
       <div className="panel">

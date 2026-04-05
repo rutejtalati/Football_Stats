@@ -89,7 +89,7 @@
 
   --tooltip-bg:     rgba(10,12,20,.97);
   --tooltip-border: rgba(10,132,255,.30);
-  --modal-bg:       #0d1424;
+  --modal-bg:       #0c0c0c;
   --modal-border:   rgba(10,132,255,.20);
   --modal-overlay:  rgba(0,0,0,.72);
 
@@ -1452,6 +1452,9 @@ button, input, select, textarea { font-family: var(--font-body); color: var(--te
 
   --font-mono:       'JetBrains Mono', monospace;
 
+  --modal-bg:       #0c0c0c;
+  --modal-overlay:  rgba(0,0,0,0.85);
+
   --table-bg:        #0c0c0c;
   --table-header-bg: #080808;
   --table-header-color: rgba(255,255,255,0.28);
@@ -2020,3 +2023,10 @@ button, input, select, textarea { font-family: var(--font-body); color: var(--te
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.24); }
+/* ── panel-dark ── */
+.panel-dark {
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  padding: 20px;
+}

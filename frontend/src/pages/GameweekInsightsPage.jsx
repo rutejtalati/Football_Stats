@@ -6,8 +6,8 @@ function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefin
 /* ─── Design tokens ─────────────────────────────────────────────── */
 const C = {
   bg: "#000000",
-  surface: "rgba(255,255,255,0.04)",
-  surfaceHov: "rgba(255,255,255,0.07)",
+  surface: "#0c0c0c",
+  surfaceHov: "#111111",
   border: "rgba(255,255,255,0.07)",
   text: "#ffffff",
   muted: "rgba(255,255,255,0.38)",

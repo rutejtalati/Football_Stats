@@ -10,9 +10,9 @@ import { getFplBootstrap, getFplPredictorTable, API_BASE as API } from "../api/a
 // ── iOS design tokens ────────────────────────────────────────────────
 const T = {
   bg:        "#000000",
-  surface:   "#1c1c1e",
-  surface2:  "#2c2c2e",
-  surface3:  "#3a3a3c",
+  surface:   "#0c0c0c",
+  surface2:  "#080808",
+  surface3:  "#111111",
   border:    "rgba(255,255,255,0.10)",
   borderHi:  "rgba(255,255,255,0.18)",
   text:      "#ffffff",
@@ -840,7 +840,7 @@ export default function FplIntelligencePage() {
 
       {/* ── MASTHEAD ── */}
       <div style={{
-        background:"rgba(28,28,30,0.95)",
+        background:"rgba(0,0,0,0.95)",
         backdropFilter:"blur(24px)",
         WebkitBackdropFilter:"blur(24px)",
         borderBottom:`1px solid ${T.border}`,

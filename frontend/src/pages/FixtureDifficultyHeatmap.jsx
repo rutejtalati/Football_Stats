@@ -135,13 +135,13 @@ export default function FixtureDifficultyHeatmap() {
   // we pass the team object directly to the row renderer
 
   return (
-    <div className="page-shell">
+    <div style={{ minHeight:"100vh", background:"#000", color:"#fff", fontFamily:"'Inter',sans-serif" }}>
       <style>{`@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`}</style>
-      <div className="page-content-wide">
+      <div style={{ maxWidth:"100%", padding:"24px" }}>
 
         {/* Header */}
         <div style={{ marginBottom:20 }}>
-          <h1 className="page-title-left" style={{ marginBottom:4 }}>Fixture Difficulty Heatmap</h1>
+          <h1 style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.03em", marginBottom:4 }} style={{ marginBottom:4 }}>Fixture Difficulty Heatmap</h1>
           <p style={{ fontSize:12, color:"#4a7a9a", margin:0, fontFamily:"'Inter',sans-serif" }}>
             FDR colour grid: green = easy, red = hard. Teams sorted by average difficulty
             over the window. Hover cells for full fixture detail.
@@ -208,7 +208,7 @@ export default function FixtureDifficultyHeatmap() {
 
         {/* Table */}
         <div style={{
-          background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.07)",
+          background:"#0c0c0c", border:"1px solid rgba(255,255,255,0.09)",
           borderRadius:14, overflow:"hidden",
         }}>
           <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
@@ -216,7 +216,7 @@ export default function FixtureDifficultyHeatmap() {
               <thead>
                 <tr>
                   <th style={{
-                    background:"#060d18", color:"#4a7a9a", fontSize:10, fontWeight:800,
+                    background:"#000", color:"#4a7a9a", fontSize:10, fontWeight:800,
                     padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)",
                     position:"sticky", left:0, zIndex:2, textAlign:"left",
                     whiteSpace:"nowrap", minWidth:160,
@@ -224,7 +224,7 @@ export default function FixtureDifficultyHeatmap() {
                     Team
                   </th>
                   <th style={{
-                    background:"#060d18", color:"#4a7a9a", fontSize:10, fontWeight:800,
+                    background:"#000", color:"#4a7a9a", fontSize:10, fontWeight:800,
                     padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)",
                     whiteSpace:"nowrap", minWidth: compact ? 80 : 100,
                   }}>
@@ -232,7 +232,7 @@ export default function FixtureDifficultyHeatmap() {
                   </th>
                   {gws.map(gw => (
                     <th key={gw} style={{
-                      background:"#060d18", color:"#4a7a9a", fontSize:10, fontWeight:800,
+                      background:"#000", color:"#4a7a9a", fontSize:10, fontWeight:800,
                       padding:"8px 8px", borderBottom:"1px solid rgba(255,255,255,0.07)",
                       textAlign:"center", whiteSpace:"nowrap",
                       minWidth: compact ? 44 : 64,
@@ -246,7 +246,7 @@ export default function FixtureDifficultyHeatmap() {
                 {loading
                   ? Array.from({length:10}).map((_,i) => (
                       <tr key={i}>
-                        <td style={{ padding:"8px 14px", background:"#060a14", position:"sticky", left:0, minWidth:160 }}>
+                        <td style={{ padding:"8px 14px", background:"#000", position:"sticky", left:0, minWidth:160 }}>
                           <Skel h={14} w={120}/>
                         </td>
                         <td style={{ padding:"8px 14px" }}><Skel h={14} w={80}/></td>
@@ -265,7 +265,7 @@ export default function FixtureDifficultyHeatmap() {
                           {/* Sticky team name */}
                           <td style={{
                             position:"sticky", left:0, zIndex:1,
-                            background:"#060a14", padding:"6px 14px",
+                            background:"#000", padding:"6px 14px",
                             borderBottom:"1px solid rgba(255,255,255,0.04)",
                             borderRight:"1px solid rgba(255,255,255,0.06)",
                             minWidth:160,

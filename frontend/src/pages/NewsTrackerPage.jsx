@@ -1359,3 +1359,4 @@ export default function NewsTrackerPage(){
       )}
     </div>
   </div>);
+}

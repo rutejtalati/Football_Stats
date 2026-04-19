@@ -3084,3 +3084,4 @@ export default function PredictionsPage({league:propLeague,slugMap}){
       </footer>
     </div>
   );
+}

@@ -2547,3 +2547,4 @@ export default function LiveMatchPage() {
     </div>
     </div>
   );
+}

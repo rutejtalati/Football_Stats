@@ -1059,3 +1059,4 @@ fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)      .then(r => {
       </div>
     </>
   );
+}

@@ -904,3 +904,4 @@ export default function PlayerInsightPage() {
       <PageFooter/>
     </div>
   );
+}

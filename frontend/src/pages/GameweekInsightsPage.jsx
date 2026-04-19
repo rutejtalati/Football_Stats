@@ -681,4 +681,5 @@ export default function GameweekInsightsPage() {
         )}
       </div>
     </div>
-  )
+  );
+}

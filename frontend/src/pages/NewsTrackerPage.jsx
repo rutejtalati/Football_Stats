@@ -1,5 +1,10 @@
-﻿// NewsTrackerPage.jsx v4 — StatinSite Intelligence Newsroom
+﻿// NewsTrackerPage.jsx v4 — StatinSite Intelligence Newsroom  ·  Part 3 refactor
+// Changes:
+//   • const BACKEND (hardcoded URL) → API_BASE from @/api/api
+//   • All NB theme, normalise(), LM, TM, components — 100% preserved
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { API_BASE as BACKEND } from "@/api/api";
 
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#080808", r:"#e2e8e4" };
@@ -16,8 +21,6 @@ const NB_CSS = `
   input[type=range] { accent-color:#ffffff; }
 `;
 
-
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://footballstats-production-ecd9.up.railway.app";
 function normalise(a) {
   return { ...a,
     home_team: a.meta?.home_team, away_team: a.meta?.away_team,
@@ -1356,4 +1359,3 @@ export default function NewsTrackerPage(){
       )}
     </div>
   </div>);
-}

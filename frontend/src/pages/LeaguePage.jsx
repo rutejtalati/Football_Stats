@@ -9,12 +9,12 @@ import {
   getStandings,
   getLeaguePredictions,
   getSeasonSimulation,
-} from "../api/api";
-import FixturesTable   from "../components/FixturesTable";
-import StandingsTable  from "../components/StandingsTable";
-import PredictionTable from "../components/PredictionTable";
-import SimulationTable from "../components/SimulationTable";
-import SectionTabs     from "../components/SectionTabs";
+} from "@/api/api";
+import FixturesTable   from "@/components/FixturesTable";
+import StandingsTable  from "@/components/StandingsTable";
+import PredictionTable from "@/components/PredictionTable";
+import SimulationTable from "@/components/SimulationTable";
+import SectionTabs     from "@/components/SectionTabs";
 
 const Y = "#e8ff47";
 const K = "#0a0a0a";

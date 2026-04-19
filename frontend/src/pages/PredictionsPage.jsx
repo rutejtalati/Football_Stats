@@ -1,16 +1,40 @@
-﻿// PredictionsPage.jsx  StatinSite v6
-// VS Split Cards  League Themes  Floating Simulator  Key Players  Charts
+﻿// PredictionsPage.jsx  StatinSite v6  ·  Part 3 refactor
+// ─────────────────────────────────────────────────────────────────────────
+// Changes:
+//   • useWindowWidth      → imported from @/hooks
+//   • COMP_NAV_GROUPS     → imported from @/constants
+//   • COMP_NAV_TABS       → imported from @/constants (with LEAGUE_TABS alias kept)
+//   • CompetitionNav      → shared component wrapper (preserves mode/navigateFn API)
+//   • INTL_BACKEND        → API_BASE from @/api/api
+//   • COMP_COLORS         → derived from compColor() helper from @/constants
+//   • All components, KP data, helpers, logic — 100% preserved
+// ─────────────────────────────────────────────────────────────────────────
+
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, NavLink, useNavigate } from "react-router-dom";
 import {
   getStandings, getLeaguePredictions, getTopScorers, getTopAssists,
   getLeagueInjuries, getH2H, getFixtureOdds, getSeasonSimulation,
-} from "../api/api";
+} from "@/api/api";
+import { useWindowWidth } from "@/hooks";
+import { API_BASE as INTL_BACKEND } from "@/api/api";
+import SharedCompNav from "@/components/CompetitionNav";
+import {
+  COMP_NAV_TABS,
+  COMP_NAV_GROUPS,
+  COMP_BY_CODE,
+  compColor,
+} from "@/constants";
 
-/* ----------------------------------------------------------
-   NEOBRUTALIST THEME  #e8ff47 yellow · #0a0a0a black · #ff2744 red
-   Fonts: Bebas Neue (display) · Space Grotesk (body) · DM Mono (mono)
----------------------------------------------------------- */
+// ── Internal aliases used throughout the body ────────────────────────────────
+// LEAGUE_TABS: body uses this name in BRACKET_ROUNDS lookups
+const LEAGUE_TABS = COMP_NAV_TABS;
+
+// COMP_COLORS: body uses COMP_COLORS[league] — derived from constants
+const COMP_COLORS = Object.fromEntries(COMP_NAV_TABS.map(t => [t.code, t.color]));
+
+// ── Theme system ─────────────────────────────────────────────────────────────
+// NB / UNIFIED / COMP_THEMES are pure local design data — not duplicates
 const NB = {
   y:"#ffffff",
   k:"#0d0d0d",
@@ -35,23 +59,11 @@ const UNIFIED = {
   label:   "",
 };
 
-/* -- Responsive hook --------------------------------------- */
-function useWindowWidth() {
-  const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
-  useEffect(() => {
-    const handler = () => setW(window.innerWidth);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
-  return w;
-}
-
 const LEAGUE_LABELS = {
   epl:"Premier League", laliga:"La Liga", bundesliga:"Bundesliga",
   seriea:"Serie A", ligue1:"Ligue 1",
   ucl:"Champions League", uel:"Europa League",
   uecl:"Conference League", facup:"FA Cup",
-  // International
   wcq_uefa:"WCQ UEFA", wcq_conmebol:"WCQ CONMEBOL", wcq_concacaf:"WCQ CONCACAF",
   wcq_caf:"WCQ CAF", wcq_afc:"WCQ AFC",
   nations_league:"Nations League", euro:"Euros", euro_q:"Euro Qual",
@@ -59,26 +71,11 @@ const LEAGUE_LABELS = {
   world_cup:"World Cup", international_friendly:"Friendly",
 };
 
-// Competition accent colours
-const COMP_COLORS = {
-  epl:"#60a5fa", laliga:"#f97316", bundesliga:"#f59e0b",
-  seriea:"#e2e8e4", ligue1:"#a78bfa",
-  ucl:"#1e40af", uel:"#f97316", uecl:"#16a34a", facup:"#dc2626",
-  // International
-  wcq_uefa:"#fbbf24", wcq_conmebol:"#fbbf24", wcq_concacaf:"#fbbf24",
-  wcq_caf:"#fbbf24", wcq_afc:"#fbbf24",
-  nations_league:"#e879f9", euro:"#3b82f6", euro_q:"#3b82f6",
-  afcon:"#22c55e", copa_america:"#fbbf24", gold_cup:"#fbbf24",
-  world_cup:"#fbbf24", international_friendly:"#94a3b8",
-};
-
-// Competition theme overrides — all share the same NB base, different accents
 const COMP_THEMES = {
   ucl:  {...UNIFIED, accent:NB.y,  accent2:"#dddddd", awayCol:"#dddddd", label:"Champions League"},
   uel:  {...UNIFIED, accent:NB.y,  accent2:"#cccccc", awayCol:"#cccccc", label:"Europa League"},
   uecl: {...UNIFIED, accent:NB.y,  accent2:"#cccccc", awayCol:"#cccccc", label:"Conference League"},
   facup:{...UNIFIED, accent:NB.y,  accent2:NB.r,      awayCol:NB.r,      label:"FA Cup"},
-  // International
   wcq_uefa:       {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ UEFA"},
   wcq_conmebol:   {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ CONMEBOL"},
   wcq_concacaf:   {...UNIFIED, accent:"#fbbf24", accent2:NB.r, awayCol:NB.r, label:"WCQ CONCACAF"},
@@ -99,125 +96,34 @@ const THEMES = {
   ...COMP_THEMES,
 };
 
-// ═══════════════════════════════════════════════════════════════════════
-// SHARED COMPETITION REGISTRY  — used by two-level nav (Solution 4)
-// badge  = confederation acronym shown in coloured chip
-// bc/bt  = badge background / badge text colours
-// slug   = URL segment for NavLink
-// group  = which group-selector tab this belongs to
-// ═══════════════════════════════════════════════════════════════════════
-const COMP_NAV_GROUPS = [
-  { key:"domestic",      label:"Domestic" },
-  { key:"european",      label:"European" },
-  { key:"cup",           label:"Cup"      },
-  { key:"international", label:"International" },
-];
-
-const AF = "https://media.api-sports.io/football/leagues/";
-
-const COMP_NAV_TABS = [
-  // ── Domestic ────────────────────────────────────────────────────────
-  { code:"epl",        slug:"premier-league",   label:"Premier League",   group:"domestic",      logo:`${AF}39.png`,  bc:"#1a3a6e", bt:"#93c5fd", hasKnockout:false },
-  { code:"laliga",     slug:"la-liga",          label:"La Liga",          group:"domestic",      logo:`${AF}140.png`, bc:"#6e1a1a", bt:"#fca5a5", hasKnockout:false },
-  { code:"bundesliga", slug:"bundesliga",       label:"Bundesliga",       group:"domestic",      logo:`${AF}78.png`,  bc:"#4a3a00", bt:"#fde68a", hasKnockout:false },
-  { code:"seriea",     slug:"serie-a",          label:"Serie A",          group:"domestic",      logo:`${AF}135.png`, bc:"#1a4a1a", bt:"#86efac", hasKnockout:false },
-  { code:"ligue1",     slug:"ligue-1",          label:"Ligue 1",          group:"domestic",      logo:`${AF}61.png`,  bc:"#2e1a6e", bt:"#c4b5fd", hasKnockout:false },
-  // ── European ────────────────────────────────────────────────────────
-  { code:"ucl",        slug:"champions-league", label:"Champions League", group:"european",      logo:`${AF}2.png`,   bc:"#0f2d6e", bt:"#93c5fd", hasKnockout:true  },
-  { code:"uel",        slug:"europa-league",    label:"Europa League",    group:"european",      logo:`${AF}3.png`,   bc:"#5c2800", bt:"#fdba74", hasKnockout:true  },
-  { code:"uecl",       slug:"conference-league",label:"Conference Lge",   group:"european",      logo:`${AF}848.png`, bc:"#0f3d2a", bt:"#6ee7b7", hasKnockout:true  },
-  // ── Cup ─────────────────────────────────────────────────────────────
-  { code:"facup",      slug:"fa-cup",           label:"FA Cup",           group:"cup",           logo:`${AF}45.png`,  bc:"#4a0f0f", bt:"#fca5a5", hasKnockout:true  },
-  // ── International ───────────────────────────────────────────────────
-  { code:"wcq_uefa",            slug:"wcq-uefa",       label:"WCQ Europe",     group:"international", logo:`${AF}32.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_conmebol",        slug:"wcq-conmebol",   label:"WCQ S. America", group:"international", logo:`${AF}29.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_concacaf",        slug:"wcq-concacaf",   label:"WCQ C. America", group:"international", logo:`${AF}30.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_caf",             slug:"wcq-caf",        label:"WCQ Africa",     group:"international", logo:`${AF}31.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"wcq_afc",             slug:"wcq-afc",        label:"WCQ Asia",       group:"international", logo:`${AF}36.png`,  bc:"#3d3000", bt:"#fde68a", isIntl:true },
-  { code:"nations_league",      slug:"nations-league", label:"Nations League", group:"international", logo:`${AF}5.png`,   bc:"#3a006e", bt:"#d8b4fe", isIntl:true },
-  { code:"euro",                slug:"euros",          label:"UEFA Euros",     group:"international", logo:`${AF}4.png`,   bc:"#0f2d6e", bt:"#93c5fd", isIntl:true, hasKnockout:true },
-  { code:"euro_q",              slug:"euro-qual",      label:"Euro Qualifiers",group:"international", logo:`${AF}960.png`, bc:"#0f2d6e", bt:"#93c5fd", isIntl:true },
-  { code:"afcon",               slug:"afcon",          label:"Africa Cup",     group:"international", logo:`${AF}6.png`,   bc:"#0f3d1a", bt:"#86efac", isIntl:true, hasKnockout:true },
-  { code:"copa_america",        slug:"copa-america",   label:"Copa América",   group:"international", logo:`${AF}9.png`,   bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
-  { code:"gold_cup",            slug:"gold-cup",       label:"Gold Cup",       group:"international", logo:`${AF}16.png`,  bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
-  { code:"world_cup",           slug:"world-cup",      label:"World Cup",      group:"international", logo:`${AF}1.png`,   bc:"#3d2c00", bt:"#fde68a", isIntl:true, hasKnockout:true },
-  { code:"international_friendly",slug:"intl-friendly",label:"Intl Friendly",  group:"international", logo:`${AF}10.png`,  bc:"#2a2a2a", bt:"#d1d5db", isIntl:true },
-];
-
-// Keep LEAGUE_TABS as alias so the rest of the file (BRACKET_ROUNDS etc.) still works
-const LEAGUE_TABS = COMP_NAV_TABS;
-
-// ── Two-level Competition Nav (Solution 4) ──────────────────────────────────
+// ── CompetitionNav adapter ────────────────────────────────────────────────────
+// The body calls <CompetitionNav mode="navlink" navigateFn={navigate} />.
+// This wrapper maps that API to the shared component's onSelect prop.
 function CompetitionNav({ activeCode, activeGroup, setActiveGroup, mode="navlink", onSelect, navigateFn }) {
-  const groupComps = COMP_NAV_TABS.filter(t => t.group === activeGroup);
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-      {/* ── Row 1: group selector ── */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-        {COMP_NAV_GROUPS.map(g => {
-          const isActive = g.key === activeGroup;
-          const count = COMP_NAV_TABS.filter(t => t.group === g.key).length;
-          return (
-            <button key={g.key} onClick={() => setActiveGroup(g.key)} style={{
-              display:"flex", alignItems:"center", gap:5,
-              padding:"6px 14px", borderRadius:8, cursor:"pointer",
-              fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:700,
-              letterSpacing:"0.06em", textTransform:"uppercase",
-              border:`1px solid ${isActive ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.14)"}`,
-              background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-              color: isActive ? "#ffffff" : "rgba(255,255,255,0.45)",
-              transition:"all 0.13s",
-            }}>
-              {g.label}
-              <span style={{
-                fontSize:9, fontWeight:700,
-                color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)",
-                background:"rgba(255,255,255,0.08)", borderRadius:999,
-                padding:"1px 5px",
-              }}>{count}</span>
-            </button>
-          );
-        })}
-      </div>
-      {/* ── Row 2: competition pills for active group ── */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", minHeight:34 }}>
-        {groupComps.map(comp => {
-          const isActive = activeCode === comp.code;
-          return (
-            <button key={comp.code} onClick={() => {
-              if (mode === "filter" && onSelect) onSelect(comp.code);
-              if (mode === "navlink" && navigateFn) navigateFn(`/predictions/${comp.slug}`);
-            }} style={{
-              display:"flex", alignItems:"center", gap:7,
-              padding:"5px 12px", borderRadius:999, cursor:"pointer",
-              fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
-              letterSpacing:"0.02em",
-              background: "rgba(255,255,255,0.93)",
-              color: "#111111",
-              border: isActive ? "2px solid #60a5fa" : "2px solid transparent",
-              boxShadow: isActive ? "0 0 0 1px #60a5fa44" : "none",
-              transition:"all 0.13s",
-              whiteSpace:"nowrap",
-            }}>
-              <img
-                src={comp.logo}
-                alt=""
-                width={15} height={15}
-                style={{ objectFit:"contain", flexShrink:0 }}
-                onError={e => { e.currentTarget.style.display="none"; }}
-              />
-              {comp.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <SharedCompNav
+      activeCode={activeCode}
+      activeGroup={activeGroup}
+      setActiveGroup={setActiveGroup}
+      onSelect={(tab) => {
+        if (mode === "filter" && onSelect) onSelect(tab.code);
+        if (mode === "navlink" && navigateFn) navigateFn(`/predictions/${tab.slug}`);
+      }}
+    />
   );
 }
 
-/* ----------------------------------------------------------
-   TASK 3  KEY PLAYERS DATA
----------------------------------------------------------- */
+// ── BACKEND_LEAGUE map (codes match directly — kept for body reference) ───────
+const BACKEND_LEAGUE = {
+  epl:"epl", laliga:"laliga", bundesliga:"bundesliga", seriea:"seriea", ligue1:"ligue1",
+  ucl:"ucl", uel:"uel", uecl:"uecl", facup:"facup",
+  wcq_uefa:"wcq_uefa", wcq_conmebol:"wcq_conmebol", wcq_concacaf:"wcq_concacaf",
+  wcq_caf:"wcq_caf", wcq_afc:"wcq_afc",
+  nations_league:"nations_league", euro:"euro", euro_q:"euro_q",
+  afcon:"afcon", copa_america:"copa_america", gold_cup:"gold_cup",
+  world_cup:"world_cup", international_friendly:"international_friendly",
+};
+
 const KP = {
   "Arsenal":         [{name:"Saka",pos:"RW",stat:"0.52 xA/90"},{name:"Havertz",pos:"ST",stat:"0.41 xG/90"},{name:"Raya",pos:"GK",stat:"+0.18 PSxG"}],
   "Chelsea":         [{name:"Palmer",pos:"AM",stat:"0.31 xA/90"},{name:"Jackson",pos:"ST",stat:"0.38 xG/90"},{name:"Caicedo",pos:"CM",stat:"6.2 PPDA"}],
@@ -2689,7 +2595,7 @@ export default function PredictionsPage({league:propLeague,slugMap}){
   ]);
   const isIntl = INTL_CODES.has(league);
 
-const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
+// INTL_BACKEND: imported as INTL_BACKEND from @/api/api at top of file
   // Ref-based guard: prevents duplicate in-flight requests when league hasn't
   // actually changed (React Strict Mode double-invoke, fast tab switching, etc.)
   const intlFetchRef = useRef(null);
@@ -3178,4 +3084,3 @@ const INTL_BACKEND = "https://footballstats-production-ecd9.up.railway.app";
       </footer>
     </div>
   );
-}

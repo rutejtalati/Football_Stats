@@ -1,29 +1,33 @@
+// pages/TeamPage.jsx  ·  Part 3 refactor
+// Changes:
+//   • const BACKEND (hardcoded URL) → API_BASE from @/api/api
+//   • useIsMobile → imported from @/hooks
+//   • LEAGUE_COLORS → derived from compColor() from @/constants
+//   • LEAGUE_SLUGS  → derived from SLUG_BY_CODE from @/constants
+//   • FORM_COLOR kept (local UI data, not in shared constants)
+//   • All components and layout — 100% preserved
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks";
+import { API_BASE as BACKEND } from "@/api/api";
+import { compColor, SLUG_BY_CODE } from "@/constants";
 
-const BACKEND = "https://footballstats-production-ecd9.up.railway.app";
-
-const LEAGUE_SLUGS = {
-  epl: "premier-league", laliga: "la-liga", seriea: "serie-a",
-  ligue1: "ligue-1", bundesliga: "bundesliga",
-};
-
+// LEAGUE_COLORS: used as accent color per league — derived from constants
 const LEAGUE_COLORS = {
-  epl: "#3d8ce8", laliga: "#e84040", seriea: "#1a1aff",
-  ligue1: "#c8a400", bundesliga: "#e84040",
+  epl: compColor("epl"),
+  laliga: compColor("laliga"),
+  seriea: compColor("seriea"),
+  ligue1: compColor("ligue1"),
+  bundesliga: compColor("bundesliga"),
 };
 
+// LEAGUE_SLUGS: used for the predictions link — derived from constants
+const LEAGUE_SLUGS = SLUG_BY_CODE;
+
+// FORM_COLOR: local UI colours, not in shared design system
 const FORM_COLOR = { W: "#00c896", D: "#888", L: "#e84040" };
 
-function useIsMobile(bp = 768) {
-  const [m, setM] = useState(window.innerWidth < bp);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
-}
 
 function StatBar({ label, value, max, color = "#3d8ce8" }) {
   const pct = Math.min((value / max) * 100, 100);
@@ -410,4 +414,3 @@ export default function TeamPage() {
       </div>
     </div>
   );
-}

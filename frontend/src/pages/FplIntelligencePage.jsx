@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFplBootstrap, getFplPredictorTable, API_BASE as API } from "../api/api";
+import { getFplBootstrap, getFplPredictorTable, API_BASE as API } from "@/api/api";
 
 // ── iOS design tokens ────────────────────────────────────────────────
 const T = {

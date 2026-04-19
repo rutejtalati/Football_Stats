@@ -1,7 +1,13 @@
-// GameweekInsightsPage.jsx — /gameweek-insights
+// GameweekInsightsPage.jsx — /fpl/stats  ·  Part 3 refactor
+// Changes:
+//   • useIsMobile → @/hooks
+//   • Route will be /fpl/stats per new structure
+//   • All UI, stat cards, layout — 100% preserved
+
 import { useState, useEffect, useMemo } from "react";
 import { API_BASE as API } from "@/api/api";
-function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
+import { useIsMobile } from "@/hooks";
+
 
 /* ─── Design tokens ─────────────────────────────────────────────── */
 const C = {
@@ -675,5 +681,4 @@ export default function GameweekInsightsPage() {
         )}
       </div>
     </div>
-  );
-}
+  )

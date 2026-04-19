@@ -1,11 +1,14 @@
-// ═════════════════════════════════════════════════════
-// StatinSite  –  Match Intelligence Page
-// FotMob-style  /match/:fixtureId
-// ═════════════════════════════════════════════════════
+// StatinSite — Match Intelligence Page  ·  Part 3 refactor
+// Changes:
+//   • const BACKEND (hardcoded URL) → API_BASE from @/api/api
+//   • ../components → @/components import path
+//   • All tabs, stats panels, commentary, lineups — 100% preserved
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import MatchLineups from "../components/MatchLineups.jsx";
-const BACKEND = "https://footballstats-production-ecd9.up.railway.app";
+import MatchLineups from "@/components/MatchLineups.jsx";
+import { API_BASE as BACKEND } from "@/api/api";
+
 const TABS = [
   { id: "facts",      label: "Facts"      },
   { id: "commentary", label: "Commentary" },
@@ -1056,4 +1059,3 @@ fetch(`${BACKEND}/api/match-intelligence/${fixtureId}`)      .then(r => {
       </div>
     </>
   );
-}

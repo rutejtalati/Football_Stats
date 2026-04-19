@@ -1,18 +1,14 @@
-// pages/FplTablePage.jsx — upgraded columns, better algorithms, full names
+// pages/FplTablePage.jsx  ·  Part 3 refactor
+// Changes:
+//   • useIsMobile → @/hooks
+//   • ../api/api  → @/api/api
+//   • All columns, algorithms, layout — 100% preserved
+
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFplPredictorTable } from "../api/api";
+import { getFplPredictorTable } from "@/api/api";
+import { useIsMobile } from "@/hooks";
 
-/* ── Responsive hook ── */
-function useIsMobile(bp = 768) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
-}
 function SiteFooter() {
   return (
     <footer style={{ background: "#000", borderTop: "0.5px solid rgba(255,255,255,0.08)", fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -799,4 +795,3 @@ export default function FplTablePage() {
     )}
     </>
   );
-}

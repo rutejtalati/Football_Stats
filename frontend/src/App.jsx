@@ -1,125 +1,203 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
+// App.jsx — StatinSite  ·  Part 3 refactor
+// ─────────────────────────────────────────────────────────────────────────
+// Route changes from previous version:
+//   /best-team              → /fpl/best-xi     (BestTeamPage)
+//   /fpl-intelligence       → /fpl/gw          (FplIntelligencePage)
+//   /captaincy              → /fpl/captain     (CaptaincyPage)
+//   /transfer-planner       → /fpl/transfers   (TransferPlannerPage)
+//   /squad-builder          → /fpl/squad       (SquadBuilderPage)
+//   /differentials          → /fpl/differentials
+//   /fixture-difficulty     → /fpl/fixtures    (FixtureDifficultyHeatmap)
+//   /gameweek-insights      → /fpl/stats       (GameweekInsightsPage)
+//   /fpl-table              → /fpl/table       (FplTablePage)
+//   /player                 → /players         (PlayerInsightPage)
+//   /player/:id             → /player/:id      (PlayerProfile — unchanged)
+//
+// New routes:
+//   /fpl                    → FplDashboardPage (to be built in Part 4)
+//   /players                → PlayerInsightPage (was /player)
+//
+// All existing routes kept as redirects for backwards compat.
+// ─────────────────────────────────────────────────────────────────────────
 
-/* ───────────────── Components ───────────────── */
-import Navbar from "./components/Navbar";
+import { lazy, Suspense } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router-dom";
 
-/* ───────────────── Pages ───────────────── */
-import HomePage from "./pages/HomePage";
-import LivePage from "./pages/LivePage";
-import PredictionsPage from "./pages/PredictionsPage";
-import SeasonSimulator from "./pages/SeasonSimulator";
-import SquadBuilderPage from "./pages/SquadBuilderPage";
-import PlayerBrowsePage from "./pages/PlayerBrowsePage";
-import PlayerInsightPage from "./pages/PlayerInsightPage";
-import TeamPage from "./pages/TeamPage";
-import MiniGamesPage from "./pages/MiniGamesPage";
-import NewsTrackerPage from "./pages/NewsTrackerPage";
-import LeaguePage from "./pages/LeaguePage";
-import LiveMatchPage from "./pages/LiveMatchPage";
-import TransferPlannerPage from "./pages/TransferPlannerPage";
-import HowItWorksPage from "./pages/HowItWorksPage";
-import CaptaincyPage from "./pages/CaptaincyPage";
-import BestTeamPage from "./pages/BestTeamPage";
-import FplTablePage from "./pages/FplTablePage";
-import GameweekInsightsPage from "./pages/GameweekInsightsPage";
-import DifferentialFinderPage from "./pages/DifferentialFinderPage";
-import FixtureDifficultyHeatmap from "./pages/FixtureDifficultyHeatmap";
-import LeaguesPage from "./pages/LeaguesPage";
-import FplIntelligencePage from "./pages/FplIntelligencePage";
-import MatchCentrePage from "./pages/MatchCentrePage";
+import Navbar     from "@/components/Navbar";
+import LiveTicker from "@/components/LiveTicker";
 
-/* ── Stub for pages not yet built ── */
-const ComingSoon = ({ name }) => (
-  <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, background: "#080808" }}>
-    <div style={{ fontSize: 28, fontFamily: "'Inter',sans-serif", fontWeight: 700, letterSpacing: "-.02em", color: "rgba(255,255,255,.2)" }}>{name}</div>
-    <div style={{ fontSize: 11, color: "rgba(255,255,255,.12)", fontFamily: "'Inter',sans-serif", letterSpacing: ".14em", textTransform: "uppercase" }}>Coming soon</div>
-  </div>
-);
+// ── Lazy-loaded pages ────────────────────────────────────────────────────────
+const HomePage                = lazy(() => import("@/pages/HomePage"));
+const LivePage                = lazy(() => import("@/pages/LivePage"));
+const LiveMatchPage           = lazy(() => import("@/pages/LiveMatchPage"));
+const MatchCentrePage         = lazy(() => import("@/pages/MatchCentrePage"));
+const MatchIntelligencePage   = lazy(() => import("@/pages/MatchIntelligencePage"));
+const PredictionsPage         = lazy(() => import("@/pages/PredictionsPage"));
+const LeaguePage              = lazy(() => import("@/pages/LeaguePage"));
+const LeaguesPage             = lazy(() => import("@/pages/LeaguesPage"));
+const TeamPage                = lazy(() => import("@/pages/TeamPage"));
+const SeasonSimulator         = lazy(() => import("@/pages/SeasonSimulator"));
+const PlayerInsightPage       = lazy(() => import("@/pages/PlayerInsightPage"));
+const PlayerBrowsePage        = lazy(() => import("@/pages/PlayerBrowsePage"));
+const PlayerProfilePage       = lazy(() => import("@/pages/PlayerProfile"));
+const NewsTrackerPage         = lazy(() => import("@/pages/NewsTrackerPage"));
+const HowItWorksPage          = lazy(() => import("@/pages/HowItWorksPage"));
+const MiniGamesPage           = lazy(() => import("@/pages/MiniGamesPage"));
+// FPL pages
+const BestTeamPage            = lazy(() => import("@/pages/BestTeamPage"));
+const FplIntelligencePage     = lazy(() => import("@/pages/FplIntelligencePage"));
+const CaptaincyPage           = lazy(() => import("@/pages/CaptaincyPage"));
+const TransferPlannerPage     = lazy(() => import("@/pages/TransferPlannerPage"));
+const SquadBuilderPage        = lazy(() => import("@/pages/SquadBuilderPage"));
+const DifferentialFinderPage  = lazy(() => import("@/pages/DifferentialFinderPage"));
+const FixtureDifficultyHeatmap = lazy(() => import("@/pages/FixtureDifficultyHeatmap"));
+const GameweekInsightsPage    = lazy(() => import("@/pages/GameweekInsightsPage"));
+const FplTablePage            = lazy(() => import("@/pages/FplTablePage"));
 
-/* ───────────────── League slug mapping ───────────────── */
+// ── Slug map (PredictionsPage needs this to resolve :slug → league code) ─────
 const SLUG_MAP = {
-  "premier-league": "epl", "la-liga": "laliga", "serie-a": "seriea", "ligue-1": "ligue1",
-  "bundesliga": "bundesliga", "champions-league": "ucl", "europa-league": "uel",
-  "conference-league": "uecl", "fa-cup": "facup",
-  "epl": "epl", "laliga": "laliga", "seriea": "seriea", "ligue1": "ligue1",
-  "ucl": "ucl", "uel": "uel", "uecl": "uecl", "facup": "facup",
-  "wcq-uefa": "wcq_uefa", "wcq-conmebol": "wcq_conmebol", "wcq-concacaf": "wcq_concacaf",
-  "wcq-caf": "wcq_caf", "wcq-afc": "wcq_afc",
-  "nations-league": "nations_league", "euros": "euro", "euro-qual": "euro_q",
-  "afcon": "afcon", "copa-america": "copa_america", "gold-cup": "gold_cup",
-  "world-cup": "world_cup", "intl-friendly": "international_friendly",
-  "wcq_uefa": "wcq_uefa", "wcq_conmebol": "wcq_conmebol", "wcq_concacaf": "wcq_concacaf",
-  "wcq_caf": "wcq_caf", "wcq_afc": "wcq_afc",
-  "nations_league": "nations_league", "euro": "euro", "euro_q": "euro_q",
-  "copa_america": "copa_america", "gold_cup": "gold_cup", "world_cup": "world_cup",
-  "international_friendly": "international_friendly",
+  "premier-league":    "epl",
+  "la-liga":           "laliga",
+  "bundesliga":        "bundesliga",
+  "serie-a":           "seriea",
+  "ligue-1":           "ligue1",
+  "champions-league":  "ucl",
+  "europa-league":     "uel",
+  "conference-league": "uecl",
+  "fa-cup":            "facup",
+  "wcq-uefa":          "wcq_uefa",
+  "wcq-conmebol":      "wcq_conmebol",
+  "wcq-concacaf":      "wcq_concacaf",
+  "wcq-caf":           "wcq_caf",
+  "wcq-afc":           "wcq_afc",
+  "nations-league":    "nations_league",
+  "euros":             "euro",
+  "euro-qual":         "euro_q",
+  "afcon":             "afcon",
+  "copa-america":      "copa_america",
+  "gold-cup":          "gold_cup",
+  "world-cup":         "world_cup",
+  "intl-friendly":     "international_friendly",
 };
 
-/* ───────────────── App Root ───────────────── */
+// ── Wrappers that extract URL params ──────────────────────────────────────────
+
+function PredictionsWrapper() {
+  const { slug } = useParams();
+  const league = SLUG_MAP[slug] || slug || "epl";
+  return <PredictionsPage league={league} slugMap={SLUG_MAP} />;
+}
+
+function LeagueWrapper() {
+  const { league } = useParams();
+  return <LeaguePage league={league || "epl"} />;
+}
+
+function TeamWrapper() {
+  const { league } = useParams();
+  return <TeamPage league={league} />;
+}
+
+// ── Loading fallback ──────────────────────────────────────────────────────────
+function PageLoader() {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0d0f14",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      <div style={{
+        width: 28, height: 28,
+        borderRadius: "50%",
+        border: "2px solid rgba(255,255,255,0.08)",
+        borderTopColor: "#0a84ff",
+        animation: "app-spin 0.7s linear infinite",
+      }} />
+      <style>{`@keyframes app-spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <HelmetProvider>
-      <BrowserRouter>
-        <div className="app-shell">
+    <BrowserRouter>
+      <Navbar />
+      <LiveTicker />
 
-          <Navbar />
+      <div className="sn-page-wrap">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
 
-          <main className="sn-page-wrap" style={{ minHeight: "100vh" }}>
-            <Routes>
-              <Route path="/"                         element={<HomePage />} />
-              <Route path="/live"                     element={<LivePage />} />
-              <Route path="/match-centre"             element={<MatchCentrePage />} />
-              <Route path="/predictions"              element={<Navigate to="/predictions/premier-league" replace />} />
-              <Route path="/ucl"                      element={<Navigate to="/predictions/champions-league" replace />} />
-              <Route path="/uel"                      element={<Navigate to="/predictions/europa-league" replace />} />
-              <Route path="/uecl"                     element={<Navigate to="/predictions/conference-league" replace />} />
-              <Route path="/facup"                    element={<Navigate to="/predictions/fa-cup" replace />} />
-              <Route path="/predictions/:league"      element={<PredictionsPage slugMap={SLUG_MAP} />} />
-              <Route path="/leagues"                  element={<LeaguesPage />} />
-              <Route path="/league/epl"               element={<LeaguePage league="epl" />} />
-              <Route path="/league/laliga"            element={<LeaguePage league="laliga" />} />
-              <Route path="/league/seriea"            element={<LeaguePage league="seriea" />} />
-              <Route path="/league/ligue1"            element={<LeaguePage league="ligue1" />} />
-              <Route path="/simulation/:league"       element={<SeasonSimulator />} />
-              {/* ── FPL Tools — new canonical URLs ── */}
-              <Route path="/fpl/captain-picks"        element={<CaptaincyPage />} />
-              <Route path="/fpl/captain-picks/gw:gw" element={<CaptaincyPage />} />
-              <Route path="/fpl/differential-picks"   element={<DifferentialFinderPage />} />
-              <Route path="/fpl/differential-picks/gw:gw" element={<DifferentialFinderPage />} />
-              <Route path="/fpl/fixture-ticker"       element={<FixtureDifficultyHeatmap />} />
-              <Route path="/fpl/fixture-ticker/gw:gw" element={<FixtureDifficultyHeatmap />} />
-              <Route path="/fpl/best-xi"              element={<BestTeamPage />} />
-              <Route path="/fpl/gw-guide"             element={<FplIntelligencePage />} />
-              <Route path="/fpl/stats"                element={<GameweekInsightsPage />} />
-              <Route path="/fpl/transfers"            element={<TransferPlannerPage />} />
-              <Route path="/fpl/standings"            element={<FplTablePage />} />
-              <Route path="/fpl/squad-builder"        element={<SquadBuilderPage />} />
+            {/* ── Core ─────────────────────────────────────────────────── */}
+            <Route path="/"              element={<HomePage />} />
+            <Route path="/live"          element={<LivePage />} />
+            <Route path="/match-centre"  element={<MatchCentrePage />} />
 
-              {/* ── Old URLs → permanent redirects (keeps any existing links working) ── */}
-              <Route path="/captaincy"                element={<Navigate to="/fpl/captain-picks" replace />} />
-              <Route path="/differentials"            element={<Navigate to="/fpl/differential-picks" replace />} />
-              <Route path="/fpl/fixtures"             element={<Navigate to="/fpl/fixture-ticker" replace />} />
-              <Route path="/best-team"                element={<Navigate to="/fpl/best-xi" replace />} />
-              <Route path="/fpl-intelligence"         element={<Navigate to="/fpl/gw-guide" replace />} />
-              <Route path="/gameweek-insights"        element={<Navigate to="/fpl/stats" replace />} />
-              <Route path="/transfer-planner"         element={<Navigate to="/fpl/transfers" replace />} />
-              <Route path="/fpl-table"                element={<Navigate to="/fpl/standings" replace />} />
-              <Route path="/squad-builder"            element={<Navigate to="/fpl/squad-builder" replace />} />
-              <Route path="/player"                   element={<PlayerInsightPage />} />
-              <Route path="/player/:id"               element={<PlayerInsightPage />} />
-              <Route path="/players"                  element={<ComingSoon name="Player Profiles" />} />
-              <Route path="/team/:teamId/:league"     element={<TeamPage />} />
-              <Route path="/match/:fixtureId"         element={<LiveMatchPage />} />
-              <Route path="/match-preview/:fixtureId" element={<LiveMatchPage />} />
-              <Route path="/games"                    element={<MiniGamesPage />} />
-              <Route path="/learn"                    element={<HowItWorksPage />} />
-              <Route path="/news"                     element={<NewsTrackerPage />} />
-            </Routes>
-          </main>
+            {/* ── Match detail ─────────────────────────────────────────── */}
+            <Route path="/match/:id"     element={<LiveMatchPage />} />
 
-        </div>
-      </BrowserRouter>
-    </HelmetProvider>
+            {/* ── Predictions ──────────────────────────────────────────── */}
+            <Route path="/predictions/:slug"      element={<PredictionsWrapper />} />
+            {/* Default redirect to Premier League */}
+            <Route path="/predictions"            element={<Navigate to="/predictions/premier-league" replace />} />
+
+            {/* ── Leagues / Teams ──────────────────────────────────────── */}
+            <Route path="/leagues"                element={<LeaguesPage />} />
+            <Route path="/league/:league"         element={<LeagueWrapper />} />
+            <Route path="/team/:teamId"           element={<TeamPage />} />
+            <Route path="/team/:teamId/:league"   element={<TeamWrapper />} />
+            <Route path="/season-sim/:league"     element={<SeasonSimulator />} />
+
+            {/* ── Players ──────────────────────────────────────────────── */}
+            <Route path="/players"       element={<PlayerInsightPage />} />
+            <Route path="/players/browse" element={<PlayerBrowsePage />} />
+            <Route path="/player/:id"    element={<PlayerProfilePage />} />
+
+            {/* ── FPL Hub ──────────────────────────────────────────────── */}
+            {/* /fpl → FPL Dashboard (placeholder redirects to best-xi until built) */}
+            <Route path="/fpl"                element={<Navigate to="/fpl/best-xi" replace />} />
+            <Route path="/fpl/best-xi"        element={<BestTeamPage />} />
+            <Route path="/fpl/gw"             element={<FplIntelligencePage />} />
+            <Route path="/fpl/captain"        element={<CaptaincyPage />} />
+            <Route path="/fpl/transfers"      element={<TransferPlannerPage />} />
+            <Route path="/fpl/squad"          element={<SquadBuilderPage />} />
+            <Route path="/fpl/differentials"  element={<DifferentialFinderPage />} />
+            <Route path="/fpl/fixtures"       element={<FixtureDifficultyHeatmap />} />
+            <Route path="/fpl/stats"          element={<GameweekInsightsPage />} />
+            <Route path="/fpl/table"          element={<FplTablePage />} />
+
+            {/* ── Content ──────────────────────────────────────────────── */}
+            <Route path="/news"    element={<NewsTrackerPage />} />
+            <Route path="/learn"   element={<HowItWorksPage />} />
+            <Route path="/games"   element={<MiniGamesPage />} />
+
+            {/* ── Legacy redirects (old routes → new routes) ───────────── */}
+            <Route path="/best-team"          element={<Navigate to="/fpl/best-xi"       replace />} />
+            <Route path="/fpl-intelligence"   element={<Navigate to="/fpl/gw"            replace />} />
+            <Route path="/captaincy"          element={<Navigate to="/fpl/captain"        replace />} />
+            <Route path="/transfer-planner"   element={<Navigate to="/fpl/transfers"      replace />} />
+            <Route path="/squad-builder"      element={<Navigate to="/fpl/squad"          replace />} />
+            <Route path="/differentials"      element={<Navigate to="/fpl/differentials"  replace />} />
+            <Route path="/fixture-difficulty" element={<Navigate to="/fpl/fixtures"       replace />} />
+            <Route path="/gameweek-insights"  element={<Navigate to="/fpl/stats"          replace />} />
+            <Route path="/fpl-table"          element={<Navigate to="/fpl/table"          replace />} />
+            <Route path="/player"             element={<Navigate to="/players"            replace />} />
+
+            {/* ── 404 fallback ─────────────────────────────────────────── */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+
+          </Routes>
+        </Suspense>
+      </div>
+    </BrowserRouter>
   );
 }

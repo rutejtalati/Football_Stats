@@ -1,14 +1,17 @@
-// LeaguesPage.jsx — StatinSite · Neobrutalist Edition
-// Design: #000 black · #e8ff47 yellow · #ff2744 red
-// All data fetching, MiniStandings, MiniScorers, LeagueCard — logic 100% preserved.
+// LeaguesPage.jsx — StatinSite · Neobrutalist Edition  ·  Part 3 refactor
+// Changes:
+//   • const BACKEND (hardcoded URL) → API_BASE from @/api/api
+//   • All MiniStandings, MiniScorers, LeagueCard — 100% preserved
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE as BACKEND } from "@/api/api";
 
-const BACKEND = "https://footballstats-production-ecd9.up.railway.app";const CYAN = "#00fff0";  // teal/cyan accent — used for titles and points
+const CYAN = "#00fff0";  // teal/cyan accent — used for titles and points
 const Y    = CYAN;       // alias kept for backwards compat with inline usages below
 const K = "#000";
 const R = "#ff2744";
+
 
 const LEAGUES = [
   { id:"epl",        name:"Premier League", country:"England", shortName:"PL",  color:Y,        logo:"https://media.api-sports.io/football/leagues/39.png",  flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
@@ -278,4 +281,3 @@ export default function LeaguesPage() {
       </div>
     </div>
   );
-}

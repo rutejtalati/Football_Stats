@@ -1,10 +1,28 @@
 // ═══════════════════════════════════════════════════════════════════
-// StatinSite — Match Detail Page
-// Mode-driven: prematch / live / fulltime
+// StatinSite — LiveMatchPage  ·  Part 2 refactor
 // ═══════════════════════════════════════════════════════════════════
+// Changes from v9:
+//   • useIsMobile         → imported from @/hooks
+//   • COMP_NAV_GROUPS     → imported from @/constants
+//   • COMP_NAV_TABS       → imported from @/constants
+//   • CompetitionNav      → imported from @/components/CompetitionNav
+//   • LIVE_STATUSES/FT_STATUSES → imported from @/constants (LIVE_SET/FINISHED_SET)
+//   • BACKEND             → API_BASE from @/api/api
+//   • All components, tabs, logic — 100% preserved
+// ═══════════════════════════════════════════════════════════════════
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
+import { useIsMobile } from "@/hooks";
+import { API_BASE as BACKEND } from "@/api/api";
+import CompetitionNav from "@/components/CompetitionNav";
+import {
+  COMP_NAV_TABS,
+  SLUG_BY_CODE,
+  COMP_BY_CODE,
+  LIVE_SET  as LIVE_STATUSES,
+  FINISHED_SET as FT_STATUSES,
+} from "@/constants";
 
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#000", r:"rgba(255,255,255,0.7)" };
@@ -22,110 +40,7 @@ const NB_CSS = `
   input[type=range] { accent-color:#ffffff; }
 `;
 
-
-
-import { API_BASE as BACKEND } from "@/api/api";
-
-// ═══════════════════════════════════════════════════════════════════════
-// SHARED COMPETITION REGISTRY  (two-level nav — Solution 4)
-// ═══════════════════════════════════════════════════════════════════════
-const COMP_NAV_GROUPS = [
-  { key:"domestic",      label:"Domestic" },
-  { key:"european",      label:"European" },
-  { key:"cup",           label:"Cup"      },
-  { key:"international", label:"International" },
-];
-
-const AF = "https://media.api-sports.io/football/leagues/";
-
-const COMP_NAV_TABS = [
-  { code:"epl",        slug:"premier-league",   label:"Premier League",   group:"domestic",      logo:`${AF}39.png`,  bc:"#1a3a6e", bt:"#93c5fd" },
-  { code:"laliga",     slug:"la-liga",          label:"La Liga",          group:"domestic",      logo:`${AF}140.png`, bc:"#6e1a1a", bt:"#fca5a5" },
-  { code:"bundesliga", slug:"bundesliga",       label:"Bundesliga",       group:"domestic",      logo:`${AF}78.png`,  bc:"#4a3a00", bt:"#fde68a" },
-  { code:"seriea",     slug:"serie-a",          label:"Serie A",          group:"domestic",      logo:`${AF}135.png`, bc:"#1a4a1a", bt:"#86efac" },
-  { code:"ligue1",     slug:"ligue-1",          label:"Ligue 1",          group:"domestic",      logo:`${AF}61.png`,  bc:"#2e1a6e", bt:"#c4b5fd" },
-  { code:"ucl",        slug:"champions-league", label:"Champions League", group:"european",      logo:`${AF}2.png`,   bc:"#0f2d6e", bt:"#93c5fd" },
-  { code:"uel",        slug:"europa-league",    label:"Europa League",    group:"european",      logo:`${AF}3.png`,   bc:"#5c2800", bt:"#fdba74" },
-  { code:"uecl",       slug:"conference-league",label:"Conference Lge",   group:"european",      logo:`${AF}848.png`, bc:"#0f3d2a", bt:"#6ee7b7" },
-  { code:"facup",      slug:"fa-cup",           label:"FA Cup",           group:"cup",           logo:`${AF}45.png`,  bc:"#4a0f0f", bt:"#fca5a5" },
-  { code:"wcq_uefa",            slug:"wcq-uefa",       label:"WCQ Europe",     group:"international", logo:`${AF}32.png`,  bc:"#3d3000", bt:"#fde68a" },
-  { code:"wcq_conmebol",        slug:"wcq-conmebol",   label:"WCQ S. America", group:"international", logo:`${AF}29.png`,  bc:"#3d3000", bt:"#fde68a" },
-  { code:"wcq_concacaf",        slug:"wcq-concacaf",   label:"WCQ C. America", group:"international", logo:`${AF}30.png`,  bc:"#3d3000", bt:"#fde68a" },
-  { code:"wcq_caf",             slug:"wcq-caf",        label:"WCQ Africa",     group:"international", logo:`${AF}31.png`,  bc:"#3d3000", bt:"#fde68a" },
-  { code:"wcq_afc",             slug:"wcq-afc",        label:"WCQ Asia",       group:"international", logo:`${AF}36.png`,  bc:"#3d3000", bt:"#fde68a" },
-  { code:"nations_league",      slug:"nations-league", label:"Nations League", group:"international", logo:`${AF}5.png`,   bc:"#3a006e", bt:"#d8b4fe" },
-  { code:"euro",                slug:"euros",          label:"UEFA Euros",     group:"international", logo:`${AF}4.png`,   bc:"#0f2d6e", bt:"#93c5fd" },
-  { code:"euro_q",              slug:"euro-qual",      label:"Euro Qualifiers",group:"international", logo:`${AF}960.png`, bc:"#0f2d6e", bt:"#93c5fd" },
-  { code:"afcon",               slug:"afcon",          label:"Africa Cup",     group:"international", logo:`${AF}6.png`,   bc:"#0f3d1a", bt:"#86efac" },
-  { code:"copa_america",        slug:"copa-america",   label:"Copa América",   group:"international", logo:`${AF}9.png`,   bc:"#3d2c00", bt:"#fde68a" },
-  { code:"gold_cup",            slug:"gold-cup",       label:"Gold Cup",       group:"international", logo:`${AF}16.png`,  bc:"#3d2c00", bt:"#fde68a" },
-  { code:"world_cup",           slug:"world-cup",      label:"World Cup",      group:"international", logo:`${AF}1.png`,   bc:"#3d2c00", bt:"#fde68a" },
-  { code:"international_friendly",slug:"intl-friendly",label:"Intl Friendly",  group:"international", logo:`${AF}10.png`,  bc:"#2a2a2a", bt:"#d1d5db" },
-];
-
-// Two-level nav: group buttons → competition pills → navigate to /predictions/:slug
-function CompetitionNav({ activeGroup, setActiveGroup, navigate: nav }) {
-  const groupComps = COMP_NAV_TABS.filter(t => t.group === activeGroup);
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"10px 20px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(8,8,8,0.9)" }}>
-      {/* Row 1: group tabs */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-        {COMP_NAV_GROUPS.map(g => {
-          const isAct = g.key === activeGroup;
-          const count = COMP_NAV_TABS.filter(t => t.group === g.key).length;
-          return (
-            <button key={g.key} onClick={() => setActiveGroup(g.key)} style={{
-              display:"flex", alignItems:"center", gap:5,
-              padding:"5px 12px", borderRadius:999, cursor:"pointer",
-              fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:700,
-              letterSpacing:"0.05em", textTransform:"uppercase",
-              border:`1px solid ${isAct ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.12)"}`,
-              background: isAct ? "rgba(255,255,255,0.1)" : "transparent",
-              color: isAct ? "#fff" : "rgba(255,255,255,0.4)",
-              transition:"all 0.13s",
-            }}>
-              {g.label}
-              <span style={{ fontSize:9, background:"rgba(255,255,255,0.08)", borderRadius:999, padding:"1px 5px", color: isAct ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)" }}>{count}</span>
-            </button>
-          );
-        })}
-      </div>
-      {/* Row 2: competition pills */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", minHeight:30 }}>
-        {groupComps.map(comp => (
-          <button key={comp.code} onClick={() => nav(`/predictions/${comp.slug}`)} style={{
-            display:"flex", alignItems:"center", gap:7,
-            padding:"4px 11px", borderRadius:999, cursor:"pointer",
-            fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
-            letterSpacing:"0.02em",
-            background: "rgba(255,255,255,0.93)",
-            color: "#111111",
-            border: "2px solid transparent",
-            transition:"all 0.13s",
-            whiteSpace:"nowrap",
-          }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#60a5fa";e.currentTarget.style.boxShadow="0 0 0 1px #60a5fa44";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="transparent";e.currentTarget.style.boxShadow="none";}}
-          >
-            <img
-              src={comp.logo}
-              alt=""
-              width={14} height={14}
-              style={{ objectFit:"contain", flexShrink:0 }}
-              onError={e => { e.currentTarget.style.display="none"; }}
-            />
-            {comp.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Mode derivation ─────────────────────────────────────────────────────────
-
-const LIVE_STATUSES = new Set(["1H","2H","HT","ET","BT","P"]);
-const FT_STATUSES   = new Set(["FT","AET","PEN","AWD","WO"]);
+// ── Mode derivation ─────────────────────────────────────────────────────────
 
 function deriveMode(statusShort) {
   if (!statusShort || statusShort === "NS" || statusShort === "TBD") return "prematch";
@@ -134,7 +49,6 @@ function deriveMode(statusShort) {
   return "prematch";
 }
 
-// ─── Utility helpers ─────────────────────────────────────────────────────────
 
 function fmtMin(elapsed, extra) {
   if (!elapsed) return "";
@@ -2492,9 +2406,10 @@ export default function LiveMatchPage() {
           </span>
         </div>
         <CompetitionNav
+          activeCode={league}
           activeGroup={activeNavGroup}
           setActiveGroup={setActiveNavGroup}
-          navigate={navigate}
+          onSelect={(tab) => navigate(`/predictions/${tab.slug}`)}
         />
       </div>
 
@@ -2632,4 +2547,3 @@ export default function LiveMatchPage() {
     </div>
     </div>
   );
-}

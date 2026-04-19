@@ -1,53 +1,44 @@
-// pages/MatchCentrePage.jsx  — StatinSite Match Centre v1
-// Three-column command centre: Left = live/upcoming, Centre = selected match deep-dive, Right = intel rail
-// Sits alongside existing LivePage and PredictionsPage — no replacements
+// pages/MatchCentrePage.jsx  — StatinSite Match Centre  ·  Part 3 refactor
+// ─────────────────────────────────────────────────────────────────────────
+// Changes:
+//   • BACKEND             → API_BASE from @/api/api
+//   • COMP_COLORS         → derived from @/constants compColor()
+//   • COMP_LABELS         → derived from @/constants compLabel()
+//   • COMP_LOGOS          → derived from @/constants compLogo()
+//   • COMPS / GROUPS / GROUP_LABELS → derived from @/constants
+//   • All components, helpers, layout — 100% preserved
+// ─────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getLeaguePredictions } from "../api/api";
+import { getLeaguePredictions } from "@/api/api";
+import { API_BASE as BACKEND } from "@/api/api";
+import {
+  COMP_NAV_TABS,
+  COMP_NAV_GROUPS,
+  COMP_BY_CODE,
+  COMPS_BY_GROUP,
+  compColor,
+  compLabel,
+  compLogo,
+} from "@/constants";
 
-/* ─────────────────────────────────────────────────────────────
-   CONSTANTS
-───────────────────────────────────────────────────────────── */
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://footballstats-production-ecd9.up.railway.app";
+// ── Derived lookups matching the original variable names used in the body ─────
+// COMP_COLORS[code] → color string
+const COMP_COLORS  = Object.fromEntries(COMP_NAV_TABS.map(t => [t.code, t.color]));
+// COMP_LABELS[code] → label string
+const COMP_LABELS  = Object.fromEntries(COMP_NAV_TABS.map(t => [t.code, t.label]));
+// COMP_LOGOS[code]  → logo URL
+const COMP_LOGOS   = Object.fromEntries(COMP_NAV_TABS.map(t => [t.code, t.logo]));
 
-const COMP_COLORS = {
-  epl:"#60a5fa", laliga:"#f97316", bundesliga:"#f59e0b",
-  seriea:"#e2e8e4", ligue1:"#a78bfa",
-  ucl:"#818cf8", uel:"#fb923c", uecl:"#4ade80", facup:"#f87171",
-};
+// COMPS: the body filters COMPS by group — use domestic+european+cup only (no intl)
+const COMPS = COMP_NAV_TABS.filter(t => ["domestic","european","cup"].includes(t.group))
+  .map(t => ({ code: t.code, group: t.group }));
 
-const COMP_LABELS = {
-  epl:"Premier League", laliga:"La Liga", bundesliga:"Bundesliga",
-  seriea:"Serie A", ligue1:"Ligue 1",
-  ucl:"Champions League", uel:"Europa League", uecl:"Conference League", facup:"FA Cup",
-};
-
-const AF = "https://media.api-sports.io/football/leagues/";
-const COMP_LOGOS = {
-  epl:`${AF}39.png`, laliga:`${AF}140.png`, bundesliga:`${AF}78.png`,
-  seriea:`${AF}135.png`, ligue1:`${AF}61.png`,
-  ucl:`${AF}2.png`, uel:`${AF}3.png`, uecl:`${AF}848.png`, facup:`${AF}45.png`,
-};
-
-const COMPS = [
-  { code:"epl",        group:"domestic"  },
-  { code:"laliga",     group:"domestic"  },
-  { code:"bundesliga", group:"domestic"  },
-  { code:"seriea",     group:"domestic"  },
-  { code:"ligue1",     group:"domestic"  },
-  { code:"ucl",        group:"european"  },
-  { code:"uel",        group:"european"  },
-  { code:"uecl",       group:"european"  },
-  { code:"facup",      group:"cup"       },
-];
-
-const GROUPS = ["domestic","european","cup"];
+// GROUPS / GROUP_LABELS: body iterates these
+const GROUPS       = ["domestic","european","cup"];
 const GROUP_LABELS = { domestic:"Domestic", european:"European", cup:"Cup" };
 
-/* ─────────────────────────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────────────────────────── */
 function poisson(lam,k){let r=Math.exp(-lam);for(let i=0;i<k;i++)r*=lam/(i+1);return r;}
 function buildProbs(xgH,xgA){
   let pH=0,pD=0,pA=0,topScore="1-0",topP=0;
@@ -975,4 +966,3 @@ export default function MatchCentrePage(){
       </footer>
     </div>
   );
-}

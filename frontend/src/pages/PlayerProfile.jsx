@@ -1,5 +1,10 @@
-// pages/PlayerProfile.jsx — StatinSite Stats Hub v2
+// pages/PlayerProfile.jsx — StatinSite Stats Hub v2  ·  Part 3 refactor
+// Changes:
+//   • const B (hardcoded URL) → API_BASE from @/api/api
+//   • All design tokens, PLAYER_TABS, TEAM_TABS, components — 100% preserved
+
 import { useState, useEffect, useRef, useCallback } from "react";
+import { API_BASE as B } from "@/api/api";
 
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#080808", r:"rgba(255,255,255,0.65)" };
@@ -17,9 +22,6 @@ const NB_CSS = `
   input[type=range] { accent-color:#ffffff; }
 `;
 
-
-
-const B = import.meta.env.VITE_BACKEND_URL || "https://footballstats-production-ecd9.up.railway.app";
 const C = {
   bg:"#080808",card:"#080808",border:"rgba(255,255,255,.15)",
   text:"#ffffff",muted:"rgba(255,255,255,.5)",dim:"rgba(255,255,255,.2)",soft:"rgba(255,255,255,.7)",
@@ -525,4 +527,3 @@ document.removeEventListener("mousedown",fn);
       <PageFooter/>
     </div>
   );
-}

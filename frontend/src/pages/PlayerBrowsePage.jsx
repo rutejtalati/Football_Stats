@@ -1,9 +1,13 @@
-// pages/PlayerBrowsePage.jsx
-// Browse all players — MOBILE RESPONSIVE
+// pages/PlayerBrowsePage.jsx — Browse all players  ·  Part 3 refactor
+// Changes:
+//   • useIsMobile  → imported from @/hooks
+//   • ../api/api   → @/api/api import path updated
+//   • All UI, SHIRT_IDS, normalizePlayer, filters — 100% preserved
 
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFplBootstrap, getFplPredictorTable } from "../api/api";
+import { getFplBootstrap, getFplPredictorTable } from "@/api/api";
+import { useIsMobile } from "@/hooks";
 
 /* ── Neobrutalist theme constants ── */
 const NB = { y:"#ffffff", k:"#080808", r:"rgba(255,255,255,0.65)" };
@@ -20,19 +24,6 @@ const NB_CSS = `
   ::selection { background:#ffffff; color:#0d0d0d; }
   input[type=range] { accent-color:#ffffff; }
 `;
-
-
-
-/* ── Responsive hook ── */
-function useIsMobile(bp = 640) {
-  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
-  useEffect(() => {
-    const h = () => setM(window.innerWidth < bp);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, [bp]);
-  return m;
-}
 
 const SHIRT_IDS = {
   ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,IPS:40,
@@ -422,4 +413,3 @@ export default function PlayerBrowsePage() {
     <PageFooter/>
     </>
   );
-}

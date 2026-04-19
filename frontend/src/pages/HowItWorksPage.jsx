@@ -1,6 +1,11 @@
-// HowItWorksPage.jsx — Football crash course & how StatinSite works
+// HowItWorksPage.jsx — Football crash course  ·  Part 3 refactor
+// Changes:
+//   • useIsMobile → @/hooks
+//   • All content, animations, layout — 100% preserved
+
 import { useState, useRef, useEffect } from "react";
-function useIsMobile(bp=768){const[m,setM]=useState(()=>typeof window!=="undefined"?window.innerWidth<bp:false);useEffect(()=>{const h=()=>setM(window.innerWidth<bp);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[bp]);return m;}
+import { useIsMobile } from "@/hooks";
+
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=JetBrains+Mono:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
@@ -1021,4 +1026,3 @@ export default function HowItWorksPage() {
       </div>
     </div>
   );
-}
